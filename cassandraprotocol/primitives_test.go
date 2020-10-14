@@ -503,3 +503,189 @@ func TestWriteStringList(t *testing.T) {
 		})
 	}
 }
+
+func TestReadStringMultiMap(t *testing.T) {
+	tests := []struct {
+		name      string
+		source    []byte
+		expected  map[string][]string
+		remaining []byte
+		err       error
+	}{
+		{"empty string multimap", []byte{0, 0}, map[string][]string{}, []byte{}, nil},
+		{"multimap 1 key 1 value", []byte{
+			0, 1, // map length
+			0, 5, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // key: hello
+			0, 1, // list length
+			0, 5, 0x77, 0x6f, 0x72, 0x6c, 0x64, // value1: world
+		}, map[string][]string{"hello": {"world"}}, []byte{}, nil},
+		{"multimap 1 key 2 values", []byte{
+			0, 1, // map length
+			0, 5, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // key: hello
+			0, 2, // list length
+			0, 5, 0x77, 0x6f, 0x72, 0x6c, 0x64, // value1: world
+			0, 5, 0x6d, 0x75, 0x6e, 0x64, 0x6f, // value2: hello
+		}, map[string][]string{"hello": {"world", "mundo"}}, []byte{}, nil},
+		{"multimap 2 keys 2 values", []byte{
+			0, 2, // map length
+			0, 5, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // key1: hello
+			0, 2, // list length
+			0, 5, 0x77, 0x6f, 0x72, 0x6c, 0x64, // value1: world
+			0, 5, 0x6d, 0x75, 0x6e, 0x64, 0x6f, // value2: mundo
+			0, 6, 0x68, 0x6f, 0x6c, 0xc3, 0xa0, 0x21, // key2: holà!
+			0, 2, // list length
+			0, 5, 0x77, 0x6f, 0x72, 0x6c, 0x64, // value1: world
+			0, 5, 0x6d, 0x75, 0x6e, 0x64, 0x6f, // value2: mundo
+		}, map[string][]string{
+			"hello": {"world", "mundo"},
+			"holà!": {"world", "mundo"},
+		}, []byte{}, nil},
+		{
+			"cannot read map length",
+			[]byte{0},
+			nil,
+			[]byte{0},
+			errors.New("not enough bytes to read a protocol [short]"),
+		},
+		{
+			"cannot read key length",
+			[]byte{0, 1, 0},
+			nil,
+			[]byte{0},
+			errors.New("not enough bytes to read a protocol [short]"),
+		},
+		{
+			"cannot read list length",
+			[]byte{0, 1, 0, 1, 0x6d, 0},
+			nil,
+			[]byte{0},
+			errors.New("not enough bytes to read a protocol [short]"),
+		},
+		{
+			"cannot read element length",
+			[]byte{0, 1, 0, 1, 0x6d, 0, 1, 0},
+			nil,
+			[]byte{0},
+			errors.New("not enough bytes to read a protocol [short]"),
+		},
+		{
+			"cannot read list",
+			[]byte{0, 1, 0, 1, 0x6d, 0, 1, 0, 5, 0x68, 0x65, 0x6c, 0x6c},
+			nil,
+			[]byte{0x68, 0x65, 0x6c, 0x6c},
+			errors.New("not enough bytes to read a protocol [string]"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual, remaining, err := ReadStringMultiMap(tt.source)
+			assert.Equal(t, tt.expected, actual)
+			assert.Equal(t, tt.remaining, remaining)
+			assert.Equal(t, tt.err, err)
+		})
+	}
+}
+
+func TestWriteStringMultiMap(t *testing.T) {
+	tests := []struct {
+		name      string
+		input     map[string][]string
+		dest      []byte
+		expected  []byte
+		remaining []byte
+		err       error
+	}{
+		{
+			"empty string multimap",
+			map[string][]string{},
+			make([]byte, SizeOfStringMultiMap(map[string][]string{})),
+			[]byte{0, 0},
+			[]byte{},
+			nil,
+		},
+		{
+			"multimap 1 key 1 value",
+			map[string][]string{"hello": {"world"}},
+			make([]byte, SizeOfStringMultiMap(map[string][]string{"hello": {"world"}})),
+			[]byte{
+				0, 1, // map length
+				0, 5, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // key: hello
+				0, 1, // list length
+				0, 5, 0x77, 0x6f, 0x72, 0x6c, 0x64, // value1: world
+			},
+			[]byte{},
+			nil,
+		},
+		{
+			"multimap 1 key 2 values",
+			map[string][]string{"hello": {"world", "mundo"}},
+			make([]byte, SizeOfStringMultiMap(map[string][]string{"hello": {"world", "mundo"}})),
+			[]byte{
+				0, 1, // map length
+				0, 5, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // key: hello
+				0, 2, // list length
+				0, 5, 0x77, 0x6f, 0x72, 0x6c, 0x64, // value1: world
+				0, 5, 0x6d, 0x75, 0x6e, 0x64, 0x6f, // value2: hello
+			},
+			[]byte{},
+			nil,
+		},
+		// Cannot test maps with > 1 key since map entry iteration order is not deterministic :-(
+		{
+			"cannot write map length",
+			map[string][]string{},
+			make([]byte, SizeOfShort-1),
+			[]byte{0},
+			[]byte{0},
+			errors.New("not enough capacity to write a protocol [short]"),
+		},
+		{
+			"cannot write key length",
+			map[string][]string{"hello": {"world"}},
+			make([]byte, SizeOfShort+SizeOfShort-1),
+			[]byte{0, 1, 0},
+			[]byte{0},
+			errors.New("not enough capacity to write a protocol [short]"),
+		},
+		{
+			"cannot write key",
+			map[string][]string{"hello": {"world"}},
+			make([]byte, SizeOfShort+SizeOfString("hello")-1),
+			[]byte{0, 1, 0, 5, 0, 0, 0, 0},
+			[]byte{0, 0, 0, 0},
+			errors.New("not enough capacity to write a protocol [string]"),
+		},
+		{
+			"cannot write list length",
+			map[string][]string{"hello": {"world"}},
+			make([]byte, SizeOfShort+SizeOfString("hello")+SizeOfShort-1),
+			[]byte{0, 1, 0, 5, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0},
+			[]byte{0},
+			errors.New("not enough capacity to write a protocol [short]"),
+		},
+		{
+			"cannot write element length",
+			map[string][]string{"hello": {"world"}},
+			make([]byte, SizeOfShort+SizeOfString("hello")+SizeOfShort+SizeOfShort-1),
+			[]byte{0, 1, 0, 5, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0, 1, 0},
+			[]byte{0},
+			errors.New("not enough capacity to write a protocol [short]"),
+		},
+		{
+			"cannot write list element",
+			map[string][]string{"hello": {"world"}},
+			make([]byte, SizeOfShort+SizeOfString("hello")+SizeOfShort+SizeOfString("world")-1),
+			[]byte{0, 1, 0, 5, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0, 1, 0, 5, 0, 0, 0, 0},
+			[]byte{0, 0, 0, 0},
+			errors.New("not enough capacity to write a protocol [string]"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			remaining, err := WriteStringMultiMap(tt.input, tt.dest)
+			assert.Equal(t, tt.expected, tt.dest)
+			assert.Equal(t, tt.remaining, remaining)
+			assert.Equal(t, tt.err, err)
+		})
+	}
+}

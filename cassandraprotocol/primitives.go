@@ -382,6 +382,32 @@ func ReadStringMultiMap(source []byte) (decoded map[string][]string, remaining [
 	return stringMap, source, nil
 }
 
+func WriteStringMultiMap(m map[string][]string, dest []byte) (remaining []byte, err error) {
+	dest, err = WriteShort(uint16(len(m)), dest)
+	if err != nil {
+		return dest, err
+	}
+	for key, value := range m {
+		dest, err = WriteString(key, dest)
+		if err != nil {
+			return dest, err
+		}
+		dest, err = WriteStringList(value, dest)
+		if err != nil {
+			return dest, err
+		}
+	}
+	return dest, nil
+}
+
+func SizeOfStringMultiMap(m map[string][]string) int {
+	size := SizeOfShort
+	for key, value := range m {
+		size += SizeOfString(key) + SizeOfStringList(value)
+	}
+	return size
+}
+
 // [bytes map]
 
 func ReadBytesMap(source []byte) (decoded map[string][]byte, remaining []byte, err error) {
