@@ -27,16 +27,16 @@ func NewStartupWithOptions(options map[string]string) *Startup {
 	return &Startup{options}
 }
 
-func (s Startup) IsResponse() bool {
+func (m Startup) IsResponse() bool {
 	return false
 }
 
-func (s Startup) GetOpCode() OpCode {
+func (m Startup) GetOpCode() OpCode {
 	return OpCodeStartup
 }
 
-func (s Startup) String() string {
-	return fmt.Sprint("STARTUP ", s.Options)
+func (m Startup) String() string {
+	return fmt.Sprint("STARTUP ", m.Options)
 }
 
 // AUTHENTICATE
@@ -45,16 +45,16 @@ type Authenticate struct {
 	Authenticator string
 }
 
-func (a Authenticate) IsResponse() bool {
+func (m Authenticate) IsResponse() bool {
 	return true
 }
 
-func (a Authenticate) GetOpCode() OpCode {
+func (m Authenticate) GetOpCode() OpCode {
 	return OpCodeAuthenticate
 }
 
-func (a Authenticate) String() string {
-	return "AUTHENTICATE " + a.Authenticator
+func (m Authenticate) String() string {
+	return "AUTHENTICATE " + m.Authenticator
 }
 
 // AUTH RESPONSE
@@ -63,16 +63,16 @@ type AuthResponse struct {
 	Token []byte
 }
 
-func (a AuthResponse) IsResponse() bool {
+func (m AuthResponse) IsResponse() bool {
 	return false
 }
 
-func (a AuthResponse) GetOpCode() OpCode {
+func (m AuthResponse) GetOpCode() OpCode {
 	return OpCodeAuthResponse
 }
 
-func (a AuthResponse) String() string {
-	return "AUTH_RESPONSE " + string(a.Token)
+func (m AuthResponse) String() string {
+	return "AUTH_RESPONSE " + string(m.Token)
 }
 
 // AUTH CHALLENGE
@@ -81,16 +81,16 @@ type AuthChallenge struct {
 	Token []byte
 }
 
-func (a AuthChallenge) IsResponse() bool {
+func (m AuthChallenge) IsResponse() bool {
 	return true
 }
 
-func (a AuthChallenge) GetOpCode() OpCode {
+func (m AuthChallenge) GetOpCode() OpCode {
 	return OpCodeAuthChallenge
 }
 
-func (a AuthChallenge) String() string {
-	return "AUTH_CHALLENGE " + string(a.Token)
+func (m AuthChallenge) String() string {
+	return "AUTH_CHALLENGE " + string(m.Token)
 }
 
 // AUTH SUCCESS
@@ -99,16 +99,16 @@ type AuthSuccess struct {
 	Token []byte
 }
 
-func (a AuthSuccess) IsResponse() bool {
+func (m AuthSuccess) IsResponse() bool {
 	return true
 }
 
-func (a AuthSuccess) GetOpCode() OpCode {
+func (m AuthSuccess) GetOpCode() OpCode {
 	return OpCodeAuthSuccess
 }
 
-func (a AuthSuccess) String() string {
-	return "AUTH_SUCCESS " + string(a.Token)
+func (m AuthSuccess) String() string {
+	return "AUTH_SUCCESS " + string(m.Token)
 }
 
 // REGISTER
@@ -121,16 +121,16 @@ func NewRegister(eventTypes []string) *Register {
 	return &Register{EventTypes: eventTypes}
 }
 
-func (r Register) IsResponse() bool {
+func (m Register) IsResponse() bool {
 	return false
 }
 
-func (r Register) GetOpCode() OpCode {
+func (m Register) GetOpCode() OpCode {
 	return OpCodeRegister
 }
 
-func (r Register) String() string {
-	return fmt.Sprint("REGISTER ", r.EventTypes)
+func (m Register) String() string {
+	return fmt.Sprint("REGISTER ", m.EventTypes)
 }
 
 // OPTIONS
@@ -138,16 +138,33 @@ func (r Register) String() string {
 type Options struct {
 }
 
-func (r Options) IsResponse() bool {
+func (m Options) IsResponse() bool {
 	return false
 }
 
-func (r Options) GetOpCode() OpCode {
+func (m Options) GetOpCode() OpCode {
 	return OpCodeOptions
 }
 
-func (r Options) String() string {
+func (m Options) String() string {
 	return "OPTIONS"
+}
+
+// SUPPORTED
+
+type Supported struct {
+}
+
+func (m Supported) IsResponse() bool {
+	return false
+}
+
+func (m Supported) GetOpCode() OpCode {
+	return OpCodeSupported
+}
+
+func (m Supported) String() string {
+	return "SUPPORTED"
 }
 
 // READY
@@ -155,14 +172,14 @@ func (r Options) String() string {
 type Ready struct {
 }
 
-func (r Ready) IsResponse() bool {
+func (m Ready) IsResponse() bool {
 	return false
 }
 
-func (r Ready) GetOpCode() OpCode {
+func (m Ready) GetOpCode() OpCode {
 	return OpCodeReady
 }
 
-func (r Ready) String() string {
+func (m Ready) String() string {
 	return "READY"
 }
