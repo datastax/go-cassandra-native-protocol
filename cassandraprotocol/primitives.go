@@ -21,7 +21,7 @@ type UUID [16]byte
 
 // [byte] ([byte] is not defined in protocol specs but is used by other primitives)
 
-func ReadByte(source []byte) (uint8, []byte, error) {
+func ReadByte(source []byte) (decoded uint8, remaining []byte, err error) {
 	length := len(source)
 	if length < SizeOfByte {
 		return 0, source, errors.New("not enough bytes to read a protocol [byte]")
@@ -29,7 +29,7 @@ func ReadByte(source []byte) (uint8, []byte, error) {
 	return source[0], source[SizeOfByte:], nil
 }
 
-func WriteByte(b uint8, dest []byte) ([]byte, error) {
+func WriteByte(b uint8, dest []byte) (remaining []byte, err error) {
 	if cap(dest) < SizeOfByte {
 		return dest, errors.New("not enough capacity to write a protocol [byte]")
 	}
@@ -39,7 +39,7 @@ func WriteByte(b uint8, dest []byte) ([]byte, error) {
 
 // [short]
 
-func ReadShort(source []byte) (uint16, []byte, error) {
+func ReadShort(source []byte) (decoded uint16, remaining []byte, error error) {
 	length := len(source)
 	if length < SizeOfShort {
 		return 0, source, errors.New("not enough bytes to read a protocol [short]")
@@ -47,7 +47,7 @@ func ReadShort(source []byte) (uint16, []byte, error) {
 	return binary.BigEndian.Uint16(source[:SizeOfShort]), source[SizeOfShort:], nil
 }
 
-func WriteShort(i uint16, dest []byte) ([]byte, error) {
+func WriteShort(i uint16, dest []byte) (remaining []byte, err error) {
 	if cap(dest) < SizeOfShort {
 		return dest, errors.New("not enough capacity to write a protocol [short]")
 	}
@@ -57,7 +57,7 @@ func WriteShort(i uint16, dest []byte) ([]byte, error) {
 
 // [int]
 
-func ReadInt(source []byte) (int32, []byte, error) {
+func ReadInt(source []byte) (decoded int32, remaining []byte, err error) {
 	length := len(source)
 	if length < SizeOfInt {
 		return 0, source, errors.New("not enough bytes to read a protocol [int]")
@@ -65,7 +65,7 @@ func ReadInt(source []byte) (int32, []byte, error) {
 	return int32(binary.BigEndian.Uint32(source[:SizeOfInt])), source[SizeOfInt:], nil
 }
 
-func WriteInt(i int32, dest []byte) ([]byte, error) {
+func WriteInt(i int32, dest []byte) (remaining []byte, err error) {
 	if cap(dest) < SizeOfInt {
 		return dest, errors.New("not enough capacity to write a protocol [int]")
 	}
@@ -75,7 +75,7 @@ func WriteInt(i int32, dest []byte) ([]byte, error) {
 
 // [long]
 
-func ReadLong(source []byte) (int64, []byte, error) {
+func ReadLong(source []byte) (decoded int64, remaining []byte, err error) {
 	length := len(source)
 	if length < SizeOfLong {
 		return 0, source, errors.New("not enough bytes to read a protocol [long]")
@@ -83,7 +83,7 @@ func ReadLong(source []byte) (int64, []byte, error) {
 	return int64(binary.BigEndian.Uint64(source[:SizeOfLong])), source[SizeOfLong:], nil
 }
 
-func WriteLong(l int64, dest []byte) ([]byte, error) {
+func WriteLong(l int64, dest []byte) (remaining []byte, err error) {
 	if cap(dest) < SizeOfLong {
 		return dest, errors.New("not enough capacity to write a protocol [long]")
 	}
@@ -93,9 +93,8 @@ func WriteLong(l int64, dest []byte) ([]byte, error) {
 
 // [string]
 
-func ReadString(source []byte) (string, []byte, error) {
+func ReadString(source []byte) (decoded string, remaining []byte, err error) {
 	var strLen uint16
-	var err error
 	strLen, source, err = ReadShort(source)
 	if err != nil {
 		return "", source, err
@@ -108,9 +107,8 @@ func ReadString(source []byte) (string, []byte, error) {
 	return str, source[strLen:], nil
 }
 
-func WriteString(s string, dest []byte) ([]byte, error) {
+func WriteString(s string, dest []byte) (remaining []byte, err error) {
 	l := len(s)
-	var err error
 	dest, err = WriteShort(uint16(l), dest)
 	if err != nil {
 		return dest, err
@@ -128,9 +126,8 @@ func SizeOfString(s string) int {
 
 // [long string]
 
-func ReadLongString(source []byte) (string, []byte, error) {
+func ReadLongString(source []byte) (decoded string, remaining []byte, err error) {
 	var strLen int32
-	var err error
 	strLen, source, err = ReadInt(source)
 	if err != nil {
 		return "", source, err
@@ -143,9 +140,8 @@ func ReadLongString(source []byte) (string, []byte, error) {
 	return str, source[strLen:], nil
 }
 
-func WriteLongString(s string, dest []byte) ([]byte, error) {
+func WriteLongString(s string, dest []byte) (remaining []byte, err error) {
 	l := len(s)
-	var err error
 	dest, err = WriteInt(int32(l), dest)
 	if err != nil {
 		return dest, err
@@ -163,9 +159,8 @@ func SizeOfLongString(s string) int {
 
 // [string list]
 
-func ReadStringList(source []byte) ([]string, []byte, error) {
+func ReadStringList(source []byte) (decoded []string, remaining []byte, err error) {
 	var size uint16
-	var err error
 	size, source, err = ReadShort(source)
 	if err != nil {
 		return nil, source, err
@@ -182,9 +177,8 @@ func ReadStringList(source []byte) ([]string, []byte, error) {
 	return list, source, nil
 }
 
-func WriteStringList(list []string, dest []byte) ([]byte, error) {
+func WriteStringList(list []string, dest []byte) (remaining []byte, err error) {
 	l := len(list)
-	var err error
 	dest, err = WriteShort(uint16(l), dest)
 	if err != nil {
 		return dest, err
@@ -208,9 +202,8 @@ func SizeOfStringList(list []string) int {
 
 // [bytes]
 
-func ReadBytes(source []byte) ([]byte, []byte, error) {
+func ReadBytes(source []byte) (decoded []byte, remaining []byte, err error) {
 	var sliceLen int32
-	var err error
 	sliceLen, source, err = ReadInt(source)
 	if err != nil {
 		return nil, source, err
@@ -223,9 +216,8 @@ func ReadBytes(source []byte) ([]byte, []byte, error) {
 
 }
 
-func WriteBytes(b []byte, dest []byte) ([]byte, error) {
+func WriteBytes(b []byte, dest []byte) (remaining []byte, err error) {
 	l := len(b)
-	var err error
 	dest, err = WriteInt(int32(l), dest)
 	if err != nil {
 		return dest, err
@@ -240,9 +232,8 @@ func SizeOfBytes(b []byte) int {
 
 // [short bytes]
 
-func ReadShortBytes(source []byte) ([]byte, []byte, error) {
+func ReadShortBytes(source []byte) (decoded []byte, remaining []byte, err error) {
 	var sliceLen uint16
-	var err error
 	sliceLen, source, err = ReadShort(source)
 	if err != nil {
 		return nil, source, err
@@ -255,9 +246,8 @@ func ReadShortBytes(source []byte) ([]byte, []byte, error) {
 	return slice, source[sliceLen:], nil
 }
 
-func WriteShortBytes(b []byte, dest []byte) ([]byte, error) {
+func WriteShortBytes(b []byte, dest []byte) (remaining []byte, err error) {
 	l := len(b)
-	var err error
 	dest, err = WriteShort(uint16(l), dest)
 	if err != nil {
 		return dest, err
@@ -272,7 +262,7 @@ func SizeOfShortBytes(b []byte) int {
 
 // [uuid]
 
-func ReadUuid(source []byte) (*UUID, []byte, error) {
+func ReadUuid(source []byte) (decoded *UUID, remaining []byte, err error) {
 	if len(source) < SizeOfUuid {
 		return nil, source, errors.New("not enough bytes to read a protocol [uuid]")
 	}
@@ -281,7 +271,7 @@ func ReadUuid(source []byte) (*UUID, []byte, error) {
 	return &uuid, source[SizeOfUuid:], nil
 }
 
-func WriteUuid(uuid *UUID, dest []byte) ([]byte, error) {
+func WriteUuid(uuid *UUID, dest []byte) (remaining []byte, err error) {
 	if len(dest) < SizeOfUuid {
 		return dest, errors.New("not enough bytes to write a protocol [uuid]")
 	}
@@ -291,7 +281,7 @@ func WriteUuid(uuid *UUID, dest []byte) ([]byte, error) {
 
 // [inet]
 
-func ReadInet(source []byte) (net.IP, int32, []byte, error) {
+func ReadInet(source []byte) (addr net.IP, port int32, remaining []byte, err error) {
 	if len(source) == 0 {
 		return nil, -1, source, errors.New("not enough bytes to read a protocol [inet]")
 	}
@@ -318,9 +308,8 @@ func ReadInet(source []byte) (net.IP, int32, []byte, error) {
 
 // [string map]
 
-func ReadStringMap(source []byte) (map[string]string, []byte, error) {
+func ReadStringMap(source []byte) (decoded map[string]string, remaining []byte, err error) {
 	var size uint16
-	var err error
 	size, source, err = ReadShort(source)
 	if err != nil {
 		return nil, source, err
@@ -342,8 +331,7 @@ func ReadStringMap(source []byte) (map[string]string, []byte, error) {
 	return stringMap, source, nil
 }
 
-func WriteStringMap(m map[string]string, dest []byte) ([]byte, error) {
-	var err error
+func WriteStringMap(m map[string]string, dest []byte) (remaining []byte, err error) {
 	dest, err = WriteShort(uint16(len(m)), dest)
 	if err != nil {
 		return dest, err
@@ -371,9 +359,8 @@ func SizeOfStringMap(m map[string]string) int {
 
 // [string multimap]
 
-func ReadStringMultiMap(source []byte) (map[string][]string, []byte, error) {
+func ReadStringMultiMap(source []byte) (decoded map[string][]string, remaining []byte, err error) {
 	var size uint16
-	var err error
 	size, source, err = ReadShort(source)
 	if err != nil {
 		return nil, source, err
@@ -397,9 +384,8 @@ func ReadStringMultiMap(source []byte) (map[string][]string, []byte, error) {
 
 // [bytes map]
 
-func ReadBytesMap(source []byte) (map[string][]byte, []byte, error) {
+func ReadBytesMap(source []byte) (decoded map[string][]byte, remaining []byte, err error) {
 	var size uint16
-	var err error
 	size, source, err = ReadShort(source)
 	if err != nil {
 		return nil, source, err
@@ -421,8 +407,7 @@ func ReadBytesMap(source []byte) (map[string][]byte, []byte, error) {
 	return bytesMap, source, nil
 }
 
-func WriteBytesMap(m map[string][]byte, dest []byte) ([]byte, error) {
-	var err error
+func WriteBytesMap(m map[string][]byte, dest []byte) (remaining []byte, err error) {
 	dest, err = WriteShort(uint16(len(m)), dest)
 	if err != nil {
 		return dest, err
