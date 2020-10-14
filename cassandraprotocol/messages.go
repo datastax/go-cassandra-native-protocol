@@ -153,10 +153,11 @@ func (m Options) String() string {
 // SUPPORTED
 
 type Supported struct {
+	Options map[string][]string
 }
 
 func (m Supported) IsResponse() bool {
-	return false
+	return true
 }
 
 func (m Supported) GetOpCode() OpCode {
@@ -164,7 +165,7 @@ func (m Supported) GetOpCode() OpCode {
 }
 
 func (m Supported) String() string {
-	return "SUPPORTED"
+	return fmt.Sprintf("SUPPORTED %v", m.Options)
 }
 
 // READY

@@ -40,7 +40,7 @@ func (c StartupCodec) Decode(source []byte) (Message, error) {
 
 // AUTHENTICATE
 
-type AuthenticateCodec struct {}
+type AuthenticateCodec struct{}
 
 func (c AuthenticateCodec) GetOpCode() OpCode {
 	return OpCodeAuthenticate
@@ -67,7 +67,7 @@ func (c AuthenticateCodec) Decode(source []byte) (Message, error) {
 
 // AUTH RESPONSE
 
-type AuthResponseCodec struct {}
+type AuthResponseCodec struct{}
 
 func (c AuthResponseCodec) GetOpCode() OpCode {
 	return OpCodeAuthResponse
@@ -94,7 +94,7 @@ func (c AuthResponseCodec) Decode(source []byte) (Message, error) {
 
 // AUTH CHALLENGE
 
-type AuthChallengeCodec struct {}
+type AuthChallengeCodec struct{}
 
 func (c AuthChallengeCodec) GetOpCode() OpCode {
 	return OpCodeAuthChallenge
@@ -121,7 +121,7 @@ func (c AuthChallengeCodec) Decode(source []byte) (Message, error) {
 
 // AUTH SUCCESS
 
-type AuthSuccessCodec struct {}
+type AuthSuccessCodec struct{}
 
 func (c AuthSuccessCodec) GetOpCode() OpCode {
 	return OpCodeAuthSuccess
@@ -193,6 +193,36 @@ func (c OptionsCodec) Decode(source []byte) (Message, error) {
 	return &Options{}, nil
 }
 
+// SUPPORTED
+
+type SupportedCodec struct{}
+
+func (c SupportedCodec) GetOpCode() OpCode {
+	return OpCodeSupported
+}
+
+func (c SupportedCodec) Encode(message Message, dest []byte) error {
+	supported := message.(*Supported)
+	_, err := WriteStringMultiMap(supported.Options, dest)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c SupportedCodec) EncodedSize(message Message) int {
+	supported := message.(*Supported)
+	return SizeOfStringMultiMap(supported.Options)
+}
+
+func (c SupportedCodec) Decode(source []byte) (Message, error) {
+	options, _, err := ReadStringMultiMap(source)
+	if err != nil {
+		return nil, err
+	}
+	return &Supported{options}, nil
+}
+
 // READY
 
 type ReadyCodec struct{}
@@ -212,4 +242,3 @@ func (c ReadyCodec) EncodedSize(message Message) int {
 func (c ReadyCodec) Decode(source []byte) (Message, error) {
 	return &Ready{}, nil
 }
-
