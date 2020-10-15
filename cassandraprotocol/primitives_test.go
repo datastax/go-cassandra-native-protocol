@@ -627,6 +627,102 @@ func TestWriteBytes(t *testing.T) {
 	}
 }
 
+func TestReadShortBytes(t *testing.T) {
+	tests := []struct {
+		name      string
+		source    []byte
+		expected  []byte
+		remaining []byte
+		err       error
+	}{
+		{"empty short bytes", []byte{0, 0}, []byte{}, []byte{}, nil},
+		{"singleton short bytes", []byte{0, 1, 1}, []byte{1}, []byte{}, nil},
+		{"simple short bytes", []byte{0, 2, 1, 2}, []byte{1, 2}, []byte{}, nil},
+		{
+			"cannot read short bytes length",
+			[]byte{0},
+			nil,
+			[]byte{0},
+			fmt.Errorf("cannot read [short bytes] length: %w", errors.New("not enough bytes to read [short]")),
+		},
+		{
+			"cannot read short bytes content",
+			[]byte{0, 2, 1},
+			nil,
+			[]byte{1},
+			fmt.Errorf("not enough bytes to read [short bytes] content"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual, remaining, err := ReadShortBytes(tt.source)
+			assert.Equal(t, tt.expected, actual)
+			assert.Equal(t, tt.remaining, remaining)
+			assert.Equal(t, tt.err, err)
+		})
+	}
+}
+
+func TestWriteShortBytes(t *testing.T) {
+	tests := []struct {
+		name      string
+		input     []byte
+		dest      []byte
+		expected  []byte
+		remaining []byte
+		err       error
+	}{
+		{
+			"empty short bytes",
+			[]byte{},
+			make([]byte, SizeOfShortBytes([]byte{})),
+			[]byte{0, 0},
+			[]byte{},
+			nil,
+		},
+		{
+			"singleton short bytes",
+			[]byte{1},
+			make([]byte, SizeOfShortBytes([]byte{1})),
+			[]byte{0, 1, 1},
+			[]byte{},
+			nil,
+		},
+		{
+			"simple short bytes",
+			[]byte{1, 2},
+			make([]byte, SizeOfShortBytes([]byte{1, 2})),
+			[]byte{0, 2, 1, 2},
+			[]byte{},
+			nil,
+		},
+		{
+			"cannot write short bytes length",
+			[]byte{1},
+			make([]byte, SizeOfShort-1),
+			[]byte{0},
+			[]byte{0},
+			fmt.Errorf("cannot write [short bytes] length: %w", errors.New("not enough capacity to write [short]")),
+		},
+		{
+			"cannot write list element",
+			[]byte{1, 2},
+			make([]byte, SizeOfShortBytes([]byte{1, 2})-1),
+			[]byte{0, 2, 0},
+			[]byte{0},
+			fmt.Errorf("not enough capacity to write [short bytes] content"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			remaining, err := WriteShortBytes(tt.input, tt.dest)
+			assert.Equal(t, tt.expected, tt.dest)
+			assert.Equal(t, tt.remaining, remaining)
+			assert.Equal(t, tt.err, err)
+		})
+	}
+}
+
 func TestReadStringMultiMap(t *testing.T) {
 	tests := []struct {
 		name      string
