@@ -109,16 +109,16 @@ func ReadString(source []byte) (decoded string, remaining []byte, err error) {
 }
 
 func WriteString(s string, dest []byte) (remaining []byte, err error) {
-	l := len(s)
-	dest, err = WriteShort(uint16(l), dest)
+	length := len(s)
+	dest, err = WriteShort(uint16(length), dest)
 	if err != nil {
 		return dest, fmt.Errorf("cannot write [string] length: %w", err)
 	}
-	if cap(dest) < l {
+	if cap(dest) < length {
 		return dest, errors.New("not enough capacity to write [string] content")
 	}
 	copy(dest, s)
-	return dest[l:], nil
+	return dest[length:], nil
 }
 
 func SizeOfString(s string) int {
@@ -142,16 +142,16 @@ func ReadLongString(source []byte) (decoded string, remaining []byte, err error)
 }
 
 func WriteLongString(s string, dest []byte) (remaining []byte, err error) {
-	l := len(s)
-	dest, err = WriteInt(int32(l), dest)
+	length := len(s)
+	dest, err = WriteInt(int32(length), dest)
 	if err != nil {
 		return dest, fmt.Errorf("cannot write [long string] length: %w", err)
 	}
-	if cap(dest) < l {
+	if cap(dest) < length {
 		return dest, errors.New("not enough capacity to write [long string] content")
 	}
 	copy(dest, s)
-	return dest[l:], nil
+	return dest[length:], nil
 }
 
 func SizeOfLongString(s string) int {
@@ -179,8 +179,8 @@ func ReadStringList(source []byte) (decoded []string, remaining []byte, err erro
 }
 
 func WriteStringList(list []string, dest []byte) (remaining []byte, err error) {
-	l := len(list)
-	dest, err = WriteShort(uint16(l), dest)
+	length := len(list)
+	dest, err = WriteShort(uint16(length), dest)
 	if err != nil {
 		return dest, fmt.Errorf("cannot write [string list] length: %w", err)
 	}
@@ -204,30 +204,29 @@ func SizeOfStringList(list []string) int {
 // [bytes]
 
 func ReadBytes(source []byte) (decoded []byte, remaining []byte, err error) {
-	var sliceLen int32
-	sliceLen, source, err = ReadInt(source)
+	var length int32
+	length, source, err = ReadInt(source)
 	if err != nil {
 		return nil, source, fmt.Errorf("cannot read [bytes] length: %w", err)
 	}
-	length := len(source)
-	if length < int(sliceLen) {
+	if len(source) < int(length) {
 		return nil, source, errors.New("not enough bytes to read [bytes] content")
 	}
-	return source[:sliceLen], source[sliceLen:], nil
+	return source[:length], source[length:], nil
 
 }
 
 func WriteBytes(b []byte, dest []byte) (remaining []byte, err error) {
-	l := len(b)
-	dest, err = WriteInt(int32(l), dest)
+	length := len(b)
+	dest, err = WriteInt(int32(length), dest)
 	if err != nil {
 		return dest, fmt.Errorf("cannot write [bytes] length: %w", err)
 	}
-	if cap(dest) < l {
+	if cap(dest) < length {
 		return dest, errors.New("not enough capacity to write [bytes] content")
 	}
 	copy(dest, b)
-	return dest[l:], nil
+	return dest[length:], nil
 }
 
 func SizeOfBytes(b []byte) int {
@@ -237,29 +236,28 @@ func SizeOfBytes(b []byte) int {
 // [short bytes]
 
 func ReadShortBytes(source []byte) (decoded []byte, remaining []byte, err error) {
-	var sliceLen uint16
-	sliceLen, source, err = ReadShort(source)
+	var length uint16
+	length, source, err = ReadShort(source)
 	if err != nil {
 		return nil, source, fmt.Errorf("cannot read [short bytes] length: %w", err)
 	}
-	length := len(source)
-	if length < int(sliceLen) {
+	if len(source) < int(length) {
 		return nil, source, errors.New("not enough bytes to read [short bytes] content")
 	}
-	return source[:sliceLen], source[sliceLen:], nil
+	return source[:length], source[length:], nil
 }
 
 func WriteShortBytes(b []byte, dest []byte) (remaining []byte, err error) {
-	l := len(b)
-	dest, err = WriteShort(uint16(l), dest)
+	length := len(b)
+	dest, err = WriteShort(uint16(length), dest)
 	if err != nil {
 		return dest, fmt.Errorf("cannot write [short bytes] length: %w", err)
 	}
-	if cap(dest) < l {
+	if cap(dest) < length {
 		return dest, errors.New("not enough capacity to write [short bytes] content")
 	}
 	copy(dest, b)
-	return dest[l:], nil
+	return dest[length:], nil
 }
 
 func SizeOfShortBytes(b []byte) int {
