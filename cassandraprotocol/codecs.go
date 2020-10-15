@@ -319,7 +319,7 @@ func (c EventCodec) Encode(message Message, dest []byte, version ProtocolVersion
 		if err != nil {
 			return err
 		}
-		dest, err = WriteInet(sce.Address, sce.Port, dest)
+		dest, err = WriteInet(sce.Address, dest)
 		if err != nil {
 			return err
 		}
@@ -333,7 +333,7 @@ func (c EventCodec) Encode(message Message, dest []byte, version ProtocolVersion
 		if err != nil {
 			return err
 		}
-		dest, err = WriteInet(tce.Address, tce.Port, dest)
+		dest, err = WriteInet(tce.Address, dest)
 		if err != nil {
 			return err
 		}
@@ -446,7 +446,7 @@ func (c EventCodec) Decode(source []byte, version ProtocolVersion) (Message, err
 		if err != nil {
 			return nil, err
 		}
-		sce.Address, sce.Port, source, err = ReadInet(source)
+		sce.Address, source, err = ReadInet(source)
 		if err != nil {
 			return nil, err
 		}
@@ -457,7 +457,7 @@ func (c EventCodec) Decode(source []byte, version ProtocolVersion) (Message, err
 		if err != nil {
 			return nil, err
 		}
-		tce.Address, tce.Port, source, err = ReadInet(source)
+		tce.Address, source, err = ReadInet(source)
 		if err != nil {
 			return nil, err
 		}

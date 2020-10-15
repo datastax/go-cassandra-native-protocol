@@ -2,6 +2,7 @@ package cassandraprotocol
 
 import (
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net"
@@ -15,7 +16,22 @@ const (
 	SizeOfUuid  = 16
 )
 
+// Models the [inet] protocol primitive structure
+type Inet struct {
+	Addr net.IP
+	Port int32
+}
+
+func (i Inet) String() string {
+	return fmt.Sprintf("%v:%v", i.Addr, i.Port)
+}
+
+// Models the [uuid] protocol primitive structure
 type UUID [16]byte
+
+func (u UUID) String() string {
+	return hex.EncodeToString(u[:])
+}
 
 // Functions to read and write CQL protocol primitive structures (as defined in section 3 of the protocol
 // specification) to and from byte slices.
@@ -287,34 +303,39 @@ func WriteUuid(uuid *UUID, dest []byte) (remaining []byte, err error) {
 
 // [inet]
 
-func ReadInet(source []byte) (addr net.IP, port int32, remaining []byte, err error) {
+func ReadInet(source []byte) (inet *Inet, remaining []byte, err error) {
 	size, source, err := ReadByte(source)
 	if err != nil {
-		return nil, -1, source, fmt.Errorf("cannot read [inet] length: %w", err)
+		return nil, source, fmt.Errorf("cannot read [inet] length: %w", err)
 	}
+	var addr net.IP
 	if size == net.IPv4len {
 		if len(source) < net.IPv4len {
-			return nil, -1, source, errors.New("not enough bytes to read [inet] IPv4 content")
+			return nil, source, errors.New("not enough bytes to read [inet] IPv4 content")
 		}
 		addr = net.IPv4(source[0], source[1], source[2], source[3])
 	} else if size == net.IPv6len {
 		if len(source) < net.IPv6len {
-			return nil, -1, source, errors.New("not enough bytes to read [inet] IPv6 content")
+			return nil, source, errors.New("not enough bytes to read [inet] IPv6 content")
 		}
 		addr = source[:net.IPv6len]
 	} else {
-		return nil, -1, source, errors.New("unknown inet address size: " + string(size))
+		return nil, source, errors.New("unknown inet address size: " + string(size))
 	}
+	var port int32
 	port, source, err = ReadInt(source[4:])
 	if err != nil {
-		return nil, -1, source, fmt.Errorf("cannot read [inet] port number: %w", err)
+		return nil, source, fmt.Errorf("cannot read [inet] port number: %w", err)
 	}
-	return addr, port, source, nil
+	return &Inet{addr, port}, source, nil
 }
 
-func WriteInet(addr net.IP, port int32, dest []byte) (remaining []byte, err error) {
+func WriteInet(inet *Inet, dest []byte) (remaining []byte, err error) {
+	if inet == nil || inet.Addr == nil {
+		return dest, errors.New("cannot write nil as [inet]")
+	}
 	var size byte
-	if addr.To4() != nil {
+	if inet.Addr.To4() != nil {
 		size = net.IPv4len
 	} else {
 		size = net.IPv6len
@@ -327,31 +348,31 @@ func WriteInet(addr net.IP, port int32, dest []byte) (remaining []byte, err erro
 		if cap(dest) < net.IPv4len {
 			return dest, errors.New("not enough capacity to write [inet] IPv4 content")
 		}
-		copy(dest, addr.To4())
+		copy(dest, inet.Addr.To4())
 		dest = dest[net.IPv4len:]
 	} else if size == net.IPv6len {
 		if cap(dest) < net.IPv6len {
 			return dest, errors.New("not enough capacity to write [inet] IPv6 content")
 		}
-		copy(dest, addr.To16())
+		copy(dest, inet.Addr.To16())
 		dest = dest[net.IPv6len:]
 	} else {
 		return dest, errors.New("wrong [inet] length: " + string(size))
 	}
-	dest, err = WriteInt(port, dest)
+	dest, err = WriteInt(inet.Port, dest)
 	if err != nil {
 		return dest, fmt.Errorf("cannot write [inet] port number: %w", err)
 	}
 	return dest, nil
 }
 
-func SizeOfInet(addr net.IP) (size int) {
-	if addr.To4() != nil {
+func SizeOfInet(inet *Inet) (size int) {
+	if inet.Addr.To4() != nil {
 		size = net.IPv4len
 	} else {
 		size = net.IPv6len
 	}
-	return size + SizeOfInt // IP + port
+	return size + SizeOfInt
 }
 
 // [string map]

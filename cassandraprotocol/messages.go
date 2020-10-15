@@ -2,7 +2,6 @@ package cassandraprotocol
 
 import (
 	"fmt"
-	"net"
 )
 
 type Message interface {
@@ -214,7 +213,7 @@ type SchemaChangeEvent struct {
 }
 
 func (m SchemaChangeEvent) String() string {
-	return fmt.Sprintf("EVENT %v (change=%s target=%s keyspace=%s object=%s args=%s)",
+	return fmt.Sprintf("EVENT %v (change=%v target=%v keyspace=%v object=%v args=%v)",
 		m.Type,
 		m.ChangeType,
 		m.Target,
@@ -228,12 +227,11 @@ func (m SchemaChangeEvent) String() string {
 type StatusChangeEvent struct {
 	Event
 	ChangeType StatusChangeType
-	Address    net.IP
-	Port       int32
+	Address    *Inet
 }
 
 func (m StatusChangeEvent) String() string {
-	return fmt.Sprintf("EVENT %v (change=%s address=%s port=%d)", m.Type, m.ChangeType, m.Address, m.Port)
+	return fmt.Sprintf("EVENT %v (change=%v address=%v)", m.Type, m.ChangeType, m.Address)
 }
 
 // TOPOLOGY CHANGE EVENT
@@ -241,10 +239,9 @@ func (m StatusChangeEvent) String() string {
 type TopologyChangeEvent struct {
 	Event
 	ChangeType TopologyChangeType
-	Address    net.IP
-	Port       int32
+	Address    *Inet
 }
 
 func (m TopologyChangeEvent) String() string {
-	return fmt.Sprintf("EVENT %v (change=%s address=%s port=%d)", m.Type, m.ChangeType, m.Address, m.Port)
+	return fmt.Sprintf("EVENT %v (change=%v address=%v)", m.Type, m.ChangeType, m.Address)
 }
