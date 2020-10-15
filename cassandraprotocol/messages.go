@@ -1,6 +1,9 @@
 package cassandraprotocol
 
-import "fmt"
+import (
+	"fmt"
+	"net"
+)
 
 type Message interface {
 	IsResponse() bool
@@ -114,10 +117,10 @@ func (m AuthSuccess) String() string {
 // REGISTER
 
 type Register struct {
-	EventTypes []string
+	EventTypes []EventType
 }
 
-func NewRegister(eventTypes []string) *Register {
+func NewRegister(eventTypes []EventType) *Register {
 	return &Register{EventTypes: eventTypes}
 }
 
@@ -131,6 +134,23 @@ func (m Register) GetOpCode() OpCode {
 
 func (m Register) String() string {
 	return fmt.Sprint("REGISTER ", m.EventTypes)
+}
+
+// READY
+
+type Ready struct {
+}
+
+func (m Ready) IsResponse() bool {
+	return false
+}
+
+func (m Ready) GetOpCode() OpCode {
+	return OpCodeReady
+}
+
+func (m Ready) String() string {
+	return "READY"
 }
 
 // OPTIONS
@@ -168,19 +188,63 @@ func (m Supported) String() string {
 	return fmt.Sprintf("SUPPORTED %v", m.Options)
 }
 
-// READY
+// EVENT
 
-type Ready struct {
+type Event struct {
+	Type EventType
 }
 
-func (m Ready) IsResponse() bool {
-	return false
+func (m Event) IsResponse() bool {
+	return true
 }
 
-func (m Ready) GetOpCode() OpCode {
-	return OpCodeReady
+func (m Event) GetOpCode() OpCode {
+	return OpCodeEvent
 }
 
-func (m Ready) String() string {
-	return "READY"
+// SCHEMA CHANGE EVENT
+
+type SchemaChangeEvent struct {
+	Event
+	ChangeType SchemaChangeType
+	Target     SchemaChangeTarget
+	Keyspace   string
+	Object     string
+	Arguments  []string
+}
+
+func (m SchemaChangeEvent) String() string {
+	return fmt.Sprintf("EVENT %v (change=%s target=%s keyspace=%s object=%s args=%s)",
+		m.Type,
+		m.ChangeType,
+		m.Target,
+		m.Keyspace,
+		m.Object,
+		m.Arguments)
+}
+
+// STATUS CHANGE EVENT
+
+type StatusChangeEvent struct {
+	Event
+	ChangeType StatusChangeType
+	Address    net.IP
+	Port       int32
+}
+
+func (m StatusChangeEvent) String() string {
+	return fmt.Sprintf("EVENT %v (change=%s address=%s port=%d)", m.Type, m.ChangeType, m.Address, m.Port)
+}
+
+// TOPOLOGY CHANGE EVENT
+
+type TopologyChangeEvent struct {
+	Event
+	ChangeType TopologyChangeType
+	Address    net.IP
+	Port       int32
+}
+
+func (m TopologyChangeEvent) String() string {
+	return fmt.Sprintf("EVENT %v (change=%s address=%s port=%d)", m.Type, m.ChangeType, m.Address, m.Port)
 }

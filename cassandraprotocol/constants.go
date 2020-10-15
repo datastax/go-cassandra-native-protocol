@@ -1,6 +1,6 @@
 package cassandraprotocol
 
-type ProtocolVersion uint8
+type ProtocolVersion = uint8
 
 const (
 	ProtocolVersion3    = ProtocolVersion(0x3)
@@ -83,14 +83,16 @@ const (
 	ConsistencyLevelLocalOne    = ConsistencyLevel(0x000A)
 )
 
+type WriteType string
+
 const (
-	WriteTypeSimple        = "SIMPLE"
-	WriteTypeBatch         = "BATCH"
-	WriteTypeUnloggedBatch = "UNLOGGED_BATCH"
-	WriteTypeCounter       = "COUNTER"
-	WriteTypeBatchLog      = "BATCH_LOG"
-	WriteTypeView          = "VIEW"
-	WriteTypeCdc           = "CDC"
+	WriteTypeSimple        = WriteType("SIMPLE")
+	WriteTypeBatch         = WriteType("BATCH")
+	WriteTypeUnloggedBatch = WriteType("UNLOGGED_BATCH")
+	WriteTypeCounter       = WriteType("COUNTER")
+	WriteTypeBatchLog      = WriteType("BATCH_LOG")
+	WriteTypeView          = WriteType("VIEW")
+	WriteTypeCdc           = WriteType("CDC")
 )
 
 type DataType uint16
@@ -124,34 +126,44 @@ const (
 	DataTypeTuple     = DataType(0x0031)
 )
 
-const (
-	EventTypeTopologyChange = "TOPOLOGY_CHANGE"
-	EventTypeStatusChange   = "STATUS_CHANGE"
-	EventTypeSchemaChange   = "SCHEMA_CHANGE"
-)
+type EventType = string
 
 const (
-	SchemaChangeTypeCreated = "CREATED"
-	SchemaChangeTypeUpdated = "UPDATED"
-	SchemaChangeTypeDropped = "DROPPED"
+	EventTypeTopologyChange = EventType("TOPOLOGY_CHANGE")
+	EventTypeStatusChange   = EventType("STATUS_CHANGE")
+	EventTypeSchemaChange   = EventType("SCHEMA_CHANGE")
 )
 
-const (
-	SchemaChangeTargetKeyspace  = "KEYSPACE"
-	SchemaChangeTargetTable     = "TABLE"
-	SchemaChangeTargetType      = "TYPE"
-	SchemaChangeTargetFunction  = "FUNCTION"
-	SchemaChangeTargetAggregate = "AGGREGATE"
-)
+type SchemaChangeType = string
 
 const (
-	TopologyChangeTypeNewNode     = "NEW_NODE"
-	TopologyChangeTypeRemovedNode = "REMOVED_NODE"
+	SchemaChangeTypeCreated = SchemaChangeType("CREATED")
+	SchemaChangeTypeUpdated = SchemaChangeType("UPDATED")
+	SchemaChangeTypeDropped = SchemaChangeType("DROPPED")
 )
 
+type SchemaChangeTarget = string
+
 const (
-	StatusChangeTypeUo   = "UP"
-	StatusChangeTypeDown = "DOWN"
+	SchemaChangeTargetKeyspace  = SchemaChangeTarget("KEYSPACE")
+	SchemaChangeTargetTable     = SchemaChangeTarget("TABLE")
+	SchemaChangeTargetType      = SchemaChangeTarget("TYPE")
+	SchemaChangeTargetFunction  = SchemaChangeTarget("FUNCTION")
+	SchemaChangeTargetAggregate = SchemaChangeTarget("AGGREGATE")
+)
+
+type TopologyChangeType = string
+
+const (
+	TopologyChangeTypeNewNode     = TopologyChangeType("NEW_NODE")
+	TopologyChangeTypeRemovedNode = TopologyChangeType("REMOVED_NODE")
+)
+
+type StatusChangeType = string
+
+const (
+	StatusChangeTypeUo   = StatusChangeType("UP")
+	StatusChangeTypeDown = StatusChangeType("DOWN")
 )
 
 type BatchType uint8

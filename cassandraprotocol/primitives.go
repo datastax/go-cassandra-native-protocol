@@ -137,8 +137,8 @@ func ReadLongString(source []byte) (decoded string, remaining []byte, err error)
 	if length < int(strLen) {
 		return "", source, errors.New("not enough bytes to read [long string] content")
 	}
-	str := string(source[:strLen])
-	return str, source[strLen:], nil
+	decoded = string(source[:strLen])
+	return decoded, source[strLen:], nil
 }
 
 func WriteLongString(s string, dest []byte) (remaining []byte, err error) {
@@ -166,16 +166,16 @@ func ReadStringList(source []byte) (decoded []string, remaining []byte, err erro
 	if err != nil {
 		return nil, source, fmt.Errorf("cannot read [string list] length: %w", err)
 	}
-	list := make([]string, size)
+	decoded = make([]string, size)
 	for i := uint16(0); i < size; i++ {
 		var str string
 		str, source, err = ReadString(source)
 		if err != nil {
 			return nil, source, fmt.Errorf("cannot read [string list] element: %w", err)
 		}
-		list[i] = str
+		decoded[i] = str
 	}
-	return list, source, nil
+	return decoded, source, nil
 }
 
 func WriteStringList(list []string, dest []byte) (remaining []byte, err error) {
@@ -246,8 +246,7 @@ func ReadShortBytes(source []byte) (decoded []byte, remaining []byte, err error)
 	if length < int(sliceLen) {
 		return nil, source, errors.New("not enough bytes to read [short bytes] content")
 	}
-	slice := source[:sliceLen]
-	return slice, source[sliceLen:], nil
+	return source[:sliceLen], source[sliceLen:], nil
 }
 
 func WriteShortBytes(b []byte, dest []byte) (remaining []byte, err error) {
@@ -271,16 +270,18 @@ func SizeOfShortBytes(b []byte) int {
 
 func ReadUuid(source []byte) (decoded *UUID, remaining []byte, err error) {
 	if len(source) < SizeOfUuid {
-		return nil, source, errors.New("not enough bytes to read [uuid]")
+		return nil, source, errors.New("not enough bytes to read [uuid] content")
 	}
-	var uuid UUID
-	copy(uuid[:], source[:SizeOfUuid])
-	return &uuid, source[SizeOfUuid:], nil
+	copy(decoded[:], source[:SizeOfUuid])
+	return decoded, source[SizeOfUuid:], nil
 }
 
 func WriteUuid(uuid *UUID, dest []byte) (remaining []byte, err error) {
+	if uuid == nil {
+		return dest, errors.New("cannot write nil as [uuid]")
+	}
 	if len(dest) < SizeOfUuid {
-		return dest, errors.New("not enough bytes to write [uuid]")
+		return dest, errors.New("not enough capacity to write [uuid] content")
 	}
 	copy(dest, uuid[:])
 	return dest[SizeOfUuid:], nil
@@ -289,28 +290,70 @@ func WriteUuid(uuid *UUID, dest []byte) (remaining []byte, err error) {
 // [inet]
 
 func ReadInet(source []byte) (addr net.IP, port int32, remaining []byte, err error) {
-	if len(source) == 0 {
-		return nil, -1, source, errors.New("not enough bytes to read [inet]")
+	size, source, err := ReadByte(source)
+	if err != nil {
+		return nil, -1, source, fmt.Errorf("cannot read [inet] length: %w", err)
 	}
-	size := source[0]
-	source = source[1:]
-	if size == 4 {
-		if len(source) < 4+4 {
-			return nil, -1, source, errors.New("not enough bytes to read [inet]")
+	if size == net.IPv4len {
+		if len(source) < net.IPv4len {
+			return nil, -1, source, errors.New("not enough bytes to read [inet] IPv4 content")
 		}
-		ip := net.IPv4(source[0], source[1], source[2], source[3])
-		port, source, _ := ReadInt(source[4:])
-		return ip, port, source, nil
-	} else if size == 16 {
-		if len(source) < 16+4 {
-			return nil, -1, source, errors.New("not enough bytes to read [inet]")
+		addr = net.IPv4(source[0], source[1], source[2], source[3])
+	} else if size == net.IPv6len {
+		if len(source) < net.IPv6len {
+			return nil, -1, source, errors.New("not enough bytes to read [inet] IPv6 content")
 		}
-		ip := net.IP(source[:16])
-		port, source, _ := ReadInt(source[16:])
-		return ip, port, source, nil
+		addr = source[:net.IPv6len]
 	} else {
 		return nil, -1, source, errors.New("unknown inet address size: " + string(size))
 	}
+	port, source, err = ReadInt(source[4:])
+	if err != nil {
+		return nil, -1, source, fmt.Errorf("cannot read [inet] port number: %w", err)
+	}
+	return addr, port, source, nil
+}
+
+func WriteInet(addr net.IP, port int32, dest []byte) (remaining []byte, err error) {
+	var size byte
+	if addr.To4() != nil {
+		size = net.IPv4len
+	} else {
+		size = net.IPv6len
+	}
+	dest, err = WriteByte(size, dest)
+	if err != nil {
+		return dest, fmt.Errorf("cannot write [inet] length: %w", err)
+	}
+	if size == net.IPv4len {
+		if cap(dest) < net.IPv4len {
+			return dest, errors.New("not enough capacity to write [inet] IPv4 content")
+		}
+		copy(dest, addr.To4())
+		dest = dest[net.IPv4len:]
+	} else if size == net.IPv6len {
+		if cap(dest) < net.IPv6len {
+			return dest, errors.New("not enough capacity to write [inet] IPv6 content")
+		}
+		copy(dest, addr.To16())
+		dest = dest[net.IPv6len:]
+	} else {
+		return dest, errors.New("wrong [inet] length: " + string(size))
+	}
+	dest, err = WriteInt(port, dest)
+	if err != nil {
+		return dest, fmt.Errorf("cannot write [inet] port number: %w", err)
+	}
+	return dest, nil
+}
+
+func SizeOfInet(addr net.IP) (size int) {
+	if addr.To4() != nil {
+		size = net.IPv4len
+	} else {
+		size = net.IPv6len
+	}
+	return size + SizeOfInt // IP + port
 }
 
 // [string map]

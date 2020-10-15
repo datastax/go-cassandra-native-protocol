@@ -6,7 +6,6 @@ import (
 )
 
 type Frame struct {
-
 	ProtocolVersion ProtocolVersion
 
 	// The protocol spec states that the stream id is a [short], but this is wrong: the stream id
@@ -58,10 +57,10 @@ func NewResponseFrame(protocolVersion ProtocolVersion, streamId int16, tracingId
 // NewFrame is mainly intended for internal use. If you want to build
 // frames to pass for encoding, see NewRequestFrame or NewResponseFrame.
 func NewFrame(protocolVersion ProtocolVersion, streamId int16, tracingRequested bool, tracingId *UUID, customPayload map[string][]byte, warnings []string, message Message) (*Frame, error) {
-	if customPayload!= nil && protocolVersion < ProtocolVersion4 {
+	if customPayload != nil && protocolVersion < ProtocolVersion4 {
 		return nil, errors.New("custom payloads require protocol version 4 or higher")
 	}
-	if warnings!= nil && protocolVersion < ProtocolVersion4 {
+	if warnings != nil && protocolVersion < ProtocolVersion4 {
 		return nil, errors.New("warnings require protocol version 4 or higher")
 	}
 	return &Frame{
@@ -74,7 +73,6 @@ func NewFrame(protocolVersion ProtocolVersion, streamId int16, tracingRequested 
 		message,
 	}, nil
 }
-
 
 type FrameCodec struct {
 	MessageEncoders map[ProtocolVersion]map[OpCode]MessageEncoder
@@ -167,7 +165,7 @@ func (c *FrameCodec) Encode(frame *Frame) ([]byte, error) {
 
 	if !compress {
 		// No compression: we can optimize and do everything with a single allocation
-		messageSize := encoder.EncodedSize(message)
+		messageSize, _ := encoder.EncodedSize(message, protocolVersion)
 		if frame.TracingId != nil {
 			messageSize += SizeOfUuid
 		}
@@ -202,7 +200,7 @@ func (c *FrameCodec) Encode(frame *Frame) ([]byte, error) {
 				return nil, err
 			}
 		}
-		err = encoder.Encode(message, remaining)
+		err = encoder.Encode(message, remaining, protocolVersion)
 		if err != nil {
 			return nil, err
 		}
@@ -211,7 +209,7 @@ func (c *FrameCodec) Encode(frame *Frame) ([]byte, error) {
 	} else {
 		// We need to compress first in order to know the body size
 		// 1) Encode uncompressed message
-		uncompressedMessageSize := encoder.EncodedSize(message)
+		uncompressedMessageSize, _ := encoder.EncodedSize(message, protocolVersion)
 		if frame.TracingId != nil {
 			uncompressedMessageSize += SizeOfUuid
 		}
@@ -242,7 +240,7 @@ func (c *FrameCodec) Encode(frame *Frame) ([]byte, error) {
 				return nil, err
 			}
 		}
-		err = encoder.Encode(message, remaining)
+		err = encoder.Encode(message, remaining, protocolVersion)
 		if err != nil {
 			return nil, err
 		}
@@ -265,7 +263,7 @@ func (c *FrameCodec) Encode(frame *Frame) ([]byte, error) {
 }
 
 func encodeHeader(frame *Frame, flags ByteFlag, messageSize int, dest []byte) ([]byte, error) {
-	versionAndDirection := uint8(frame.ProtocolVersion)
+	versionAndDirection := frame.ProtocolVersion
 	if frame.Message.IsResponse() {
 		versionAndDirection |= 0b1000_0000
 	}
@@ -369,7 +367,7 @@ func (c *FrameCodec) Decode(source []byte) (*Frame, error) {
 	}
 
 	var response Message
-	response, err = decoder.Decode(source)
+	response, err = decoder.Decode(source, protocolVersion)
 	if err != nil {
 		return nil, err
 	}
