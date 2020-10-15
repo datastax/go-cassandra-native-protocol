@@ -1,10 +1,10 @@
-package cassandraprotocol
+package codec
 
 import (
 	"encoding/binary"
-	"encoding/hex"
 	"errors"
 	"fmt"
+	"go-cassandra-native-protocol/cassandraprotocol"
 	"net"
 )
 
@@ -15,23 +15,6 @@ const (
 	SizeOfLong  = 8
 	SizeOfUuid  = 16
 )
-
-// Models the [inet] protocol primitive structure
-type Inet struct {
-	Addr net.IP
-	Port int32
-}
-
-func (i Inet) String() string {
-	return fmt.Sprintf("%v:%v", i.Addr, i.Port)
-}
-
-// Models the [uuid] protocol primitive structure
-type UUID [16]byte
-
-func (u UUID) String() string {
-	return hex.EncodeToString(u[:])
-}
 
 // Functions to read and write CQL protocol primitive structures (as defined in section 3 of the protocol
 // specification) to and from byte slices.
@@ -282,7 +265,7 @@ func SizeOfShortBytes(b []byte) int {
 
 // [uuid]
 
-func ReadUuid(source []byte) (decoded *UUID, remaining []byte, err error) {
+func ReadUuid(source []byte) (decoded *cassandraprotocol.UUID, remaining []byte, err error) {
 	if len(source) < SizeOfUuid {
 		return nil, source, errors.New("not enough bytes to read [uuid] content")
 	}
@@ -290,7 +273,7 @@ func ReadUuid(source []byte) (decoded *UUID, remaining []byte, err error) {
 	return decoded, source[SizeOfUuid:], nil
 }
 
-func WriteUuid(uuid *UUID, dest []byte) (remaining []byte, err error) {
+func WriteUuid(uuid *cassandraprotocol.UUID, dest []byte) (remaining []byte, err error) {
 	if uuid == nil {
 		return dest, errors.New("cannot write nil as [uuid]")
 	}
@@ -303,7 +286,7 @@ func WriteUuid(uuid *UUID, dest []byte) (remaining []byte, err error) {
 
 // [inet]
 
-func ReadInet(source []byte) (inet *Inet, remaining []byte, err error) {
+func ReadInet(source []byte) (inet *cassandraprotocol.Inet, remaining []byte, err error) {
 	size, source, err := ReadByte(source)
 	if err != nil {
 		return nil, source, fmt.Errorf("cannot read [inet] length: %w", err)
@@ -327,10 +310,10 @@ func ReadInet(source []byte) (inet *Inet, remaining []byte, err error) {
 	if err != nil {
 		return nil, source, fmt.Errorf("cannot read [inet] port number: %w", err)
 	}
-	return &Inet{addr, port}, source, nil
+	return &cassandraprotocol.Inet{addr, port}, source, nil
 }
 
-func WriteInet(inet *Inet, dest []byte) (remaining []byte, err error) {
+func WriteInet(inet *cassandraprotocol.Inet, dest []byte) (remaining []byte, err error) {
 	if inet == nil || inet.Addr == nil {
 		return dest, errors.New("cannot write nil as [inet]")
 	}
@@ -366,7 +349,7 @@ func WriteInet(inet *Inet, dest []byte) (remaining []byte, err error) {
 	return dest, nil
 }
 
-func SizeOfInet(inet *Inet) (size int) {
+func SizeOfInet(inet *cassandraprotocol.Inet) (size int) {
 	if inet.Addr.To4() != nil {
 		size = net.IPv4len
 	} else {

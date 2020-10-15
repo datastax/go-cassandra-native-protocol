@@ -1,5 +1,28 @@
 package cassandraprotocol
 
+import (
+	"encoding/hex"
+	"fmt"
+	"net"
+)
+
+// Models the [inet] protocol primitive structure
+type Inet struct {
+	Addr net.IP
+	Port int32
+}
+
+func (i Inet) String() string {
+	return fmt.Sprintf("%v:%v", i.Addr, i.Port)
+}
+
+// Models the [uuid] protocol primitive structure
+type UUID [16]byte
+
+func (u UUID) String() string {
+	return hex.EncodeToString(u[:])
+}
+
 type ProtocolVersion = uint8
 
 const (

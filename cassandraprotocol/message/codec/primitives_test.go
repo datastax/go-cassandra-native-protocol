@@ -1,4 +1,4 @@
-package cassandraprotocol
+package codec
 
 import (
 	"errors"
