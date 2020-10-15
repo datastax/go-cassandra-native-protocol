@@ -2,6 +2,7 @@ package cassandraprotocol
 
 import (
 	"errors"
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -17,7 +18,7 @@ func TestReadByte(t *testing.T) {
 		{"simple byte", []byte{5}, byte(5), []byte{}, nil},
 		{"zero byte", []byte{0}, byte(0), []byte{}, nil},
 		{"byte with remaining", []byte{5, 1, 2, 3, 4}, byte(5), []byte{1, 2, 3, 4}, nil},
-		{"cannot read byte", []byte{}, byte(0), []byte{}, errors.New("not enough bytes to read a protocol [byte]")},
+		{"cannot read byte", []byte{}, byte(0), []byte{}, errors.New("not enough bytes to read [byte]")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -40,7 +41,7 @@ func TestWriteByte(t *testing.T) {
 	}{
 		{"simple byte", byte(5), make([]byte, 1), []byte{5}, []byte{}, nil},
 		{"byte with remaining", byte(5), make([]byte, 4), []byte{5, 0, 0, 0}, []byte{0, 0, 0}, nil},
-		{"cannot write byte", byte(5), []byte{}, []byte{}, []byte{}, errors.New("not enough capacity to write a protocol [byte]")},
+		{"cannot write byte", byte(5), []byte{}, []byte{}, []byte{}, errors.New("not enough capacity to write [byte]")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -63,7 +64,7 @@ func TestReadShort(t *testing.T) {
 		{"simple short", []byte{0, 5}, uint16(5), []byte{}, nil},
 		{"zero short", []byte{0, 0}, uint16(0), []byte{}, nil},
 		{"short with remaining", []byte{0, 5, 1, 2, 3, 4}, uint16(5), []byte{1, 2, 3, 4}, nil},
-		{"cannot read short", []byte{0}, uint16(0), []byte{0}, errors.New("not enough bytes to read a protocol [short]")},
+		{"cannot read short", []byte{0}, uint16(0), []byte{0}, errors.New("not enough bytes to read [short]")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -86,7 +87,7 @@ func TestWriteShort(t *testing.T) {
 	}{
 		{"simple short", uint16(5), make([]byte, SizeOfShort), []byte{0, 5}, []byte{}, nil},
 		{"short with remaining", uint16(5), make([]byte, SizeOfShort+1), []byte{0, 5, 0}, []byte{0}, nil},
-		{"cannot write short", uint16(5), make([]byte, SizeOfShort-1), []byte{0}, []byte{0}, errors.New("not enough capacity to write a protocol [short]")},
+		{"cannot write short", uint16(5), make([]byte, SizeOfShort-1), []byte{0}, []byte{0}, errors.New("not enough capacity to write [short]")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -110,7 +111,7 @@ func TestReadInt(t *testing.T) {
 		{"zero int", []byte{0, 0, 0, 0}, int32(0), []byte{}, nil},
 		{"negative int", []byte{0xff, 0xff, 0xff, 0xff & -5}, int32(-5), []byte{}, nil},
 		{"int with remaining", []byte{0, 0, 0, 5, 1, 2, 3, 4}, int32(5), []byte{1, 2, 3, 4}, nil},
-		{"cannot read int", []byte{0, 0, 0}, int32(0), []byte{0, 0, 0}, errors.New("not enough bytes to read a protocol [int]")},
+		{"cannot read int", []byte{0, 0, 0}, int32(0), []byte{0, 0, 0}, errors.New("not enough bytes to read [int]")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -134,7 +135,7 @@ func TestWriteInt(t *testing.T) {
 		{"simple int", int32(5), make([]byte, SizeOfInt), []byte{0, 0, 0, 5}, []byte{}, nil},
 		{"negative int", int32(-5), make([]byte, SizeOfInt), []byte{0xff, 0xff, 0xff, 0xff & -5}, []byte{}, nil},
 		{"int with remaining", int32(5), make([]byte, SizeOfInt+1), []byte{0, 0, 0, 5, 0}, []byte{0}, nil},
-		{"cannot write int", int32(5), make([]byte, SizeOfInt-1), []byte{0, 0, 0}, []byte{0, 0, 0}, errors.New("not enough capacity to write a protocol [int]")},
+		{"cannot write int", int32(5), make([]byte, SizeOfInt-1), []byte{0, 0, 0}, []byte{0, 0, 0}, errors.New("not enough capacity to write [int]")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -158,7 +159,7 @@ func TestReadLong(t *testing.T) {
 		{"zero long", []byte{0, 0, 0, 0, 0, 0, 0, 0}, int64(0), []byte{}, nil},
 		{"negative long", []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff & -5}, int64(-5), []byte{}, nil},
 		{"long with remaining", []byte{0, 0, 0, 0, 0, 0, 0, 5, 1, 2, 3, 4}, int64(5), []byte{1, 2, 3, 4}, nil},
-		{"cannot read long", []byte{0, 0, 0, 0, 0, 0, 0}, int64(0), []byte{0, 0, 0, 0, 0, 0, 0}, errors.New("not enough bytes to read a protocol [long]")},
+		{"cannot read long", []byte{0, 0, 0, 0, 0, 0, 0}, int64(0), []byte{0, 0, 0, 0, 0, 0, 0}, errors.New("not enough bytes to read [long]")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -182,7 +183,7 @@ func TestWriteLong(t *testing.T) {
 		{"simple long", int64(5), make([]byte, SizeOfLong), []byte{0, 0, 0, 0, 0, 0, 0, 5}, []byte{}, nil},
 		{"negative long", int64(-5), make([]byte, SizeOfLong), []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff & -5}, []byte{}, nil},
 		{"long with remaining", int64(5), make([]byte, SizeOfLong+1), []byte{0, 0, 0, 0, 0, 0, 0, 5, 0}, []byte{0}, nil},
-		{"cannot write long", int64(5), make([]byte, SizeOfLong-1), []byte{0, 0, 0, 0, 0, 0, 0}, []byte{0, 0, 0, 0, 0, 0, 0}, errors.New("not enough capacity to write a protocol [long]")},
+		{"cannot write long", int64(5), make([]byte, SizeOfLong-1), []byte{0, 0, 0, 0, 0, 0, 0}, []byte{0, 0, 0, 0, 0, 0, 0}, errors.New("not enough capacity to write [long]")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -194,6 +195,20 @@ func TestWriteLong(t *testing.T) {
 	}
 }
 
+const (
+	d = byte('d')
+	e = byte('e')
+	h = byte('h')
+	k = byte('k')
+	l = byte('l')
+	m = byte('m')
+	n = byte('n')
+	o = byte('o')
+	r = byte('r')
+	u = byte('u')
+	w = byte('w')
+)
+
 func TestReadString(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -202,8 +217,8 @@ func TestReadString(t *testing.T) {
 		remaining []byte
 		err       error
 	}{
-		{"simple string", []byte{0, 5, 0x68, 0x65, 0x6c, 0x6c, 0x6f}, "hello", []byte{}, nil},
-		{"string with remaining", []byte{0, 5, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 1, 2, 3, 4}, "hello", []byte{1, 2, 3, 4}, nil},
+		{"simple string", []byte{0, 5, h, e, l, l, o}, "hello", []byte{}, nil},
+		{"string with remaining", []byte{0, 5, h, e, l, l, o, 1, 2, 3, 4}, "hello", []byte{1, 2, 3, 4}, nil},
 		{"empty string", []byte{0, 0}, "", []byte{}, nil},
 		{"non-ASCII string", []byte{
 			0, 15, // length
@@ -211,8 +226,20 @@ func TestReadString(t *testing.T) {
 			0x20,                               // space
 			0xcf, 0x83, 0xce, 0xbf, 0xcf, 0x85, // σου
 		}, "γειά σου", []byte{}, nil},
-		{"cannot read length", []byte{0}, "", []byte{0}, errors.New("not enough bytes to read a protocol [short]")},
-		{"cannot read string", []byte{0, 5, 0x68, 0x65, 0x6c, 0x6c}, "", []byte{0x68, 0x65, 0x6c, 0x6c}, errors.New("not enough bytes to read a protocol [string]")},
+		{
+			"cannot read length",
+			[]byte{0},
+			"",
+			[]byte{0},
+			fmt.Errorf("cannot read [string] length: %w", errors.New("not enough bytes to read [short]")),
+		},
+		{
+			"cannot read string",
+			[]byte{0, 5, h, e, l, l},
+			"",
+			[]byte{h, e, l, l},
+			errors.New("not enough bytes to read [string] content"),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -237,7 +264,7 @@ func TestWriteString(t *testing.T) {
 			"simple string",
 			"hello",
 			make([]byte, SizeOfString("hello")),
-			[]byte{0, 5, 0x68, 0x65, 0x6c, 0x6c, 0x6f},
+			[]byte{0, 5, h, e, l, l, o},
 			[]byte{},
 			nil,
 		},
@@ -252,7 +279,7 @@ func TestWriteString(t *testing.T) {
 			"string with remaining",
 			"hello",
 			make([]byte, SizeOfString("hello")+1),
-			[]byte{0, 5, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0},
+			[]byte{0, 5, h, e, l, l, o, 0},
 			[]byte{0},
 			nil,
 		},
@@ -262,7 +289,7 @@ func TestWriteString(t *testing.T) {
 			make([]byte, SizeOfShort-1),
 			[]byte{0},
 			[]byte{0},
-			errors.New("not enough capacity to write a protocol [short]"),
+			fmt.Errorf("cannot write [string] length: %w", errors.New("not enough capacity to write [short]")),
 		},
 		{
 			"cannot write string",
@@ -270,7 +297,7 @@ func TestWriteString(t *testing.T) {
 			make([]byte, SizeOfString("hello")-1),
 			[]byte{0, 5, 0, 0, 0, 0},
 			[]byte{0, 0, 0, 0},
-			errors.New("not enough capacity to write a protocol [string]"),
+			errors.New("not enough capacity to write [string] content"),
 		},
 	}
 	for _, tt := range tests {
@@ -291,8 +318,8 @@ func TestReadLongString(t *testing.T) {
 		remaining []byte
 		err       error
 	}{
-		{"simple string", []byte{0, 0, 0, 5, 0x68, 0x65, 0x6c, 0x6c, 0x6f}, "hello", []byte{}, nil},
-		{"string with remaining", []byte{0, 0, 0, 5, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 1, 2, 3, 4}, "hello", []byte{1, 2, 3, 4}, nil},
+		{"simple string", []byte{0, 0, 0, 5, h, e, l, l, o}, "hello", []byte{}, nil},
+		{"string with remaining", []byte{0, 0, 0, 5, h, e, l, l, o, 1, 2, 3, 4}, "hello", []byte{1, 2, 3, 4}, nil},
 		{"empty string", []byte{0, 0, 0, 0}, "", []byte{}, nil},
 		{"non-ASCII string", []byte{
 			0, 0, 0, 15, // length
@@ -305,14 +332,14 @@ func TestReadLongString(t *testing.T) {
 			[]byte{0, 0, 0},
 			"",
 			[]byte{0, 0, 0},
-			errors.New("not enough bytes to read a protocol [int]"),
+			fmt.Errorf("cannot read [long string] length: %w", errors.New("not enough bytes to read [int]")),
 		},
 		{
 			"cannot read string",
-			[]byte{0, 0, 0, 5, 0x68, 0x65, 0x6c, 0x6c},
+			[]byte{0, 0, 0, 5, h, e, l, l},
 			"",
-			[]byte{0x68, 0x65, 0x6c, 0x6c},
-			errors.New("not enough bytes to read a protocol [long string]"),
+			[]byte{h, e, l, l},
+			errors.New("not enough bytes to read [long string] content"),
 		},
 	}
 	for _, tt := range tests {
@@ -334,7 +361,7 @@ func TestWriteLongString(t *testing.T) {
 		remaining []byte
 		err       error
 	}{
-		{"simple string", "hello", make([]byte, SizeOfLongString("hello")), []byte{0, 0, 0, 5, 0x68, 0x65, 0x6c, 0x6c, 0x6f}, []byte{}, nil},
+		{"simple string", "hello", make([]byte, SizeOfLongString("hello")), []byte{0, 0, 0, 5, h, e, l, l, o}, []byte{}, nil},
 		{"empty string", "", make([]byte, SizeOfLongString("")), []byte{0, 0, 0, 0}, []byte{}, nil},
 		{"non-ASCII string", "γειά σου", make([]byte, SizeOfLongString("γειά σου")), []byte{
 			0, 0, 0, 15, // length
@@ -346,7 +373,7 @@ func TestWriteLongString(t *testing.T) {
 			"string with remaining",
 			"hello",
 			make([]byte, SizeOfLongString("hello")+1),
-			[]byte{0, 0, 0, 5, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0},
+			[]byte{0, 0, 0, 5, h, e, l, l, o, 0},
 			[]byte{0},
 			nil,
 		},
@@ -356,7 +383,7 @@ func TestWriteLongString(t *testing.T) {
 			make([]byte, SizeOfInt-1),
 			[]byte{0, 0, 0},
 			[]byte{0, 0, 0},
-			errors.New("not enough capacity to write a protocol [int]"),
+			fmt.Errorf("cannot write [long string] length: %w", errors.New("not enough capacity to write [int]")),
 		},
 		{
 			"cannot write string",
@@ -364,7 +391,7 @@ func TestWriteLongString(t *testing.T) {
 			make([]byte, SizeOfLongString("hello")-1),
 			[]byte{0, 0, 0, 5, 0, 0, 0, 0},
 			[]byte{0, 0, 0, 0},
-			errors.New("not enough capacity to write a protocol [long string]"),
+			errors.New("not enough capacity to write [long string] content"),
 		},
 	}
 	for _, tt := range tests {
@@ -388,12 +415,12 @@ func TestReadStringList(t *testing.T) {
 		{"empty string list", []byte{0, 0}, []string{}, []byte{}, nil},
 		{"singleton string list", []byte{
 			0, 1, // length
-			0, 5, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // hello
+			0, 5, h, e, l, l, o, // hello
 		}, []string{"hello"}, []byte{}, nil},
 		{"simple string list", []byte{
 			0, 2, // length
-			0, 5, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // hello
-			0, 5, 0x77, 0x6f, 0x72, 0x6c, 0x64, // world
+			0, 5, h, e, l, l, o, // hello
+			0, 5, w, o, r, l, d, // world
 		}, []string{"hello", "world"}, []byte{}, nil},
 		{"empty elements", []byte{
 			0, 2, // length
@@ -401,18 +428,18 @@ func TestReadStringList(t *testing.T) {
 			0, 0, // elt 2
 		}, []string{"", ""}, []byte{}, nil},
 		{
-			"cannot read length",
+			"cannot read list length",
 			[]byte{0},
 			nil,
 			[]byte{0},
-			errors.New("not enough bytes to read a protocol [short]"),
+			fmt.Errorf("cannot read [string list] length: %w", errors.New("not enough bytes to read [short]")),
 		},
 		{
-			"cannot read list",
-			[]byte{0, 1, 0, 5, 0x68, 0x65, 0x6c, 0x6c},
+			"cannot read list element",
+			[]byte{0, 1, 0, 5, h, e, l, l},
 			nil,
-			[]byte{0x68, 0x65, 0x6c, 0x6c},
-			errors.New("not enough bytes to read a protocol [string]"),
+			[]byte{h, e, l, l},
+			fmt.Errorf("cannot read [string list] element: %w", errors.New("not enough bytes to read [string] content")),
 		},
 	}
 	for _, tt := range tests {
@@ -448,7 +475,7 @@ func TestWriteStringList(t *testing.T) {
 			make([]byte, SizeOfStringList([]string{"hello"})),
 			[]byte{
 				0, 1, // length
-				0, 5, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // hello
+				0, 5, h, e, l, l, o, // hello
 			},
 			[]byte{},
 			nil,
@@ -459,8 +486,8 @@ func TestWriteStringList(t *testing.T) {
 			make([]byte, SizeOfStringList([]string{"hello", "world"})),
 			[]byte{
 				0, 2, // length
-				0, 5, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // hello
-				0, 5, 0x77, 0x6f, 0x72, 0x6c, 0x64, // world
+				0, 5, h, e, l, l, o, // hello
+				0, 5, w, o, r, l, d, // world
 			},
 			[]byte{},
 			nil,
@@ -478,12 +505,12 @@ func TestWriteStringList(t *testing.T) {
 			nil,
 		},
 		{
-			"cannot write list size",
+			"cannot write list length",
 			[]string{"hello"},
 			make([]byte, SizeOfShort-1),
 			[]byte{0},
 			[]byte{0},
-			errors.New("not enough capacity to write a protocol [short]"),
+			fmt.Errorf("cannot write [string list] length: %w", errors.New("not enough capacity to write [short]")),
 		},
 		{
 			"cannot write list element",
@@ -491,7 +518,7 @@ func TestWriteStringList(t *testing.T) {
 			make([]byte, SizeOfStringList([]string{"hello"})-1),
 			[]byte{0, 1, 0, 5, 0, 0, 0, 0},
 			[]byte{0, 0, 0, 0},
-			errors.New("not enough capacity to write a protocol [string]"),
+			fmt.Errorf("cannot write [string list] element: %w", errors.New("not enough capacity to write [string] content")),
 		},
 	}
 	for _, tt := range tests {
@@ -515,27 +542,27 @@ func TestReadStringMultiMap(t *testing.T) {
 		{"empty string multimap", []byte{0, 0}, map[string][]string{}, []byte{}, nil},
 		{"multimap 1 key 1 value", []byte{
 			0, 1, // map length
-			0, 5, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // key: hello
+			0, 5, h, e, l, l, o, // key: hello
 			0, 1, // list length
-			0, 5, 0x77, 0x6f, 0x72, 0x6c, 0x64, // value1: world
+			0, 5, w, o, r, l, d, // value1: world
 		}, map[string][]string{"hello": {"world"}}, []byte{}, nil},
 		{"multimap 1 key 2 values", []byte{
 			0, 1, // map length
-			0, 5, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // key: hello
+			0, 5, h, e, l, l, o, // key: hello
 			0, 2, // list length
-			0, 5, 0x77, 0x6f, 0x72, 0x6c, 0x64, // value1: world
-			0, 5, 0x6d, 0x75, 0x6e, 0x64, 0x6f, // value2: hello
+			0, 5, w, o, r, l, d, // value1: world
+			0, 5, m, u, n, d, o, // value2: mundo
 		}, map[string][]string{"hello": {"world", "mundo"}}, []byte{}, nil},
 		{"multimap 2 keys 2 values", []byte{
 			0, 2, // map length
-			0, 5, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // key1: hello
+			0, 5, h, e, l, l, o, // key1: hello
 			0, 2, // list length
-			0, 5, 0x77, 0x6f, 0x72, 0x6c, 0x64, // value1: world
-			0, 5, 0x6d, 0x75, 0x6e, 0x64, 0x6f, // value2: mundo
-			0, 6, 0x68, 0x6f, 0x6c, 0xc3, 0xa0, 0x21, // key2: holà!
+			0, 5, w, o, r, l, d, // value1: world
+			0, 5, m, u, n, d, o, // value2: mundo
+			0, 6, h, o, l, 0xc3, 0xa0, 0x21, // key2: holà!
 			0, 2, // list length
-			0, 5, 0x77, 0x6f, 0x72, 0x6c, 0x64, // value1: world
-			0, 5, 0x6d, 0x75, 0x6e, 0x64, 0x6f, // value2: mundo
+			0, 5, w, o, r, l, d, // value1: world
+			0, 5, m, u, n, d, o, // value2: mundo
 		}, map[string][]string{
 			"hello": {"world", "mundo"},
 			"holà!": {"world", "mundo"},
@@ -545,35 +572,53 @@ func TestReadStringMultiMap(t *testing.T) {
 			[]byte{0},
 			nil,
 			[]byte{0},
-			errors.New("not enough bytes to read a protocol [short]"),
+			fmt.Errorf(
+				"cannot read [string multimap] length: %w",
+				errors.New("not enough bytes to read [short]"),
+			),
 		},
 		{
 			"cannot read key length",
 			[]byte{0, 1, 0},
 			nil,
 			[]byte{0},
-			errors.New("not enough bytes to read a protocol [short]"),
+			fmt.Errorf(
+				"cannot read [string multimap] key: %w",
+				fmt.Errorf("cannot read [string] length: %w",
+					errors.New("not enough bytes to read [short]")),
+			),
 		},
 		{
 			"cannot read list length",
-			[]byte{0, 1, 0, 1, 0x6d, 0},
+			[]byte{0, 1, 0, 1, k, 0},
 			nil,
 			[]byte{0},
-			errors.New("not enough bytes to read a protocol [short]"),
+			fmt.Errorf(
+				"cannot read [string multimap] value: %w",
+				fmt.Errorf("cannot read [string list] length: %w",
+					errors.New("not enough bytes to read [short]")),
+			),
 		},
 		{
 			"cannot read element length",
-			[]byte{0, 1, 0, 1, 0x6d, 0, 1, 0},
+			[]byte{0, 1, 0, 1, k, 0, 1, 0},
 			nil,
 			[]byte{0},
-			errors.New("not enough bytes to read a protocol [short]"),
+			fmt.Errorf(
+				"cannot read [string multimap] value: %w",
+				fmt.Errorf("cannot read [string list] element: %w",
+					fmt.Errorf("cannot read [string] length: %w",
+						errors.New("not enough bytes to read [short]"))),
+			),
 		},
 		{
 			"cannot read list",
-			[]byte{0, 1, 0, 1, 0x6d, 0, 1, 0, 5, 0x68, 0x65, 0x6c, 0x6c},
+			[]byte{0, 1, 0, 1, k, 0, 1, 0, 5, h, e, l, l},
 			nil,
-			[]byte{0x68, 0x65, 0x6c, 0x6c},
-			errors.New("not enough bytes to read a protocol [string]"),
+			[]byte{h, e, l, l},
+			fmt.Errorf("cannot read [string multimap] value: %w",
+				fmt.Errorf("cannot read [string list] element: %w",
+					errors.New("not enough bytes to read [string] content"))),
 		},
 	}
 	for _, tt := range tests {
@@ -609,9 +654,9 @@ func TestWriteStringMultiMap(t *testing.T) {
 			make([]byte, SizeOfStringMultiMap(map[string][]string{"hello": {"world"}})),
 			[]byte{
 				0, 1, // map length
-				0, 5, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // key: hello
+				0, 5, h, e, l, l, o, // key: hello
 				0, 1, // list length
-				0, 5, 0x77, 0x6f, 0x72, 0x6c, 0x64, // value1: world
+				0, 5, w, o, r, l, d, // value1: world
 			},
 			[]byte{},
 			nil,
@@ -622,10 +667,10 @@ func TestWriteStringMultiMap(t *testing.T) {
 			make([]byte, SizeOfStringMultiMap(map[string][]string{"hello": {"world", "mundo"}})),
 			[]byte{
 				0, 1, // map length
-				0, 5, 0x68, 0x65, 0x6c, 0x6c, 0x6f, // key: hello
+				0, 5, h, e, l, l, o, // key: hello
 				0, 2, // list length
-				0, 5, 0x77, 0x6f, 0x72, 0x6c, 0x64, // value1: world
-				0, 5, 0x6d, 0x75, 0x6e, 0x64, 0x6f, // value2: hello
+				0, 5, w, o, r, l, d, // value1: world
+				0, 5, m, u, n, d, o, // value2: mundo
 			},
 			[]byte{},
 			nil,
@@ -637,7 +682,8 @@ func TestWriteStringMultiMap(t *testing.T) {
 			make([]byte, SizeOfShort-1),
 			[]byte{0},
 			[]byte{0},
-			errors.New("not enough capacity to write a protocol [short]"),
+			fmt.Errorf("cannot write [string multimap] length: %w",
+				errors.New("not enough capacity to write [short]")),
 		},
 		{
 			"cannot write key length",
@@ -645,7 +691,9 @@ func TestWriteStringMultiMap(t *testing.T) {
 			make([]byte, SizeOfShort+SizeOfShort-1),
 			[]byte{0, 1, 0},
 			[]byte{0},
-			errors.New("not enough capacity to write a protocol [short]"),
+			fmt.Errorf("cannot write [string multimap] key: %w",
+				fmt.Errorf("cannot write [string] length: %w",
+					errors.New("not enough capacity to write [short]"))),
 		},
 		{
 			"cannot write key",
@@ -653,31 +701,41 @@ func TestWriteStringMultiMap(t *testing.T) {
 			make([]byte, SizeOfShort+SizeOfString("hello")-1),
 			[]byte{0, 1, 0, 5, 0, 0, 0, 0},
 			[]byte{0, 0, 0, 0},
-			errors.New("not enough capacity to write a protocol [string]"),
+			fmt.Errorf("cannot write [string multimap] key: %w",
+				errors.New("not enough capacity to write [string] content")),
 		},
 		{
 			"cannot write list length",
 			map[string][]string{"hello": {"world"}},
 			make([]byte, SizeOfShort+SizeOfString("hello")+SizeOfShort-1),
-			[]byte{0, 1, 0, 5, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0},
+			[]byte{0, 1, 0, 5, h, e, l, l, o, 0},
 			[]byte{0},
-			errors.New("not enough capacity to write a protocol [short]"),
+			fmt.Errorf("cannot write [string multimap] value: %w",
+				fmt.Errorf("cannot write [string list] length: %w",
+					errors.New("not enough capacity to write [short]"))),
 		},
 		{
 			"cannot write element length",
 			map[string][]string{"hello": {"world"}},
 			make([]byte, SizeOfShort+SizeOfString("hello")+SizeOfShort+SizeOfShort-1),
-			[]byte{0, 1, 0, 5, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0, 1, 0},
+			[]byte{0, 1, 0, 5, h, e, l, l, o, 0, 1, 0},
 			[]byte{0},
-			errors.New("not enough capacity to write a protocol [short]"),
+			fmt.Errorf("cannot write [string multimap] value: %w",
+				fmt.Errorf("cannot write [string list] element: %w",
+					fmt.Errorf("cannot write [string] length: %w",
+						errors.New("not enough capacity to write [short]")))),
 		},
 		{
 			"cannot write list element",
 			map[string][]string{"hello": {"world"}},
 			make([]byte, SizeOfShort+SizeOfString("hello")+SizeOfShort+SizeOfString("world")-1),
-			[]byte{0, 1, 0, 5, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0, 1, 0, 5, 0, 0, 0, 0},
+			[]byte{0, 1, 0, 5, h, e, l, l, o, 0, 1, 0, 5, 0, 0, 0, 0},
 			[]byte{0, 0, 0, 0},
-			errors.New("not enough capacity to write a protocol [string]"),
+			fmt.Errorf(
+				"cannot write [string multimap] value: %w",
+				fmt.Errorf("cannot write [string list] element: %w",
+					errors.New("not enough capacity to write [string] content")),
+			),
 		},
 	}
 	for _, tt := range tests {
