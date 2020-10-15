@@ -11,7 +11,7 @@ const (
 	ProtocolVersionBeta = ProtocolVersion5
 )
 
-type OpCode uint8
+type OpCode = uint8
 
 const (
 	// requests
@@ -34,7 +34,7 @@ const (
 	OpCodeAuthSuccess   = OpCode(0x10)
 )
 
-type ResultKind uint32
+type ResultKind = uint32
 
 const (
 	ResultKindVoid         = ResultKind(0x0001)
@@ -44,7 +44,7 @@ const (
 	ResultKindSchemaChange = ResultKind(0x0005)
 )
 
-type ErrorCode uint32
+type ErrorCode = uint32
 
 const (
 	ErrorCodeServerError          = ErrorCode(0x0000)
@@ -67,7 +67,7 @@ const (
 	ErrorCodeUnprepared           = ErrorCode(0x2500)
 )
 
-type ConsistencyLevel uint16
+type ConsistencyLevel = uint16
 
 const (
 	ConsistencyLevelAny         = ConsistencyLevel(0x0000)
@@ -83,7 +83,7 @@ const (
 	ConsistencyLevelLocalOne    = ConsistencyLevel(0x000A)
 )
 
-type WriteType string
+type WriteType = string
 
 const (
 	WriteTypeSimple        = WriteType("SIMPLE")
@@ -95,7 +95,7 @@ const (
 	WriteTypeCdc           = WriteType("CDC")
 )
 
-type DataType uint16
+type DataType = uint16
 
 const (
 	DataTypeCustom    = DataType(0x0000)
@@ -166,7 +166,7 @@ const (
 	StatusChangeTypeDown = StatusChangeType("DOWN")
 )
 
-type BatchType uint8
+type BatchType = uint8
 
 const (
 	BatchTypeLogged   = BatchType(0x00)
@@ -174,7 +174,7 @@ const (
 	BatchTypeCounter  = BatchType(0x02)
 )
 
-type ByteFlag uint8
+type ByteFlag = uint8
 
 const (
 	HeaderFlagCompressed    = ByteFlag(0x01)
@@ -184,15 +184,7 @@ const (
 	HeaderFlagUseBeta       = ByteFlag(0x10)
 )
 
-func (f ByteFlag) contains(other ByteFlag) bool {
-	return f&other == other
-}
-
-func (f ByteFlag) add(other ByteFlag) ByteFlag {
-	return f | other
-}
-
-type IntFlag uint32
+type IntFlag = uint32
 
 const (
 	// query flags are uint8 in v3 and v4
@@ -213,11 +205,3 @@ const (
 	RowsFlagNoMetadata       = IntFlag(0x00000004)
 	RowsFlagMetadataChanged  = IntFlag(0x00000008)
 )
-
-func (f IntFlag) contains(other IntFlag) bool {
-	return f&other == other
-}
-
-func (f IntFlag) add(other IntFlag) IntFlag {
-	return f | other
-}

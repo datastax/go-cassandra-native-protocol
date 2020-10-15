@@ -148,19 +148,19 @@ func (c *FrameCodec) Encode(frame *Frame) ([]byte, error) {
 	var flags ByteFlag = 0
 
 	if compress {
-		flags = flags.add(HeaderFlagCompressed)
+		flags |= HeaderFlagCompressed
 	}
 	if message.IsResponse() && frame.TracingId != nil || !message.IsResponse() && frame.TracingRequested {
-		flags = flags.add(HeaderFlagTracing)
+		flags |= HeaderFlagTracing
 	}
 	if frame.CustomPayload != nil {
-		flags = flags.add(HeaderFlagCustomPayload)
+		flags |= HeaderFlagCustomPayload
 	}
 	if frame.Warnings != nil {
-		flags = flags.add(HeaderFlagWarning)
+		flags |= HeaderFlagWarning
 	}
 	if protocolVersion == ProtocolVersionBeta {
-		flags = flags.add(HeaderFlagUseBeta)
+		flags |= HeaderFlagUseBeta
 	}
 
 	if !compress {
@@ -329,7 +329,7 @@ func (c *FrameCodec) Decode(source []byte) (*Frame, error) {
 			actualLength))
 	}
 
-	decompressed := flags.contains(HeaderFlagCompressed)
+	decompressed := flags&HeaderFlagCompressed > 0
 	if decompressed {
 		source, err = c.Compressor.Decompress(source)
 		if err != nil {
@@ -338,7 +338,7 @@ func (c *FrameCodec) Decode(source []byte) (*Frame, error) {
 	}
 
 	var tracingId *UUID
-	if isResponse && flags.contains(HeaderFlagTracing) {
+	if isResponse && (flags&HeaderFlagTracing > 0) {
 		tracingId, source, err = ReadUuid(source)
 		if err != nil {
 			return nil, err
@@ -346,7 +346,7 @@ func (c *FrameCodec) Decode(source []byte) (*Frame, error) {
 	}
 
 	var customPayload map[string][]byte
-	if flags.contains(HeaderFlagCustomPayload) {
+	if flags&HeaderFlagCustomPayload > 0 {
 		customPayload, source, err = ReadBytesMap(source)
 		if err != nil {
 			return nil, err
@@ -354,7 +354,7 @@ func (c *FrameCodec) Decode(source []byte) (*Frame, error) {
 	}
 
 	var warnings []string
-	if isResponse && flags.contains(HeaderFlagWarning) {
+	if isResponse && (flags&HeaderFlagWarning > 0) {
 		warnings, source, err = ReadStringList(source)
 		if err != nil {
 			return nil, err
