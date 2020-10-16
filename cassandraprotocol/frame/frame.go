@@ -37,7 +37,7 @@ func NewRequestFrame(
 	if message.IsResponse() {
 		panic("NewRequestFrame cannot be used with response messages")
 	}
-	return NewFrame(
+	return newFrame(
 		version,
 		streamId,
 		tracing,
@@ -58,7 +58,7 @@ func NewResponseFrame(
 	if !message.IsResponse() {
 		panic("NewResponseFrame cannot be used with request messages")
 	}
-	return NewFrame(
+	return newFrame(
 		version,
 		streamId,
 		tracingId != nil,
@@ -68,9 +68,7 @@ func NewResponseFrame(
 		message)
 }
 
-// NewFrame is mainly intended for internal use. If you want to build
-// frames to pass for encoding, see NewRequestFrame or NewResponseFrame.
-func NewFrame(
+func newFrame(
 	version cassandraprotocol.ProtocolVersion,
 	streamId int16,
 	tracingRequested bool,

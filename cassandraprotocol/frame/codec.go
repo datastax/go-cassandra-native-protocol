@@ -4,55 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"go-cassandra-native-protocol/cassandraprotocol"
+	"go-cassandra-native-protocol/cassandraprotocol/compression"
 	"go-cassandra-native-protocol/cassandraprotocol/message"
 	"go-cassandra-native-protocol/cassandraprotocol/message/codec"
+	"go-cassandra-native-protocol/cassandraprotocol/primitive"
 )
 
 type Codec struct {
-	MessageEncoders map[cassandraprotocol.ProtocolVersion]map[cassandraprotocol.OpCode]codec.MessageEncoder
-	MessageDecoders map[cassandraprotocol.ProtocolVersion]map[cassandraprotocol.OpCode]codec.MessageDecoder
-	Compressor      cassandraprotocol.MessageCompressor
-}
-
-func NewCodec(
-	compressor cassandraprotocol.MessageCompressor,
-	messageCodecGroups ...MessageCodecGroup) *Codec {
-	messageEncoders := make(map[cassandraprotocol.ProtocolVersion]map[cassandraprotocol.OpCode]codec.MessageEncoder)
-	messageDecoders := make(map[cassandraprotocol.ProtocolVersion]map[cassandraprotocol.OpCode]codec.MessageDecoder)
-	for _, messageCodecGroup := range messageCodecGroups {
-		version := messageCodecGroup.ProtocolVersion
-		for _, encoder := range messageCodecGroup.MessageEncoders {
-			encoders, ok := messageEncoders[version]
-			if !ok {
-				encoders = make(map[cassandraprotocol.OpCode]codec.MessageEncoder)
-				messageEncoders[version] = encoders
-			}
-			opCode := encoder.GetOpCode()
-			encoders[opCode] = encoder
-		}
-		for _, decoder := range messageCodecGroup.MessageDecoders {
-			decoders, ok := messageDecoders[version]
-			if !ok {
-				decoders = make(map[cassandraprotocol.OpCode]codec.MessageDecoder)
-				messageDecoders[version] = decoders
-			}
-			opCode := decoder.GetOpCode()
-			decoders[opCode] = decoder
-		}
-	}
-	return &Codec{MessageEncoders: messageEncoders, MessageDecoders: messageDecoders, Compressor: compressor}
-}
-
-// NewDefaultClientFrameCodec builds a new instance with the default codecs for a client
-// (encoding requests, decoding responses).
-func NewDefaultClientFrameCodec(compressor cassandraprotocol.MessageCompressor) *Codec {
-	return NewCodec(compressor, ProtocolV3ClientCodecs, ProtocolV4ClientCodecs, ProtocolV5ClientCodecs)
-}
-
-// NewDefaultServerFrameCodec builds a new instance with the default codecs for a server
-// (decoding requests, encoding responses).
-func NewDefaultServerFrameCodec(compressor cassandraprotocol.MessageCompressor) *Codec {
-	return NewCodec(compressor, ProtocolV3ServerCodecs, ProtocolV4ServerCodecs, ProtocolV5ServerCodecs)
+	Compressor compression.MessageCompressor
 }
 
 const headerEncodedSize = 9
@@ -71,7 +30,7 @@ func (c *Codec) Encode(frame *Frame) ([]byte, error) {
 	}
 
 	opCode := msg.GetOpCode()
-	encoder := c.MessageEncoders[version][opCode]
+	var encoder codec.MessageEncoder = findMessageCodec(opCode)
 
 	if encoder == nil {
 		return nil, errors.New(fmt.Sprintf("unsupported opcode %d in protocol version %d", opCode, version))
@@ -101,13 +60,13 @@ func (c *Codec) Encode(frame *Frame) ([]byte, error) {
 		// No compression: we can optimize and do everything with a single allocation
 		messageSize, _ := encoder.EncodedSize(msg, version)
 		if frame.TracingId != nil {
-			messageSize += codec.SizeOfUuid
+			messageSize += primitive.SizeOfUuid
 		}
 		if frame.CustomPayload != nil {
-			messageSize += codec.SizeOfBytesMap(frame.CustomPayload)
+			messageSize += primitive.SizeOfBytesMap(frame.CustomPayload)
 		}
 		if frame.Warnings != nil {
-			messageSize += codec.SizeOfStringList(frame.Warnings)
+			messageSize += primitive.SizeOfStringList(frame.Warnings)
 		}
 		encodedFrame := make([]byte, headerEncodedSize+messageSize)
 		remaining := encodedFrame
@@ -117,19 +76,19 @@ func (c *Codec) Encode(frame *Frame) ([]byte, error) {
 			return nil, err
 		}
 		if msg.IsResponse() && frame.TracingId != nil {
-			remaining, err = codec.WriteUuid(frame.TracingId, remaining)
+			remaining, err = primitive.WriteUuid(frame.TracingId, remaining)
 			if err != nil {
 				return nil, err
 			}
 		}
 		if frame.CustomPayload != nil {
-			remaining, err = codec.WriteBytesMap(frame.CustomPayload, remaining)
+			remaining, err = primitive.WriteBytesMap(frame.CustomPayload, remaining)
 			if err != nil {
 				return nil, err
 			}
 		}
 		if frame.Warnings != nil {
-			remaining, err = codec.WriteStringList(frame.Warnings, remaining)
+			remaining, err = primitive.WriteStringList(frame.Warnings, remaining)
 			if err != nil {
 				return nil, err
 			}
@@ -145,31 +104,31 @@ func (c *Codec) Encode(frame *Frame) ([]byte, error) {
 		// 1) Encode uncompressed message
 		uncompressedMessageSize, _ := encoder.EncodedSize(msg, version)
 		if frame.TracingId != nil {
-			uncompressedMessageSize += codec.SizeOfUuid
+			uncompressedMessageSize += primitive.SizeOfUuid
 		}
 		if frame.CustomPayload != nil {
-			uncompressedMessageSize += codec.SizeOfBytesMap(frame.CustomPayload)
+			uncompressedMessageSize += primitive.SizeOfBytesMap(frame.CustomPayload)
 		}
 		if frame.Warnings != nil {
-			uncompressedMessageSize += codec.SizeOfStringList(frame.Warnings)
+			uncompressedMessageSize += primitive.SizeOfStringList(frame.Warnings)
 		}
 		uncompressedMessage := make([]byte, uncompressedMessageSize)
 		remaining := uncompressedMessage
 		var err error
 		if frame.TracingId != nil {
-			remaining, err = codec.WriteUuid(frame.TracingId, remaining)
+			remaining, err = primitive.WriteUuid(frame.TracingId, remaining)
 			if err != nil {
 				return nil, err
 			}
 		}
 		if frame.CustomPayload != nil {
-			remaining, err = codec.WriteBytesMap(frame.CustomPayload, remaining)
+			remaining, err = primitive.WriteBytesMap(frame.CustomPayload, remaining)
 			if err != nil {
 				return nil, err
 			}
 		}
 		if frame.Warnings != nil {
-			remaining, err = codec.WriteStringList(frame.Warnings, remaining)
+			remaining, err = primitive.WriteStringList(frame.Warnings, remaining)
 			if err != nil {
 				return nil, err
 			}
@@ -202,23 +161,23 @@ func encodeHeader(frame *Frame, flags cassandraprotocol.ByteFlag, messageSize in
 		versionAndDirection |= 0b1000_0000
 	}
 	var err error
-	dest, err = codec.WriteByte(versionAndDirection, dest)
+	dest, err = primitive.WriteByte(versionAndDirection, dest)
 	if err != nil {
 		return nil, err
 	}
-	dest, err = codec.WriteByte(uint8(flags), dest)
+	dest, err = primitive.WriteByte(uint8(flags), dest)
 	if err != nil {
 		return nil, err
 	}
-	dest, err = codec.WriteShort(uint16(frame.StreamId)&0xFFFF, dest)
+	dest, err = primitive.WriteShort(uint16(frame.StreamId)&0xFFFF, dest)
 	if err != nil {
 		return nil, err
 	}
-	dest, err = codec.WriteByte(uint8(frame.Message.GetOpCode()), dest)
+	dest, err = primitive.WriteByte(uint8(frame.Message.GetOpCode()), dest)
 	if err != nil {
 		return nil, err
 	}
-	dest, err = codec.WriteInt(int32(messageSize), dest)
+	dest, err = primitive.WriteInt(int32(messageSize), dest)
 	if err != nil {
 		return nil, err
 	}
@@ -228,30 +187,30 @@ func encodeHeader(frame *Frame, flags cassandraprotocol.ByteFlag, messageSize in
 func (c *Codec) Decode(source []byte) (*Frame, error) {
 	var b byte
 	var err error
-	b, source, err = codec.ReadByte(source)
+	b, source, err = primitive.ReadByte(source)
 	if err != nil {
 		return nil, err
 	}
 	isResponse := (b & 0b1000_0000) == 0b1000_0000
 	version := cassandraprotocol.ProtocolVersion(b & 0b0111_1111)
-	b, source, err = codec.ReadByte(source)
+	b, source, err = primitive.ReadByte(source)
 	if err != nil {
 		return nil, err
 	}
 	flags := cassandraprotocol.ByteFlag(b)
 	//beta := flags.contains(HeaderFlagUseBeta)
 	var streamId uint16
-	streamId, source, err = codec.ReadShort(source)
+	streamId, source, err = primitive.ReadShort(source)
 	if err != nil {
 		return nil, err
 	}
-	b, source, err = codec.ReadByte(source)
+	b, source, err = primitive.ReadByte(source)
 	if err != nil {
 		return nil, err
 	}
 	opCode := cassandraprotocol.OpCode(b)
 	var i int32
-	i, source, err = codec.ReadInt(source)
+	i, source, err = primitive.ReadInt(source)
 	if err != nil {
 		return nil, err
 	}
@@ -273,7 +232,7 @@ func (c *Codec) Decode(source []byte) (*Frame, error) {
 
 	var tracingId *cassandraprotocol.UUID
 	if isResponse && (flags&cassandraprotocol.HeaderFlagTracing > 0) {
-		tracingId, source, err = codec.ReadUuid(source)
+		tracingId, source, err = primitive.ReadUuid(source)
 		if err != nil {
 			return nil, err
 		}
@@ -281,7 +240,7 @@ func (c *Codec) Decode(source []byte) (*Frame, error) {
 
 	var customPayload map[string][]byte
 	if flags&cassandraprotocol.HeaderFlagCustomPayload > 0 {
-		customPayload, source, err = codec.ReadBytesMap(source)
+		customPayload, source, err = primitive.ReadBytesMap(source)
 		if err != nil {
 			return nil, err
 		}
@@ -289,13 +248,13 @@ func (c *Codec) Decode(source []byte) (*Frame, error) {
 
 	var warnings []string
 	if isResponse && (flags&cassandraprotocol.HeaderFlagWarning > 0) {
-		warnings, source, err = codec.ReadStringList(source)
+		warnings, source, err = primitive.ReadStringList(source)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	decoder := c.MessageDecoders[version][opCode]
+	var decoder codec.MessageDecoder = findMessageCodec(opCode)
 	if decoder == nil {
 		return nil, errors.New(fmt.Sprintf("Unsupported request opcode: %d in protocol version %d", opCode, version))
 	}
@@ -315,4 +274,44 @@ func (c *Codec) Decode(source []byte) (*Frame, error) {
 		warnings,
 		response}
 	return frame, nil
+}
+
+func findMessageCodec(opCode cassandraprotocol.OpCode) codec.MessageCodec {
+	switch opCode {
+	// requests
+	case cassandraprotocol.OpCodeStartup:
+		return codec.StartupCodec{}
+	case cassandraprotocol.OpCodeOptions:
+		return codec.OptionsCodec{}
+	case cassandraprotocol.OpCodeQuery:
+		return nil // TODO
+	case cassandraprotocol.OpCodePrepare:
+		return nil // TODO
+	case cassandraprotocol.OpCodeExecute:
+		return nil // TODO
+	case cassandraprotocol.OpCodeRegister:
+		return codec.RegisterCodec{}
+	case cassandraprotocol.OpCodeBatch:
+		return nil // TODO
+	case cassandraprotocol.OpCodeAuthResponse:
+		return codec.AuthResponseCodec{}
+	// responses
+	case cassandraprotocol.OpCodeError:
+		return nil // TODO
+	case cassandraprotocol.OpCodeReady:
+		return codec.ReadyCodec{}
+	case cassandraprotocol.OpCodeAuthenticate:
+		return codec.AuthenticateCodec{}
+	case cassandraprotocol.OpCodeSupported:
+		return codec.SupportedCodec{}
+	case cassandraprotocol.OpCodeResult:
+		return nil // TODO
+	case cassandraprotocol.OpCodeEvent:
+		return codec.EventCodec{}
+	case cassandraprotocol.OpCodeAuthChallenge:
+		return codec.AuthChallengeCodec{}
+	case cassandraprotocol.OpCodeAuthSuccess:
+		return codec.AuthSuccessCodec{}
+	}
+	return nil
 }

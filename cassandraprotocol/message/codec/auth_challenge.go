@@ -3,27 +3,27 @@ package codec
 import (
 	"go-cassandra-native-protocol/cassandraprotocol"
 	"go-cassandra-native-protocol/cassandraprotocol/message"
+	"go-cassandra-native-protocol/cassandraprotocol/primitive"
 )
+
+var AuthChallengeEncoder struct {
+}
 
 type AuthChallengeCodec struct{}
 
-func (c AuthChallengeCodec) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeAuthChallenge
-}
-
 func (c AuthChallengeCodec) Encode(msg message.Message, dest []byte, version cassandraprotocol.ProtocolVersion) error {
 	authChallenge := msg.(*message.AuthChallenge)
-	_, err := WriteBytes(authChallenge.Token, dest)
+	_, err := primitive.WriteBytes(authChallenge.Token, dest)
 	return err
 }
 
 func (c AuthChallengeCodec) EncodedSize(msg message.Message, version cassandraprotocol.ProtocolVersion) (int, error) {
 	authChallenge := msg.(*message.AuthChallenge)
-	return SizeOfBytes(authChallenge.Token), nil
+	return primitive.SizeOfBytes(authChallenge.Token), nil
 }
 
 func (c AuthChallengeCodec) Decode(source []byte, version cassandraprotocol.ProtocolVersion) (message.Message, error) {
-	token, _, err := ReadBytes(source)
+	token, _, err := primitive.ReadBytes(source)
 	if err != nil {
 		return nil, err
 	}

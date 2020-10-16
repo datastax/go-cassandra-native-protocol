@@ -1,14 +1,9 @@
-package cassandraprotocol
+package compression
 
 import (
 	"errors"
 	"github.com/pierrec/lz4"
 )
-
-type MessageCompressor interface {
-	Compress(uncompressedMessage []byte) ([]byte, error)
-	Decompress(compressedMessage []byte) ([]byte, error)
-}
 
 type Lz4Compressor struct{}
 

@@ -7,10 +7,6 @@ import (
 
 type OptionsCodec struct{}
 
-func (c OptionsCodec) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeOptions
-}
-
 func (c OptionsCodec) Encode(msg message.Message, dest []byte, version cassandraprotocol.ProtocolVersion) error {
 	return nil
 }
