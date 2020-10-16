@@ -280,6 +280,7 @@ func ReadUuid(source []byte) (decoded *cassandraprotocol.UUID, remaining []byte,
 	if len(source) < LengthOfUuid {
 		return nil, source, errors.New("not enough bytes to read [uuid] content")
 	}
+	decoded = new(cassandraprotocol.UUID)
 	copy(decoded[:], source[:LengthOfUuid])
 	return decoded, source[LengthOfUuid:], nil
 }

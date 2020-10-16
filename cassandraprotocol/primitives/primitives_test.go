@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"go-cassandra-native-protocol/cassandraprotocol"
 	"testing"
 )
 
@@ -969,6 +970,89 @@ func TestWriteStringMultiMap(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			remaining, err := WriteStringMultiMap(tt.input, tt.dest)
+			assert.Equal(t, tt.expected, tt.dest)
+			assert.Equal(t, tt.remaining, remaining)
+			assert.Equal(t, tt.err, err)
+		})
+	}
+}
+
+var uuid = cassandraprotocol.UUID{0xC0, 0xD1, 0xD2, 0x1E, 0xBB, 0x01, 0x41, 0x96, 0x86, 0xDB, 0xBC, 0x31, 0x7B, 0xC1, 0x79, 0x6A}
+var uuidBytes = [16]byte{0xC0, 0xD1, 0xD2, 0x1E, 0xBB, 0x01, 0x41, 0x96, 0x86, 0xDB, 0xBC, 0x31, 0x7B, 0xC1, 0x79, 0x6A}
+
+func TestReadUuid(t *testing.T) {
+	tests := []struct {
+		name      string
+		source    []byte
+		expected  *cassandraprotocol.UUID
+		remaining []byte
+		err       error
+	}{
+		{"simple UUID", uuidBytes[:], &uuid, []byte{}, nil},
+		{"UUID with remaining", append(uuidBytes[:], 1, 2, 3, 4), &uuid, []byte{1, 2, 3, 4}, nil},
+		{
+			"cannot read UUID",
+			uuidBytes[:15],
+			nil,
+			uuidBytes[:15],
+			errors.New("not enough bytes to read [uuid] content"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual, remaining, err := ReadUuid(tt.source)
+			assert.Equal(t, tt.expected, actual)
+			assert.Equal(t, tt.remaining, remaining)
+			assert.Equal(t, tt.err, err)
+		})
+	}
+}
+
+func TestWriteUuid(t *testing.T) {
+	tests := []struct {
+		name      string
+		input     *cassandraprotocol.UUID
+		dest      []byte
+		expected  []byte
+		remaining []byte
+		err       error
+	}{
+		{
+			"simple UUID",
+			&uuid,
+			make([]byte, LengthOfUuid),
+			uuidBytes[:],
+			[]byte{},
+			nil,
+		},
+		{
+			"UUID with extra capacity",
+			&uuid,
+			make([]byte, LengthOfUuid+1),
+			append(uuidBytes[:], 0),
+			[]byte{0},
+			nil,
+		},
+		{
+			"nil UUID",
+			nil,
+			make([]byte, LengthOfUuid),
+			make([]byte, LengthOfUuid),
+			make([]byte, LengthOfUuid),
+			errors.New("cannot write nil as [uuid]"),
+		},
+		{
+			"cannot write UUID content",
+			&uuid,
+			make([]byte, LengthOfUuid-1),
+			make([]byte, LengthOfUuid-1),
+			make([]byte, LengthOfUuid-1),
+			errors.New("not enough capacity to write [uuid] content"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			remaining, err := WriteUuid(tt.input, tt.dest)
 			assert.Equal(t, tt.expected, tt.dest)
 			assert.Equal(t, tt.remaining, remaining)
 			assert.Equal(t, tt.err, err)
