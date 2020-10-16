@@ -9,11 +9,11 @@ import (
 )
 
 const (
-	SizeOfByte  = 1
-	SizeOfShort = 2
-	SizeOfInt   = 4
-	SizeOfLong  = 8
-	SizeOfUuid  = 16
+	LengthOfByte  = 1
+	LengthOfShort = 2
+	LengthOfInt   = 4
+	LengthOfLong  = 8
+	LengthOfUuid  = 16
 )
 
 // Functions to read and write CQL protocol primitive structures (as defined in section 3 of the protocol
@@ -23,72 +23,72 @@ const (
 
 func ReadByte(source []byte) (decoded uint8, remaining []byte, err error) {
 	length := len(source)
-	if length < SizeOfByte {
+	if length < LengthOfByte {
 		return 0, source, errors.New("not enough bytes to read [byte]")
 	}
-	return source[0], source[SizeOfByte:], nil
+	return source[0], source[LengthOfByte:], nil
 }
 
 func WriteByte(b uint8, dest []byte) (remaining []byte, err error) {
-	if cap(dest) < SizeOfByte {
+	if cap(dest) < LengthOfByte {
 		return dest, errors.New("not enough capacity to write [byte]")
 	}
 	dest[0] = b
-	return dest[SizeOfByte:], nil
+	return dest[LengthOfByte:], nil
 }
 
 // [short]
 
 func ReadShort(source []byte) (decoded uint16, remaining []byte, error error) {
 	length := len(source)
-	if length < SizeOfShort {
+	if length < LengthOfShort {
 		return 0, source, errors.New("not enough bytes to read [short]")
 	}
-	return binary.BigEndian.Uint16(source[:SizeOfShort]), source[SizeOfShort:], nil
+	return binary.BigEndian.Uint16(source[:LengthOfShort]), source[LengthOfShort:], nil
 }
 
 func WriteShort(i uint16, dest []byte) (remaining []byte, err error) {
-	if cap(dest) < SizeOfShort {
+	if cap(dest) < LengthOfShort {
 		return dest, errors.New("not enough capacity to write [short]")
 	}
 	binary.BigEndian.PutUint16(dest, i)
-	return dest[SizeOfShort:], nil
+	return dest[LengthOfShort:], nil
 }
 
 // [int]
 
 func ReadInt(source []byte) (decoded int32, remaining []byte, err error) {
 	length := len(source)
-	if length < SizeOfInt {
+	if length < LengthOfInt {
 		return 0, source, errors.New("not enough bytes to read [int]")
 	}
-	return int32(binary.BigEndian.Uint32(source[:SizeOfInt])), source[SizeOfInt:], nil
+	return int32(binary.BigEndian.Uint32(source[:LengthOfInt])), source[LengthOfInt:], nil
 }
 
 func WriteInt(i int32, dest []byte) (remaining []byte, err error) {
-	if cap(dest) < SizeOfInt {
+	if cap(dest) < LengthOfInt {
 		return dest, errors.New("not enough capacity to write [int]")
 	}
 	binary.BigEndian.PutUint32(dest, uint32(i))
-	return dest[SizeOfInt:], nil
+	return dest[LengthOfInt:], nil
 }
 
 // [long]
 
 func ReadLong(source []byte) (decoded int64, remaining []byte, err error) {
 	length := len(source)
-	if length < SizeOfLong {
+	if length < LengthOfLong {
 		return 0, source, errors.New("not enough bytes to read [long]")
 	}
-	return int64(binary.BigEndian.Uint64(source[:SizeOfLong])), source[SizeOfLong:], nil
+	return int64(binary.BigEndian.Uint64(source[:LengthOfLong])), source[LengthOfLong:], nil
 }
 
 func WriteLong(l int64, dest []byte) (remaining []byte, err error) {
-	if cap(dest) < SizeOfLong {
+	if cap(dest) < LengthOfLong {
 		return dest, errors.New("not enough capacity to write [long]")
 	}
 	binary.BigEndian.PutUint64(dest, uint64(l))
-	return dest[SizeOfLong:], nil
+	return dest[LengthOfLong:], nil
 }
 
 // [string]
@@ -120,8 +120,8 @@ func WriteString(s string, dest []byte) (remaining []byte, err error) {
 	return dest[length:], nil
 }
 
-func SizeOfString(s string) int {
-	return SizeOfShort + len(s)
+func LengthOfString(s string) int {
+	return LengthOfShort + len(s)
 }
 
 // [long string]
@@ -153,8 +153,8 @@ func WriteLongString(s string, dest []byte) (remaining []byte, err error) {
 	return dest[length:], nil
 }
 
-func SizeOfLongString(s string) int {
-	return SizeOfInt + len(s)
+func LengthOfLongString(s string) int {
+	return LengthOfInt + len(s)
 }
 
 // [string list]
@@ -192,10 +192,10 @@ func WriteStringList(list []string, dest []byte) (remaining []byte, err error) {
 	return dest, nil
 }
 
-func SizeOfStringList(list []string) int {
-	length := SizeOfShort
+func LengthOfStringList(list []string) int {
+	length := LengthOfShort
 	for _, s := range list {
-		length += SizeOfString(s)
+		length += LengthOfString(s)
 	}
 	return length
 }
@@ -239,8 +239,8 @@ func WriteBytes(b []byte, dest []byte) (remaining []byte, err error) {
 	}
 }
 
-func SizeOfBytes(b []byte) int {
-	return SizeOfInt + len(b)
+func LengthOfBytes(b []byte) int {
+	return LengthOfInt + len(b)
 }
 
 // [short bytes]
@@ -270,29 +270,29 @@ func WriteShortBytes(b []byte, dest []byte) (remaining []byte, err error) {
 	return dest[length:], nil
 }
 
-func SizeOfShortBytes(b []byte) int {
-	return SizeOfShort + len(b)
+func LengthOfShortBytes(b []byte) int {
+	return LengthOfShort + len(b)
 }
 
 // [uuid]
 
 func ReadUuid(source []byte) (decoded *cassandraprotocol.UUID, remaining []byte, err error) {
-	if len(source) < SizeOfUuid {
+	if len(source) < LengthOfUuid {
 		return nil, source, errors.New("not enough bytes to read [uuid] content")
 	}
-	copy(decoded[:], source[:SizeOfUuid])
-	return decoded, source[SizeOfUuid:], nil
+	copy(decoded[:], source[:LengthOfUuid])
+	return decoded, source[LengthOfUuid:], nil
 }
 
 func WriteUuid(uuid *cassandraprotocol.UUID, dest []byte) (remaining []byte, err error) {
 	if uuid == nil {
 		return dest, errors.New("cannot write nil as [uuid]")
 	}
-	if len(dest) < SizeOfUuid {
+	if len(dest) < LengthOfUuid {
 		return dest, errors.New("not enough capacity to write [uuid] content")
 	}
 	copy(dest, uuid[:])
-	return dest[SizeOfUuid:], nil
+	return dest[LengthOfUuid:], nil
 }
 
 // [inet]
@@ -360,13 +360,13 @@ func WriteInet(inet *cassandraprotocol.Inet, dest []byte) (remaining []byte, err
 	return dest, nil
 }
 
-func SizeOfInet(inet *cassandraprotocol.Inet) (length int) {
+func LengthOfInet(inet *cassandraprotocol.Inet) (length int) {
 	if inet.Addr.To4() != nil {
 		length = net.IPv4len
 	} else {
 		length = net.IPv6len
 	}
-	return length + SizeOfInt
+	return length + LengthOfInt
 }
 
 // [string map]
@@ -412,10 +412,10 @@ func WriteStringMap(m map[string]string, dest []byte) (remaining []byte, err err
 	return dest, nil
 }
 
-func SizeOfStringMap(m map[string]string) int {
-	length := SizeOfShort
+func LengthOfStringMap(m map[string]string) int {
+	length := LengthOfShort
 	for key, value := range m {
-		length += SizeOfString(key) + SizeOfString(value)
+		length += LengthOfString(key) + LengthOfString(value)
 	}
 	return length
 }
@@ -463,10 +463,10 @@ func WriteStringMultiMap(m map[string][]string, dest []byte) (remaining []byte, 
 	return dest, nil
 }
 
-func SizeOfStringMultiMap(m map[string][]string) int {
-	length := SizeOfShort
+func LengthOfStringMultiMap(m map[string][]string) int {
+	length := LengthOfShort
 	for key, value := range m {
-		length += SizeOfString(key) + SizeOfStringList(value)
+		length += LengthOfString(key) + LengthOfStringList(value)
 	}
 	return length
 }
@@ -514,10 +514,10 @@ func WriteBytesMap(m map[string][]byte, dest []byte) (remaining []byte, err erro
 	return dest, nil
 }
 
-func SizeOfBytesMap(m map[string][]byte) int {
-	length := SizeOfShort
+func LengthOfBytesMap(m map[string][]byte) int {
+	length := LengthOfShort
 	for key, value := range m {
-		length += SizeOfString(key) + SizeOfBytes(value)
+		length += LengthOfString(key) + LengthOfBytes(value)
 	}
 	return length
 }

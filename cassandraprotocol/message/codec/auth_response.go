@@ -16,7 +16,7 @@ func (c AuthResponseCodec) Encode(msg message.Message, dest []byte, version cass
 
 func (c AuthResponseCodec) EncodedSize(msg message.Message, version cassandraprotocol.ProtocolVersion) (int, error) {
 	authResponse := msg.(*message.AuthResponse)
-	return primitives.SizeOfBytes(authResponse.Token), nil
+	return primitives.LengthOfBytes(authResponse.Token), nil
 }
 
 func (c AuthResponseCodec) Decode(source []byte, version cassandraprotocol.ProtocolVersion) (message.Message, error) {

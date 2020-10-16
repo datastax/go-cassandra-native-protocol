@@ -16,7 +16,7 @@ func (c RegisterCodec) Encode(msg message.Message, dest []byte, version cassandr
 
 func (c RegisterCodec) EncodedSize(msg message.Message, version cassandraprotocol.ProtocolVersion) (int, error) {
 	register := msg.(*message.Register)
-	return primitives.SizeOfStringList(register.EventTypes), nil
+	return primitives.LengthOfStringList(register.EventTypes), nil
 }
 
 func (c RegisterCodec) Decode(source []byte, version cassandraprotocol.ProtocolVersion) (message.Message, error) {

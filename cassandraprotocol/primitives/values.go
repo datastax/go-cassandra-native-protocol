@@ -43,14 +43,14 @@ func WriteValue(value *cassandraprotocol.Value, dest []byte) (remaining []byte, 
 	return dest, nil
 }
 
-func SizeOfValue(value *cassandraprotocol.Value) (int, error) {
+func LengthOfValue(value *cassandraprotocol.Value) (int, error) {
 	switch value.Type {
 	case cassandraprotocol.ValueTypeNull:
 		fallthrough
 	case cassandraprotocol.ValueTypeUnset:
-		return SizeOfInt, nil
+		return LengthOfInt, nil
 	case cassandraprotocol.ValueTypeRegular:
-		return SizeOfBytes(value.Contents), nil
+		return LengthOfBytes(value.Contents), nil
 	default:
 		return -1, fmt.Errorf("unknown value type: %v", value.Type)
 	}
@@ -91,17 +91,17 @@ func WritePositionalValues(values []*cassandraprotocol.Value, dest []byte) (rema
 	return remaining, nil
 }
 
-func SizeOfPositionalValues(values []*cassandraprotocol.Value) (size int, err error) {
-	size += SizeOfShort
+func LengthOfPositionalValues(values []*cassandraprotocol.Value) (length int, err error) {
+	length += LengthOfShort
 	for _, value := range values {
-		var valueSize int
-		valueSize, err = SizeOfValue(value)
+		var valueLength int
+		valueLength, err = LengthOfValue(value)
 		if err != nil {
 			return -1, fmt.Errorf("cannot compute length of positional [value]s: %w", err)
 		}
-		size += valueSize
+		length += valueLength
 	}
-	return size, nil
+	return length, nil
 }
 
 // named [value]s
@@ -148,17 +148,17 @@ func WriteNamedValues(values map[string]*cassandraprotocol.Value, dest []byte) (
 	return remaining, nil
 }
 
-func SizeOfNamedValues(values map[string]*cassandraprotocol.Value) (size int, err error) {
-	size += SizeOfShort
+func LengthOfNamedValues(values map[string]*cassandraprotocol.Value) (length int, err error) {
+	length += LengthOfShort
 	for name, value := range values {
-		var nameSize = SizeOfString(name)
-		var valueSize int
-		valueSize, err = SizeOfValue(value)
+		var nameLength = LengthOfString(name)
+		var valueLength int
+		valueLength, err = LengthOfValue(value)
 		if err != nil {
 			return -1, fmt.Errorf("cannot compute length of named [value]s: %w", err)
 		}
-		size += nameSize
-		size += valueSize
+		length += nameLength
+		length += valueLength
 	}
-	return size, nil
+	return length, nil
 }

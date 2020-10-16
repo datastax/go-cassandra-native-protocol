@@ -75,19 +75,19 @@ func EncodeQueryOptions(options *message.QueryOptions, dest []byte, version cass
 	return dest, nil
 }
 
-func SizeOfQueryOptions(options *message.QueryOptions, version cassandraprotocol.ProtocolVersion) (size int, err error) {
-	size += primitives.SizeOfShort // consistency level
+func LengthOfQueryOptions(options *message.QueryOptions, version cassandraprotocol.ProtocolVersion) (size int, err error) {
+	size += primitives.LengthOfShort // consistency level
 	if version >= cassandraprotocol.ProtocolVersion5 {
-		size += primitives.SizeOfInt
+		size += primitives.LengthOfInt
 	} else {
-		size += primitives.SizeOfByte
+		size += primitives.LengthOfByte
 	}
 	var s int
 	if options.Flags&cassandraprotocol.QueryFlagValues != 0 {
 		if options.Flags&cassandraprotocol.QueryFlagValueNames != 0 {
-			s, err = primitives.SizeOfNamedValues(options.NamedValues)
+			s, err = primitives.LengthOfNamedValues(options.NamedValues)
 		} else {
-			s, err = primitives.SizeOfPositionalValues(options.PositionalValues)
+			s, err = primitives.LengthOfPositionalValues(options.PositionalValues)
 		}
 	}
 	if err != nil {
@@ -95,22 +95,22 @@ func SizeOfQueryOptions(options *message.QueryOptions, version cassandraprotocol
 	}
 	size += s
 	if options.Flags&cassandraprotocol.QueryFlagPageSize != 0 {
-		size += primitives.SizeOfInt
+		size += primitives.LengthOfInt
 	}
 	if options.Flags&cassandraprotocol.QueryFlagPagingState != 0 {
-		size += primitives.SizeOfBytes(options.PagingState)
+		size += primitives.LengthOfBytes(options.PagingState)
 	}
 	if options.Flags&cassandraprotocol.QueryFlagSerialConsistency != 0 {
-		size += primitives.SizeOfShort
+		size += primitives.LengthOfShort
 	}
 	if options.Flags&cassandraprotocol.QueryFlagDefaultTimestamp != 0 {
-		size += primitives.SizeOfLong
+		size += primitives.LengthOfLong
 	}
 	if options.Flags&cassandraprotocol.QueryFlagWithKeyspace != 0 {
-		size += primitives.SizeOfString(options.Keyspace)
+		size += primitives.LengthOfString(options.Keyspace)
 	}
 	if options.Flags&cassandraprotocol.QueryFlagNowInSeconds != 0 {
-		size += primitives.SizeOfInt
+		size += primitives.LengthOfInt
 	}
 	return size, nil
 }

@@ -19,7 +19,7 @@ func (c SupportedCodec) Encode(msg message.Message, dest []byte, version cassand
 
 func (c SupportedCodec) EncodedSize(msg message.Message, version cassandraprotocol.ProtocolVersion) (int, error) {
 	supported := msg.(*message.Supported)
-	return primitives.SizeOfStringMultiMap(supported.Options), nil
+	return primitives.LengthOfStringMultiMap(supported.Options), nil
 }
 
 func (c SupportedCodec) Decode(source []byte, version cassandraprotocol.ProtocolVersion) (message.Message, error) {

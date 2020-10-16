@@ -16,7 +16,7 @@ func (c StartupCodec) Encode(msg message.Message, dest []byte, version cassandra
 
 func (c StartupCodec) EncodedSize(msg message.Message, version cassandraprotocol.ProtocolVersion) (int, error) {
 	startup := msg.(*message.Startup)
-	return primitives.SizeOfStringMap(startup.Options), nil
+	return primitives.LengthOfStringMap(startup.Options), nil
 }
 
 func (c StartupCodec) Decode(source []byte, version cassandraprotocol.ProtocolVersion) (message.Message, error) {

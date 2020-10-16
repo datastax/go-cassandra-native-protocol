@@ -19,7 +19,7 @@ func (c AuthChallengeCodec) Encode(msg message.Message, dest []byte, version cas
 
 func (c AuthChallengeCodec) EncodedSize(msg message.Message, version cassandraprotocol.ProtocolVersion) (int, error) {
 	authChallenge := msg.(*message.AuthChallenge)
-	return primitives.SizeOfBytes(authChallenge.Token), nil
+	return primitives.LengthOfBytes(authChallenge.Token), nil
 }
 
 func (c AuthChallengeCodec) Decode(source []byte, version cassandraprotocol.ProtocolVersion) (message.Message, error) {

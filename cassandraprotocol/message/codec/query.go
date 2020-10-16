@@ -20,7 +20,7 @@ func (c QueryCodec) Encode(msg message.Message, dest []byte, version cassandrapr
 
 func (q QueryCodec) EncodedSize(msg message.Message, version cassandraprotocol.ProtocolVersion) (int, error) {
 	query := msg.(*message.Query)
-	return primitives.SizeOfLongString(query.Query) + SizeOfQueryOptions(query.Options, version), nil
+	return primitives.LengthOfLongString(query.Query) + LengthOfQueryOptions(query.Options, version), nil
 }
 
 func (q QueryCodec) Decode(source []byte, version cassandraprotocol.ProtocolVersion) (msg message.Message, err error) {

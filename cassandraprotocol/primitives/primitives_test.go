@@ -85,9 +85,9 @@ func TestWriteShort(t *testing.T) {
 		remaining []byte
 		err       error
 	}{
-		{"simple short", uint16(5), make([]byte, SizeOfShort), []byte{0, 5}, []byte{}, nil},
-		{"short with remaining", uint16(5), make([]byte, SizeOfShort+1), []byte{0, 5, 0}, []byte{0}, nil},
-		{"cannot write short", uint16(5), make([]byte, SizeOfShort-1), []byte{0}, []byte{0}, errors.New("not enough capacity to write [short]")},
+		{"simple short", uint16(5), make([]byte, LengthOfShort), []byte{0, 5}, []byte{}, nil},
+		{"short with remaining", uint16(5), make([]byte, LengthOfShort+1), []byte{0, 5, 0}, []byte{0}, nil},
+		{"cannot write short", uint16(5), make([]byte, LengthOfShort-1), []byte{0}, []byte{0}, errors.New("not enough capacity to write [short]")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -132,10 +132,10 @@ func TestWriteInt(t *testing.T) {
 		remaining []byte
 		err       error
 	}{
-		{"simple int", int32(5), make([]byte, SizeOfInt), []byte{0, 0, 0, 5}, []byte{}, nil},
-		{"negative int", int32(-5), make([]byte, SizeOfInt), []byte{0xff, 0xff, 0xff, 0xff & -5}, []byte{}, nil},
-		{"int with remaining", int32(5), make([]byte, SizeOfInt+1), []byte{0, 0, 0, 5, 0}, []byte{0}, nil},
-		{"cannot write int", int32(5), make([]byte, SizeOfInt-1), []byte{0, 0, 0}, []byte{0, 0, 0}, errors.New("not enough capacity to write [int]")},
+		{"simple int", int32(5), make([]byte, LengthOfInt), []byte{0, 0, 0, 5}, []byte{}, nil},
+		{"negative int", int32(-5), make([]byte, LengthOfInt), []byte{0xff, 0xff, 0xff, 0xff & -5}, []byte{}, nil},
+		{"int with remaining", int32(5), make([]byte, LengthOfInt+1), []byte{0, 0, 0, 5, 0}, []byte{0}, nil},
+		{"cannot write int", int32(5), make([]byte, LengthOfInt-1), []byte{0, 0, 0}, []byte{0, 0, 0}, errors.New("not enough capacity to write [int]")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -180,10 +180,10 @@ func TestWriteLong(t *testing.T) {
 		remaining []byte
 		err       error
 	}{
-		{"simple long", int64(5), make([]byte, SizeOfLong), []byte{0, 0, 0, 0, 0, 0, 0, 5}, []byte{}, nil},
-		{"negative long", int64(-5), make([]byte, SizeOfLong), []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff & -5}, []byte{}, nil},
-		{"long with remaining", int64(5), make([]byte, SizeOfLong+1), []byte{0, 0, 0, 0, 0, 0, 0, 5, 0}, []byte{0}, nil},
-		{"cannot write long", int64(5), make([]byte, SizeOfLong-1), []byte{0, 0, 0, 0, 0, 0, 0}, []byte{0, 0, 0, 0, 0, 0, 0}, errors.New("not enough capacity to write [long]")},
+		{"simple long", int64(5), make([]byte, LengthOfLong), []byte{0, 0, 0, 0, 0, 0, 0, 5}, []byte{}, nil},
+		{"negative long", int64(-5), make([]byte, LengthOfLong), []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff & -5}, []byte{}, nil},
+		{"long with remaining", int64(5), make([]byte, LengthOfLong+1), []byte{0, 0, 0, 0, 0, 0, 0, 5, 0}, []byte{0}, nil},
+		{"cannot write long", int64(5), make([]byte, LengthOfLong-1), []byte{0, 0, 0, 0, 0, 0, 0}, []byte{0, 0, 0, 0, 0, 0, 0}, errors.New("not enough capacity to write [long]")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -263,13 +263,13 @@ func TestWriteString(t *testing.T) {
 		{
 			"simple string",
 			"hello",
-			make([]byte, SizeOfString("hello")),
+			make([]byte, LengthOfString("hello")),
 			[]byte{0, 5, h, e, l, l, o},
 			[]byte{},
 			nil,
 		},
-		{"empty string", "", make([]byte, SizeOfString("")), []byte{0, 0}, []byte{}, nil},
-		{"non-ASCII string", "γειά σου", make([]byte, SizeOfString("γειά σου")), []byte{
+		{"empty string", "", make([]byte, LengthOfString("")), []byte{0, 0}, []byte{}, nil},
+		{"non-ASCII string", "γειά σου", make([]byte, LengthOfString("γειά σου")), []byte{
 			0, 15, // length
 			0xce, 0xb3, 0xce, 0xb5, 0xce, 0xb9, 0xce, 0xac, //γειά
 			0x20,                               // space
@@ -278,15 +278,15 @@ func TestWriteString(t *testing.T) {
 		{
 			"string with remaining",
 			"hello",
-			make([]byte, SizeOfString("hello")+1),
+			make([]byte, LengthOfString("hello")+1),
 			[]byte{0, 5, h, e, l, l, o, 0},
 			[]byte{0},
 			nil,
 		},
 		{
-			"cannot write string size",
+			"cannot write string length",
 			"hello",
-			make([]byte, SizeOfShort-1),
+			make([]byte, LengthOfShort-1),
 			[]byte{0},
 			[]byte{0},
 			fmt.Errorf("cannot write [string] length: %w", errors.New("not enough capacity to write [short]")),
@@ -294,7 +294,7 @@ func TestWriteString(t *testing.T) {
 		{
 			"cannot write string",
 			"hello",
-			make([]byte, SizeOfString("hello")-1),
+			make([]byte, LengthOfString("hello")-1),
 			[]byte{0, 5, 0, 0, 0, 0},
 			[]byte{0, 0, 0, 0},
 			errors.New("not enough capacity to write [string] content"),
@@ -361,9 +361,9 @@ func TestWriteLongString(t *testing.T) {
 		remaining []byte
 		err       error
 	}{
-		{"simple string", "hello", make([]byte, SizeOfLongString("hello")), []byte{0, 0, 0, 5, h, e, l, l, o}, []byte{}, nil},
-		{"empty string", "", make([]byte, SizeOfLongString("")), []byte{0, 0, 0, 0}, []byte{}, nil},
-		{"non-ASCII string", "γειά σου", make([]byte, SizeOfLongString("γειά σου")), []byte{
+		{"simple string", "hello", make([]byte, LengthOfLongString("hello")), []byte{0, 0, 0, 5, h, e, l, l, o}, []byte{}, nil},
+		{"empty string", "", make([]byte, LengthOfLongString("")), []byte{0, 0, 0, 0}, []byte{}, nil},
+		{"non-ASCII string", "γειά σου", make([]byte, LengthOfLongString("γειά σου")), []byte{
 			0, 0, 0, 15, // length
 			0xce, 0xb3, 0xce, 0xb5, 0xce, 0xb9, 0xce, 0xac, //γειά
 			0x20,                               // space
@@ -372,15 +372,15 @@ func TestWriteLongString(t *testing.T) {
 		{
 			"string with remaining",
 			"hello",
-			make([]byte, SizeOfLongString("hello")+1),
+			make([]byte, LengthOfLongString("hello")+1),
 			[]byte{0, 0, 0, 5, h, e, l, l, o, 0},
 			[]byte{0},
 			nil,
 		},
 		{
-			"cannot write string size",
+			"cannot write string length",
 			"hello",
-			make([]byte, SizeOfInt-1),
+			make([]byte, LengthOfInt-1),
 			[]byte{0, 0, 0},
 			[]byte{0, 0, 0},
 			fmt.Errorf("cannot write [long string] length: %w", errors.New("not enough capacity to write [int]")),
@@ -388,7 +388,7 @@ func TestWriteLongString(t *testing.T) {
 		{
 			"cannot write string",
 			"hello",
-			make([]byte, SizeOfLongString("hello")-1),
+			make([]byte, LengthOfLongString("hello")-1),
 			[]byte{0, 0, 0, 5, 0, 0, 0, 0},
 			[]byte{0, 0, 0, 0},
 			errors.New("not enough capacity to write [long string] content"),
@@ -464,7 +464,7 @@ func TestWriteStringList(t *testing.T) {
 		{
 			"empty string list",
 			[]string{},
-			make([]byte, SizeOfStringList([]string{})),
+			make([]byte, LengthOfStringList([]string{})),
 			[]byte{0, 0},
 			[]byte{},
 			nil,
@@ -472,7 +472,7 @@ func TestWriteStringList(t *testing.T) {
 		{
 			"singleton string list",
 			[]string{"hello"},
-			make([]byte, SizeOfStringList([]string{"hello"})),
+			make([]byte, LengthOfStringList([]string{"hello"})),
 			[]byte{
 				0, 1, // length
 				0, 5, h, e, l, l, o, // hello
@@ -483,7 +483,7 @@ func TestWriteStringList(t *testing.T) {
 		{
 			"simple string list",
 			[]string{"hello", "world"},
-			make([]byte, SizeOfStringList([]string{"hello", "world"})),
+			make([]byte, LengthOfStringList([]string{"hello", "world"})),
 			[]byte{
 				0, 2, // length
 				0, 5, h, e, l, l, o, // hello
@@ -495,7 +495,7 @@ func TestWriteStringList(t *testing.T) {
 		{
 			"empty elements",
 			[]string{"", ""},
-			make([]byte, SizeOfStringList([]string{"", ""})),
+			make([]byte, LengthOfStringList([]string{"", ""})),
 			[]byte{
 				0, 2, // length
 				0, 0, // elt 1
@@ -507,7 +507,7 @@ func TestWriteStringList(t *testing.T) {
 		{
 			"cannot write list length",
 			[]string{"hello"},
-			make([]byte, SizeOfShort-1),
+			make([]byte, LengthOfShort-1),
 			[]byte{0},
 			[]byte{0},
 			fmt.Errorf("cannot write [string list] length: %w", errors.New("not enough capacity to write [short]")),
@@ -515,7 +515,7 @@ func TestWriteStringList(t *testing.T) {
 		{
 			"cannot write list element",
 			[]string{"hello"},
-			make([]byte, SizeOfStringList([]string{"hello"})-1),
+			make([]byte, LengthOfStringList([]string{"hello"})-1),
 			[]byte{0, 1, 0, 5, 0, 0, 0, 0},
 			[]byte{0, 0, 0, 0},
 			fmt.Errorf("cannot write [string list] element: %w", errors.New("not enough capacity to write [string] content")),
@@ -580,7 +580,7 @@ func TestWriteBytes(t *testing.T) {
 		{
 			"empty bytes",
 			[]byte{},
-			make([]byte, SizeOfBytes([]byte{})),
+			make([]byte, LengthOfBytes([]byte{})),
 			[]byte{0, 0, 0, 0},
 			[]byte{},
 			nil,
@@ -588,7 +588,7 @@ func TestWriteBytes(t *testing.T) {
 		{
 			"singleton bytes",
 			[]byte{1},
-			make([]byte, SizeOfBytes([]byte{1})),
+			make([]byte, LengthOfBytes([]byte{1})),
 			[]byte{0, 0, 0, 1, 1},
 			[]byte{},
 			nil,
@@ -596,7 +596,7 @@ func TestWriteBytes(t *testing.T) {
 		{
 			"simple bytes",
 			[]byte{1, 2},
-			make([]byte, SizeOfBytes([]byte{1, 2})),
+			make([]byte, LengthOfBytes([]byte{1, 2})),
 			[]byte{0, 0, 0, 2, 1, 2},
 			[]byte{},
 			nil,
@@ -604,7 +604,7 @@ func TestWriteBytes(t *testing.T) {
 		{
 			"cannot write bytes length",
 			[]byte{1},
-			make([]byte, SizeOfInt-1),
+			make([]byte, LengthOfInt-1),
 			[]byte{0, 0, 0},
 			[]byte{0, 0, 0},
 			fmt.Errorf("cannot write [bytes] length: %w", errors.New("not enough capacity to write [int]")),
@@ -612,7 +612,7 @@ func TestWriteBytes(t *testing.T) {
 		{
 			"cannot write list element",
 			[]byte{1, 2},
-			make([]byte, SizeOfBytes([]byte{1, 2})-1),
+			make([]byte, LengthOfBytes([]byte{1, 2})-1),
 			[]byte{0, 0, 0, 2, 0},
 			[]byte{0},
 			fmt.Errorf("not enough capacity to write [bytes] content"),
@@ -677,7 +677,7 @@ func TestWriteShortBytes(t *testing.T) {
 		{
 			"empty short bytes",
 			[]byte{},
-			make([]byte, SizeOfShortBytes([]byte{})),
+			make([]byte, LengthOfShortBytes([]byte{})),
 			[]byte{0, 0},
 			[]byte{},
 			nil,
@@ -685,7 +685,7 @@ func TestWriteShortBytes(t *testing.T) {
 		{
 			"singleton short bytes",
 			[]byte{1},
-			make([]byte, SizeOfShortBytes([]byte{1})),
+			make([]byte, LengthOfShortBytes([]byte{1})),
 			[]byte{0, 1, 1},
 			[]byte{},
 			nil,
@@ -693,7 +693,7 @@ func TestWriteShortBytes(t *testing.T) {
 		{
 			"simple short bytes",
 			[]byte{1, 2},
-			make([]byte, SizeOfShortBytes([]byte{1, 2})),
+			make([]byte, LengthOfShortBytes([]byte{1, 2})),
 			[]byte{0, 2, 1, 2},
 			[]byte{},
 			nil,
@@ -701,7 +701,7 @@ func TestWriteShortBytes(t *testing.T) {
 		{
 			"cannot write short bytes length",
 			[]byte{1},
-			make([]byte, SizeOfShort-1),
+			make([]byte, LengthOfShort-1),
 			[]byte{0},
 			[]byte{0},
 			fmt.Errorf("cannot write [short bytes] length: %w", errors.New("not enough capacity to write [short]")),
@@ -709,7 +709,7 @@ func TestWriteShortBytes(t *testing.T) {
 		{
 			"cannot write list element",
 			[]byte{1, 2},
-			make([]byte, SizeOfShortBytes([]byte{1, 2})-1),
+			make([]byte, LengthOfShortBytes([]byte{1, 2})-1),
 			[]byte{0, 2, 0},
 			[]byte{0},
 			fmt.Errorf("not enough capacity to write [short bytes] content"),
@@ -837,7 +837,7 @@ func TestWriteStringMultiMap(t *testing.T) {
 		{
 			"empty string multimap",
 			map[string][]string{},
-			make([]byte, SizeOfStringMultiMap(map[string][]string{})),
+			make([]byte, LengthOfStringMultiMap(map[string][]string{})),
 			[]byte{0, 0},
 			[]byte{},
 			nil,
@@ -845,7 +845,7 @@ func TestWriteStringMultiMap(t *testing.T) {
 		{
 			"multimap 1 key 1 value",
 			map[string][]string{"hello": {"world"}},
-			make([]byte, SizeOfStringMultiMap(map[string][]string{"hello": {"world"}})),
+			make([]byte, LengthOfStringMultiMap(map[string][]string{"hello": {"world"}})),
 			[]byte{
 				0, 1, // map length
 				0, 5, h, e, l, l, o, // key: hello
@@ -858,7 +858,7 @@ func TestWriteStringMultiMap(t *testing.T) {
 		{
 			"multimap 1 key 2 values",
 			map[string][]string{"hello": {"world", "mundo"}},
-			make([]byte, SizeOfStringMultiMap(map[string][]string{"hello": {"world", "mundo"}})),
+			make([]byte, LengthOfStringMultiMap(map[string][]string{"hello": {"world", "mundo"}})),
 			[]byte{
 				0, 1, // map length
 				0, 5, h, e, l, l, o, // key: hello
@@ -873,7 +873,7 @@ func TestWriteStringMultiMap(t *testing.T) {
 		{
 			"cannot write map length",
 			map[string][]string{},
-			make([]byte, SizeOfShort-1),
+			make([]byte, LengthOfShort-1),
 			[]byte{0},
 			[]byte{0},
 			fmt.Errorf("cannot write [string multimap] length: %w",
@@ -882,7 +882,7 @@ func TestWriteStringMultiMap(t *testing.T) {
 		{
 			"cannot write key length",
 			map[string][]string{"hello": {"world"}},
-			make([]byte, SizeOfShort+SizeOfShort-1),
+			make([]byte, LengthOfShort+LengthOfShort-1),
 			[]byte{0, 1, 0},
 			[]byte{0},
 			fmt.Errorf("cannot write [string multimap] key: %w",
@@ -892,7 +892,7 @@ func TestWriteStringMultiMap(t *testing.T) {
 		{
 			"cannot write key",
 			map[string][]string{"hello": {"world"}},
-			make([]byte, SizeOfShort+SizeOfString("hello")-1),
+			make([]byte, LengthOfShort+LengthOfString("hello")-1),
 			[]byte{0, 1, 0, 5, 0, 0, 0, 0},
 			[]byte{0, 0, 0, 0},
 			fmt.Errorf("cannot write [string multimap] key: %w",
@@ -901,7 +901,7 @@ func TestWriteStringMultiMap(t *testing.T) {
 		{
 			"cannot write list length",
 			map[string][]string{"hello": {"world"}},
-			make([]byte, SizeOfShort+SizeOfString("hello")+SizeOfShort-1),
+			make([]byte, LengthOfShort+LengthOfString("hello")+LengthOfShort-1),
 			[]byte{0, 1, 0, 5, h, e, l, l, o, 0},
 			[]byte{0},
 			fmt.Errorf("cannot write [string multimap] value: %w",
@@ -911,7 +911,7 @@ func TestWriteStringMultiMap(t *testing.T) {
 		{
 			"cannot write element length",
 			map[string][]string{"hello": {"world"}},
-			make([]byte, SizeOfShort+SizeOfString("hello")+SizeOfShort+SizeOfShort-1),
+			make([]byte, LengthOfShort+LengthOfString("hello")+LengthOfShort+LengthOfShort-1),
 			[]byte{0, 1, 0, 5, h, e, l, l, o, 0, 1, 0},
 			[]byte{0},
 			fmt.Errorf("cannot write [string multimap] value: %w",
@@ -922,7 +922,7 @@ func TestWriteStringMultiMap(t *testing.T) {
 		{
 			"cannot write list element",
 			map[string][]string{"hello": {"world"}},
-			make([]byte, SizeOfShort+SizeOfString("hello")+SizeOfShort+SizeOfString("world")-1),
+			make([]byte, LengthOfShort+LengthOfString("hello")+LengthOfShort+LengthOfString("world")-1),
 			[]byte{0, 1, 0, 5, h, e, l, l, o, 0, 1, 0, 5, 0, 0, 0, 0},
 			[]byte{0, 0, 0, 0},
 			fmt.Errorf(

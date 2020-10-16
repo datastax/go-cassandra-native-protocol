@@ -96,22 +96,22 @@ func (c EventCodec) Encode(msg message.Message, dest []byte, version cassandrapr
 
 func (c EventCodec) EncodedSize(msg message.Message, version cassandraprotocol.ProtocolVersion) (int, error) {
 	event := msg.(*message.Event)
-	size := primitives.SizeOfString(event.Type)
+	size := primitives.LengthOfString(event.Type)
 	switch event.Type {
 	case cassandraprotocol.EventTypeSchemaChange:
 		sce, ok := msg.(*message.SchemaChangeEvent)
 		if !ok {
 			return -1, errors.New(fmt.Sprintf("expected SchemaChangeEvent struct, got %T", sce))
 		}
-		size += primitives.SizeOfString(sce.ChangeType)
-		size += primitives.SizeOfString(sce.Target)
-		size += primitives.SizeOfString(sce.Keyspace)
+		size += primitives.LengthOfString(sce.ChangeType)
+		size += primitives.LengthOfString(sce.Target)
+		size += primitives.LengthOfString(sce.Keyspace)
 		switch sce.Target {
 		case cassandraprotocol.SchemaChangeTargetKeyspace:
 		case cassandraprotocol.SchemaChangeTargetTable:
 			fallthrough
 		case cassandraprotocol.SchemaChangeTargetType:
-			size += primitives.SizeOfString(sce.Object)
+			size += primitives.LengthOfString(sce.Object)
 			break
 		case cassandraprotocol.SchemaChangeTargetAggregate:
 			fallthrough
@@ -119,8 +119,8 @@ func (c EventCodec) EncodedSize(msg message.Message, version cassandraprotocol.P
 			if version < cassandraprotocol.ProtocolVersion4 {
 				return -1, errors.New(fmt.Sprintf("%s schema change events are not supported in protocol version %d", sce.Target, version))
 			}
-			size += primitives.SizeOfString(sce.Object)
-			size += primitives.SizeOfStringList(sce.Arguments)
+			size += primitives.LengthOfString(sce.Object)
+			size += primitives.LengthOfStringList(sce.Arguments)
 		default:
 			return -1, errors.New(fmt.Sprintf("unknown schema change target: " + sce.Target))
 		}
@@ -130,16 +130,16 @@ func (c EventCodec) EncodedSize(msg message.Message, version cassandraprotocol.P
 		if !ok {
 			return -1, errors.New(fmt.Sprintf("expected StatusChangeEvent struct, got %T", sce))
 		}
-		size += primitives.SizeOfString(sce.ChangeType)
-		size += primitives.SizeOfInet(sce.Address)
+		size += primitives.LengthOfString(sce.ChangeType)
+		size += primitives.LengthOfInet(sce.Address)
 		return size, nil
 	case cassandraprotocol.EventTypeTopologyChange:
 		tce, ok := msg.(*message.TopologyChangeEvent)
 		if !ok {
 			return -1, errors.New(fmt.Sprintf("expected TopologyChangeEvent struct, got %T", tce))
 		}
-		size += primitives.SizeOfString(tce.ChangeType)
-		size += primitives.SizeOfInet(tce.Address)
+		size += primitives.LengthOfString(tce.ChangeType)
+		size += primitives.LengthOfInet(tce.Address)
 		return size, nil
 	}
 	return -1, errors.New("unknown event type: " + event.Type)

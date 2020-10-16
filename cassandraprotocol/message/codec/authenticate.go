@@ -16,7 +16,7 @@ func (c AuthenticateCodec) Encode(msg message.Message, dest []byte, version cass
 
 func (c AuthenticateCodec) EncodedSize(msg message.Message, version cassandraprotocol.ProtocolVersion) (int, error) {
 	authenticate := msg.(*message.Authenticate)
-	return primitives.SizeOfString(authenticate.Authenticator), nil
+	return primitives.LengthOfString(authenticate.Authenticator), nil
 }
 
 func (c AuthenticateCodec) Decode(source []byte, version cassandraprotocol.ProtocolVersion) (message.Message, error) {

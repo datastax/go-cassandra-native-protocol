@@ -60,13 +60,13 @@ func (c *Codec) Encode(frame *Frame) ([]byte, error) {
 		// No compression: we can optimize and do everything with a single allocation
 		messageSize, _ := encoder.EncodedSize(msg, version)
 		if frame.TracingId != nil {
-			messageSize += primitives.SizeOfUuid
+			messageSize += primitives.LengthOfUuid
 		}
 		if frame.CustomPayload != nil {
-			messageSize += primitives.SizeOfBytesMap(frame.CustomPayload)
+			messageSize += primitives.LengthOfBytesMap(frame.CustomPayload)
 		}
 		if frame.Warnings != nil {
-			messageSize += primitives.SizeOfStringList(frame.Warnings)
+			messageSize += primitives.LengthOfStringList(frame.Warnings)
 		}
 		encodedFrame := make([]byte, headerEncodedSize+messageSize)
 		remaining := encodedFrame
@@ -104,13 +104,13 @@ func (c *Codec) Encode(frame *Frame) ([]byte, error) {
 		// 1) Encode uncompressed message
 		uncompressedMessageSize, _ := encoder.EncodedSize(msg, version)
 		if frame.TracingId != nil {
-			uncompressedMessageSize += primitives.SizeOfUuid
+			uncompressedMessageSize += primitives.LengthOfUuid
 		}
 		if frame.CustomPayload != nil {
-			uncompressedMessageSize += primitives.SizeOfBytesMap(frame.CustomPayload)
+			uncompressedMessageSize += primitives.LengthOfBytesMap(frame.CustomPayload)
 		}
 		if frame.Warnings != nil {
-			uncompressedMessageSize += primitives.SizeOfStringList(frame.Warnings)
+			uncompressedMessageSize += primitives.LengthOfStringList(frame.Warnings)
 		}
 		uncompressedMessage := make([]byte, uncompressedMessageSize)
 		remaining := uncompressedMessage

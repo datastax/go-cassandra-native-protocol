@@ -16,7 +16,7 @@ func (c AuthSuccessCodec) Encode(msg message.Message, dest []byte, version cassa
 
 func (c AuthSuccessCodec) EncodedSize(msg message.Message, version cassandraprotocol.ProtocolVersion) (int, error) {
 	authSuccess := msg.(*message.AuthSuccess)
-	return primitives.SizeOfBytes(authSuccess.Token), nil
+	return primitives.LengthOfBytes(authSuccess.Token), nil
 }
 
 func (c AuthSuccessCodec) Decode(source []byte, version cassandraprotocol.ProtocolVersion) (message.Message, error) {
