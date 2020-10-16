@@ -1,4 +1,4 @@
-package primitive
+package primitives
 
 import (
 	"encoding/binary"
@@ -160,13 +160,13 @@ func SizeOfLongString(s string) int {
 // [string list]
 
 func ReadStringList(source []byte) (decoded []string, remaining []byte, err error) {
-	var size uint16
-	size, source, err = ReadShort(source)
+	var length uint16
+	length, source, err = ReadShort(source)
 	if err != nil {
 		return nil, source, fmt.Errorf("cannot read [string list] length: %w", err)
 	}
-	decoded = make([]string, size)
-	for i := uint16(0); i < size; i++ {
+	decoded = make([]string, length)
+	for i := uint16(0); i < length; i++ {
 		var str string
 		str, source, err = ReadString(source)
 		if err != nil {
@@ -193,11 +193,11 @@ func WriteStringList(list []string, dest []byte) (remaining []byte, err error) {
 }
 
 func SizeOfStringList(list []string) int {
-	size := SizeOfShort
+	length := SizeOfShort
 	for _, s := range list {
-		size += SizeOfString(s)
+		length += SizeOfString(s)
 	}
-	return size
+	return length
 }
 
 // [bytes]
@@ -208,6 +208,9 @@ func ReadBytes(source []byte) (decoded []byte, remaining []byte, err error) {
 	if err != nil {
 		return nil, source, fmt.Errorf("cannot read [bytes] length: %w", err)
 	}
+	if length < 0 {
+		return nil, source, nil
+	}
 	if len(source) < int(length) {
 		return nil, source, errors.New("not enough bytes to read [bytes] content")
 	}
@@ -216,16 +219,24 @@ func ReadBytes(source []byte) (decoded []byte, remaining []byte, err error) {
 }
 
 func WriteBytes(b []byte, dest []byte) (remaining []byte, err error) {
-	length := len(b)
-	dest, err = WriteInt(int32(length), dest)
-	if err != nil {
-		return dest, fmt.Errorf("cannot write [bytes] length: %w", err)
+	if b == nil {
+		dest, err = WriteInt(-1, dest)
+		if err != nil {
+			return dest, fmt.Errorf("cannot write null [bytes]: %w", err)
+		}
+		return dest, nil
+	} else {
+		length := len(b)
+		dest, err = WriteInt(int32(length), dest)
+		if err != nil {
+			return dest, fmt.Errorf("cannot write [bytes] length: %w", err)
+		}
+		if cap(dest) < length {
+			return dest, errors.New("not enough capacity to write [bytes] content")
+		}
+		copy(dest, b)
+		return dest[length:], nil
 	}
-	if cap(dest) < length {
-		return dest, errors.New("not enough capacity to write [bytes] content")
-	}
-	copy(dest, b)
-	return dest[length:], nil
 }
 
 func SizeOfBytes(b []byte) int {
@@ -287,23 +298,23 @@ func WriteUuid(uuid *cassandraprotocol.UUID, dest []byte) (remaining []byte, err
 // [inet]
 
 func ReadInet(source []byte) (inet *cassandraprotocol.Inet, remaining []byte, err error) {
-	size, source, err := ReadByte(source)
+	length, source, err := ReadByte(source)
 	if err != nil {
 		return nil, source, fmt.Errorf("cannot read [inet] length: %w", err)
 	}
 	var addr net.IP
-	if size == net.IPv4len {
+	if length == net.IPv4len {
 		if len(source) < net.IPv4len {
 			return nil, source, errors.New("not enough bytes to read [inet] IPv4 content")
 		}
 		addr = net.IPv4(source[0], source[1], source[2], source[3])
-	} else if size == net.IPv6len {
+	} else if length == net.IPv6len {
 		if len(source) < net.IPv6len {
 			return nil, source, errors.New("not enough bytes to read [inet] IPv6 content")
 		}
 		addr = source[:net.IPv6len]
 	} else {
-		return nil, source, errors.New("unknown inet address size: " + string(size))
+		return nil, source, errors.New("unknown inet address length: " + string(length))
 	}
 	var port int32
 	port, source, err = ReadInt(source[4:])
@@ -317,30 +328,30 @@ func WriteInet(inet *cassandraprotocol.Inet, dest []byte) (remaining []byte, err
 	if inet == nil || inet.Addr == nil {
 		return dest, errors.New("cannot write nil as [inet]")
 	}
-	var size byte
+	var length byte
 	if inet.Addr.To4() != nil {
-		size = net.IPv4len
+		length = net.IPv4len
 	} else {
-		size = net.IPv6len
+		length = net.IPv6len
 	}
-	dest, err = WriteByte(size, dest)
+	dest, err = WriteByte(length, dest)
 	if err != nil {
 		return dest, fmt.Errorf("cannot write [inet] length: %w", err)
 	}
-	if size == net.IPv4len {
+	if length == net.IPv4len {
 		if cap(dest) < net.IPv4len {
 			return dest, errors.New("not enough capacity to write [inet] IPv4 content")
 		}
 		copy(dest, inet.Addr.To4())
 		dest = dest[net.IPv4len:]
-	} else if size == net.IPv6len {
+	} else if length == net.IPv6len {
 		if cap(dest) < net.IPv6len {
 			return dest, errors.New("not enough capacity to write [inet] IPv6 content")
 		}
 		copy(dest, inet.Addr.To16())
 		dest = dest[net.IPv6len:]
 	} else {
-		return dest, errors.New("wrong [inet] length: " + string(size))
+		return dest, errors.New("wrong [inet] length: " + string(length))
 	}
 	dest, err = WriteInt(inet.Port, dest)
 	if err != nil {
@@ -349,25 +360,25 @@ func WriteInet(inet *cassandraprotocol.Inet, dest []byte) (remaining []byte, err
 	return dest, nil
 }
 
-func SizeOfInet(inet *cassandraprotocol.Inet) (size int) {
+func SizeOfInet(inet *cassandraprotocol.Inet) (length int) {
 	if inet.Addr.To4() != nil {
-		size = net.IPv4len
+		length = net.IPv4len
 	} else {
-		size = net.IPv6len
+		length = net.IPv6len
 	}
-	return size + SizeOfInt
+	return length + SizeOfInt
 }
 
 // [string map]
 
 func ReadStringMap(source []byte) (decoded map[string]string, remaining []byte, err error) {
-	var size uint16
-	size, source, err = ReadShort(source)
+	var length uint16
+	length, source, err = ReadShort(source)
 	if err != nil {
 		return nil, source, fmt.Errorf("cannot read [string map] length: %w", err)
 	}
-	stringMap := make(map[string]string, size)
-	for i := uint16(0); i < size; i++ {
+	stringMap := make(map[string]string, length)
+	for i := uint16(0); i < length; i++ {
 		var key string
 		var value string
 		key, source, err = ReadString(source)
@@ -402,23 +413,23 @@ func WriteStringMap(m map[string]string, dest []byte) (remaining []byte, err err
 }
 
 func SizeOfStringMap(m map[string]string) int {
-	size := SizeOfShort
+	length := SizeOfShort
 	for key, value := range m {
-		size += SizeOfString(key) + SizeOfString(value)
+		length += SizeOfString(key) + SizeOfString(value)
 	}
-	return size
+	return length
 }
 
 // [string multimap]
 
 func ReadStringMultiMap(source []byte) (decoded map[string][]string, remaining []byte, err error) {
-	var size uint16
-	size, source, err = ReadShort(source)
+	var length uint16
+	length, source, err = ReadShort(source)
 	if err != nil {
 		return nil, source, fmt.Errorf("cannot read [string multimap] length: %w", err)
 	}
-	stringMap := make(map[string][]string, size)
-	for i := uint16(0); i < size; i++ {
+	stringMap := make(map[string][]string, length)
+	for i := uint16(0); i < length; i++ {
 		var key string
 		var value []string
 		key, source, err = ReadString(source)
@@ -453,23 +464,23 @@ func WriteStringMultiMap(m map[string][]string, dest []byte) (remaining []byte, 
 }
 
 func SizeOfStringMultiMap(m map[string][]string) int {
-	size := SizeOfShort
+	length := SizeOfShort
 	for key, value := range m {
-		size += SizeOfString(key) + SizeOfStringList(value)
+		length += SizeOfString(key) + SizeOfStringList(value)
 	}
-	return size
+	return length
 }
 
 // [bytes map]
 
 func ReadBytesMap(source []byte) (decoded map[string][]byte, remaining []byte, err error) {
-	var size uint16
-	size, source, err = ReadShort(source)
+	var length uint16
+	length, source, err = ReadShort(source)
 	if err != nil {
 		return nil, source, fmt.Errorf("cannot read [bytes map] length: %w", err)
 	}
-	bytesMap := make(map[string][]byte, size)
-	for i := uint16(0); i < size; i++ {
+	bytesMap := make(map[string][]byte, length)
+	for i := uint16(0); i < length; i++ {
 		var key string
 		var value []byte
 		key, source, err = ReadString(source)
@@ -504,9 +515,9 @@ func WriteBytesMap(m map[string][]byte, dest []byte) (remaining []byte, err erro
 }
 
 func SizeOfBytesMap(m map[string][]byte) int {
-	size := SizeOfShort
+	length := SizeOfShort
 	for key, value := range m {
-		size += SizeOfString(key) + SizeOfBytes(value)
+		length += SizeOfString(key) + SizeOfBytes(value)
 	}
-	return size
+	return length
 }

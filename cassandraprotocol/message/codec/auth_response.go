@@ -3,24 +3,24 @@ package codec
 import (
 	"go-cassandra-native-protocol/cassandraprotocol"
 	"go-cassandra-native-protocol/cassandraprotocol/message"
-	"go-cassandra-native-protocol/cassandraprotocol/primitive"
+	"go-cassandra-native-protocol/cassandraprotocol/primitives"
 )
 
 type AuthResponseCodec struct{}
 
 func (c AuthResponseCodec) Encode(msg message.Message, dest []byte, version cassandraprotocol.ProtocolVersion) error {
 	authResponse := msg.(*message.AuthResponse)
-	_, err := primitive.WriteBytes(authResponse.Token, dest)
+	_, err := primitives.WriteBytes(authResponse.Token, dest)
 	return err
 }
 
 func (c AuthResponseCodec) EncodedSize(msg message.Message, version cassandraprotocol.ProtocolVersion) (int, error) {
 	authResponse := msg.(*message.AuthResponse)
-	return primitive.SizeOfBytes(authResponse.Token), nil
+	return primitives.SizeOfBytes(authResponse.Token), nil
 }
 
 func (c AuthResponseCodec) Decode(source []byte, version cassandraprotocol.ProtocolVersion) (message.Message, error) {
-	token, _, err := primitive.ReadBytes(source)
+	token, _, err := primitives.ReadBytes(source)
 	if err != nil {
 		return nil, err
 	}

@@ -23,6 +23,21 @@ func (u UUID) String() string {
 	return hex.EncodeToString(u[:])
 }
 
+// Models the [value] protocol primitive structure
+type Value struct {
+	Type     ValueType
+	Contents []byte
+}
+
+type ValueType = int32
+
+const (
+	ValueTypeRegular = ValueType(0)
+	ValueTypeNull    = ValueType(-1)
+	ValueTypeUnset   = ValueType(-2)
+	ValueTypeError   = ValueType(-3)
+)
+
 type ProtocolVersion = uint8
 
 const (

@@ -1,4 +1,4 @@
-package primitive
+package primitives
 
 import (
 	"errors"
@@ -557,6 +557,7 @@ func TestReadBytes(t *testing.T) {
 			fmt.Errorf("not enough bytes to read [bytes] content"),
 		},
 	}
+	// TODO test read nil [bytes]
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			actual, remaining, err := ReadBytes(tt.source)
@@ -617,6 +618,7 @@ func TestWriteBytes(t *testing.T) {
 			fmt.Errorf("not enough capacity to write [bytes] content"),
 		},
 	}
+	// TODO test write nil [bytes]
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			remaining, err := WriteBytes(tt.input, tt.dest)

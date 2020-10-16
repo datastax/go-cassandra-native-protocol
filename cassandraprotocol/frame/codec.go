@@ -7,7 +7,7 @@ import (
 	"go-cassandra-native-protocol/cassandraprotocol/compression"
 	"go-cassandra-native-protocol/cassandraprotocol/message"
 	"go-cassandra-native-protocol/cassandraprotocol/message/codec"
-	"go-cassandra-native-protocol/cassandraprotocol/primitive"
+	"go-cassandra-native-protocol/cassandraprotocol/primitives"
 )
 
 type Codec struct {
@@ -60,13 +60,13 @@ func (c *Codec) Encode(frame *Frame) ([]byte, error) {
 		// No compression: we can optimize and do everything with a single allocation
 		messageSize, _ := encoder.EncodedSize(msg, version)
 		if frame.TracingId != nil {
-			messageSize += primitive.SizeOfUuid
+			messageSize += primitives.SizeOfUuid
 		}
 		if frame.CustomPayload != nil {
-			messageSize += primitive.SizeOfBytesMap(frame.CustomPayload)
+			messageSize += primitives.SizeOfBytesMap(frame.CustomPayload)
 		}
 		if frame.Warnings != nil {
-			messageSize += primitive.SizeOfStringList(frame.Warnings)
+			messageSize += primitives.SizeOfStringList(frame.Warnings)
 		}
 		encodedFrame := make([]byte, headerEncodedSize+messageSize)
 		remaining := encodedFrame
@@ -76,19 +76,19 @@ func (c *Codec) Encode(frame *Frame) ([]byte, error) {
 			return nil, err
 		}
 		if msg.IsResponse() && frame.TracingId != nil {
-			remaining, err = primitive.WriteUuid(frame.TracingId, remaining)
+			remaining, err = primitives.WriteUuid(frame.TracingId, remaining)
 			if err != nil {
 				return nil, err
 			}
 		}
 		if frame.CustomPayload != nil {
-			remaining, err = primitive.WriteBytesMap(frame.CustomPayload, remaining)
+			remaining, err = primitives.WriteBytesMap(frame.CustomPayload, remaining)
 			if err != nil {
 				return nil, err
 			}
 		}
 		if frame.Warnings != nil {
-			remaining, err = primitive.WriteStringList(frame.Warnings, remaining)
+			remaining, err = primitives.WriteStringList(frame.Warnings, remaining)
 			if err != nil {
 				return nil, err
 			}
@@ -104,31 +104,31 @@ func (c *Codec) Encode(frame *Frame) ([]byte, error) {
 		// 1) Encode uncompressed message
 		uncompressedMessageSize, _ := encoder.EncodedSize(msg, version)
 		if frame.TracingId != nil {
-			uncompressedMessageSize += primitive.SizeOfUuid
+			uncompressedMessageSize += primitives.SizeOfUuid
 		}
 		if frame.CustomPayload != nil {
-			uncompressedMessageSize += primitive.SizeOfBytesMap(frame.CustomPayload)
+			uncompressedMessageSize += primitives.SizeOfBytesMap(frame.CustomPayload)
 		}
 		if frame.Warnings != nil {
-			uncompressedMessageSize += primitive.SizeOfStringList(frame.Warnings)
+			uncompressedMessageSize += primitives.SizeOfStringList(frame.Warnings)
 		}
 		uncompressedMessage := make([]byte, uncompressedMessageSize)
 		remaining := uncompressedMessage
 		var err error
 		if frame.TracingId != nil {
-			remaining, err = primitive.WriteUuid(frame.TracingId, remaining)
+			remaining, err = primitives.WriteUuid(frame.TracingId, remaining)
 			if err != nil {
 				return nil, err
 			}
 		}
 		if frame.CustomPayload != nil {
-			remaining, err = primitive.WriteBytesMap(frame.CustomPayload, remaining)
+			remaining, err = primitives.WriteBytesMap(frame.CustomPayload, remaining)
 			if err != nil {
 				return nil, err
 			}
 		}
 		if frame.Warnings != nil {
-			remaining, err = primitive.WriteStringList(frame.Warnings, remaining)
+			remaining, err = primitives.WriteStringList(frame.Warnings, remaining)
 			if err != nil {
 				return nil, err
 			}
@@ -161,23 +161,23 @@ func encodeHeader(frame *Frame, flags cassandraprotocol.HeaderFlag, messageSize 
 		versionAndDirection |= 0b1000_0000
 	}
 	var err error
-	dest, err = primitive.WriteByte(versionAndDirection, dest)
+	dest, err = primitives.WriteByte(versionAndDirection, dest)
 	if err != nil {
 		return nil, err
 	}
-	dest, err = primitive.WriteByte(uint8(flags), dest)
+	dest, err = primitives.WriteByte(uint8(flags), dest)
 	if err != nil {
 		return nil, err
 	}
-	dest, err = primitive.WriteShort(uint16(frame.StreamId)&0xFFFF, dest)
+	dest, err = primitives.WriteShort(uint16(frame.StreamId)&0xFFFF, dest)
 	if err != nil {
 		return nil, err
 	}
-	dest, err = primitive.WriteByte(uint8(frame.Message.GetOpCode()), dest)
+	dest, err = primitives.WriteByte(uint8(frame.Message.GetOpCode()), dest)
 	if err != nil {
 		return nil, err
 	}
-	dest, err = primitive.WriteInt(int32(messageSize), dest)
+	dest, err = primitives.WriteInt(int32(messageSize), dest)
 	if err != nil {
 		return nil, err
 	}
@@ -187,30 +187,30 @@ func encodeHeader(frame *Frame, flags cassandraprotocol.HeaderFlag, messageSize 
 func (c *Codec) Decode(source []byte) (*Frame, error) {
 	var b byte
 	var err error
-	b, source, err = primitive.ReadByte(source)
+	b, source, err = primitives.ReadByte(source)
 	if err != nil {
 		return nil, err
 	}
 	isResponse := (b & 0b1000_0000) == 0b1000_0000
 	version := cassandraprotocol.ProtocolVersion(b & 0b0111_1111)
-	b, source, err = primitive.ReadByte(source)
+	b, source, err = primitives.ReadByte(source)
 	if err != nil {
 		return nil, err
 	}
 	flags := cassandraprotocol.HeaderFlag(b)
 	//beta := flags.contains(HeaderFlagUseBeta)
 	var streamId uint16
-	streamId, source, err = primitive.ReadShort(source)
+	streamId, source, err = primitives.ReadShort(source)
 	if err != nil {
 		return nil, err
 	}
-	b, source, err = primitive.ReadByte(source)
+	b, source, err = primitives.ReadByte(source)
 	if err != nil {
 		return nil, err
 	}
 	opCode := cassandraprotocol.OpCode(b)
 	var i int32
-	i, source, err = primitive.ReadInt(source)
+	i, source, err = primitives.ReadInt(source)
 	if err != nil {
 		return nil, err
 	}
@@ -232,7 +232,7 @@ func (c *Codec) Decode(source []byte) (*Frame, error) {
 
 	var tracingId *cassandraprotocol.UUID
 	if isResponse && (flags&cassandraprotocol.HeaderFlagTracing > 0) {
-		tracingId, source, err = primitive.ReadUuid(source)
+		tracingId, source, err = primitives.ReadUuid(source)
 		if err != nil {
 			return nil, err
 		}
@@ -240,7 +240,7 @@ func (c *Codec) Decode(source []byte) (*Frame, error) {
 
 	var customPayload map[string][]byte
 	if flags&cassandraprotocol.HeaderFlagCustomPayload > 0 {
-		customPayload, source, err = primitive.ReadBytesMap(source)
+		customPayload, source, err = primitives.ReadBytesMap(source)
 		if err != nil {
 			return nil, err
 		}
@@ -248,7 +248,7 @@ func (c *Codec) Decode(source []byte) (*Frame, error) {
 
 	var warnings []string
 	if isResponse && (flags&cassandraprotocol.HeaderFlagWarning > 0) {
-		warnings, source, err = primitive.ReadStringList(source)
+		warnings, source, err = primitives.ReadStringList(source)
 		if err != nil {
 			return nil, err
 		}
