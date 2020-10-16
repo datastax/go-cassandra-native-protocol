@@ -470,6 +470,14 @@ func TestWriteStringList(t *testing.T) {
 			nil,
 		},
 		{
+			"nil string list",
+			nil,
+			make([]byte, LengthOfStringList(nil)),
+			[]byte{0, 0},
+			[]byte{},
+			nil,
+		},
+		{
 			"singleton string list",
 			[]string{"hello"},
 			make([]byte, LengthOfStringList([]string{"hello"})),
@@ -540,6 +548,7 @@ func TestReadBytes(t *testing.T) {
 		err       error
 	}{
 		{"empty bytes", []byte{0, 0, 0, 0}, []byte{}, []byte{}, nil},
+		{"nil bytes", []byte{0xff, 0xff, 0xff, 0xff}, nil, []byte{}, nil},
 		{"singleton bytes", []byte{0, 0, 0, 1, 1}, []byte{1}, []byte{}, nil},
 		{"simple bytes", []byte{0, 0, 0, 2, 1, 2}, []byte{1, 2}, []byte{}, nil},
 		{
@@ -557,7 +566,6 @@ func TestReadBytes(t *testing.T) {
 			fmt.Errorf("not enough bytes to read [bytes] content"),
 		},
 	}
-	// TODO test read nil [bytes]
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			actual, remaining, err := ReadBytes(tt.source)
@@ -582,6 +590,14 @@ func TestWriteBytes(t *testing.T) {
 			[]byte{},
 			make([]byte, LengthOfBytes([]byte{})),
 			[]byte{0, 0, 0, 0},
+			[]byte{},
+			nil,
+		},
+		{
+			"nil bytes",
+			nil,
+			make([]byte, LengthOfBytes([]byte{})),
+			[]byte{0xff, 0xff, 0xff, 0xff},
 			[]byte{},
 			nil,
 		},
@@ -678,6 +694,15 @@ func TestWriteShortBytes(t *testing.T) {
 			"empty short bytes",
 			[]byte{},
 			make([]byte, LengthOfShortBytes([]byte{})),
+			[]byte{0, 0},
+			[]byte{},
+			nil,
+		},
+		// not officially allowed by the specs, but better safe than sorry
+		{
+			"nil short bytes",
+			nil,
+			make([]byte, LengthOfShortBytes(nil)),
 			[]byte{0, 0},
 			[]byte{},
 			nil,
@@ -838,6 +863,15 @@ func TestWriteStringMultiMap(t *testing.T) {
 			"empty string multimap",
 			map[string][]string{},
 			make([]byte, LengthOfStringMultiMap(map[string][]string{})),
+			[]byte{0, 0},
+			[]byte{},
+			nil,
+		},
+		// not officially allowed by the specs, but better safe than sorry
+		{
+			"nil string multimap",
+			nil,
+			make([]byte, LengthOfStringMultiMap(nil)),
 			[]byte{0, 0},
 			[]byte{},
 			nil,
