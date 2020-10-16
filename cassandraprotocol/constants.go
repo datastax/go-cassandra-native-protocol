@@ -197,34 +197,36 @@ const (
 	BatchTypeCounter  = BatchType(0x02)
 )
 
-type ByteFlag = uint8
+type HeaderFlag = uint8
 
 const (
-	HeaderFlagCompressed    = ByteFlag(0x01)
-	HeaderFlagTracing       = ByteFlag(0x02)
-	HeaderFlagCustomPayload = ByteFlag(0x04)
-	HeaderFlagWarning       = ByteFlag(0x08)
-	HeaderFlagUseBeta       = ByteFlag(0x10)
+	HeaderFlagCompressed    = HeaderFlag(0x01)
+	HeaderFlagTracing       = HeaderFlag(0x02)
+	HeaderFlagCustomPayload = HeaderFlag(0x04)
+	HeaderFlagWarning       = HeaderFlag(0x08)
+	HeaderFlagUseBeta       = HeaderFlag(0x10)
 )
 
-type IntFlag = uint32
+// query flags were [byte] in v3 and v4, but changed to [int] in v5
+type QueryFlag = int32
 
 const (
-	// query flags are uint8 in v3 and v4
-	QueryFlagValues            = IntFlag(0x00000001)
-	QueryFlagSkipMetadata      = IntFlag(0x00000002)
-	QueryFlagPageSize          = IntFlag(0x00000004)
-	QueryFlagPagingState       = IntFlag(0x00000008)
-	QueryFlagSerialConsistency = IntFlag(0x00000010)
-	QueryFlagDefaultTimestamp  = IntFlag(0x00000020)
-	QueryFlagValueNames        = IntFlag(0x00000040)
-	QueryFlagWithKeyspace      = IntFlag(0x00000080)
-	QueryFlagNowInSeconds      = IntFlag(0x00000100)
+	QueryFlagValues            = QueryFlag(0x00000001)
+	QueryFlagSkipMetadata      = QueryFlag(0x00000002)
+	QueryFlagPageSize          = QueryFlag(0x00000004)
+	QueryFlagPagingState       = QueryFlag(0x00000008)
+	QueryFlagSerialConsistency = QueryFlag(0x00000010)
+	QueryFlagDefaultTimestamp  = QueryFlag(0x00000020)
+	QueryFlagValueNames        = QueryFlag(0x00000040)
+	QueryFlagWithKeyspace      = QueryFlag(0x00000080)
+	QueryFlagNowInSeconds      = QueryFlag(0x00000100)
 )
 
+type RowsFlag = int32
+
 const (
-	RowsFlagGlobalTablesSpec = IntFlag(0x00000001)
-	RowsFlagHasMorePages     = IntFlag(0x00000002)
-	RowsFlagNoMetadata       = IntFlag(0x00000004)
-	RowsFlagMetadataChanged  = IntFlag(0x00000008)
+	RowsFlagGlobalTablesSpec = RowsFlag(0x00000001)
+	RowsFlagHasMorePages     = RowsFlag(0x00000002)
+	RowsFlagNoMetadata       = RowsFlag(0x00000004)
+	RowsFlagMetadataChanged  = RowsFlag(0x00000008)
 )

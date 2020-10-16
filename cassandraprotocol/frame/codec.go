@@ -38,7 +38,7 @@ func (c *Codec) Encode(frame *Frame) ([]byte, error) {
 
 	compress := c.Compressor != nil && opCode != cassandraprotocol.OpCodeStartup && opCode != cassandraprotocol.OpCodeOptions
 
-	var flags cassandraprotocol.ByteFlag = 0
+	var flags cassandraprotocol.HeaderFlag = 0
 
 	if compress {
 		flags |= cassandraprotocol.HeaderFlagCompressed
@@ -155,7 +155,7 @@ func (c *Codec) Encode(frame *Frame) ([]byte, error) {
 	}
 }
 
-func encodeHeader(frame *Frame, flags cassandraprotocol.ByteFlag, messageSize int, dest []byte) ([]byte, error) {
+func encodeHeader(frame *Frame, flags cassandraprotocol.HeaderFlag, messageSize int, dest []byte) ([]byte, error) {
 	versionAndDirection := frame.Version
 	if frame.Message.IsResponse() {
 		versionAndDirection |= 0b1000_0000
@@ -197,7 +197,7 @@ func (c *Codec) Decode(source []byte) (*Frame, error) {
 	if err != nil {
 		return nil, err
 	}
-	flags := cassandraprotocol.ByteFlag(b)
+	flags := cassandraprotocol.HeaderFlag(b)
 	//beta := flags.contains(HeaderFlagUseBeta)
 	var streamId uint16
 	streamId, source, err = primitive.ReadShort(source)
