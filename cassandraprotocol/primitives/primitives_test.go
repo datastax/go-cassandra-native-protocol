@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"go-cassandra-native-protocol/cassandraprotocol"
+	"net"
 	"testing"
 )
 
@@ -635,7 +636,6 @@ func TestWriteBytes(t *testing.T) {
 			fmt.Errorf("not enough capacity to write [bytes] content"),
 		},
 	}
-	// TODO test write nil [bytes]
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			remaining, err := WriteBytes(tt.input, tt.dest)
@@ -1069,6 +1069,209 @@ func TestWriteUuid(t *testing.T) {
 			remaining, err := WriteUuid(tt.input, tt.dest)
 			assert.Equal(t, tt.expected, tt.dest)
 			assert.Equal(t, tt.remaining, remaining)
+			assert.Equal(t, tt.err, err)
+		})
+	}
+}
+
+var inet4 = cassandraprotocol.Inet{
+	Addr: net.IPv4(192, 168, 1, 1),
+	Port: 9042,
+}
+var inet4Bytes = []byte{
+	4,              // length of IP
+	192, 168, 1, 1, // IP
+	0, 0, 0x23, 0x52, //port
+}
+
+var inet6 = cassandraprotocol.Inet{
+	// 2001:0db8:85a3:0000:0000:8a2e:0370:7334
+	Addr: net.IP{0x20, 0x01, 0x0d, 0xb8, 0x85, 0xa3, 0x00, 0x00, 0x00, 0x00, 0x8a, 0x2e, 0x03, 0x70, 0x73, 0x34},
+	Port: 9042,
+}
+var inet6Bytes = []byte{
+	16,                                                                                             // length of IP
+	0x20, 0x01, 0x0d, 0xb8, 0x85, 0xa3, 0x00, 0x00, 0x00, 0x00, 0x8a, 0x2e, 0x03, 0x70, 0x73, 0x34, // IP
+	0, 0, 0x23, 0x52, //port
+}
+
+func TestReadInet(t *testing.T) {
+	tests := []struct {
+		name      string
+		source    []byte
+		expected  *cassandraprotocol.Inet
+		remaining []byte
+		err       error
+	}{
+		{"IPv4 INET", inet4Bytes[:], &inet4, []byte{}, nil},
+		{"IPv6 INET", inet6Bytes[:], &inet6, []byte{}, nil},
+		{"INET with remaining", append(inet4Bytes[:], 1, 2, 3, 4), &inet4, []byte{1, 2, 3, 4}, nil},
+		{
+			"cannot read INET length",
+			[]byte{},
+			nil,
+			[]byte{},
+			fmt.Errorf("cannot read [inet] length: %w", errors.New("not enough bytes to read [byte]")),
+		},
+		{
+			"not enough bytes to read [inet] IPv4 content",
+			[]byte{4, 192, 168, 1},
+			nil,
+			[]byte{192, 168, 1},
+			errors.New("not enough bytes to read [inet] IPv4 content"),
+		},
+		{
+			"not enough bytes to read [inet] IPv6 content",
+			[]byte{16, 0x20, 0x01, 0x0d, 0xb8, 0x85, 0xa3, 0x00, 0x00, 0x00, 0x00, 0x8a, 0x2e, 0x03, 0x70, 0x73},
+			nil,
+			[]byte{0x20, 0x01, 0x0d, 0xb8, 0x85, 0xa3, 0x00, 0x00, 0x00, 0x00, 0x8a, 0x2e, 0x03, 0x70, 0x73},
+			errors.New("not enough bytes to read [inet] IPv6 content"),
+		},
+		{
+			"cannot read [inet] port number",
+			[]byte{4, 192, 168, 1, 1, 0, 0, 0},
+			nil,
+			[]byte{0, 0, 0},
+			fmt.Errorf("cannot read [inet] port number: %w", errors.New("not enough bytes to read [int]")),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual, remaining, err := ReadInet(tt.source)
+			assert.Equal(t, tt.expected, actual)
+			assert.Equal(t, tt.remaining, remaining)
+			assert.Equal(t, tt.err, err)
+		})
+	}
+}
+
+var inet4Length, _ = LengthOfInet(&inet4)
+var inet6Length, _ = LengthOfInet(&inet6)
+
+func TestWriteInet(t *testing.T) {
+	tests := []struct {
+		name      string
+		input     *cassandraprotocol.Inet
+		dest      []byte
+		expected  []byte
+		remaining []byte
+		err       error
+	}{
+		{
+			"IPv4 INET",
+			&inet4,
+			make([]byte, inet4Length),
+			inet4Bytes,
+			[]byte{},
+			nil,
+		},
+		{
+			"IPv6 INET",
+			&inet6,
+			make([]byte, inet6Length),
+			inet6Bytes,
+			[]byte{},
+			nil,
+		},
+		{
+			"INET with remaining",
+			&inet4,
+			make([]byte, inet4Length+1),
+			append(inet4Bytes, 0),
+			[]byte{0},
+			nil,
+		},
+		{
+			"cannot write nil INET",
+			nil,
+			[]byte{},
+			[]byte{},
+			[]byte{},
+			errors.New("cannot write nil as [inet]"),
+		},
+		{
+			"cannot write INET length",
+			&inet4,
+			[]byte{},
+			[]byte{},
+			[]byte{},
+			fmt.Errorf("cannot write [inet] length: %w", errors.New("not enough capacity to write [byte]")),
+		},
+		{
+			"not enough capacity to write [inet] IPv4 content",
+			&inet4,
+			make([]byte, inet4Length-LengthOfInt-1),
+			[]byte{4, 0, 0, 0},
+			[]byte{0, 0, 0},
+			errors.New("not enough capacity to write [inet] IPv4 content"),
+		},
+		{
+			"not enough capacity to write [inet] IPv6 content",
+			&inet6,
+			make([]byte, inet6Length-LengthOfInt-1),
+			[]byte{16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+			[]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+			errors.New("not enough capacity to write [inet] IPv6 content"),
+		},
+		{
+			"cannot write port number",
+			&inet6,
+			make([]byte, inet6Length-1),
+			[]byte{
+				16,                                                                                             // length of IP
+				0x20, 0x01, 0x0d, 0xb8, 0x85, 0xa3, 0x00, 0x00, 0x00, 0x00, 0x8a, 0x2e, 0x03, 0x70, 0x73, 0x34, // IP
+				0, 0, 0,
+			},
+			[]byte{0, 0, 0},
+			fmt.Errorf("cannot write [inet] port number: %w", errors.New("not enough capacity to write [int]")),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			remaining, err := WriteInet(tt.input, tt.dest)
+			assert.Equal(t, tt.expected, tt.dest)
+			assert.Equal(t, tt.remaining, remaining)
+			assert.Equal(t, tt.err, err)
+		})
+	}
+}
+
+func TestLengthOfInet(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    *cassandraprotocol.Inet
+		expected int
+		err      error
+	}{
+		{
+			"IPv4 INET",
+			&inet4,
+			LengthOfByte + net.IPv4len + LengthOfInt,
+			nil,
+		},
+		{
+			"IPv6 INET",
+			&inet6,
+			LengthOfByte + net.IPv6len + LengthOfInt,
+			nil,
+		},
+		{
+			"nil INET",
+			nil,
+			-1,
+			errors.New("cannot compute nil [inet] length"),
+		},
+		{
+			"nil INET addr",
+			&cassandraprotocol.Inet{},
+			-1,
+			errors.New("cannot compute nil [inet] length"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual, err := LengthOfInet(tt.input)
+			assert.Equal(t, tt.expected, actual)
 			assert.Equal(t, tt.err, err)
 		})
 	}
