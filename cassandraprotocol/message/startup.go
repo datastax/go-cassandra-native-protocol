@@ -3,6 +3,7 @@ package message
 import (
 	"fmt"
 	"go-cassandra-native-protocol/cassandraprotocol"
+	"go-cassandra-native-protocol/cassandraprotocol/primitives"
 )
 
 type Startup struct {
@@ -35,4 +36,23 @@ func (m Startup) String() string {
 	return fmt.Sprint("STARTUP ", m.Options)
 }
 
-// AUTHENTICATE
+type StartupCodec struct{}
+
+func (c StartupCodec) Encode(msg Message, dest []byte, _ cassandraprotocol.ProtocolVersion) error {
+	startup := msg.(*Startup)
+	_, err := primitives.WriteStringMap(startup.Options, dest)
+	return err
+}
+
+func (c StartupCodec) EncodedSize(msg Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
+	startup := msg.(*Startup)
+	return primitives.LengthOfStringMap(startup.Options), nil
+}
+
+func (c StartupCodec) Decode(source []byte, _ cassandraprotocol.ProtocolVersion) (Message, error) {
+	options, _, err := primitives.ReadStringMap(source)
+	if err != nil {
+		return nil, err
+	}
+	return NewStartupWithOptions(options), nil
+}

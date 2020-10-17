@@ -6,7 +6,6 @@ import (
 	"go-cassandra-native-protocol/cassandraprotocol"
 	"go-cassandra-native-protocol/cassandraprotocol/compression"
 	"go-cassandra-native-protocol/cassandraprotocol/message"
-	"go-cassandra-native-protocol/cassandraprotocol/message/codec"
 	"go-cassandra-native-protocol/cassandraprotocol/primitives"
 )
 
@@ -30,7 +29,7 @@ func (c *Codec) Encode(frame *Frame) ([]byte, error) {
 	}
 
 	opCode := msg.GetOpCode()
-	var encoder codec.MessageEncoder = findMessageCodec(opCode)
+	var encoder message.Encoder = findCodec(opCode)
 
 	if encoder == nil {
 		return nil, errors.New(fmt.Sprintf("unsupported opcode %d in protocol version %d", opCode, version))
@@ -254,7 +253,7 @@ func (c *Codec) Decode(source []byte) (*Frame, error) {
 		}
 	}
 
-	var decoder codec.MessageDecoder = findMessageCodec(opCode)
+	var decoder message.Decoder = findCodec(opCode)
 	if decoder == nil {
 		return nil, errors.New(fmt.Sprintf("Unsupported request opcode: %d in protocol version %d", opCode, version))
 	}
@@ -276,42 +275,42 @@ func (c *Codec) Decode(source []byte) (*Frame, error) {
 	return frame, nil
 }
 
-func findMessageCodec(opCode cassandraprotocol.OpCode) codec.MessageCodec {
+func findCodec(opCode cassandraprotocol.OpCode) message.Codec {
 	switch opCode {
 	// requests
 	case cassandraprotocol.OpCodeStartup:
-		return codec.StartupCodec{}
+		return message.StartupCodec{}
 	case cassandraprotocol.OpCodeOptions:
-		return codec.OptionsCodec{}
+		return message.OptionsCodec{}
 	case cassandraprotocol.OpCodeQuery:
-		return codec.QueryCodec{}
+		return message.QueryCodec{}
 	case cassandraprotocol.OpCodePrepare:
 		return nil // TODO
 	case cassandraprotocol.OpCodeExecute:
-		return codec.ExecuteCodec{}
+		return message.ExecuteCodec{}
 	case cassandraprotocol.OpCodeRegister:
-		return codec.RegisterCodec{}
+		return message.RegisterCodec{}
 	case cassandraprotocol.OpCodeBatch:
 		return nil // TODO
 	case cassandraprotocol.OpCodeAuthResponse:
-		return codec.AuthResponseCodec{}
+		return message.AuthResponseCodec{}
 	// responses
 	case cassandraprotocol.OpCodeError:
 		return nil // TODO
 	case cassandraprotocol.OpCodeReady:
-		return codec.ReadyCodec{}
+		return message.ReadyCodec{}
 	case cassandraprotocol.OpCodeAuthenticate:
-		return codec.AuthenticateCodec{}
+		return message.AuthenticateCodec{}
 	case cassandraprotocol.OpCodeSupported:
-		return codec.SupportedCodec{}
+		return message.SupportedCodec{}
 	case cassandraprotocol.OpCodeResult:
 		return nil // TODO
 	case cassandraprotocol.OpCodeEvent:
-		return codec.EventCodec{}
+		return message.EventCodec{}
 	case cassandraprotocol.OpCodeAuthChallenge:
-		return codec.AuthChallengeCodec{}
+		return message.AuthChallengeCodec{}
 	case cassandraprotocol.OpCodeAuthSuccess:
-		return codec.AuthSuccessCodec{}
+		return message.AuthSuccessCodec{}
 	}
 	return nil
 }
