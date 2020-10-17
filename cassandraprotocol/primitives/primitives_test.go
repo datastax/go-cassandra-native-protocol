@@ -751,246 +751,6 @@ func TestWriteShortBytes(t *testing.T) {
 	}
 }
 
-func TestReadStringMultiMap(t *testing.T) {
-	tests := []struct {
-		name      string
-		source    []byte
-		expected  map[string][]string
-		remaining []byte
-		err       error
-	}{
-		{"empty string multimap", []byte{0, 0}, map[string][]string{}, []byte{}, nil},
-		{"multimap 1 key 1 value", []byte{
-			0, 1, // map length
-			0, 5, h, e, l, l, o, // key: hello
-			0, 1, // list length
-			0, 5, w, o, r, l, d, // value1: world
-		}, map[string][]string{"hello": {"world"}}, []byte{}, nil},
-		{"multimap 1 key 2 values", []byte{
-			0, 1, // map length
-			0, 5, h, e, l, l, o, // key: hello
-			0, 2, // list length
-			0, 5, w, o, r, l, d, // value1: world
-			0, 5, m, u, n, d, o, // value2: mundo
-		}, map[string][]string{"hello": {"world", "mundo"}}, []byte{}, nil},
-		{"multimap 2 keys 2 values", []byte{
-			0, 2, // map length
-			0, 5, h, e, l, l, o, // key1: hello
-			0, 2, // list length
-			0, 5, w, o, r, l, d, // value1: world
-			0, 5, m, u, n, d, o, // value2: mundo
-			0, 6, h, o, l, 0xc3, 0xa0, 0x21, // key2: holà!
-			0, 2, // list length
-			0, 5, w, o, r, l, d, // value1: world
-			0, 5, m, u, n, d, o, // value2: mundo
-		}, map[string][]string{
-			"hello": {"world", "mundo"},
-			"holà!": {"world", "mundo"},
-		}, []byte{}, nil},
-		{
-			"cannot read map length",
-			[]byte{0},
-			nil,
-			[]byte{0},
-			fmt.Errorf(
-				"cannot read [string multimap] length: %w",
-				errors.New("not enough bytes to read [short]"),
-			),
-		},
-		{
-			"cannot read key length",
-			[]byte{0, 1, 0},
-			nil,
-			[]byte{0},
-			fmt.Errorf(
-				"cannot read [string multimap] key: %w",
-				fmt.Errorf("cannot read [string] length: %w",
-					errors.New("not enough bytes to read [short]")),
-			),
-		},
-		{
-			"cannot read list length",
-			[]byte{0, 1, 0, 1, k, 0},
-			nil,
-			[]byte{0},
-			fmt.Errorf(
-				"cannot read [string multimap] value: %w",
-				fmt.Errorf("cannot read [string list] length: %w",
-					errors.New("not enough bytes to read [short]")),
-			),
-		},
-		{
-			"cannot read element length",
-			[]byte{0, 1, 0, 1, k, 0, 1, 0},
-			nil,
-			[]byte{0},
-			fmt.Errorf(
-				"cannot read [string multimap] value: %w",
-				fmt.Errorf("cannot read [string list] element: %w",
-					fmt.Errorf("cannot read [string] length: %w",
-						errors.New("not enough bytes to read [short]"))),
-			),
-		},
-		{
-			"cannot read list",
-			[]byte{0, 1, 0, 1, k, 0, 1, 0, 5, h, e, l, l},
-			nil,
-			[]byte{h, e, l, l},
-			fmt.Errorf("cannot read [string multimap] value: %w",
-				fmt.Errorf("cannot read [string list] element: %w",
-					errors.New("not enough bytes to read [string] content"))),
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			actual, remaining, err := ReadStringMultiMap(tt.source)
-			assert.Equal(t, tt.expected, actual)
-			assert.Equal(t, tt.remaining, remaining)
-			assert.Equal(t, tt.err, err)
-		})
-	}
-}
-
-func TestWriteStringMultiMap(t *testing.T) {
-	tests := []struct {
-		name      string
-		input     map[string][]string
-		dest      []byte
-		expected  []byte
-		remaining []byte
-		err       error
-	}{
-		{
-			"empty string multimap",
-			map[string][]string{},
-			make([]byte, LengthOfStringMultiMap(map[string][]string{})),
-			[]byte{0, 0},
-			[]byte{},
-			nil,
-		},
-		// not officially allowed by the specs, but better safe than sorry
-		{
-			"nil string multimap",
-			nil,
-			make([]byte, LengthOfStringMultiMap(nil)),
-			[]byte{0, 0},
-			[]byte{},
-			nil,
-		},
-		{
-			"multimap 1 key 1 value",
-			map[string][]string{"hello": {"world"}},
-			make([]byte, LengthOfStringMultiMap(map[string][]string{"hello": {"world"}})),
-			[]byte{
-				0, 1, // map length
-				0, 5, h, e, l, l, o, // key: hello
-				0, 1, // list length
-				0, 5, w, o, r, l, d, // value1: world
-			},
-			[]byte{},
-			nil,
-		},
-		{
-			"multimap 1 key 1 value with remaining",
-			map[string][]string{"hello": {"world"}},
-			make([]byte, LengthOfStringMultiMap(map[string][]string{"hello": {"world"}})+1),
-			[]byte{
-				0, 1, // map length
-				0, 5, h, e, l, l, o, // key: hello
-				0, 1, // list length
-				0, 5, w, o, r, l, d, // value1: world
-				0, // extra
-			},
-			[]byte{0},
-			nil,
-		},
-		{
-			"multimap 1 key 2 values",
-			map[string][]string{"hello": {"world", "mundo"}},
-			make([]byte, LengthOfStringMultiMap(map[string][]string{"hello": {"world", "mundo"}})),
-			[]byte{
-				0, 1, // map length
-				0, 5, h, e, l, l, o, // key: hello
-				0, 2, // list length
-				0, 5, w, o, r, l, d, // value1: world
-				0, 5, m, u, n, d, o, // value2: mundo
-			},
-			[]byte{},
-			nil,
-		},
-		// Cannot test maps with > 1 key since map entry iteration order is not deterministic :-(
-		{
-			"cannot write map length",
-			map[string][]string{},
-			make([]byte, LengthOfShort-1),
-			[]byte{0},
-			[]byte{0},
-			fmt.Errorf("cannot write [string multimap] length: %w",
-				errors.New("not enough capacity to write [short]")),
-		},
-		{
-			"cannot write key length",
-			map[string][]string{"hello": {"world"}},
-			make([]byte, LengthOfShort+LengthOfShort-1),
-			[]byte{0, 1, 0},
-			[]byte{0},
-			fmt.Errorf("cannot write [string multimap] key: %w",
-				fmt.Errorf("cannot write [string] length: %w",
-					errors.New("not enough capacity to write [short]"))),
-		},
-		{
-			"cannot write key",
-			map[string][]string{"hello": {"world"}},
-			make([]byte, LengthOfShort+LengthOfString("hello")-1),
-			[]byte{0, 1, 0, 5, 0, 0, 0, 0},
-			[]byte{0, 0, 0, 0},
-			fmt.Errorf("cannot write [string multimap] key: %w",
-				errors.New("not enough capacity to write [string] content")),
-		},
-		{
-			"cannot write list length",
-			map[string][]string{"hello": {"world"}},
-			make([]byte, LengthOfShort+LengthOfString("hello")+LengthOfShort-1),
-			[]byte{0, 1, 0, 5, h, e, l, l, o, 0},
-			[]byte{0},
-			fmt.Errorf("cannot write [string multimap] value: %w",
-				fmt.Errorf("cannot write [string list] length: %w",
-					errors.New("not enough capacity to write [short]"))),
-		},
-		{
-			"cannot write element length",
-			map[string][]string{"hello": {"world"}},
-			make([]byte, LengthOfShort+LengthOfString("hello")+LengthOfShort+LengthOfShort-1),
-			[]byte{0, 1, 0, 5, h, e, l, l, o, 0, 1, 0},
-			[]byte{0},
-			fmt.Errorf("cannot write [string multimap] value: %w",
-				fmt.Errorf("cannot write [string list] element: %w",
-					fmt.Errorf("cannot write [string] length: %w",
-						errors.New("not enough capacity to write [short]")))),
-		},
-		{
-			"cannot write list element",
-			map[string][]string{"hello": {"world"}},
-			make([]byte, LengthOfShort+LengthOfString("hello")+LengthOfShort+LengthOfString("world")-1),
-			[]byte{0, 1, 0, 5, h, e, l, l, o, 0, 1, 0, 5, 0, 0, 0, 0},
-			[]byte{0, 0, 0, 0},
-			fmt.Errorf(
-				"cannot write [string multimap] value: %w",
-				fmt.Errorf("cannot write [string list] element: %w",
-					errors.New("not enough capacity to write [string] content")),
-			),
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			remaining, err := WriteStringMultiMap(tt.input, tt.dest)
-			assert.Equal(t, tt.expected, tt.dest)
-			assert.Equal(t, tt.remaining, remaining)
-			assert.Equal(t, tt.err, err)
-		})
-	}
-}
-
 var uuid = cassandraprotocol.UUID{0xC0, 0xD1, 0xD2, 0x1E, 0xBB, 0x01, 0x41, 0x96, 0x86, 0xDB, 0xBC, 0x31, 0x7B, 0xC1, 0x79, 0x6A}
 var uuidBytes = [16]byte{0xC0, 0xD1, 0xD2, 0x1E, 0xBB, 0x01, 0x41, 0x96, 0x86, 0xDB, 0xBC, 0x31, 0x7B, 0xC1, 0x79, 0x6A}
 
@@ -1272,6 +1032,444 @@ func TestLengthOfInet(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			actual, err := LengthOfInet(tt.input)
 			assert.Equal(t, tt.expected, actual)
+			assert.Equal(t, tt.err, err)
+		})
+	}
+}
+
+func TestReadStringMap(t *testing.T) {
+	tests := []struct {
+		name      string
+		source    []byte
+		expected  map[string]string
+		remaining []byte
+		err       error
+	}{
+		{"empty string map", []byte{0, 0}, map[string]string{}, []byte{}, nil},
+		{"map 1 key", []byte{
+			0, 1, // map length
+			0, 5, h, e, l, l, o, // key: hello
+			0, 5, w, o, r, l, d, // value1: world
+		}, map[string]string{"hello": "world"}, []byte{}, nil},
+		{"map 2 keys", []byte{
+			0, 2, // map length
+			0, 5, h, e, l, l, o, // key1: hello
+			0, 5, w, o, r, l, d, // value1: world
+			0, 6, h, o, l, 0xc3, 0xa0, 0x21, // key2: holà!
+			0, 5, m, u, n, d, o, // value2: mundo
+		}, map[string]string{
+			"hello": "world",
+			"holà!": "mundo",
+		}, []byte{}, nil},
+		{
+			"cannot read map length",
+			[]byte{0},
+			nil,
+			[]byte{0},
+			fmt.Errorf(
+				"cannot read [string map] length: %w",
+				errors.New("not enough bytes to read [short]"),
+			),
+		},
+		{
+			"cannot read key length",
+			[]byte{0, 1, 0},
+			nil,
+			[]byte{0},
+			fmt.Errorf(
+				"cannot read [string map] key: %w",
+				fmt.Errorf("cannot read [string] length: %w",
+					errors.New("not enough bytes to read [short]")),
+			),
+		},
+		{
+			"cannot read key",
+			[]byte{0, 1, 0, 2, 0},
+			nil,
+			[]byte{0},
+			fmt.Errorf(
+				"cannot read [string map] key: %w",
+				errors.New("not enough bytes to read [string] content"),
+			),
+		},
+		{
+			"cannot read value length",
+			[]byte{0, 1, 0, 1, k, 0},
+			nil,
+			[]byte{0},
+			fmt.Errorf(
+				"cannot read [string map] value: %w",
+				fmt.Errorf("cannot read [string] length: %w",
+					errors.New("not enough bytes to read [short]")),
+			),
+		},
+		{
+			"cannot read value",
+			[]byte{0, 1, 0, 1, k, 0, 2, 0},
+			nil,
+			[]byte{0},
+			fmt.Errorf(
+				"cannot read [string map] value: %w",
+				errors.New("not enough bytes to read [string] content"),
+			),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual, remaining, err := ReadStringMap(tt.source)
+			assert.Equal(t, tt.expected, actual)
+			assert.Equal(t, tt.remaining, remaining)
+			assert.Equal(t, tt.err, err)
+		})
+	}
+}
+
+func TestWriteStringMap(t *testing.T) {
+	tests := []struct {
+		name      string
+		input     map[string]string
+		dest      []byte
+		expected  []byte
+		remaining []byte
+		err       error
+	}{
+		{
+			"empty string map",
+			map[string]string{},
+			make([]byte, LengthOfStringMap(map[string]string{})),
+			[]byte{0, 0},
+			[]byte{},
+			nil,
+		},
+		// not officially allowed by the specs, but better safe than sorry
+		{
+			"nil string map",
+			nil,
+			make([]byte, LengthOfStringMap(nil)),
+			[]byte{0, 0},
+			[]byte{},
+			nil,
+		},
+		{
+			"map 1 key",
+			map[string]string{"hello": "world"},
+			make([]byte, LengthOfStringMap(map[string]string{"hello": "world"})),
+			[]byte{
+				0, 1, // map length
+				0, 5, h, e, l, l, o, // key: hello
+				0, 5, w, o, r, l, d, // value1: world
+			},
+			[]byte{},
+			nil,
+		},
+		{
+			"map 1 key with remaining",
+			map[string]string{"hello": "world"},
+			make([]byte, LengthOfStringMap(map[string]string{"hello": "world"})+1),
+			[]byte{
+				0, 1, // map length
+				0, 5, h, e, l, l, o, // key: hello
+				0, 5, w, o, r, l, d, // value1: world
+				0, // extra
+			},
+			[]byte{0},
+			nil,
+		},
+		// Cannot test maps with > 1 key since map entry iteration order is not deterministic :-(
+		{
+			"cannot write map length",
+			map[string]string{},
+			make([]byte, LengthOfShort-1),
+			[]byte{0},
+			[]byte{0},
+			fmt.Errorf("cannot write [string map] length: %w",
+				errors.New("not enough capacity to write [short]")),
+		},
+		{
+			"cannot write key length",
+			map[string]string{"hello": "world"},
+			make([]byte, LengthOfShort+LengthOfShort-1),
+			[]byte{0, 1, 0},
+			[]byte{0},
+			fmt.Errorf("cannot write [string map] key: %w",
+				fmt.Errorf("cannot write [string] length: %w",
+					errors.New("not enough capacity to write [short]"))),
+		},
+		{
+			"cannot write key",
+			map[string]string{"hello": "world"},
+			make([]byte, LengthOfShort+LengthOfString("hello")-1),
+			[]byte{0, 1, 0, 5, 0, 0, 0, 0},
+			[]byte{0, 0, 0, 0},
+			fmt.Errorf("cannot write [string map] key: %w",
+				errors.New("not enough capacity to write [string] content")),
+		},
+		{
+			"cannot write value length",
+			map[string]string{"hello": "world"},
+			make([]byte, LengthOfShort+LengthOfString("hello")+LengthOfShort-1),
+			[]byte{0, 1, 0, 5, h, e, l, l, o, 0},
+			[]byte{0},
+			fmt.Errorf("cannot write [string map] value: %w",
+				fmt.Errorf("cannot write [string] length: %w",
+					errors.New("not enough capacity to write [short]"))),
+		},
+		{
+			"cannot write value",
+			map[string]string{"hello": "world"},
+			make([]byte, LengthOfShort+LengthOfString("hello")+LengthOfString("world")-1),
+			[]byte{0, 1, 0, 5, h, e, l, l, o, 0, 5, 0, 0, 0, 0},
+			[]byte{0, 0, 0, 0},
+			fmt.Errorf(
+				"cannot write [string map] value: %w",
+				errors.New("not enough capacity to write [string] content")),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			remaining, err := WriteStringMap(tt.input, tt.dest)
+			assert.Equal(t, tt.expected, tt.dest)
+			assert.Equal(t, tt.remaining, remaining)
+			assert.Equal(t, tt.err, err)
+		})
+	}
+}
+
+func TestReadStringMultiMap(t *testing.T) {
+	tests := []struct {
+		name      string
+		source    []byte
+		expected  map[string][]string
+		remaining []byte
+		err       error
+	}{
+		{"empty string multimap", []byte{0, 0}, map[string][]string{}, []byte{}, nil},
+		{"multimap 1 key 1 value", []byte{
+			0, 1, // map length
+			0, 5, h, e, l, l, o, // key: hello
+			0, 1, // list length
+			0, 5, w, o, r, l, d, // value1: world
+		}, map[string][]string{"hello": {"world"}}, []byte{}, nil},
+		{"multimap 1 key 2 values", []byte{
+			0, 1, // map length
+			0, 5, h, e, l, l, o, // key: hello
+			0, 2, // list length
+			0, 5, w, o, r, l, d, // value1: world
+			0, 5, m, u, n, d, o, // value2: mundo
+		}, map[string][]string{"hello": {"world", "mundo"}}, []byte{}, nil},
+		{"multimap 2 keys 2 values", []byte{
+			0, 2, // map length
+			0, 5, h, e, l, l, o, // key1: hello
+			0, 2, // list length
+			0, 5, w, o, r, l, d, // value1: world
+			0, 5, m, u, n, d, o, // value2: mundo
+			0, 6, h, o, l, 0xc3, 0xa0, 0x21, // key2: holà!
+			0, 2, // list length
+			0, 5, w, o, r, l, d, // value1: world
+			0, 5, m, u, n, d, o, // value2: mundo
+		}, map[string][]string{
+			"hello": {"world", "mundo"},
+			"holà!": {"world", "mundo"},
+		}, []byte{}, nil},
+		{
+			"cannot read map length",
+			[]byte{0},
+			nil,
+			[]byte{0},
+			fmt.Errorf(
+				"cannot read [string multimap] length: %w",
+				errors.New("not enough bytes to read [short]"),
+			),
+		},
+		{
+			"cannot read key length",
+			[]byte{0, 1, 0},
+			nil,
+			[]byte{0},
+			fmt.Errorf(
+				"cannot read [string multimap] key: %w",
+				fmt.Errorf("cannot read [string] length: %w",
+					errors.New("not enough bytes to read [short]")),
+			),
+		},
+		{
+			"cannot read list length",
+			[]byte{0, 1, 0, 1, k, 0},
+			nil,
+			[]byte{0},
+			fmt.Errorf(
+				"cannot read [string multimap] value: %w",
+				fmt.Errorf("cannot read [string list] length: %w",
+					errors.New("not enough bytes to read [short]")),
+			),
+		},
+		{
+			"cannot read element length",
+			[]byte{0, 1, 0, 1, k, 0, 1, 0},
+			nil,
+			[]byte{0},
+			fmt.Errorf(
+				"cannot read [string multimap] value: %w",
+				fmt.Errorf("cannot read [string list] element: %w",
+					fmt.Errorf("cannot read [string] length: %w",
+						errors.New("not enough bytes to read [short]"))),
+			),
+		},
+		{
+			"cannot read list",
+			[]byte{0, 1, 0, 1, k, 0, 1, 0, 5, h, e, l, l},
+			nil,
+			[]byte{h, e, l, l},
+			fmt.Errorf("cannot read [string multimap] value: %w",
+				fmt.Errorf("cannot read [string list] element: %w",
+					errors.New("not enough bytes to read [string] content"))),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual, remaining, err := ReadStringMultiMap(tt.source)
+			assert.Equal(t, tt.expected, actual)
+			assert.Equal(t, tt.remaining, remaining)
+			assert.Equal(t, tt.err, err)
+		})
+	}
+}
+
+func TestWriteStringMultiMap(t *testing.T) {
+	tests := []struct {
+		name      string
+		input     map[string][]string
+		dest      []byte
+		expected  []byte
+		remaining []byte
+		err       error
+	}{
+		{
+			"empty string multimap",
+			map[string][]string{},
+			make([]byte, LengthOfStringMultiMap(map[string][]string{})),
+			[]byte{0, 0},
+			[]byte{},
+			nil,
+		},
+		// not officially allowed by the specs, but better safe than sorry
+		{
+			"nil string multimap",
+			nil,
+			make([]byte, LengthOfStringMultiMap(nil)),
+			[]byte{0, 0},
+			[]byte{},
+			nil,
+		},
+		{
+			"multimap 1 key 1 value",
+			map[string][]string{"hello": {"world"}},
+			make([]byte, LengthOfStringMultiMap(map[string][]string{"hello": {"world"}})),
+			[]byte{
+				0, 1, // map length
+				0, 5, h, e, l, l, o, // key: hello
+				0, 1, // list length
+				0, 5, w, o, r, l, d, // value1: world
+			},
+			[]byte{},
+			nil,
+		},
+		{
+			"multimap 1 key 1 value with remaining",
+			map[string][]string{"hello": {"world"}},
+			make([]byte, LengthOfStringMultiMap(map[string][]string{"hello": {"world"}})+1),
+			[]byte{
+				0, 1, // map length
+				0, 5, h, e, l, l, o, // key: hello
+				0, 1, // list length
+				0, 5, w, o, r, l, d, // value1: world
+				0, // extra
+			},
+			[]byte{0},
+			nil,
+		},
+		{
+			"multimap 1 key 2 values",
+			map[string][]string{"hello": {"world", "mundo"}},
+			make([]byte, LengthOfStringMultiMap(map[string][]string{"hello": {"world", "mundo"}})),
+			[]byte{
+				0, 1, // map length
+				0, 5, h, e, l, l, o, // key: hello
+				0, 2, // list length
+				0, 5, w, o, r, l, d, // value1: world
+				0, 5, m, u, n, d, o, // value2: mundo
+			},
+			[]byte{},
+			nil,
+		},
+		// Cannot test maps with > 1 key since map entry iteration order is not deterministic :-(
+		{
+			"cannot write map length",
+			map[string][]string{},
+			make([]byte, LengthOfShort-1),
+			[]byte{0},
+			[]byte{0},
+			fmt.Errorf("cannot write [string multimap] length: %w",
+				errors.New("not enough capacity to write [short]")),
+		},
+		{
+			"cannot write key length",
+			map[string][]string{"hello": {"world"}},
+			make([]byte, LengthOfShort+LengthOfShort-1),
+			[]byte{0, 1, 0},
+			[]byte{0},
+			fmt.Errorf("cannot write [string multimap] key: %w",
+				fmt.Errorf("cannot write [string] length: %w",
+					errors.New("not enough capacity to write [short]"))),
+		},
+		{
+			"cannot write key",
+			map[string][]string{"hello": {"world"}},
+			make([]byte, LengthOfShort+LengthOfString("hello")-1),
+			[]byte{0, 1, 0, 5, 0, 0, 0, 0},
+			[]byte{0, 0, 0, 0},
+			fmt.Errorf("cannot write [string multimap] key: %w",
+				errors.New("not enough capacity to write [string] content")),
+		},
+		{
+			"cannot write list length",
+			map[string][]string{"hello": {"world"}},
+			make([]byte, LengthOfShort+LengthOfString("hello")+LengthOfShort-1),
+			[]byte{0, 1, 0, 5, h, e, l, l, o, 0},
+			[]byte{0},
+			fmt.Errorf("cannot write [string multimap] value: %w",
+				fmt.Errorf("cannot write [string list] length: %w",
+					errors.New("not enough capacity to write [short]"))),
+		},
+		{
+			"cannot write element length",
+			map[string][]string{"hello": {"world"}},
+			make([]byte, LengthOfShort+LengthOfString("hello")+LengthOfShort+LengthOfShort-1),
+			[]byte{0, 1, 0, 5, h, e, l, l, o, 0, 1, 0},
+			[]byte{0},
+			fmt.Errorf("cannot write [string multimap] value: %w",
+				fmt.Errorf("cannot write [string list] element: %w",
+					fmt.Errorf("cannot write [string] length: %w",
+						errors.New("not enough capacity to write [short]")))),
+		},
+		{
+			"cannot write list element",
+			map[string][]string{"hello": {"world"}},
+			make([]byte, LengthOfShort+LengthOfString("hello")+LengthOfShort+LengthOfString("world")-1),
+			[]byte{0, 1, 0, 5, h, e, l, l, o, 0, 1, 0, 5, 0, 0, 0, 0},
+			[]byte{0, 0, 0, 0},
+			fmt.Errorf(
+				"cannot write [string multimap] value: %w",
+				fmt.Errorf("cannot write [string list] element: %w",
+					errors.New("not enough capacity to write [string] content")),
+			),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			remaining, err := WriteStringMultiMap(tt.input, tt.dest)
+			assert.Equal(t, tt.expected, tt.dest)
+			assert.Equal(t, tt.remaining, remaining)
 			assert.Equal(t, tt.err, err)
 		})
 	}
