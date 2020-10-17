@@ -11,7 +11,7 @@ type Message interface {
 
 type Encoder interface {
 	Encode(msg Message, dest []byte, version cassandraprotocol.ProtocolVersion) error
-	EncodedSize(msg Message, version cassandraprotocol.ProtocolVersion) (int, error)
+	EncodedLength(msg Message, version cassandraprotocol.ProtocolVersion) (int, error)
 }
 
 type Decoder interface {

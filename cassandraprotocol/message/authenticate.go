@@ -29,7 +29,7 @@ func (c AuthenticateCodec) Encode(msg Message, dest []byte, _ cassandraprotocol.
 	return err
 }
 
-func (c AuthenticateCodec) EncodedSize(msg Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
+func (c AuthenticateCodec) EncodedLength(msg Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
 	authenticate := msg.(*Authenticate)
 	return primitives.LengthOfString(authenticate.Authenticator), nil
 }

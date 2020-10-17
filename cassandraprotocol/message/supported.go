@@ -33,7 +33,7 @@ func (c SupportedCodec) Encode(msg Message, dest []byte, _ cassandraprotocol.Pro
 	return nil
 }
 
-func (c SupportedCodec) EncodedSize(msg Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
+func (c SupportedCodec) EncodedLength(msg Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
 	supported := msg.(*Supported)
 	return primitives.LengthOfStringMultiMap(supported.Options), nil
 }

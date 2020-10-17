@@ -23,7 +23,7 @@ func (c OptionsCodec) Encode(_ Message, _ []byte, _ cassandraprotocol.ProtocolVe
 	return nil
 }
 
-func (c OptionsCodec) EncodedSize(_ Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
+func (c OptionsCodec) EncodedLength(_ Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
 	return 0, nil
 }
 

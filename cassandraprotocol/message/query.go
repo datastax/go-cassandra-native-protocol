@@ -31,7 +31,7 @@ func (c QueryCodec) Encode(msg Message, dest []byte, version cassandraprotocol.P
 	return err
 }
 
-func (q QueryCodec) EncodedSize(msg Message, version cassandraprotocol.ProtocolVersion) (int, error) {
+func (q QueryCodec) EncodedLength(msg Message, version cassandraprotocol.ProtocolVersion) (int, error) {
 	query := msg.(*Query)
 	lengthOfQuery := primitives.LengthOfLongString(query.Query)
 	lengthOfQueryOptions, err := LengthOfQueryOptions(query.Options, version)

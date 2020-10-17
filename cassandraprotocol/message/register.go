@@ -34,7 +34,7 @@ func (c RegisterCodec) Encode(msg Message, dest []byte, _ cassandraprotocol.Prot
 	return err
 }
 
-func (c RegisterCodec) EncodedSize(msg Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
+func (c RegisterCodec) EncodedLength(msg Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
 	register := msg.(*Register)
 	return primitives.LengthOfStringList(register.EventTypes), nil
 }

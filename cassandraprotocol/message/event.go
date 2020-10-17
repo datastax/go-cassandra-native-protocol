@@ -152,7 +152,7 @@ func (c EventCodec) Encode(msg Message, dest []byte, version cassandraprotocol.P
 	return errors.New("unknown event type: " + event.Type)
 }
 
-func (c EventCodec) EncodedSize(msg Message, version cassandraprotocol.ProtocolVersion) (int, error) {
+func (c EventCodec) EncodedLength(msg Message, version cassandraprotocol.ProtocolVersion) (int, error) {
 	event := msg.(*Event)
 	size := primitives.LengthOfString(event.Type)
 	switch event.Type {

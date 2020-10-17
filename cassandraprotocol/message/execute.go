@@ -44,7 +44,7 @@ func (c ExecuteCodec) Encode(msg Message, dest []byte, version cassandraprotocol
 	return
 }
 
-func (c ExecuteCodec) EncodedSize(msg Message, version cassandraprotocol.ProtocolVersion) (size int, err error) {
+func (c ExecuteCodec) EncodedLength(msg Message, version cassandraprotocol.ProtocolVersion) (size int, err error) {
 	execute := msg.(*Execute)
 	size += primitives.LengthOfShortBytes(execute.QueryId)
 	if version >= cassandraprotocol.ProtocolVersion5 {

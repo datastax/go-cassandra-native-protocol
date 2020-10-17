@@ -23,7 +23,7 @@ func (c ReadyCodec) Encode(_ Message, _ []byte, _ cassandraprotocol.ProtocolVers
 	return nil
 }
 
-func (c ReadyCodec) EncodedSize(_ Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
+func (c ReadyCodec) EncodedLength(_ Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
 	return 0, nil
 }
 

@@ -57,7 +57,7 @@ func (c *Codec) Encode(frame *Frame) ([]byte, error) {
 
 	if !compress {
 		// No compression: we can optimize and do everything with a single allocation
-		messageSize, _ := encoder.EncodedSize(msg, version)
+		messageSize, _ := encoder.EncodedLength(msg, version)
 		if frame.TracingId != nil {
 			messageSize += primitives.LengthOfUuid
 		}
@@ -101,7 +101,7 @@ func (c *Codec) Encode(frame *Frame) ([]byte, error) {
 	} else {
 		// We need to compress first in order to know the body size
 		// 1) Encode uncompressed message
-		uncompressedMessageSize, _ := encoder.EncodedSize(msg, version)
+		uncompressedMessageSize, _ := encoder.EncodedLength(msg, version)
 		if frame.TracingId != nil {
 			uncompressedMessageSize += primitives.LengthOfUuid
 		}
@@ -285,7 +285,7 @@ func findCodec(opCode cassandraprotocol.OpCode) message.Codec {
 	case cassandraprotocol.OpCodeQuery:
 		return message.QueryCodec{}
 	case cassandraprotocol.OpCodePrepare:
-		return nil // TODO
+		return &message.PrepareCodec{}
 	case cassandraprotocol.OpCodeExecute:
 		return message.ExecuteCodec{}
 	case cassandraprotocol.OpCodeRegister:

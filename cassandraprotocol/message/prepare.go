@@ -47,7 +47,7 @@ func (c *PrepareCodec) Encode(msg Message, dest []byte, version cassandraprotoco
 	return
 }
 
-func (c *PrepareCodec) EncodedSize(msg Message, version cassandraprotocol.ProtocolVersion) (size int, err error) {
+func (c *PrepareCodec) EncodedLength(msg Message, version cassandraprotocol.ProtocolVersion) (size int, err error) {
 	prepare := msg.(*Prepare)
 	size += primitives.LengthOfLongString(prepare.Query)
 	if version >= cassandraprotocol.ProtocolVersion5 {
