@@ -22,7 +22,7 @@ func (q Query) GetOpCode() cassandraprotocol.OpCode {
 type QueryCodec struct {
 }
 
-func (c QueryCodec) Encode(msg Message, dest []byte, version cassandraprotocol.ProtocolVersion) (err error) {
+func (c *QueryCodec) Encode(msg Message, dest []byte, version cassandraprotocol.ProtocolVersion) (err error) {
 	query := msg.(*Query)
 	dest, err = primitives.WriteLongString(query.Query, dest)
 	if err == nil {

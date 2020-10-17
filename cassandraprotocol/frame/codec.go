@@ -279,38 +279,38 @@ func findCodec(opCode cassandraprotocol.OpCode) message.Codec {
 	switch opCode {
 	// requests
 	case cassandraprotocol.OpCodeStartup:
-		return message.StartupCodec{}
+		return &message.StartupCodec{}
 	case cassandraprotocol.OpCodeOptions:
-		return message.OptionsCodec{}
+		return &message.OptionsCodec{}
 	case cassandraprotocol.OpCodeQuery:
-		return message.QueryCodec{}
+		return &message.QueryCodec{}
 	case cassandraprotocol.OpCodePrepare:
 		return &message.PrepareCodec{}
 	case cassandraprotocol.OpCodeExecute:
-		return message.ExecuteCodec{}
+		return &message.ExecuteCodec{}
 	case cassandraprotocol.OpCodeRegister:
-		return message.RegisterCodec{}
+		return &message.RegisterCodec{}
 	case cassandraprotocol.OpCodeBatch:
 		return nil // TODO
 	case cassandraprotocol.OpCodeAuthResponse:
-		return message.AuthResponseCodec{}
+		return &message.AuthResponseCodec{}
 	// responses
 	case cassandraprotocol.OpCodeError:
 		return nil // TODO
 	case cassandraprotocol.OpCodeReady:
-		return message.ReadyCodec{}
+		return &message.ReadyCodec{}
 	case cassandraprotocol.OpCodeAuthenticate:
-		return message.AuthenticateCodec{}
+		return &message.AuthenticateCodec{}
 	case cassandraprotocol.OpCodeSupported:
-		return message.SupportedCodec{}
+		return &message.SupportedCodec{}
 	case cassandraprotocol.OpCodeResult:
 		return nil // TODO
 	case cassandraprotocol.OpCodeEvent:
-		return message.EventCodec{}
+		return &message.EventCodec{}
 	case cassandraprotocol.OpCodeAuthChallenge:
-		return message.AuthChallengeCodec{}
+		return &message.AuthChallengeCodec{}
 	case cassandraprotocol.OpCodeAuthSuccess:
-		return message.AuthSuccessCodec{}
+		return &message.AuthSuccessCodec{}
 	}
 	return nil
 }

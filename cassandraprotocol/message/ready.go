@@ -5,28 +5,28 @@ import "go-cassandra-native-protocol/cassandraprotocol"
 type Ready struct {
 }
 
-func (m Ready) IsResponse() bool {
+func (m *Ready) IsResponse() bool {
 	return false
 }
 
-func (m Ready) GetOpCode() cassandraprotocol.OpCode {
+func (m *Ready) GetOpCode() cassandraprotocol.OpCode {
 	return cassandraprotocol.OpCodeReady
 }
 
-func (m Ready) String() string {
+func (m *Ready) String() string {
 	return "READY"
 }
 
 type ReadyCodec struct{}
 
-func (c ReadyCodec) Encode(_ Message, _ []byte, _ cassandraprotocol.ProtocolVersion) error {
+func (c *ReadyCodec) Encode(_ Message, _ []byte, _ cassandraprotocol.ProtocolVersion) error {
 	return nil
 }
 
-func (c ReadyCodec) EncodedLength(_ Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
+func (c *ReadyCodec) EncodedLength(_ Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
 	return 0, nil
 }
 
-func (c ReadyCodec) Decode(_ []byte, _ cassandraprotocol.ProtocolVersion) (Message, error) {
+func (c *ReadyCodec) Decode(_ []byte, _ cassandraprotocol.ProtocolVersion) (Message, error) {
 	return &Ready{}, nil
 }

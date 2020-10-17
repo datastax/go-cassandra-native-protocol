@@ -24,32 +24,32 @@ func NewStartupWithOptions(options map[string]string) *Startup {
 	return &Startup{options}
 }
 
-func (m Startup) IsResponse() bool {
+func (m *Startup) IsResponse() bool {
 	return false
 }
 
-func (m Startup) GetOpCode() cassandraprotocol.OpCode {
+func (m *Startup) GetOpCode() cassandraprotocol.OpCode {
 	return cassandraprotocol.OpCodeStartup
 }
 
-func (m Startup) String() string {
+func (m *Startup) String() string {
 	return fmt.Sprint("STARTUP ", m.Options)
 }
 
 type StartupCodec struct{}
 
-func (c StartupCodec) Encode(msg Message, dest []byte, _ cassandraprotocol.ProtocolVersion) error {
+func (c *StartupCodec) Encode(msg Message, dest []byte, _ cassandraprotocol.ProtocolVersion) error {
 	startup := msg.(*Startup)
 	_, err := primitives.WriteStringMap(startup.Options, dest)
 	return err
 }
 
-func (c StartupCodec) EncodedLength(msg Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
+func (c *StartupCodec) EncodedLength(msg Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
 	startup := msg.(*Startup)
 	return primitives.LengthOfStringMap(startup.Options), nil
 }
 
-func (c StartupCodec) Decode(source []byte, _ cassandraprotocol.ProtocolVersion) (Message, error) {
+func (c *StartupCodec) Decode(source []byte, _ cassandraprotocol.ProtocolVersion) (Message, error) {
 	options, _, err := primitives.ReadStringMap(source)
 	if err != nil {
 		return nil, err

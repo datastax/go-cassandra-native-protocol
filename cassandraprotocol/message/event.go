@@ -11,11 +11,11 @@ type Event struct {
 	Type cassandraprotocol.EventType
 }
 
-func (m Event) IsResponse() bool {
+func (m *Event) IsResponse() bool {
 	return true
 }
 
-func (m Event) GetOpCode() cassandraprotocol.OpCode {
+func (m *Event) GetOpCode() cassandraprotocol.OpCode {
 	return cassandraprotocol.OpCodeEvent
 }
 
@@ -30,7 +30,7 @@ type SchemaChangeEvent struct {
 	Arguments  []string
 }
 
-func (m SchemaChangeEvent) String() string {
+func (m *SchemaChangeEvent) String() string {
 	return fmt.Sprintf("EVENT %v (change=%v target=%v keyspace=%v object=%v args=%v)",
 		m.Type,
 		m.ChangeType,
@@ -48,7 +48,7 @@ type StatusChangeEvent struct {
 	Address    *cassandraprotocol.Inet
 }
 
-func (m StatusChangeEvent) String() string {
+func (m *StatusChangeEvent) String() string {
 	return fmt.Sprintf("EVENT %v (change=%v address=%v)", m.Type, m.ChangeType, m.Address)
 }
 
@@ -60,7 +60,7 @@ type TopologyChangeEvent struct {
 	Address    *cassandraprotocol.Inet
 }
 
-func (m TopologyChangeEvent) String() string {
+func (m *TopologyChangeEvent) String() string {
 	return fmt.Sprintf("EVENT %v (change=%v address=%v)", m.Type, m.ChangeType, m.Address)
 }
 
@@ -68,7 +68,7 @@ func (m TopologyChangeEvent) String() string {
 
 type EventCodec struct{}
 
-func (c EventCodec) Encode(msg Message, dest []byte, version cassandraprotocol.ProtocolVersion) error {
+func (c *EventCodec) Encode(msg Message, dest []byte, version cassandraprotocol.ProtocolVersion) error {
 	event := msg.(*Event)
 	var err error
 	dest, err = primitives.WriteString(event.Type, dest)
@@ -152,7 +152,7 @@ func (c EventCodec) Encode(msg Message, dest []byte, version cassandraprotocol.P
 	return errors.New("unknown event type: " + event.Type)
 }
 
-func (c EventCodec) EncodedLength(msg Message, version cassandraprotocol.ProtocolVersion) (int, error) {
+func (c *EventCodec) EncodedLength(msg Message, version cassandraprotocol.ProtocolVersion) (int, error) {
 	event := msg.(*Event)
 	size := primitives.LengthOfString(event.Type)
 	switch event.Type {
@@ -211,7 +211,7 @@ func (c EventCodec) EncodedLength(msg Message, version cassandraprotocol.Protoco
 	return -1, errors.New("unknown event type: " + event.Type)
 }
 
-func (c EventCodec) Decode(source []byte, version cassandraprotocol.ProtocolVersion) (Message, error) {
+func (c *EventCodec) Decode(source []byte, version cassandraprotocol.ProtocolVersion) (Message, error) {
 	eventType, _, err := primitives.ReadString(source)
 	if err != nil {
 		return nil, err
