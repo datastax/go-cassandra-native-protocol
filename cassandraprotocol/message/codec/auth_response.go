@@ -8,18 +8,18 @@ import (
 
 type AuthResponseCodec struct{}
 
-func (c AuthResponseCodec) Encode(msg message.Message, dest []byte, version cassandraprotocol.ProtocolVersion) error {
+func (c AuthResponseCodec) Encode(msg message.Message, dest []byte, _ cassandraprotocol.ProtocolVersion) error {
 	authResponse := msg.(*message.AuthResponse)
 	_, err := primitives.WriteBytes(authResponse.Token, dest)
 	return err
 }
 
-func (c AuthResponseCodec) EncodedSize(msg message.Message, version cassandraprotocol.ProtocolVersion) (int, error) {
+func (c AuthResponseCodec) EncodedSize(msg message.Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
 	authResponse := msg.(*message.AuthResponse)
 	return primitives.LengthOfBytes(authResponse.Token), nil
 }
 
-func (c AuthResponseCodec) Decode(source []byte, version cassandraprotocol.ProtocolVersion) (message.Message, error) {
+func (c AuthResponseCodec) Decode(source []byte, _ cassandraprotocol.ProtocolVersion) (message.Message, error) {
 	token, _, err := primitives.ReadBytes(source)
 	if err != nil {
 		return nil, err

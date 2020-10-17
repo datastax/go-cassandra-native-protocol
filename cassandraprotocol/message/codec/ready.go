@@ -7,14 +7,14 @@ import (
 
 type ReadyCodec struct{}
 
-func (c ReadyCodec) Encode(msg message.Message, dest []byte, version cassandraprotocol.ProtocolVersion) error {
+func (c ReadyCodec) Encode(_ message.Message, _ []byte, _ cassandraprotocol.ProtocolVersion) error {
 	return nil
 }
 
-func (c ReadyCodec) EncodedSize(msg message.Message, version cassandraprotocol.ProtocolVersion) (int, error) {
+func (c ReadyCodec) EncodedSize(_ message.Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
 	return 0, nil
 }
 
-func (c ReadyCodec) Decode(source []byte, version cassandraprotocol.ProtocolVersion) (message.Message, error) {
+func (c ReadyCodec) Decode(_ []byte, _ cassandraprotocol.ProtocolVersion) (message.Message, error) {
 	return &message.Ready{}, nil
 }

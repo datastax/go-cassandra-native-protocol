@@ -8,7 +8,7 @@ import (
 
 type SupportedCodec struct{}
 
-func (c SupportedCodec) Encode(msg message.Message, dest []byte, version cassandraprotocol.ProtocolVersion) error {
+func (c SupportedCodec) Encode(msg message.Message, dest []byte, _ cassandraprotocol.ProtocolVersion) error {
 	supported := msg.(*message.Supported)
 	_, err := primitives.WriteStringMultiMap(supported.Options, dest)
 	if err != nil {
@@ -17,12 +17,12 @@ func (c SupportedCodec) Encode(msg message.Message, dest []byte, version cassand
 	return nil
 }
 
-func (c SupportedCodec) EncodedSize(msg message.Message, version cassandraprotocol.ProtocolVersion) (int, error) {
+func (c SupportedCodec) EncodedSize(msg message.Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
 	supported := msg.(*message.Supported)
 	return primitives.LengthOfStringMultiMap(supported.Options), nil
 }
 
-func (c SupportedCodec) Decode(source []byte, version cassandraprotocol.ProtocolVersion) (message.Message, error) {
+func (c SupportedCodec) Decode(source []byte, _ cassandraprotocol.ProtocolVersion) (message.Message, error) {
 	options, _, err := primitives.ReadStringMultiMap(source)
 	if err != nil {
 		return nil, err

@@ -8,18 +8,18 @@ import (
 
 type AuthSuccessCodec struct{}
 
-func (c AuthSuccessCodec) Encode(msg message.Message, dest []byte, version cassandraprotocol.ProtocolVersion) error {
+func (c AuthSuccessCodec) Encode(msg message.Message, dest []byte, _ cassandraprotocol.ProtocolVersion) error {
 	authSuccess := msg.(*message.AuthSuccess)
 	_, err := primitives.WriteBytes(authSuccess.Token, dest)
 	return err
 }
 
-func (c AuthSuccessCodec) EncodedSize(msg message.Message, version cassandraprotocol.ProtocolVersion) (int, error) {
+func (c AuthSuccessCodec) EncodedSize(msg message.Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
 	authSuccess := msg.(*message.AuthSuccess)
 	return primitives.LengthOfBytes(authSuccess.Token), nil
 }
 
-func (c AuthSuccessCodec) Decode(source []byte, version cassandraprotocol.ProtocolVersion) (message.Message, error) {
+func (c AuthSuccessCodec) Decode(source []byte, _ cassandraprotocol.ProtocolVersion) (message.Message, error) {
 	token, _, err := primitives.ReadBytes(source)
 	if err != nil {
 		return nil, err
