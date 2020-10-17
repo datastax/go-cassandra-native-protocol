@@ -30,24 +30,23 @@ var defaultCodecs = []message.Codec{
 	&message.AuthSuccessCodec{},
 }
 
-type CodecOption func(*Codec)
+type CodecCustomizer func(*Codec)
 
-func NewCodec(options ...CodecOption) *Codec {
+func NewCodec(customizers ...CodecCustomizer) *Codec {
 	codec := &Codec{codecs: makeCodecsMap(defaultCodecs)}
-	// Apply options if there are any, can overwrite default
-	for _, option := range options {
-		option(codec)
+	for _, customizer := range customizers {
+		customizer(codec)
 	}
 	return codec
 }
 
-func WithCompressor(compressor compression.MessageCompressor) CodecOption {
+func WithCompressor(compressor compression.MessageCompressor) CodecCustomizer {
 	return func(codec *Codec) {
 		codec.compressor = compressor
 	}
 }
 
-func WithMessageCodecs(codecs ...message.Codec) CodecOption {
+func WithMessageCodecs(codecs ...message.Codec) CodecCustomizer {
 	return func(codec *Codec) {
 		codec.codecs = makeCodecsMap(codecs)
 	}

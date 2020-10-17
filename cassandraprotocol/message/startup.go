@@ -10,18 +10,28 @@ type Startup struct {
 	Options map[string]string
 }
 
-func NewStartup() *Startup {
-	return &Startup{map[string]string{"CQL_VERSION": "3.0.0"}}
+type StartupCustomizer func(*Startup)
+
+func NewStartup(customizers ...StartupCustomizer) *Startup {
+	startup := &Startup{map[string]string{"CQL_VERSION": "3.0.0"}}
+	for _, customizer := range customizers {
+		customizer(startup)
+	}
+	return startup
 }
 
-func NewStartupWithCompression(compression string) *Startup {
-	return &Startup{map[string]string{
-		"CQL_VERSION": "3.0.0",
-		"COMPRESSION": compression}}
+func WithCompression(compression string) StartupCustomizer {
+	return func(startup *Startup) {
+		startup.Options["COMPRESSION"] = compression
+	}
 }
 
-func NewStartupWithOptions(options map[string]string) *Startup {
-	return &Startup{options}
+func WithOptions(options map[string]string) StartupCustomizer {
+	return func(startup *Startup) {
+		for key, value := range options {
+			startup.Options[key] = value
+		}
+	}
 }
 
 func (m *Startup) IsResponse() bool {
@@ -54,7 +64,7 @@ func (c *StartupCodec) Decode(source []byte, _ cassandraprotocol.ProtocolVersion
 	if err != nil {
 		return nil, err
 	}
-	return NewStartupWithOptions(options), nil
+	return NewStartup(WithOptions(options)), nil
 }
 
 func (c *StartupCodec) GetOpCode() cassandraprotocol.OpCode {

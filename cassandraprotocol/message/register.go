@@ -10,10 +10,6 @@ type Register struct {
 	EventTypes []cassandraprotocol.EventType
 }
 
-func NewRegister(eventTypes []cassandraprotocol.EventType) *Register {
-	return &Register{EventTypes: eventTypes}
-}
-
 func (m *Register) IsResponse() bool {
 	return false
 }
@@ -44,7 +40,7 @@ func (c *RegisterCodec) Decode(source []byte, _ cassandraprotocol.ProtocolVersio
 	if err != nil {
 		return nil, err
 	}
-	return NewRegister(eventTypes), nil
+	return &Register{EventTypes: eventTypes}, nil
 }
 
 func (c *RegisterCodec) GetOpCode() cassandraprotocol.OpCode {
