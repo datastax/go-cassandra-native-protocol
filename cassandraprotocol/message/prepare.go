@@ -75,3 +75,7 @@ func (c *PrepareCodec) Decode(source []byte, version cassandraprotocol.ProtocolV
 	}
 	return &prepare, nil
 }
+
+func (c *PrepareCodec) GetOpCode() cassandraprotocol.OpCode {
+	return cassandraprotocol.OpCodePrepare
+}

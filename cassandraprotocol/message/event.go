@@ -283,3 +283,7 @@ func (c *EventCodec) Decode(source []byte, version cassandraprotocol.ProtocolVer
 	}
 	return nil, errors.New("unknown event type: " + eventType)
 }
+
+func (c *EventCodec) GetOpCode() cassandraprotocol.OpCode {
+	return cassandraprotocol.OpCodeEvent
+}

@@ -30,3 +30,7 @@ func (c *OptionsCodec) EncodedLength(_ Message, _ cassandraprotocol.ProtocolVers
 func (c *OptionsCodec) Decode(_ []byte, _ cassandraprotocol.ProtocolVersion) (Message, error) {
 	return &Options{}, nil
 }
+
+func (c *OptionsCodec) GetOpCode() cassandraprotocol.OpCode {
+	return cassandraprotocol.OpCodeOptions
+}

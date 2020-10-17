@@ -13,15 +13,15 @@ type Execute struct {
 	Options          *QueryOptions
 }
 
-func (m **Execute) IsResponse() bool {
+func (m *Execute) IsResponse() bool {
 	return false
 }
 
-func (m **Execute) GetOpCode() cassandraprotocol.OpCode {
+func (m *Execute) GetOpCode() cassandraprotocol.OpCode {
 	return cassandraprotocol.OpCodeExecute
 }
 
-func (m **Execute) String() string {
+func (m *Execute) String() string {
 	return "EXECUTE " + hex.EncodeToString(m.QueryId)
 }
 
@@ -76,4 +76,8 @@ func (c *ExecuteCodec) Decode(source []byte, version cassandraprotocol.ProtocolV
 		ResultMetadataId: resultMetadataId,
 		Options:          options,
 	}, nil
+}
+
+func (c *ExecuteCodec) GetOpCode() cassandraprotocol.OpCode {
+	return cassandraprotocol.OpCodeExecute
 }

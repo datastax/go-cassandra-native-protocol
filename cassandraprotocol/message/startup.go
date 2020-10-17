@@ -56,3 +56,7 @@ func (c *StartupCodec) Decode(source []byte, _ cassandraprotocol.ProtocolVersion
 	}
 	return NewStartupWithOptions(options), nil
 }
+
+func (c *StartupCodec) GetOpCode() cassandraprotocol.OpCode {
+	return cassandraprotocol.OpCodeStartup
+}

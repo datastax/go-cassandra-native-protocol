@@ -21,4 +21,5 @@ type Decoder interface {
 type Codec interface {
 	Encoder
 	Decoder
+	GetOpCode() cassandraprotocol.OpCode
 }

@@ -41,3 +41,7 @@ func (c *AuthResponseCodec) Decode(source []byte, _ cassandraprotocol.ProtocolVe
 	}
 	return &AuthResponse{Token: token}, nil
 }
+
+func (c *AuthResponseCodec) GetOpCode() cassandraprotocol.OpCode {
+	return cassandraprotocol.OpCodeAuthResponse
+}

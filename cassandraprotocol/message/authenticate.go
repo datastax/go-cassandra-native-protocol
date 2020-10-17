@@ -41,3 +41,7 @@ func (c *AuthenticateCodec) Decode(source []byte, _ cassandraprotocol.ProtocolVe
 	}
 	return &Authenticate{Authenticator: authenticator}, nil
 }
+
+func (c *AuthenticateCodec) GetOpCode() cassandraprotocol.OpCode {
+	return cassandraprotocol.OpCodeAuthenticate
+}

@@ -53,3 +53,7 @@ func (q QueryCodec) Decode(source []byte, version cassandraprotocol.ProtocolVers
 	}
 	return nil, err
 }
+
+func (c *QueryCodec) GetOpCode() cassandraprotocol.OpCode {
+	return cassandraprotocol.OpCodeQuery
+}

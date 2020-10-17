@@ -7,24 +7,28 @@ import (
 )
 
 type Frame struct {
-	Version cassandraprotocol.ProtocolVersion
+	Header *Header
+	Body   *Body
+}
 
+type Header struct {
+	Version cassandraprotocol.ProtocolVersion
 	// The protocol spec states that the stream id is a [short], but this is wrong: the stream id
 	// is signed and can be negative, which is why it has type int16.
 	StreamId int16
-
 	// Whether tracing should be activated for this request. Only valid for request frames, ignored for response frames.
 	// Note that only QUERY, PREPARE and EXECUTE queries support tracing. Other requests will simply ignore the tracing flag if set.
 	TracingRequested bool
+}
 
+type Body struct {
 	// The tracing ID. Only valid for response frames, ignored otherwise.
 	TracingId *cassandraprotocol.UUID
-
+	// Custom payloads are only valid from Protocol Version 4 onwards.
 	CustomPayload map[string][]byte
-
+	// Query warnings, if any. Query warnings are only valid for response frames, and only from Protocol Version 4 onwards.
 	Warnings []string
-
-	Message message.Message
+	Message  message.Message
 }
 
 func NewRequestFrame(
@@ -35,16 +39,18 @@ func NewRequestFrame(
 	message message.Message,
 ) (*Frame, error) {
 	if message.IsResponse() {
-		panic("NewRequestFrame cannot be used with response messages")
+		return nil, errors.New("message is not a request: opcode " + string(message.GetOpCode()))
 	}
 	return newFrame(
-		version,
-		streamId,
-		tracing,
-		nil,
-		customPayload,
-		nil,
-		message)
+		&Header{
+			Version:          version,
+			StreamId:         streamId,
+			TracingRequested: tracing,
+		},
+		&Body{
+			CustomPayload: customPayload,
+			Message:       message,
+		})
 }
 
 func NewResponseFrame(
@@ -56,40 +62,27 @@ func NewResponseFrame(
 	message message.Message,
 ) (*Frame, error) {
 	if !message.IsResponse() {
-		panic("NewResponseFrame cannot be used with request messages")
+		return nil, errors.New("message is not a response: opcode " + string(message.GetOpCode()))
 	}
 	return newFrame(
-		version,
-		streamId,
-		tracingId != nil,
-		tracingId,
-		customPayload,
-		warnings,
-		message)
+		&Header{
+			Version:  version,
+			StreamId: streamId,
+		},
+		&Body{
+			TracingId:     tracingId,
+			CustomPayload: customPayload,
+			Warnings:      warnings,
+			Message:       message,
+		})
 }
 
-func newFrame(
-	version cassandraprotocol.ProtocolVersion,
-	streamId int16,
-	tracingRequested bool,
-	tracingId *cassandraprotocol.UUID,
-	customPayload map[string][]byte,
-	warnings []string,
-	message message.Message,
-) (*Frame, error) {
-	if customPayload != nil && version < cassandraprotocol.ProtocolVersion4 {
+func newFrame(header *Header, body *Body) (*Frame, error) {
+	if body.CustomPayload != nil && header.Version < cassandraprotocol.ProtocolVersion4 {
 		return nil, errors.New("custom payloads require protocol version 4 or higher")
 	}
-	if warnings != nil && version < cassandraprotocol.ProtocolVersion4 {
+	if body.Warnings != nil && header.Version < cassandraprotocol.ProtocolVersion4 {
 		return nil, errors.New("warnings require protocol version 4 or higher")
 	}
-	return &Frame{
-		version,
-		streamId,
-		tracingRequested,
-		tracingId,
-		customPayload,
-		warnings,
-		message,
-	}, nil
+	return &Frame{header, body}, nil
 }

@@ -30,3 +30,7 @@ func (c *ReadyCodec) EncodedLength(_ Message, _ cassandraprotocol.ProtocolVersio
 func (c *ReadyCodec) Decode(_ []byte, _ cassandraprotocol.ProtocolVersion) (Message, error) {
 	return &Ready{}, nil
 }
+
+func (c *ReadyCodec) GetOpCode() cassandraprotocol.OpCode {
+	return cassandraprotocol.OpCodeReady
+}

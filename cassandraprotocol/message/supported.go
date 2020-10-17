@@ -45,3 +45,7 @@ func (c *SupportedCodec) Decode(source []byte, _ cassandraprotocol.ProtocolVersi
 	}
 	return &Supported{Options: options}, nil
 }
+
+func (c *SupportedCodec) GetOpCode() cassandraprotocol.OpCode {
+	return cassandraprotocol.OpCodeSupported
+}

@@ -46,3 +46,7 @@ func (c *RegisterCodec) Decode(source []byte, _ cassandraprotocol.ProtocolVersio
 	}
 	return NewRegister(eventTypes), nil
 }
+
+func (c *RegisterCodec) GetOpCode() cassandraprotocol.OpCode {
+	return cassandraprotocol.OpCodeRegister
+}
