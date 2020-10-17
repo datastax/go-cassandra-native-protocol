@@ -1474,3 +1474,201 @@ func TestWriteStringMultiMap(t *testing.T) {
 		})
 	}
 }
+
+func TestReadBytesMap(t *testing.T) {
+	tests := []struct {
+		name      string
+		source    []byte
+		expected  map[string][]byte
+		remaining []byte
+		err       error
+	}{
+		{"empty bytes map", []byte{0, 0}, map[string][]byte{}, []byte{}, nil},
+		{"map 1 key", []byte{
+			0, 1, // map length
+			0, 5, h, e, l, l, o, // key: hello
+			0, 0, 0, 5, w, o, r, l, d, // value1: world
+		}, map[string][]byte{"hello": {w, o, r, l, d}}, []byte{}, nil},
+		{"map 2 keys", []byte{
+			0, 2, // map length
+			0, 5, h, e, l, l, o, // key1: hello
+			0, 0, 0, 5, w, o, r, l, d, // value1: world
+			0, 6, h, o, l, 0xc3, 0xa0, 0x21, // key2: holà!
+			0, 0, 0, 5, m, u, n, d, o, // value2: mundo
+		}, map[string][]byte{
+			"hello": {w, o, r, l, d},
+			"holà!": {m, u, n, d, o},
+		}, []byte{}, nil},
+		{
+			"cannot read map length",
+			[]byte{0},
+			nil,
+			[]byte{0},
+			fmt.Errorf(
+				"cannot read [bytes map] length: %w",
+				errors.New("not enough bytes to read [short]"),
+			),
+		},
+		{
+			"cannot read key length",
+			[]byte{0, 1, 0},
+			nil,
+			[]byte{0},
+			fmt.Errorf(
+				"cannot read [bytes map] key: %w",
+				fmt.Errorf("cannot read [string] length: %w",
+					errors.New("not enough bytes to read [short]")),
+			),
+		},
+		{
+			"cannot read key",
+			[]byte{0, 1, 0, 2, 0},
+			nil,
+			[]byte{0},
+			fmt.Errorf(
+				"cannot read [bytes map] key: %w",
+				errors.New("not enough bytes to read [string] content"),
+			),
+		},
+		{
+			"cannot read value length",
+			[]byte{0, 1, 0, 1, k, 0, 0, 0},
+			nil,
+			[]byte{0, 0, 0},
+			fmt.Errorf(
+				"cannot read [bytes map] value: %w",
+				fmt.Errorf("cannot read [bytes] length: %w",
+					errors.New("not enough bytes to read [int]")),
+			),
+		},
+		{
+			"cannot read value",
+			[]byte{0, 1, 0, 1, k, 0, 0, 0, 2, 0},
+			nil,
+			[]byte{0},
+			fmt.Errorf(
+				"cannot read [bytes map] value: %w",
+				errors.New("not enough bytes to read [bytes] content"),
+			),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual, remaining, err := ReadBytesMap(tt.source)
+			assert.Equal(t, tt.expected, actual)
+			assert.Equal(t, tt.remaining, remaining)
+			assert.Equal(t, tt.err, err)
+		})
+	}
+}
+
+func TestWriteBytesMap(t *testing.T) {
+	tests := []struct {
+		name      string
+		input     map[string][]byte
+		dest      []byte
+		expected  []byte
+		remaining []byte
+		err       error
+	}{
+		{
+			"empty bytes map",
+			map[string][]byte{},
+			make([]byte, LengthOfBytesMap(map[string][]byte{})),
+			[]byte{0, 0},
+			[]byte{},
+			nil,
+		},
+		// not officially allowed by the specs, but better safe than sorry
+		{
+			"nil bytes map",
+			nil,
+			make([]byte, LengthOfBytesMap(nil)),
+			[]byte{0, 0},
+			[]byte{},
+			nil,
+		},
+		{
+			"map 1 key",
+			map[string][]byte{"hello": {w, o, r, l, d}},
+			make([]byte, LengthOfBytesMap(map[string][]byte{"hello": {w, o, r, l, d}})),
+			[]byte{
+				0, 1, // map length
+				0, 5, h, e, l, l, o, // key: hello
+				0, 0, 0, 5, w, o, r, l, d, // value1: world
+			},
+			[]byte{},
+			nil,
+		},
+		{
+			"map 1 key with remaining",
+			map[string][]byte{"hello": {w, o, r, l, d}},
+			make([]byte, LengthOfBytesMap(map[string][]byte{"hello": {w, o, r, l, d}})+1),
+			[]byte{
+				0, 1, // map length
+				0, 5, h, e, l, l, o, // key: hello
+				0, 0, 0, 5, w, o, r, l, d, // value1: world
+				0, // extra
+			},
+			[]byte{0},
+			nil,
+		},
+		// Cannot test maps with > 1 key since map entry iteration order is not deterministic :-(
+		{
+			"cannot write map length",
+			map[string][]byte{},
+			make([]byte, LengthOfShort-1),
+			[]byte{0},
+			[]byte{0},
+			fmt.Errorf("cannot write [bytes map] length: %w",
+				errors.New("not enough capacity to write [short]")),
+		},
+		{
+			"cannot write key length",
+			map[string][]byte{"hello": {w, o, r, l, d}},
+			make([]byte, LengthOfShort+LengthOfShort-1),
+			[]byte{0, 1, 0},
+			[]byte{0},
+			fmt.Errorf("cannot write [bytes map] key: %w",
+				fmt.Errorf("cannot write [string] length: %w",
+					errors.New("not enough capacity to write [short]"))),
+		},
+		{
+			"cannot write key",
+			map[string][]byte{"hello": {w, o, r, l, d}},
+			make([]byte, LengthOfShort+LengthOfString("hello")-1),
+			[]byte{0, 1, 0, 5, 0, 0, 0, 0},
+			[]byte{0, 0, 0, 0},
+			fmt.Errorf("cannot write [bytes map] key: %w",
+				errors.New("not enough capacity to write [string] content")),
+		},
+		{
+			"cannot write value length",
+			map[string][]byte{"hello": {w, o, r, l, d}},
+			make([]byte, LengthOfShort+LengthOfString("hello")+LengthOfInt-1),
+			[]byte{0, 1, 0, 5, h, e, l, l, o, 0, 0, 0},
+			[]byte{0, 0, 0},
+			fmt.Errorf("cannot write [bytes map] value: %w",
+				fmt.Errorf("cannot write [bytes] length: %w",
+					errors.New("not enough capacity to write [int]"))),
+		},
+		{
+			"cannot write value",
+			map[string][]byte{"hello": {w, o, r, l, d}},
+			make([]byte, LengthOfShort+LengthOfString("hello")+LengthOfBytes([]byte{w, o, r, l, d})-1),
+			[]byte{0, 1, 0, 5, h, e, l, l, o, 0, 0, 0, 5, 0, 0, 0, 0},
+			[]byte{0, 0, 0, 0},
+			fmt.Errorf(
+				"cannot write [bytes map] value: %w",
+				errors.New("not enough capacity to write [bytes] content")),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			remaining, err := WriteBytesMap(tt.input, tt.dest)
+			assert.Equal(t, tt.expected, tt.dest)
+			assert.Equal(t, tt.remaining, remaining)
+			assert.Equal(t, tt.err, err)
+		})
+	}
+}
