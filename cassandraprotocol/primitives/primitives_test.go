@@ -891,6 +891,20 @@ func TestWriteStringMultiMap(t *testing.T) {
 			nil,
 		},
 		{
+			"multimap 1 key 1 value with remaining",
+			map[string][]string{"hello": {"world"}},
+			make([]byte, LengthOfStringMultiMap(map[string][]string{"hello": {"world"}})+1),
+			[]byte{
+				0, 1, // map length
+				0, 5, h, e, l, l, o, // key: hello
+				0, 1, // list length
+				0, 5, w, o, r, l, d, // value1: world
+				0, // extra
+			},
+			[]byte{0},
+			nil,
+		},
+		{
 			"multimap 1 key 2 values",
 			map[string][]string{"hello": {"world", "mundo"}},
 			make([]byte, LengthOfStringMultiMap(map[string][]string{"hello": {"world", "mundo"}})),
@@ -1026,7 +1040,7 @@ func TestWriteUuid(t *testing.T) {
 			nil,
 		},
 		{
-			"UUID with extra capacity",
+			"UUID with remaining",
 			&uuid,
 			make([]byte, LengthOfUuid+1),
 			append(uuidBytes[:], 0),
