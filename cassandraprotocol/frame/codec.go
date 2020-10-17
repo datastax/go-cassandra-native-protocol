@@ -284,11 +284,11 @@ func findMessageCodec(opCode cassandraprotocol.OpCode) codec.MessageCodec {
 	case cassandraprotocol.OpCodeOptions:
 		return codec.OptionsCodec{}
 	case cassandraprotocol.OpCodeQuery:
-		return nil // TODO
+		return codec.QueryCodec{}
 	case cassandraprotocol.OpCodePrepare:
 		return nil // TODO
 	case cassandraprotocol.OpCodeExecute:
-		return nil // TODO
+		return codec.ExecuteCodec{}
 	case cassandraprotocol.OpCodeRegister:
 		return codec.RegisterCodec{}
 	case cassandraprotocol.OpCodeBatch:
