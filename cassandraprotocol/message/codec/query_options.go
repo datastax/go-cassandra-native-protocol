@@ -112,7 +112,7 @@ func LengthOfQueryOptions(options *message.QueryOptions, version cassandraprotoc
 	if options.Flags&cassandraprotocol.QueryFlagNowInSeconds != 0 {
 		size += primitives.LengthOfInt
 	}
-	return size, nil
+	return
 }
 
 func DecodeQueryOptions(source []byte, version cassandraprotocol.ProtocolVersion) (*message.QueryOptions, []byte, error) {

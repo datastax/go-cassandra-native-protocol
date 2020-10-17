@@ -1,6 +1,7 @@
 package codec
 
 import (
+	"fmt"
 	"go-cassandra-native-protocol/cassandraprotocol"
 	"go-cassandra-native-protocol/cassandraprotocol/message"
 	"go-cassandra-native-protocol/cassandraprotocol/primitives"
@@ -20,7 +21,12 @@ func (c QueryCodec) Encode(msg message.Message, dest []byte, version cassandrapr
 
 func (q QueryCodec) EncodedSize(msg message.Message, version cassandraprotocol.ProtocolVersion) (int, error) {
 	query := msg.(*message.Query)
-	return primitives.LengthOfLongString(query.Query) + LengthOfQueryOptions(query.Options, version), nil
+	lengthOfQuery := primitives.LengthOfLongString(query.Query)
+	lengthOfQueryOptions, err := LengthOfQueryOptions(query.Options, version)
+	if err != nil {
+		return -1, fmt.Errorf("cannot compute size of QUERY message: %w", err)
+	}
+	return lengthOfQuery + lengthOfQueryOptions, nil
 }
 
 func (q QueryCodec) Decode(source []byte, version cassandraprotocol.ProtocolVersion) (msg message.Message, err error) {
