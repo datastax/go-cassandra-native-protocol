@@ -35,7 +35,6 @@ const (
 	ValueTypeRegular = ValueType(0)
 	ValueTypeNull    = ValueType(-1)
 	ValueTypeUnset   = ValueType(-2)
-	ValueTypeError   = ValueType(-3)
 )
 
 type ProtocolVersion = uint8
@@ -82,27 +81,27 @@ const (
 	ResultKindSchemaChange = ResultKind(0x0005)
 )
 
-type ErrorCode = uint32
+type ErrorCode = int32
 
 const (
-	ErrorCodeServerError          = ErrorCode(0x0000)
-	ErrorCodeProtocolError        = ErrorCode(0x000A)
-	ErrorCodeAuthenticationError  = ErrorCode(0x0100)
-	ErrorCodeUnavailableException = ErrorCode(0x1000)
-	ErrorCodeOverloaded           = ErrorCode(0x1001)
-	ErrorCodeIsBootstrapping      = ErrorCode(0x1002)
-	ErrorCodeTruncateError        = ErrorCode(0x1003)
-	ErrorCodeWriteTimeout         = ErrorCode(0x1100)
-	ErrorCodeReadTimeout          = ErrorCode(0x1200)
-	ErrorCodeReadFailure          = ErrorCode(0x1300)
-	ErrorCodeFunctionFailure      = ErrorCode(0x1400)
-	ErrorCodeWriteFailure         = ErrorCode(0x1500)
-	ErrorCodeSyntaxError          = ErrorCode(0x2000)
-	ErrorCodeUnauthorized         = ErrorCode(0x2100)
-	ErrorCodeInvalid              = ErrorCode(0x2200)
-	ErrorCodeConfigError          = ErrorCode(0x2300)
-	ErrorCodeAlreadyExists        = ErrorCode(0x2400)
-	ErrorCodeUnprepared           = ErrorCode(0x2500)
+	ErrorCodeServerError         = ErrorCode(0x0000)
+	ErrorCodeProtocolError       = ErrorCode(0x000A)
+	ErrorCodeAuthenticationError = ErrorCode(0x0100)
+	ErrorCodeUnavailable         = ErrorCode(0x1000)
+	ErrorCodeOverloaded          = ErrorCode(0x1001)
+	ErrorCodeIsBootstrapping     = ErrorCode(0x1002)
+	ErrorCodeTruncateError       = ErrorCode(0x1003)
+	ErrorCodeWriteTimeout        = ErrorCode(0x1100)
+	ErrorCodeReadTimeout         = ErrorCode(0x1200)
+	ErrorCodeReadFailure         = ErrorCode(0x1300)
+	ErrorCodeFunctionFailure     = ErrorCode(0x1400)
+	ErrorCodeWriteFailure        = ErrorCode(0x1500)
+	ErrorCodeSyntaxError         = ErrorCode(0x2000)
+	ErrorCodeUnauthorized        = ErrorCode(0x2100)
+	ErrorCodeInvalid             = ErrorCode(0x2200)
+	ErrorCodeConfigError         = ErrorCode(0x2300)
+	ErrorCodeAlreadyExists       = ErrorCode(0x2400)
+	ErrorCodeUnprepared          = ErrorCode(0x2500)
 )
 
 type ConsistencyLevel = uint16
