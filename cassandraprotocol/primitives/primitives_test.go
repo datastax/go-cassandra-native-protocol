@@ -813,7 +813,7 @@ func TestWriteUuid(t *testing.T) {
 			make([]byte, LengthOfUuid),
 			make([]byte, LengthOfUuid),
 			make([]byte, LengthOfUuid),
-			errors.New("cannot write nil as [uuid]"),
+			errors.New("cannot write nil [uuid]"),
 		},
 		{
 			"cannot write UUID content",
@@ -834,25 +834,197 @@ func TestWriteUuid(t *testing.T) {
 	}
 }
 
+var inetAddr4 = net.IPv4(192, 168, 1, 1)
+
 var inet4 = cassandraprotocol.Inet{
-	Addr: net.IPv4(192, 168, 1, 1),
+	Addr: inetAddr4,
 	Port: 9042,
-}
-var inet4Bytes = []byte{
-	4,              // length of IP
-	192, 168, 1, 1, // IP
-	0, 0, 0x23, 0x52, //port
 }
 
+var inetAddr4Bytes = []byte{
+	4,              // length of IP
+	192, 168, 1, 1, // IP
+}
+
+var inet4Bytes = append(inetAddr4Bytes,
+	0, 0, 0x23, 0x52, //port
+)
+
+// 2001:0db8:85a3:0000:0000:8a2e:0370:7334
+var inetAddr6 = net.IP{0x20, 0x01, 0x0d, 0xb8, 0x85, 0xa3, 0x00, 0x00, 0x00, 0x00, 0x8a, 0x2e, 0x03, 0x70, 0x73, 0x34}
+
 var inet6 = cassandraprotocol.Inet{
-	// 2001:0db8:85a3:0000:0000:8a2e:0370:7334
-	Addr: net.IP{0x20, 0x01, 0x0d, 0xb8, 0x85, 0xa3, 0x00, 0x00, 0x00, 0x00, 0x8a, 0x2e, 0x03, 0x70, 0x73, 0x34},
+	Addr: inetAddr6,
 	Port: 9042,
 }
-var inet6Bytes = []byte{
+
+var inetAddr6Bytes = []byte{
 	16,                                                                                             // length of IP
 	0x20, 0x01, 0x0d, 0xb8, 0x85, 0xa3, 0x00, 0x00, 0x00, 0x00, 0x8a, 0x2e, 0x03, 0x70, 0x73, 0x34, // IP
+}
+
+var inet6Bytes = append(inetAddr6Bytes,
 	0, 0, 0x23, 0x52, //port
+)
+
+var inetAddr4Length, _ = LengthOfInetAddr(inetAddr4)
+var inetAddr6Length, _ = LengthOfInetAddr(inetAddr6)
+
+var inet4Length, _ = LengthOfInet(&inet4)
+var inet6Length, _ = LengthOfInet(&inet6)
+
+func TestReadInetAddr(t *testing.T) {
+	tests := []struct {
+		name      string
+		source    []byte
+		expected  net.IP
+		remaining []byte
+		err       error
+	}{
+		{"IPv4 InetAddr", inetAddr4Bytes[:], inetAddr4, []byte{}, nil},
+		{"IPv6 InetAddr", inetAddr6Bytes[:], inetAddr6, []byte{}, nil},
+		{"InetAddr with remaining", append(inetAddr4Bytes[:], 1, 2, 3, 4), inetAddr4, []byte{1, 2, 3, 4}, nil},
+		{
+			"cannot read InetAddr length",
+			[]byte{},
+			nil,
+			[]byte{},
+			fmt.Errorf("cannot read [inetaddr] length: %w", errors.New("not enough bytes to read [byte]")),
+		},
+		{
+			"not enough bytes to read [inetaddr] IPv4 content",
+			[]byte{4, 192, 168, 1},
+			nil,
+			[]byte{192, 168, 1},
+			errors.New("not enough bytes to read [inetaddr] IPv4 content"),
+		},
+		{
+			"not enough bytes to read [inetaddr] IPv6 content",
+			[]byte{16, 0x20, 0x01, 0x0d, 0xb8, 0x85, 0xa3, 0x00, 0x00, 0x00, 0x00, 0x8a, 0x2e, 0x03, 0x70, 0x73},
+			nil,
+			[]byte{0x20, 0x01, 0x0d, 0xb8, 0x85, 0xa3, 0x00, 0x00, 0x00, 0x00, 0x8a, 0x2e, 0x03, 0x70, 0x73},
+			errors.New("not enough bytes to read [inetaddr] IPv6 content"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual, remaining, err := ReadInetAddr(tt.source)
+			assert.Equal(t, tt.expected, actual)
+			assert.Equal(t, tt.remaining, remaining)
+			assert.Equal(t, tt.err, err)
+		})
+	}
+}
+
+func TestWriteInetAddr(t *testing.T) {
+	tests := []struct {
+		name      string
+		input     net.IP
+		dest      []byte
+		expected  []byte
+		remaining []byte
+		err       error
+	}{
+		{
+			"IPv4 InetAddr",
+			inetAddr4,
+			make([]byte, inetAddr4Length),
+			inetAddr4Bytes,
+			[]byte{},
+			nil,
+		},
+		{
+			"IPv6 InetAddr",
+			inetAddr6,
+			make([]byte, inetAddr6Length),
+			inetAddr6Bytes,
+			[]byte{},
+			nil,
+		},
+		{
+			"InetAddr with remaining",
+			inetAddr4,
+			make([]byte, inetAddr4Length+1),
+			append(inetAddr4Bytes, 0),
+			[]byte{0},
+			nil,
+		},
+		{
+			"cannot write nil InetAddr",
+			nil,
+			[]byte{},
+			[]byte{},
+			[]byte{},
+			errors.New("cannot write nil [inetaddr]"),
+		},
+		{
+			"cannot write InetAddr length",
+			inetAddr4,
+			[]byte{},
+			[]byte{},
+			[]byte{},
+			fmt.Errorf("cannot write [inetaddr] length: %w", errors.New("not enough capacity to write [byte]")),
+		},
+		{
+			"not enough capacity to write [inetaddr] IPv4 content",
+			inetAddr4,
+			make([]byte, inetAddr4Length-1),
+			[]byte{4, 0, 0, 0},
+			[]byte{0, 0, 0},
+			errors.New("not enough capacity to write [inetaddr] IPv4 content"),
+		},
+		{
+			"not enough capacity to write [inetaddr] IPv6 content",
+			inetAddr6,
+			make([]byte, inetAddr6Length-1),
+			[]byte{16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+			[]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+			errors.New("not enough capacity to write [inetaddr] IPv6 content"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			remaining, err := WriteInetAddr(tt.input, tt.dest)
+			assert.Equal(t, tt.expected, tt.dest)
+			assert.Equal(t, tt.remaining, remaining)
+			assert.Equal(t, tt.err, err)
+		})
+	}
+}
+
+func TestLengthOfInetAddr(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    net.IP
+		expected int
+		err      error
+	}{
+		{
+			"IPv4 InetAddr",
+			inetAddr4,
+			LengthOfByte + net.IPv4len,
+			nil,
+		},
+		{
+			"IPv6 InetAddr",
+			inetAddr6,
+			LengthOfByte + net.IPv6len,
+			nil,
+		},
+		{
+			"nil InetAddr",
+			nil,
+			-1,
+			errors.New("cannot compute nil [inetaddr] length"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			actual, err := LengthOfInetAddr(tt.input)
+			assert.Equal(t, tt.expected, actual)
+			assert.Equal(t, tt.err, err)
+		})
+	}
 }
 
 func TestReadInet(t *testing.T) {
@@ -871,21 +1043,21 @@ func TestReadInet(t *testing.T) {
 			[]byte{},
 			nil,
 			[]byte{},
-			fmt.Errorf("cannot read [inet] length: %w", errors.New("not enough bytes to read [byte]")),
+			fmt.Errorf("cannot read [inet] address: %w", fmt.Errorf("cannot read [inetaddr] length: %w", errors.New("not enough bytes to read [byte]"))),
 		},
 		{
 			"not enough bytes to read [inet] IPv4 content",
 			[]byte{4, 192, 168, 1},
 			nil,
 			[]byte{192, 168, 1},
-			errors.New("not enough bytes to read [inet] IPv4 content"),
+			fmt.Errorf("cannot read [inet] address: %w", errors.New("not enough bytes to read [inetaddr] IPv4 content")),
 		},
 		{
 			"not enough bytes to read [inet] IPv6 content",
 			[]byte{16, 0x20, 0x01, 0x0d, 0xb8, 0x85, 0xa3, 0x00, 0x00, 0x00, 0x00, 0x8a, 0x2e, 0x03, 0x70, 0x73},
 			nil,
 			[]byte{0x20, 0x01, 0x0d, 0xb8, 0x85, 0xa3, 0x00, 0x00, 0x00, 0x00, 0x8a, 0x2e, 0x03, 0x70, 0x73},
-			errors.New("not enough bytes to read [inet] IPv6 content"),
+			fmt.Errorf("cannot read [inet] address: %w", errors.New("not enough bytes to read [inetaddr] IPv6 content")),
 		},
 		{
 			"cannot read [inet] port number",
@@ -904,9 +1076,6 @@ func TestReadInet(t *testing.T) {
 		})
 	}
 }
-
-var inet4Length, _ = LengthOfInet(&inet4)
-var inet6Length, _ = LengthOfInet(&inet6)
 
 func TestWriteInet(t *testing.T) {
 	tests := []struct {
@@ -947,7 +1116,7 @@ func TestWriteInet(t *testing.T) {
 			[]byte{},
 			[]byte{},
 			[]byte{},
-			errors.New("cannot write nil as [inet]"),
+			errors.New("cannot write nil [inet]"),
 		},
 		{
 			"cannot write INET length",
@@ -955,7 +1124,7 @@ func TestWriteInet(t *testing.T) {
 			[]byte{},
 			[]byte{},
 			[]byte{},
-			fmt.Errorf("cannot write [inet] length: %w", errors.New("not enough capacity to write [byte]")),
+			fmt.Errorf("cannot write [inet] address: %w", fmt.Errorf("cannot write [inetaddr] length: %w", errors.New("not enough capacity to write [byte]"))),
 		},
 		{
 			"not enough capacity to write [inet] IPv4 content",
@@ -963,7 +1132,7 @@ func TestWriteInet(t *testing.T) {
 			make([]byte, inet4Length-LengthOfInt-1),
 			[]byte{4, 0, 0, 0},
 			[]byte{0, 0, 0},
-			errors.New("not enough capacity to write [inet] IPv4 content"),
+			fmt.Errorf("cannot write [inet] address: %w", errors.New("not enough capacity to write [inetaddr] IPv4 content")),
 		},
 		{
 			"not enough capacity to write [inet] IPv6 content",
@@ -971,7 +1140,7 @@ func TestWriteInet(t *testing.T) {
 			make([]byte, inet6Length-LengthOfInt-1),
 			[]byte{16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 			[]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			errors.New("not enough capacity to write [inet] IPv6 content"),
+			fmt.Errorf("cannot write [inet] address: %w", errors.New("not enough capacity to write [inetaddr] IPv6 content")),
 		},
 		{
 			"cannot write port number",
@@ -1025,7 +1194,7 @@ func TestLengthOfInet(t *testing.T) {
 			"nil INET addr",
 			&cassandraprotocol.Inet{},
 			-1,
-			errors.New("cannot compute nil [inet] length"),
+			errors.New("cannot compute nil [inetaddr] length"),
 		},
 	}
 	for _, tt := range tests {

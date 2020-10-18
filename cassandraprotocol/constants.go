@@ -6,7 +6,7 @@ import (
 	"net"
 )
 
-// Models the [inet] protocol primitive structure
+// Models the [inet] protocol primitive structure, whereas [inetaddr] is modeled by net.IP
 type Inet struct {
 	Addr net.IP
 	Port int32

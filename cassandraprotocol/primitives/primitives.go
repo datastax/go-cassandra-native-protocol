@@ -284,7 +284,7 @@ func ReadUuid(source []byte) (decoded *cassandraprotocol.UUID, remaining []byte,
 
 func WriteUuid(uuid *cassandraprotocol.UUID, dest []byte) (remaining []byte, err error) {
 	if uuid == nil {
-		return dest, errors.New("cannot write nil as [uuid]")
+		return dest, errors.New("cannot write nil [uuid]")
 	}
 	if len(dest) < LengthOfUuid {
 		return dest, errors.New("not enough capacity to write [uuid] content")
@@ -293,61 +293,96 @@ func WriteUuid(uuid *cassandraprotocol.UUID, dest []byte) (remaining []byte, err
 	return dest[LengthOfUuid:], nil
 }
 
-// [inet]
+// [inetaddr]
 
-func ReadInet(source []byte) (inet *cassandraprotocol.Inet, remaining []byte, err error) {
+func ReadInetAddr(source []byte) (inetAddr net.IP, remaining []byte, err error) {
 	length, source, err := ReadByte(source)
 	if err != nil {
-		return nil, source, fmt.Errorf("cannot read [inet] length: %w", err)
+		return nil, source, fmt.Errorf("cannot read [inetaddr] length: %w", err)
 	}
 	var addr net.IP
 	if length == net.IPv4len {
 		if len(source) < net.IPv4len {
-			return nil, source, errors.New("not enough bytes to read [inet] IPv4 content")
+			return nil, source, errors.New("not enough bytes to read [inetaddr] IPv4 content")
 		}
 		addr = net.IPv4(source[0], source[1], source[2], source[3])
 	} else if length == net.IPv6len {
 		if len(source) < net.IPv6len {
-			return nil, source, errors.New("not enough bytes to read [inet] IPv6 content")
+			return nil, source, errors.New("not enough bytes to read [inetaddr] IPv6 content")
 		}
 		addr = source[:net.IPv6len]
 	} else {
 		return nil, source, errors.New("unknown inet address length: " + string(length))
 	}
-	var port int32
-	port, source, err = ReadInt(source[length:])
-	if err != nil {
-		return nil, source, fmt.Errorf("cannot read [inet] port number: %w", err)
-	}
-	return &cassandraprotocol.Inet{addr, port}, source, nil
+	return addr, source[length:], nil
 }
 
-func WriteInet(inet *cassandraprotocol.Inet, dest []byte) (remaining []byte, err error) {
-	if inet == nil || inet.Addr == nil {
-		return dest, errors.New("cannot write nil as [inet]")
+func WriteInetAddr(inetAddr net.IP, dest []byte) (remaining []byte, err error) {
+	if inetAddr == nil {
+		return dest, errors.New("cannot write nil [inetaddr]")
 	}
 	var length byte
-	if inet.Addr.To4() != nil {
+	if inetAddr.To4() != nil {
 		length = net.IPv4len
 	} else {
 		length = net.IPv6len
 	}
 	dest, err = WriteByte(length, dest)
 	if err != nil {
-		return dest, fmt.Errorf("cannot write [inet] length: %w", err)
+		return dest, fmt.Errorf("cannot write [inetaddr] length: %w", err)
 	}
 	if length == net.IPv4len {
 		if cap(dest) < net.IPv4len {
-			return dest, errors.New("not enough capacity to write [inet] IPv4 content")
+			return dest, errors.New("not enough capacity to write [inetaddr] IPv4 content")
 		}
-		copy(dest, inet.Addr.To4())
+		copy(dest, inetAddr.To4())
 		dest = dest[net.IPv4len:]
 	} else {
 		if cap(dest) < net.IPv6len {
-			return dest, errors.New("not enough capacity to write [inet] IPv6 content")
+			return dest, errors.New("not enough capacity to write [inetaddr] IPv6 content")
 		}
-		copy(dest, inet.Addr.To16())
+		copy(dest, inetAddr.To16())
 		dest = dest[net.IPv6len:]
+	}
+	return dest, nil
+}
+
+func LengthOfInetAddr(inetAddr net.IP) (length int, err error) {
+	if inetAddr == nil {
+		return -1, errors.New("cannot compute nil [inetaddr] length")
+	}
+	length = LengthOfByte
+	if inetAddr.To4() != nil {
+		length += net.IPv4len
+	} else {
+		length += net.IPv6len
+	}
+	return length, nil
+}
+
+// [inet] (net.IP + port) see cassandraprotocol.Inet
+
+func ReadInet(source []byte) (inet *cassandraprotocol.Inet, remaining []byte, err error) {
+	var addr net.IP
+	addr, source, err = ReadInetAddr(source)
+	if err != nil {
+		return nil, source, fmt.Errorf("cannot read [inet] address: %w", err)
+	}
+	var port int32
+	port, source, err = ReadInt(source)
+	if err != nil {
+		return nil, source, fmt.Errorf("cannot read [inet] port number: %w", err)
+	}
+	return &cassandraprotocol.Inet{Addr: addr, Port: port}, source, nil
+}
+
+func WriteInet(inet *cassandraprotocol.Inet, dest []byte) (remaining []byte, err error) {
+	if inet == nil {
+		return dest, errors.New("cannot write nil [inet]")
+	}
+	dest, err = WriteInetAddr(inet.Addr, dest)
+	if err != nil {
+		return dest, fmt.Errorf("cannot write [inet] address: %w", err)
 	}
 	dest, err = WriteInt(inet.Port, dest)
 	if err != nil {
@@ -357,14 +392,12 @@ func WriteInet(inet *cassandraprotocol.Inet, dest []byte) (remaining []byte, err
 }
 
 func LengthOfInet(inet *cassandraprotocol.Inet) (length int, err error) {
-	if inet == nil || inet.Addr == nil {
+	if inet == nil {
 		return -1, errors.New("cannot compute nil [inet] length")
 	}
-	length = LengthOfByte
-	if inet.Addr.To4() != nil {
-		length += net.IPv4len
-	} else {
-		length += net.IPv6len
+	length, err = LengthOfInetAddr(inet.Addr)
+	if err != nil {
+		return -1, err
 	}
 	return length + LengthOfInt, nil
 }
