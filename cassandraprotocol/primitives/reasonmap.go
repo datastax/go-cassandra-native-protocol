@@ -53,7 +53,7 @@ func WriteReasonMap(reasonMap map[string]uint16, dest []byte) (remaining []byte,
 
 func LengthOfReasonMap(reasonMap map[string]uint16) (int, error) {
 	length := LengthOfInt
-	for addrStr, _ := range reasonMap {
+	for addrStr := range reasonMap {
 		if addr := net.ParseIP(addrStr); addr == nil {
 			return -1, errors.New("cannot parse IP: " + addrStr)
 		} else {

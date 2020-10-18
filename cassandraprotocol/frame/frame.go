@@ -79,11 +79,13 @@ func NewResponseFrame(
 }
 
 func newFrame(header *Header, body *Body) (*Frame, error) {
+	// Check header and body global conformity with protocol specs
 	if body.CustomPayload != nil && header.Version < cassandraprotocol.ProtocolVersion4 {
 		return nil, errors.New("custom payloads require protocol version 4 or higher")
 	}
 	if body.Warnings != nil && header.Version < cassandraprotocol.ProtocolVersion4 {
 		return nil, errors.New("warnings require protocol version 4 or higher")
 	}
+	// Body message conformity with protocol specs will be tested by the message codecs
 	return &Frame{header, body}, nil
 }
