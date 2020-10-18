@@ -232,8 +232,8 @@ const (
 	QueryFlagSerialConsistency = QueryFlag(0x00000010)
 	QueryFlagDefaultTimestamp  = QueryFlag(0x00000020)
 	QueryFlagValueNames        = QueryFlag(0x00000040)
-	QueryFlagWithKeyspace      = QueryFlag(0x00000080)
-	QueryFlagNowInSeconds      = QueryFlag(0x00000100)
+	QueryFlagWithKeyspace      = QueryFlag(0x00000080) // protocol v5+
+	QueryFlagNowInSeconds      = QueryFlag(0x00000100) // protocol v5+
 )
 
 type RowsFlag = int32
