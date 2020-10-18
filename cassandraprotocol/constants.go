@@ -71,14 +71,14 @@ const (
 	OpCodeAuthSuccess   = OpCode(0x10)
 )
 
-type ResultKind = uint32
+type ResultType = int32
 
 const (
-	ResultKindVoid         = ResultKind(0x0001)
-	ResultKindRows         = ResultKind(0x0002)
-	ResultKindSetKeyspace  = ResultKind(0x0003)
-	ResultKindPrepared     = ResultKind(0x0004)
-	ResultKindSchemaChange = ResultKind(0x0005)
+	ResultTypeVoid         = ResultType(0x0001)
+	ResultTypeRows         = ResultType(0x0002)
+	ResultTypeSetKeyspace  = ResultType(0x0003)
+	ResultTypePrepared     = ResultType(0x0004)
+	ResultTypeSchemaChange = ResultType(0x0005)
 )
 
 type ErrorCode = int32
