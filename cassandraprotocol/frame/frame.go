@@ -28,7 +28,8 @@ type Body struct {
 	CustomPayload map[string][]byte
 	// Query warnings, if any. Query warnings are only valid for response frames, and only from Protocol Version 4 onwards.
 	Warnings []string
-	Message  message.Message
+	// The body message
+	Message message.Message
 }
 
 func NewRequestFrame(

@@ -40,8 +40,7 @@ func WriteByte(b uint8, dest []byte) (remaining []byte, err error) {
 // [short]
 
 func ReadShort(source []byte) (decoded uint16, remaining []byte, error error) {
-	length := len(source)
-	if length < LengthOfShort {
+	if len(source) < LengthOfShort {
 		return 0, source, errors.New("not enough bytes to read [short]")
 	}
 	return binary.BigEndian.Uint16(source[:LengthOfShort]), source[LengthOfShort:], nil
@@ -58,8 +57,7 @@ func WriteShort(i uint16, dest []byte) (remaining []byte, err error) {
 // [int]
 
 func ReadInt(source []byte) (decoded int32, remaining []byte, err error) {
-	length := len(source)
-	if length < LengthOfInt {
+	if len(source) < LengthOfInt {
 		return 0, source, errors.New("not enough bytes to read [int]")
 	}
 	return int32(binary.BigEndian.Uint32(source[:LengthOfInt])), source[LengthOfInt:], nil
@@ -76,8 +74,7 @@ func WriteInt(i int32, dest []byte) (remaining []byte, err error) {
 // [long]
 
 func ReadLong(source []byte) (decoded int64, remaining []byte, err error) {
-	length := len(source)
-	if length < LengthOfLong {
+	if len(source) < LengthOfLong {
 		return 0, source, errors.New("not enough bytes to read [long]")
 	}
 	return int64(binary.BigEndian.Uint64(source[:LengthOfLong])), source[LengthOfLong:], nil
