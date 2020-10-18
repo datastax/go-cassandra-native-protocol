@@ -35,8 +35,7 @@ func (m *SchemaChangeEvent) GetEventType() cassandraprotocol.EventType {
 }
 
 func (m *SchemaChangeEvent) String() string {
-	return fmt.Sprintf("EVENT %v (change=%v target=%v keyspace=%v object=%v args=%v)",
-		m.GetEventType(),
+	return fmt.Sprintf("EVENT SCHEMA CHANGE (type=%v target=%v keyspace=%v object=%v args=%v)",
 		m.ChangeType,
 		m.Target,
 		m.Keyspace,
@@ -64,7 +63,7 @@ func (m *StatusChangeEvent) GetEventType() cassandraprotocol.EventType {
 }
 
 func (m *StatusChangeEvent) String() string {
-	return fmt.Sprintf("EVENT %v (change=%v address=%v)", m.GetEventType(), m.ChangeType, m.Address)
+	return fmt.Sprintf("EVENT STATUS CHANGE (type=%v address=%v)", m.ChangeType, m.Address)
 }
 
 // TOPOLOGY CHANGE EVENT
@@ -87,7 +86,7 @@ func (m *TopologyChangeEvent) GetEventType() cassandraprotocol.EventType {
 }
 
 func (m *TopologyChangeEvent) String() string {
-	return fmt.Sprintf("EVENT %v (change=%v address=%v)", m.GetEventType(), m.ChangeType, m.Address)
+	return fmt.Sprintf("EVENT TOPOLOGY CHANGE (type=%v address=%v)", m.ChangeType, m.Address)
 }
 
 // EVENT CODEC
@@ -106,7 +105,7 @@ func (c *EventCodec) Encode(msg Message, dest []byte, version cassandraprotocol.
 	case cassandraprotocol.EventTypeSchemaChange:
 		sce, ok := msg.(*SchemaChangeEvent)
 		if !ok {
-			return errors.New(fmt.Sprintf("expected SchemaChangeEvent struct, got %T", sce))
+			return errors.New(fmt.Sprintf("expected SchemaChangeEvent struct, got %T", msg))
 		}
 		switch sce.ChangeType {
 		case cassandraprotocol.SchemaChangeTypeCreated:
@@ -151,7 +150,7 @@ func (c *EventCodec) Encode(msg Message, dest []byte, version cassandraprotocol.
 	case cassandraprotocol.EventTypeStatusChange:
 		sce, ok := msg.(*StatusChangeEvent)
 		if !ok {
-			return errors.New(fmt.Sprintf("expected StatusChangeEvent struct, got %T", sce))
+			return errors.New(fmt.Sprintf("expected StatusChangeEvent struct, got %T", msg))
 		}
 		switch sce.ChangeType {
 		case cassandraprotocol.StatusChangeTypeUp:
@@ -169,7 +168,7 @@ func (c *EventCodec) Encode(msg Message, dest []byte, version cassandraprotocol.
 	case cassandraprotocol.EventTypeTopologyChange:
 		tce, ok := msg.(*TopologyChangeEvent)
 		if !ok {
-			return errors.New(fmt.Sprintf("expected TopologyChangeEvent struct, got %T", tce))
+			return errors.New(fmt.Sprintf("expected TopologyChangeEvent struct, got %T", msg))
 		}
 		switch tce.ChangeType {
 		case cassandraprotocol.TopologyChangeTypeNewNode:
@@ -198,7 +197,7 @@ func (c *EventCodec) EncodedLength(msg Message, version cassandraprotocol.Protoc
 	case cassandraprotocol.EventTypeSchemaChange:
 		sce, ok := msg.(*SchemaChangeEvent)
 		if !ok {
-			return -1, errors.New(fmt.Sprintf("expected SchemaChangeEvent struct, got %T", sce))
+			return -1, errors.New(fmt.Sprintf("expected SchemaChangeEvent struct, got %T", msg))
 		}
 		length += primitives.LengthOfString(sce.ChangeType)
 		length += primitives.LengthOfString(sce.Target)
@@ -224,7 +223,7 @@ func (c *EventCodec) EncodedLength(msg Message, version cassandraprotocol.Protoc
 	case cassandraprotocol.EventTypeStatusChange:
 		sce, ok := msg.(*StatusChangeEvent)
 		if !ok {
-			return -1, errors.New(fmt.Sprintf("expected StatusChangeEvent struct, got %T", sce))
+			return -1, errors.New(fmt.Sprintf("expected StatusChangeEvent struct, got %T", msg))
 		}
 		length += primitives.LengthOfString(sce.ChangeType)
 		inetLength, err := primitives.LengthOfInet(sce.Address)
@@ -236,7 +235,7 @@ func (c *EventCodec) EncodedLength(msg Message, version cassandraprotocol.Protoc
 	case cassandraprotocol.EventTypeTopologyChange:
 		tce, ok := msg.(*TopologyChangeEvent)
 		if !ok {
-			return -1, errors.New(fmt.Sprintf("expected TopologyChangeEvent struct, got %T", tce))
+			return -1, errors.New(fmt.Sprintf("expected TopologyChangeEvent struct, got %T", msg))
 		}
 		length += primitives.LengthOfString(tce.ChangeType)
 		inetLength, err := primitives.LengthOfInet(tce.Address)
