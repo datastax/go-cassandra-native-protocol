@@ -199,7 +199,7 @@ const (
 type StatusChangeType = string
 
 const (
-	StatusChangeTypeUo   = StatusChangeType("UP")
+	StatusChangeTypeUp   = StatusChangeType("UP")
 	StatusChangeTypeDown = StatusChangeType("DOWN")
 )
 

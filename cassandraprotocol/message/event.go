@@ -108,6 +108,13 @@ func (c *EventCodec) Encode(msg Message, dest []byte, version cassandraprotocol.
 		if !ok {
 			return errors.New(fmt.Sprintf("expected SchemaChangeEvent struct, got %T", sce))
 		}
+		switch sce.ChangeType {
+		case cassandraprotocol.SchemaChangeTypeCreated:
+		case cassandraprotocol.SchemaChangeTypeUpdated:
+		case cassandraprotocol.SchemaChangeTypeDropped:
+		default:
+			return errors.New(fmt.Sprintf("unknown schema change type: %v", sce.Target))
+		}
 		if dest, err = primitives.WriteString(sce.ChangeType, dest); err != nil {
 			return fmt.Errorf("cannot write SchemaChangeEvent.ChangeType: %w", err)
 		}
@@ -138,13 +145,19 @@ func (c *EventCodec) Encode(msg Message, dest []byte, version cassandraprotocol.
 				return fmt.Errorf("cannot write SchemaChangeEvent.Arguments: %w", err)
 			}
 		default:
-			return errors.New(fmt.Sprintf("unknown schema change target: " + sce.Target))
+			return errors.New(fmt.Sprintf("unknown schema change target: %v", sce.Target))
 		}
 		return nil
 	case cassandraprotocol.EventTypeStatusChange:
 		sce, ok := msg.(*StatusChangeEvent)
 		if !ok {
 			return errors.New(fmt.Sprintf("expected StatusChangeEvent struct, got %T", sce))
+		}
+		switch sce.ChangeType {
+		case cassandraprotocol.StatusChangeTypeUp:
+		case cassandraprotocol.StatusChangeTypeDown:
+		default:
+			return errors.New(fmt.Sprintf("unknown status change type: %v", sce.ChangeType))
 		}
 		if dest, err = primitives.WriteString(sce.ChangeType, dest); err != nil {
 			return fmt.Errorf("cannot write StatusChangeEvent.ChangeType: %w", err)
@@ -158,6 +171,12 @@ func (c *EventCodec) Encode(msg Message, dest []byte, version cassandraprotocol.
 		if !ok {
 			return errors.New(fmt.Sprintf("expected TopologyChangeEvent struct, got %T", tce))
 		}
+		switch tce.ChangeType {
+		case cassandraprotocol.TopologyChangeTypeNewNode:
+		case cassandraprotocol.TopologyChangeTypeRemovedNode:
+		default:
+			return errors.New(fmt.Sprintf("unknown topology change type: %v", tce.ChangeType))
+		}
 		if dest, err = primitives.WriteString(tce.ChangeType, dest); err != nil {
 			return fmt.Errorf("cannot write TopologyChangeEvent.ChangeType: %w", err)
 		}
@@ -166,7 +185,7 @@ func (c *EventCodec) Encode(msg Message, dest []byte, version cassandraprotocol.
 		}
 		return nil
 	}
-	return errors.New("unknown event type: " + event.GetEventType())
+	return errors.New("unknown EVENT type: " + event.GetEventType())
 }
 
 func (c *EventCodec) EncodedLength(msg Message, version cassandraprotocol.ProtocolVersion) (length int, err error) {
@@ -190,7 +209,6 @@ func (c *EventCodec) EncodedLength(msg Message, version cassandraprotocol.Protoc
 			fallthrough
 		case cassandraprotocol.SchemaChangeTargetType:
 			length += primitives.LengthOfString(sce.Object)
-			break
 		case cassandraprotocol.SchemaChangeTargetAggregate:
 			fallthrough
 		case cassandraprotocol.SchemaChangeTargetFunction:
@@ -200,7 +218,7 @@ func (c *EventCodec) EncodedLength(msg Message, version cassandraprotocol.Protoc
 			length += primitives.LengthOfString(sce.Object)
 			length += primitives.LengthOfStringList(sce.Arguments)
 		default:
-			return -1, errors.New(fmt.Sprintf("unknown schema change target: " + sce.Target))
+			return -1, errors.New(fmt.Sprintf("unknown schema change target: %v", sce.Target))
 		}
 		return length, nil
 	case cassandraprotocol.EventTypeStatusChange:
@@ -228,7 +246,7 @@ func (c *EventCodec) EncodedLength(msg Message, version cassandraprotocol.Protoc
 		length += inetLength
 		return length, nil
 	}
-	return -1, errors.New("unknown event type: " + event.GetEventType())
+	return -1, errors.New("unknown EVENT type: " + event.GetEventType())
 }
 
 func (c *EventCodec) Decode(source []byte, version cassandraprotocol.ProtocolVersion) (Message, error) {
@@ -269,7 +287,7 @@ func (c *EventCodec) Decode(source []byte, version cassandraprotocol.ProtocolVer
 				return nil, fmt.Errorf("cannot read SchemaChangeEvent.Arguments: %w", err)
 			}
 		default:
-			return nil, errors.New(fmt.Sprintf("unknown schema change target: " + sce.Target))
+			return nil, errors.New(fmt.Sprintf("unknown schema change target: %v", sce.Target))
 		}
 		return sce, nil
 	case cassandraprotocol.EventTypeStatusChange:
@@ -291,7 +309,7 @@ func (c *EventCodec) Decode(source []byte, version cassandraprotocol.ProtocolVer
 		}
 		return tce, nil
 	}
-	return nil, errors.New("unknown event type: " + eventType)
+	return nil, errors.New("unknown EVENT type: " + eventType)
 }
 
 func (c *EventCodec) GetOpCode() cassandraprotocol.OpCode {
