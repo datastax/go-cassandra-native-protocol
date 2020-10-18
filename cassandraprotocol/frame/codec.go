@@ -20,7 +20,7 @@ var defaultCodecs = []message.Codec{
 	&message.RegisterCodec{},
 	&message.BatchCodec{},
 	&message.AuthResponseCodec{},
-	// TODO error
+	&message.ErrorCodec{},
 	&message.ReadyCodec{},
 	&message.AuthenticateCodec{},
 	&message.SupportedCodec{},
