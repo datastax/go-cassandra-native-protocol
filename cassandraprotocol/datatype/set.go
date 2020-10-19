@@ -24,8 +24,7 @@ func (c *setTypeCodec) Encode(t DataType, dest []byte, version cassandraprotocol
 	setType, ok := t.(*setType)
 	if !ok {
 		return dest, errors.New(fmt.Sprintf("expected setType struct, got %T", t))
-	}
-	if dest, err = WriteDataType(setType.elementType, dest, version); err != nil {
+	} else if dest, err = WriteDataType(setType.elementType, dest, version); err != nil {
 		return dest, fmt.Errorf("cannot write set element type: %w", err)
 	}
 	return dest, nil
@@ -35,8 +34,7 @@ func (c *setTypeCodec) EncodedLength(t DataType, version cassandraprotocol.Proto
 	setType, ok := t.(*setType)
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected setType struct, got %T", t))
-	}
-	if elementLength, err := LengthOfDataType(setType.elementType, version); err != nil {
+	} else if elementLength, err := LengthOfDataType(setType.elementType, version); err != nil {
 		return -1, fmt.Errorf("cannot compute length of set element type: %w", err)
 	} else {
 		length += elementLength

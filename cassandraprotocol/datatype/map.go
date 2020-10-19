@@ -25,8 +25,7 @@ func (c *mapTypeCodec) Encode(t DataType, dest []byte, version cassandraprotocol
 	mapType, ok := t.(*mapType)
 	if !ok {
 		return dest, errors.New(fmt.Sprintf("expected mapType struct, got %T", t))
-	}
-	if dest, err = WriteDataType(mapType.keyType, dest, version); err != nil {
+	} else if dest, err = WriteDataType(mapType.keyType, dest, version); err != nil {
 		return dest, fmt.Errorf("cannot write map key type: %w", err)
 	} else if dest, err = WriteDataType(mapType.valueType, dest, version); err != nil {
 		return dest, fmt.Errorf("cannot write map value type: %w", err)

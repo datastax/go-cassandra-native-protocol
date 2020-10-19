@@ -25,8 +25,7 @@ func (c *tupleTypeCodec) Encode(t DataType, dest []byte, version cassandraprotoc
 	tupleType, ok := t.(*tupleType)
 	if !ok {
 		return dest, errors.New(fmt.Sprintf("expected tupleType struct, got %T", t))
-	}
-	if dest, err = primitives.WriteShort(uint16(len(tupleType.FieldTypes)), dest); err != nil {
+	} else if dest, err = primitives.WriteShort(uint16(len(tupleType.FieldTypes)), dest); err != nil {
 		return dest, fmt.Errorf("cannot write tuple type field count: %w", err)
 	}
 	for i, fieldType := range tupleType.FieldTypes {

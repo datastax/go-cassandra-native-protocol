@@ -25,8 +25,7 @@ func (c *customTypeCodec) Encode(t DataType, dest []byte, _ cassandraprotocol.Pr
 	customType, ok := t.(*customType)
 	if !ok {
 		return dest, errors.New(fmt.Sprintf("expected customType struct, got %T", t))
-	}
-	if dest, err = primitives.WriteString(customType.className, dest); err != nil {
+	} else if dest, err = primitives.WriteString(customType.className, dest); err != nil {
 		return dest, fmt.Errorf("cannot write custom type class name: %w", err)
 	}
 	return dest, nil

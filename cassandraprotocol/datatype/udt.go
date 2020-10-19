@@ -27,8 +27,7 @@ func (c *userDefinedTypeCodec) Encode(t DataType, dest []byte, version cassandra
 	userDefinedType, ok := t.(*userDefinedType)
 	if !ok {
 		return dest, errors.New(fmt.Sprintf("expected userDefinedType struct, got %T", t))
-	}
-	if dest, err = primitives.WriteString(userDefinedType.keyspace, dest); err != nil {
+	} else if dest, err = primitives.WriteString(userDefinedType.keyspace, dest); err != nil {
 		return dest, fmt.Errorf("cannot write udt keyspace: %w", err)
 	} else if dest, err = primitives.WriteString(userDefinedType.table, dest); err != nil {
 		return dest, fmt.Errorf("cannot write udt table: %w", err)

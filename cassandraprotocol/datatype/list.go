@@ -24,8 +24,7 @@ func (c *listTypeCodec) Encode(t DataType, dest []byte, version cassandraprotoco
 	listType, ok := t.(*listType)
 	if !ok {
 		return dest, errors.New(fmt.Sprintf("expected listType struct, got %T", t))
-	}
-	if dest, err = WriteDataType(listType.elementType, dest, version); err != nil {
+	} else if dest, err = WriteDataType(listType.elementType, dest, version); err != nil {
 		return dest, fmt.Errorf("cannot write list element type: %w", err)
 	}
 	return dest, nil
@@ -35,8 +34,7 @@ func (c *listTypeCodec) EncodedLength(t DataType, version cassandraprotocol.Prot
 	listType, ok := t.(*listType)
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected listType struct, got %T", t))
-	}
-	if elementLength, err := LengthOfDataType(listType.elementType, version); err != nil {
+	} else if elementLength, err := LengthOfDataType(listType.elementType, version); err != nil {
 		return -1, fmt.Errorf("cannot compute length of list element type: %w", err)
 	} else {
 		length += elementLength
