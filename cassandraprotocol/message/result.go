@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"go-cassandra-native-protocol/cassandraprotocol"
+	"go-cassandra-native-protocol/cassandraprotocol/datatype"
 	"go-cassandra-native-protocol/cassandraprotocol/primitives"
 )
 
@@ -182,7 +183,7 @@ type ColumnSpec struct {
 	TableName    string
 	Name         string
 	Index        int32
-	Type         cassandraprotocol.DataType
+	Type         datatype.DataType
 }
 
 // CODEC
@@ -192,7 +193,7 @@ type ResultCodec struct{}
 func (c *ResultCodec) Encode(msg Message, dest []byte, version cassandraprotocol.ProtocolVersion) (err error) {
 	result, ok := msg.(Result)
 	if !ok {
-		return errors.New(fmt.Sprintf("expecting interface Result, got %T", msg))
+		return errors.New(fmt.Sprintf("expected interface Result, got %T", msg))
 	}
 	if dest, err = primitives.WriteInt(result.GetResultType(), dest); err != nil {
 		return fmt.Errorf("cannot write RESULT type: %w", err)
@@ -298,7 +299,7 @@ func (c *ResultCodec) Encode(msg Message, dest []byte, version cassandraprotocol
 func (c *ResultCodec) EncodedLength(msg Message, version cassandraprotocol.ProtocolVersion) (length int, err error) {
 	result, ok := msg.(Result)
 	if !ok {
-		return -1, errors.New(fmt.Sprintf("expecting interface Result, got %T", msg))
+		return -1, errors.New(fmt.Sprintf("expected interface Result, got %T", msg))
 	}
 	length += primitives.LengthOfInt
 	switch result.GetResultType() {
@@ -526,7 +527,7 @@ func encodeRowsMetadata(metadata *RowsMetadata, encodePkIndices bool, version ca
 			if dest, err = primitives.WriteString(spec.Name, dest); err != nil {
 				return dest, fmt.Errorf("cannot write RESULT ROWS column spec %d name: %w", i, err)
 			}
-			if dest, err = primitives.WriteDataType(spec.Type, dest); err != nil {
+			if dest, err = datatype.WriteDataType(spec.Type, dest, version); err != nil {
 				return dest, fmt.Errorf("cannot write RESULT ROWS column spec %d type: %w", i, err)
 			}
 		}
@@ -562,7 +563,11 @@ func lengthOfRowsMetadata(metadata *RowsMetadata, encodePkIndices bool, version 
 				length += primitives.LengthOfString(spec.TableName)
 			}
 			length += primitives.LengthOfString(spec.Name)
-			length += primitives.LengthOfDataType(spec.Type)
+			if lengthOfDataType, err := datatype.LengthOfDataType(spec.Type, version); err != nil {
+				return -1, err
+			} else {
+				length += lengthOfDataType
+			}
 		}
 	}
 	return length, nil
@@ -633,7 +638,7 @@ func decodeRowsMetadata(decodePkIndices bool, version cassandraprotocol.Protocol
 			if metadata.ColumnSpecs[i].Name, source, err = primitives.ReadString(source); err != nil {
 				return nil, source, fmt.Errorf("cannot read RESULT ROWS column spec %d name: %w", i, err)
 			}
-			if metadata.ColumnSpecs[i].Type, source, err = primitives.ReadDataType(source); err != nil {
+			if metadata.ColumnSpecs[i].Type, source, err = datatype.ReadDataType(source, version); err != nil {
 				return nil, source, fmt.Errorf("cannot read RESULT ROWS column spec %d type: %w", i, err)
 			}
 		}
