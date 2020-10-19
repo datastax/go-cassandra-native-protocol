@@ -607,7 +607,7 @@ type ErrorCodec struct{}
 func (c *ErrorCodec) Encode(msg Message, dest []byte, version cassandraprotocol.ProtocolVersion) (err error) {
 	errMsg, ok := msg.(Error)
 	if !ok {
-		return errors.New(fmt.Sprintf("expecting Error interface, got %T", msg))
+		return errors.New(fmt.Sprintf("expected Error interface, got %T", msg))
 	}
 	if dest, err = primitives.WriteInt(errMsg.GetErrorCode(), dest); err != nil {
 		return fmt.Errorf("cannot write ERROR code: %w", err)
@@ -630,7 +630,7 @@ func (c *ErrorCodec) Encode(msg Message, dest []byte, version cassandraprotocol.
 	case cassandraprotocol.ErrorCodeUnavailable:
 		unavailable, ok := errMsg.(*Unavailable)
 		if !ok {
-			return errors.New(fmt.Sprintf("expecting Unavailable, got %T", msg))
+			return errors.New(fmt.Sprintf("expected Unavailable, got %T", msg))
 		}
 		if dest, err = primitives.WriteShort(unavailable.Consistency, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR UNAVAILABLE consistency: %w", err)
@@ -645,7 +645,7 @@ func (c *ErrorCodec) Encode(msg Message, dest []byte, version cassandraprotocol.
 	case cassandraprotocol.ErrorCodeReadTimeout:
 		readTimeout, ok := errMsg.(*ReadTimeout)
 		if !ok {
-			return errors.New(fmt.Sprintf("expecting ReadTimeout, got %T", msg))
+			return errors.New(fmt.Sprintf("expected ReadTimeout, got %T", msg))
 		}
 		if dest, err = primitives.WriteShort(readTimeout.Consistency, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR READ TIMEOUT consistency: %w", err)
@@ -668,7 +668,7 @@ func (c *ErrorCodec) Encode(msg Message, dest []byte, version cassandraprotocol.
 	case cassandraprotocol.ErrorCodeWriteTimeout:
 		writeTimeout, ok := errMsg.(*WriteTimeout)
 		if !ok {
-			return errors.New(fmt.Sprintf("expecting WriteTimeout, got %T", msg))
+			return errors.New(fmt.Sprintf("expected WriteTimeout, got %T", msg))
 		}
 		if dest, err = primitives.WriteShort(writeTimeout.Consistency, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR WRITE TIMEOUT consistency: %w", err)
@@ -686,7 +686,7 @@ func (c *ErrorCodec) Encode(msg Message, dest []byte, version cassandraprotocol.
 	case cassandraprotocol.ErrorCodeReadFailure:
 		readFailure, ok := errMsg.(*ReadFailure)
 		if !ok {
-			return errors.New(fmt.Sprintf("expecting ReadFailure, got %T", msg))
+			return errors.New(fmt.Sprintf("expected ReadFailure, got %T", msg))
 		}
 		if dest, err = primitives.WriteShort(readFailure.Consistency, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR READ FAILURE consistency: %w", err)
@@ -718,7 +718,7 @@ func (c *ErrorCodec) Encode(msg Message, dest []byte, version cassandraprotocol.
 	case cassandraprotocol.ErrorCodeWriteFailure:
 		writeFailure, ok := errMsg.(*WriteFailure)
 		if !ok {
-			return errors.New(fmt.Sprintf("expecting WriteFailure, got %T", msg))
+			return errors.New(fmt.Sprintf("expected WriteFailure, got %T", msg))
 		}
 		if dest, err = primitives.WriteShort(writeFailure.Consistency, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR WRITE FAILURE consistency: %w", err)
@@ -745,7 +745,7 @@ func (c *ErrorCodec) Encode(msg Message, dest []byte, version cassandraprotocol.
 	case cassandraprotocol.ErrorCodeFunctionFailure:
 		functionFailure, ok := errMsg.(*FunctionFailure)
 		if !ok {
-			return errors.New(fmt.Sprintf("expecting FunctionFailure, got %T", msg))
+			return errors.New(fmt.Sprintf("expected FunctionFailure, got %T", msg))
 		}
 		if dest, err = primitives.WriteString(functionFailure.Keyspace, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR FUNCTION FAILURE keyspace: %w", err)
@@ -760,7 +760,7 @@ func (c *ErrorCodec) Encode(msg Message, dest []byte, version cassandraprotocol.
 	case cassandraprotocol.ErrorCodeAlreadyExists:
 		alreadyExists, ok := errMsg.(*AlreadyExists)
 		if !ok {
-			return errors.New(fmt.Sprintf("expecting AlreadyExists, got %T", msg))
+			return errors.New(fmt.Sprintf("expected AlreadyExists, got %T", msg))
 		}
 		if dest, err = primitives.WriteString(alreadyExists.Keyspace, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR ALREADY EXISTS keyspace: %w", err)
@@ -772,7 +772,7 @@ func (c *ErrorCodec) Encode(msg Message, dest []byte, version cassandraprotocol.
 	case cassandraprotocol.ErrorCodeUnprepared:
 		unprepared, ok := errMsg.(*Unprepared)
 		if !ok {
-			return errors.New(fmt.Sprintf("expecting Unprepared, got %T", msg))
+			return errors.New(fmt.Sprintf("expected Unprepared, got %T", msg))
 		}
 		if dest, err = primitives.WriteShortBytes(unprepared.Id, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR UNPREPARED id: %w", err)
@@ -825,7 +825,7 @@ func (c *ErrorCodec) EncodedLength(msg Message, version cassandraprotocol.Protoc
 		if version > cassandraprotocol.ProtocolVersion5 {
 			readFailure, ok := errMsg.(*ReadFailure)
 			if !ok {
-				return -1, errors.New(fmt.Sprintf("expecting ReadFailure, got %T", msg))
+				return -1, errors.New(fmt.Sprintf("expected ReadFailure, got %T", msg))
 			}
 			if reasonMapLength, err := primitives.LengthOfReasonMap(readFailure.ReasonMap); err != nil {
 				return -1, fmt.Errorf("cannot compute length of ERROR READ FAILURE rason map: %w", err)
@@ -844,7 +844,7 @@ func (c *ErrorCodec) EncodedLength(msg Message, version cassandraprotocol.Protoc
 		if version > cassandraprotocol.ProtocolVersion5 {
 			writeFailure, ok := errMsg.(*WriteFailure)
 			if !ok {
-				return -1, errors.New(fmt.Sprintf("expecting WriteFailure, got %T", msg))
+				return -1, errors.New(fmt.Sprintf("expected WriteFailure, got %T", msg))
 			}
 			if reasonMapLength, err := primitives.LengthOfReasonMap(writeFailure.ReasonMap); err != nil {
 				return -1, fmt.Errorf("cannot compute length of ERROR WRITE FAILURE rason map: %w", err)

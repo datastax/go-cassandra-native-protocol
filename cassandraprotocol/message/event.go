@@ -96,7 +96,7 @@ type EventCodec struct{}
 func (c *EventCodec) Encode(msg Message, dest []byte, version cassandraprotocol.ProtocolVersion) (err error) {
 	event, ok := msg.(Event)
 	if !ok {
-		return errors.New(fmt.Sprintf("expecting Event interface, got %T", msg))
+		return errors.New(fmt.Sprintf("expected Event interface, got %T", msg))
 	}
 	if dest, err = primitives.WriteString(event.GetEventType(), dest); err != nil {
 		return err
@@ -190,7 +190,7 @@ func (c *EventCodec) Encode(msg Message, dest []byte, version cassandraprotocol.
 func (c *EventCodec) EncodedLength(msg Message, version cassandraprotocol.ProtocolVersion) (length int, err error) {
 	event, ok := msg.(Event)
 	if !ok {
-		return -1, errors.New(fmt.Sprintf("expecting Event interface, got %T", msg))
+		return -1, errors.New(fmt.Sprintf("expected Event interface, got %T", msg))
 	}
 	length = primitives.LengthOfString(event.GetEventType())
 	switch event.GetEventType() {
