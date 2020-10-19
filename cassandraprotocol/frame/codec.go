@@ -24,7 +24,7 @@ var defaultCodecs = []message.Codec{
 	&message.ReadyCodec{},
 	&message.AuthenticateCodec{},
 	&message.SupportedCodec{},
-	// TODO result
+	&message.ResultCodec{},
 	&message.EventCodec{},
 	&message.AuthChallengeCodec{},
 	&message.AuthSuccessCodec{},
