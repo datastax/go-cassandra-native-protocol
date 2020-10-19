@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"go-cassandra-native-protocol/cassandraprotocol"
+	"io"
 )
 
 type mapType struct {
@@ -21,16 +22,16 @@ func (t *mapType) String() string {
 
 type mapTypeCodec struct{}
 
-func (c *mapTypeCodec) Encode(t DataType, dest []byte, version cassandraprotocol.ProtocolVersion) (remaining []byte, err error) {
+func (c *mapTypeCodec) Encode(t DataType, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
 	mapType, ok := t.(*mapType)
 	if !ok {
-		return dest, errors.New(fmt.Sprintf("expected mapType struct, got %T", t))
-	} else if dest, err = WriteDataType(mapType.keyType, dest, version); err != nil {
-		return dest, fmt.Errorf("cannot write map key type: %w", err)
-	} else if dest, err = WriteDataType(mapType.valueType, dest, version); err != nil {
-		return dest, fmt.Errorf("cannot write map value type: %w", err)
+		return errors.New(fmt.Sprintf("expected mapType struct, got %T", t))
+	} else if err = WriteDataType(mapType.keyType, dest, version); err != nil {
+		return fmt.Errorf("cannot write map key type: %w", err)
+	} else if err = WriteDataType(mapType.valueType, dest, version); err != nil {
+		return fmt.Errorf("cannot write map value type: %w", err)
 	}
-	return dest, nil
+	return nil
 }
 
 func (c *mapTypeCodec) EncodedLength(t DataType, version cassandraprotocol.ProtocolVersion) (length int, err error) {
@@ -51,12 +52,12 @@ func (c *mapTypeCodec) EncodedLength(t DataType, version cassandraprotocol.Proto
 	return length, nil
 }
 
-func (c *mapTypeCodec) Decode(source []byte, version cassandraprotocol.ProtocolVersion) (decoded DataType, remaining []byte, err error) {
+func (c *mapTypeCodec) Decode(source io.Reader, version cassandraprotocol.ProtocolVersion) (decoded DataType, err error) {
 	mapType := &mapType{}
-	if mapType.keyType, source, err = ReadDataType(source, version); err != nil {
-		return nil, source, fmt.Errorf("cannot read map key type: %w", err)
-	} else if mapType.valueType, source, err = ReadDataType(source, version); err != nil {
-		return nil, source, fmt.Errorf("cannot read map value type: %w", err)
+	if mapType.keyType, err = ReadDataType(source, version); err != nil {
+		return nil, fmt.Errorf("cannot read map key type: %w", err)
+	} else if mapType.valueType, err = ReadDataType(source, version); err != nil {
+		return nil, fmt.Errorf("cannot read map value type: %w", err)
 	}
-	return mapType, source, nil
+	return mapType, nil
 }

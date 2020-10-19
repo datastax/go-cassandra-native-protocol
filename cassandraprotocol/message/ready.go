@@ -1,6 +1,9 @@
 package message
 
-import "go-cassandra-native-protocol/cassandraprotocol"
+import (
+	"go-cassandra-native-protocol/cassandraprotocol"
+	"io"
+)
 
 type Ready struct {
 }
@@ -19,7 +22,7 @@ func (m *Ready) String() string {
 
 type ReadyCodec struct{}
 
-func (c *ReadyCodec) Encode(_ Message, _ []byte, _ cassandraprotocol.ProtocolVersion) error {
+func (c *ReadyCodec) Encode(_ Message, _ io.Writer, _ cassandraprotocol.ProtocolVersion) error {
 	return nil
 }
 
@@ -27,7 +30,7 @@ func (c *ReadyCodec) EncodedLength(_ Message, _ cassandraprotocol.ProtocolVersio
 	return 0, nil
 }
 
-func (c *ReadyCodec) Decode(_ []byte, _ cassandraprotocol.ProtocolVersion) (Message, error) {
+func (c *ReadyCodec) Decode(_ io.Reader, _ cassandraprotocol.ProtocolVersion) (Message, error) {
 	return &Ready{}, nil
 }
 

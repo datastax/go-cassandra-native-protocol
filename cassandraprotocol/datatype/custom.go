@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go-cassandra-native-protocol/cassandraprotocol"
 	"go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"io"
 )
 
 type customType struct {
@@ -21,29 +22,28 @@ func (t *customType) String() string {
 
 type customTypeCodec struct{}
 
-func (c *customTypeCodec) Encode(t DataType, dest []byte, _ cassandraprotocol.ProtocolVersion) (remaining []byte, err error) {
-	customType, ok := t.(*customType)
-	if !ok {
-		return dest, errors.New(fmt.Sprintf("expected customType struct, got %T", t))
-	} else if dest, err = primitives.WriteString(customType.className, dest); err != nil {
-		return dest, fmt.Errorf("cannot write custom type class name: %w", err)
+func (c *customTypeCodec) Encode(t DataType, dest io.Writer, _ cassandraprotocol.ProtocolVersion) (err error) {
+	if customType, ok := t.(*customType); !ok {
+		return errors.New(fmt.Sprintf("expected customType struct, got %T", t))
+	} else if err = primitives.WriteString(customType.className, dest); err != nil {
+		return fmt.Errorf("cannot write custom type class name: %w", err)
 	}
-	return dest, nil
+	return nil
 }
 
 func (c *customTypeCodec) EncodedLength(t DataType, _ cassandraprotocol.ProtocolVersion) (length int, err error) {
-	customType, ok := t.(*customType)
-	if !ok {
+	if customType, ok := t.(*customType); !ok {
 		return -1, errors.New(fmt.Sprintf("expected customType struct, got %T", t))
+	} else {
+		length += primitives.LengthOfString(customType.className)
 	}
-	length += primitives.LengthOfString(customType.className)
 	return length, nil
 }
 
-func (c *customTypeCodec) Decode(source []byte, _ cassandraprotocol.ProtocolVersion) (t DataType, remaining []byte, err error) {
+func (c *customTypeCodec) Decode(source io.Reader, _ cassandraprotocol.ProtocolVersion) (t DataType, err error) {
 	customType := &customType{}
-	if customType.className, source, err = primitives.ReadString(source); err != nil {
-		return nil, source, fmt.Errorf("cannot read custom type class name: %w", err)
+	if customType.className, err = primitives.ReadString(source); err != nil {
+		return nil, fmt.Errorf("cannot read custom type class name: %w", err)
 	}
-	return customType, source, nil
+	return customType, nil
 }

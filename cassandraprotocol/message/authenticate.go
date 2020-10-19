@@ -3,6 +3,7 @@ package message
 import (
 	"go-cassandra-native-protocol/cassandraprotocol"
 	"go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"io"
 )
 
 type Authenticate struct {
@@ -23,10 +24,9 @@ func (m *Authenticate) String() string {
 
 type AuthenticateCodec struct{}
 
-func (c *AuthenticateCodec) Encode(msg Message, dest []byte, _ cassandraprotocol.ProtocolVersion) error {
+func (c *AuthenticateCodec) Encode(msg Message, dest io.Writer, _ cassandraprotocol.ProtocolVersion) error {
 	authenticate := msg.(*Authenticate)
-	_, err := primitives.WriteString(authenticate.Authenticator, dest)
-	return err
+	return primitives.WriteString(authenticate.Authenticator, dest)
 }
 
 func (c *AuthenticateCodec) EncodedLength(msg Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
@@ -34,12 +34,12 @@ func (c *AuthenticateCodec) EncodedLength(msg Message, _ cassandraprotocol.Proto
 	return primitives.LengthOfString(authenticate.Authenticator), nil
 }
 
-func (c *AuthenticateCodec) Decode(source []byte, _ cassandraprotocol.ProtocolVersion) (Message, error) {
-	authenticator, _, err := primitives.ReadString(source)
-	if err != nil {
+func (c *AuthenticateCodec) Decode(source io.Reader, _ cassandraprotocol.ProtocolVersion) (Message, error) {
+	if authenticator, err := primitives.ReadString(source); err != nil {
 		return nil, err
+	} else {
+		return &Authenticate{Authenticator: authenticator}, nil
 	}
-	return &Authenticate{Authenticator: authenticator}, nil
 }
 
 func (c *AuthenticateCodec) GetOpCode() cassandraprotocol.OpCode {

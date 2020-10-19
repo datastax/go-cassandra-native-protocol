@@ -6,6 +6,7 @@ import (
 	"go-cassandra-native-protocol/cassandraprotocol"
 	"go-cassandra-native-protocol/cassandraprotocol/datatype"
 	"go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"io"
 )
 
 type Result interface {
@@ -190,12 +191,12 @@ type ColumnSpec struct {
 
 type ResultCodec struct{}
 
-func (c *ResultCodec) Encode(msg Message, dest []byte, version cassandraprotocol.ProtocolVersion) (err error) {
+func (c *ResultCodec) Encode(msg Message, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
 	result, ok := msg.(Result)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected interface Result, got %T", msg))
 	}
-	if dest, err = primitives.WriteInt(result.GetResultType(), dest); err != nil {
+	if err = primitives.WriteInt(result.GetResultType(), dest); err != nil {
 		return fmt.Errorf("cannot write RESULT type: %w", err)
 	}
 	switch result.GetResultType() {
@@ -206,7 +207,7 @@ func (c *ResultCodec) Encode(msg Message, dest []byte, version cassandraprotocol
 		if !ok {
 			return errors.New(fmt.Sprintf("expected SetKeyspace struct, got %T", result))
 		}
-		if dest, err = primitives.WriteString(sk.Keyspace, dest); err != nil {
+		if err = primitives.WriteString(sk.Keyspace, dest); err != nil {
 			return fmt.Errorf("cannot write RESULT SET KEYSPACE keyspace: %w", err)
 		}
 	case cassandraprotocol.ResultTypeSchemaChange:
@@ -221,13 +222,13 @@ func (c *ResultCodec) Encode(msg Message, dest []byte, version cassandraprotocol
 		default:
 			return errors.New(fmt.Sprintf("unknown schema change type: %v", sce.Target))
 		}
-		if dest, err = primitives.WriteString(sce.ChangeType, dest); err != nil {
+		if err = primitives.WriteString(sce.ChangeType, dest); err != nil {
 			return fmt.Errorf("cannot write SchemaChange.ChangeType: %w", err)
 		}
-		if dest, err = primitives.WriteString(sce.Target, dest); err != nil {
+		if err = primitives.WriteString(sce.Target, dest); err != nil {
 			return fmt.Errorf("cannot write SchemaChange.Target: %w", err)
 		}
-		if dest, err = primitives.WriteString(sce.Keyspace, dest); err != nil {
+		if err = primitives.WriteString(sce.Keyspace, dest); err != nil {
 			return fmt.Errorf("cannot write SchemaChange.Keyspace: %w", err)
 		}
 		switch sce.Target {
@@ -235,7 +236,7 @@ func (c *ResultCodec) Encode(msg Message, dest []byte, version cassandraprotocol
 		case cassandraprotocol.SchemaChangeTargetTable:
 			fallthrough
 		case cassandraprotocol.SchemaChangeTargetType:
-			if dest, err = primitives.WriteString(sce.Object, dest); err != nil {
+			if err = primitives.WriteString(sce.Object, dest); err != nil {
 				return fmt.Errorf("cannot write SchemaChange.Object: %w", err)
 			}
 		case cassandraprotocol.SchemaChangeTargetAggregate:
@@ -244,10 +245,10 @@ func (c *ResultCodec) Encode(msg Message, dest []byte, version cassandraprotocol
 			if version < cassandraprotocol.ProtocolVersion4 {
 				return errors.New(fmt.Sprintf("%s schema changes are not supported in protocol version %d", sce.Target, version))
 			}
-			if dest, err = primitives.WriteString(sce.Object, dest); err != nil {
+			if err = primitives.WriteString(sce.Object, dest); err != nil {
 				return fmt.Errorf("cannot write SchemaChange.Object: %w", err)
 			}
-			if dest, err = primitives.WriteStringList(sce.Arguments, dest); err != nil {
+			if err = primitives.WriteStringList(sce.Arguments, dest); err != nil {
 				return fmt.Errorf("cannot write SchemaChange.Arguments: %w", err)
 			}
 		default:
@@ -258,18 +259,18 @@ func (c *ResultCodec) Encode(msg Message, dest []byte, version cassandraprotocol
 		if !ok {
 			return errors.New(fmt.Sprintf("expected Prepared struct, got %T", msg))
 		}
-		if dest, err = primitives.WriteShortBytes(p.PreparedQueryId, dest); err != nil {
+		if err = primitives.WriteShortBytes(p.PreparedQueryId, dest); err != nil {
 			return fmt.Errorf("cannot write RESULT PREPARED prepared query id: %w", err)
 		}
 		if version >= cassandraprotocol.ProtocolVersion5 {
-			if dest, err = primitives.WriteShortBytes(p.ResultMetadataId, dest); err != nil {
+			if err = primitives.WriteShortBytes(p.ResultMetadataId, dest); err != nil {
 				return fmt.Errorf("cannot write RESULT PREPARED result metadata id: %w", err)
 			}
 		}
-		if dest, err = encodeRowsMetadata(p.VariablesMetadata, version >= cassandraprotocol.ProtocolVersion4, version, dest); err != nil {
+		if err = encodeRowsMetadata(p.VariablesMetadata, version >= cassandraprotocol.ProtocolVersion4, dest, version); err != nil {
 			return fmt.Errorf("cannot write RESULT PREPARED variables metadata: %w", err)
 		}
-		if dest, err = encodeRowsMetadata(p.ResultMetadata, false, version, dest); err != nil {
+		if err = encodeRowsMetadata(p.ResultMetadata, false, dest, version); err != nil {
 			return fmt.Errorf("cannot write RESULT PREPARED result metadata: %w", err)
 		}
 	case cassandraprotocol.ResultTypeRows:
@@ -277,15 +278,15 @@ func (c *ResultCodec) Encode(msg Message, dest []byte, version cassandraprotocol
 		if !ok {
 			return errors.New(fmt.Sprintf("expected Rows struct, got %T", msg))
 		}
-		if dest, err = encodeRowsMetadata(rows.Metadata, false, version, dest); err != nil {
+		if err = encodeRowsMetadata(rows.Metadata, false, dest, version); err != nil {
 			return fmt.Errorf("cannot write RESULT ROWS metadata: %w", err)
 		}
-		if dest, err = primitives.WriteInt(int32(len(rows.Data)), dest); err != nil {
+		if err = primitives.WriteInt(int32(len(rows.Data)), dest); err != nil {
 			return fmt.Errorf("cannot write RESULT ROWS data length: %w", err)
 		}
 		for i, row := range rows.Data {
 			for j, col := range row {
-				if dest, err = primitives.WriteBytes(col, dest); err != nil {
+				if err = primitives.WriteBytes(col, dest); err != nil {
 					return fmt.Errorf("cannot write RESULT ROWS data row %d col %d: %w", i, j, err)
 				}
 			}
@@ -377,9 +378,9 @@ func (c *ResultCodec) EncodedLength(msg Message, version cassandraprotocol.Proto
 	return length, nil
 }
 
-func (c *ResultCodec) Decode(source []byte, version cassandraprotocol.ProtocolVersion) (msg Message, err error) {
+func (c *ResultCodec) Decode(source io.Reader, version cassandraprotocol.ProtocolVersion) (msg Message, err error) {
 	var resultType cassandraprotocol.ResultType
-	if resultType, source, err = primitives.ReadInt(source); err != nil {
+	if resultType, err = primitives.ReadInt(source); err != nil {
 		return nil, fmt.Errorf("cannot read RESULT type: %w", err)
 	}
 	switch resultType {
@@ -387,19 +388,19 @@ func (c *ResultCodec) Decode(source []byte, version cassandraprotocol.ProtocolVe
 		return &Void{}, nil
 	case cassandraprotocol.ResultTypeSetKeyspace:
 		setKeyspace := &SetKeyspace{}
-		if setKeyspace.Keyspace, source, err = primitives.ReadString(source); err != nil {
+		if setKeyspace.Keyspace, err = primitives.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read RESULT SetKeyspace.Keyspace: %w", err)
 		}
 		return setKeyspace, nil
 	case cassandraprotocol.ResultTypeSchemaChange:
 		sc := &SchemaChange{}
-		if sc.ChangeType, source, err = primitives.ReadString(source); err != nil {
+		if sc.ChangeType, err = primitives.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read SchemaChange.ChangeType: %w", err)
 		}
-		if sc.Target, source, err = primitives.ReadString(source); err != nil {
+		if sc.Target, err = primitives.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read SchemaChange.Target: %w", err)
 		}
-		if sc.Keyspace, source, err = primitives.ReadString(source); err != nil {
+		if sc.Keyspace, err = primitives.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read SchemaChange.Keyspace: %w", err)
 		}
 		switch sc.Target {
@@ -407,7 +408,7 @@ func (c *ResultCodec) Decode(source []byte, version cassandraprotocol.ProtocolVe
 		case cassandraprotocol.SchemaChangeTargetTable:
 			fallthrough
 		case cassandraprotocol.SchemaChangeTargetType:
-			if sc.Object, source, err = primitives.ReadString(source); err != nil {
+			if sc.Object, err = primitives.ReadString(source); err != nil {
 				return nil, fmt.Errorf("cannot read SchemaChange.Object: %w", err)
 			}
 		case cassandraprotocol.SchemaChangeTargetAggregate:
@@ -416,10 +417,10 @@ func (c *ResultCodec) Decode(source []byte, version cassandraprotocol.ProtocolVe
 			if version < cassandraprotocol.ProtocolVersion4 {
 				return nil, errors.New(fmt.Sprintf("%s schema change are not supported in protocol version %d", sc.Target, version))
 			}
-			if sc.Object, source, err = primitives.ReadString(source); err != nil {
+			if sc.Object, err = primitives.ReadString(source); err != nil {
 				return nil, fmt.Errorf("cannot read SchemaChange.Object: %w", err)
 			}
-			if sc.Arguments, source, err = primitives.ReadStringList(source); err != nil {
+			if sc.Arguments, err = primitives.ReadStringList(source); err != nil {
 				return nil, fmt.Errorf("cannot read SchemaChange.Arguments: %w", err)
 			}
 		default:
@@ -428,35 +429,35 @@ func (c *ResultCodec) Decode(source []byte, version cassandraprotocol.ProtocolVe
 		return sc, nil
 	case cassandraprotocol.ResultTypePrepared:
 		p := &Prepared{}
-		if p.PreparedQueryId, source, err = primitives.ReadShortBytes(source); err != nil {
+		if p.PreparedQueryId, err = primitives.ReadShortBytes(source); err != nil {
 			return nil, fmt.Errorf("cannot read RESULT PREPARED prepared query id: %w", err)
 		}
 		if version >= cassandraprotocol.ProtocolVersion5 {
-			if p.ResultMetadataId, source, err = primitives.ReadShortBytes(source); err != nil {
+			if p.ResultMetadataId, err = primitives.ReadShortBytes(source); err != nil {
 				return nil, fmt.Errorf("cannot read RESULT PREPARED result metadata id: %w", err)
 			}
 		}
-		if p.VariablesMetadata, source, err = decodeRowsMetadata(version >= cassandraprotocol.ProtocolVersion4, version, source); err != nil {
+		if p.VariablesMetadata, err = decodeRowsMetadata(version >= cassandraprotocol.ProtocolVersion4, source, version); err != nil {
 			return nil, fmt.Errorf("cannot read RESULT PREPARED variables metadata: %w", err)
 		}
-		if p.ResultMetadata, source, err = decodeRowsMetadata(false, version, source); err != nil {
+		if p.ResultMetadata, err = decodeRowsMetadata(false, source, version); err != nil {
 			return nil, fmt.Errorf("cannot read RESULT PREPARED result metadata: %w", err)
 		}
 		return p, nil
 	case cassandraprotocol.ResultTypeRows:
 		rows := &Rows{}
-		if rows.Metadata, source, err = decodeRowsMetadata(false, version, source); err != nil {
+		if rows.Metadata, err = decodeRowsMetadata(false, source, version); err != nil {
 			return nil, fmt.Errorf("cannot read RESULT ROWS metadata: %w", err)
 		}
 		var rowsCount int32
-		if rowsCount, source, err = primitives.ReadInt(source); err != nil {
+		if rowsCount, err = primitives.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read RESULT ROWS data length: %w", err)
 		}
 		rows.Data = make([][][]byte, rowsCount)
 		for i := 0; i < int(rowsCount); i++ {
 			rows.Data[i] = make([][]byte, rows.Metadata.ColumnCount)
 			for j := 0; j < int(rows.Metadata.ColumnCount); j++ {
-				if rows.Data[i][j], source, err = primitives.ReadBytes(source); err != nil {
+				if rows.Data[i][j], err = primitives.ReadBytes(source); err != nil {
 					return nil, fmt.Errorf("cannot read RESULT ROWS data row %d col %d: %w", i, j, err)
 				}
 			}
@@ -471,68 +472,68 @@ func (c *ResultCodec) GetOpCode() cassandraprotocol.OpCode {
 	return cassandraprotocol.OpCodeResult
 }
 
-func encodeRowsMetadata(metadata *RowsMetadata, encodePkIndices bool, version cassandraprotocol.ProtocolVersion, dest []byte) (remaining []byte, err error) {
-	if dest, err = primitives.WriteInt(metadata.Flags, dest); err != nil {
-		return dest, fmt.Errorf("cannot write RESULT ROWS metadata flags: %w", err)
+func encodeRowsMetadata(metadata *RowsMetadata, encodePkIndices bool, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
+	if err = primitives.WriteInt(metadata.Flags, dest); err != nil {
+		return fmt.Errorf("cannot write RESULT ROWS metadata flags: %w", err)
 	}
-	if dest, err = primitives.WriteInt(metadata.ColumnCount, dest); err != nil {
-		return dest, fmt.Errorf("cannot write RESULT ROWS metadata column count: %w", err)
+	if err = primitives.WriteInt(metadata.ColumnCount, dest); err != nil {
+		return fmt.Errorf("cannot write RESULT ROWS metadata column count: %w", err)
 	}
 	if encodePkIndices {
 		if metadata.PkIndices == nil {
-			if dest, err = primitives.WriteInt(0, dest); err != nil {
-				return dest, fmt.Errorf("cannot write RESULT ROWS metadata pk indices length: %w", err)
+			if err = primitives.WriteInt(0, dest); err != nil {
+				return fmt.Errorf("cannot write RESULT ROWS metadata pk indices length: %w", err)
 			}
 		} else {
-			if dest, err = primitives.WriteInt(int32(len(metadata.PkIndices)), dest); err != nil {
-				return dest, fmt.Errorf("cannot write RESULT ROWS metadata pk indices length: %w", err)
+			if err = primitives.WriteInt(int32(len(metadata.PkIndices)), dest); err != nil {
+				return fmt.Errorf("cannot write RESULT ROWS metadata pk indices length: %w", err)
 			}
 			for i, idx := range metadata.PkIndices {
-				if dest, err = primitives.WriteShort(idx, dest); err != nil {
-					return dest, fmt.Errorf("cannot write RESULT ROWS metadata pk indices element %d: %w", i, err)
+				if err = primitives.WriteShort(idx, dest); err != nil {
+					return fmt.Errorf("cannot write RESULT ROWS metadata pk indices element %d: %w", i, err)
 				}
 			}
 		}
 	}
 	if metadata.Flags&cassandraprotocol.RowsFlagHasMorePages > 0 {
-		if dest, err = primitives.WriteBytes(metadata.PagingState, dest); err != nil {
-			return dest, fmt.Errorf("cannot write RESULT ROWS metadata paging state: %w", err)
+		if err = primitives.WriteBytes(metadata.PagingState, dest); err != nil {
+			return fmt.Errorf("cannot write RESULT ROWS metadata paging state: %w", err)
 		}
 	}
 	if metadata.Flags&cassandraprotocol.RowsFlagMetadataChanged > 0 {
-		if dest, err = primitives.WriteShortBytes(metadata.NewResultMetadataId, dest); err != nil {
-			return dest, fmt.Errorf("cannot write RESULT ROWS metadata new result metadata id: %w", err)
+		if err = primitives.WriteShortBytes(metadata.NewResultMetadataId, dest); err != nil {
+			return fmt.Errorf("cannot write RESULT ROWS metadata new result metadata id: %w", err)
 		}
 	}
 	if metadata.Flags&cassandraprotocol.RowsFlagNoMetadata == 0 && len(metadata.ColumnSpecs) > 0 {
 		globalTable := metadata.Flags&cassandraprotocol.RowsFlagGlobalTablesSpec > 0
 		if globalTable {
 			firstSpec := metadata.ColumnSpecs[0]
-			if dest, err = primitives.WriteString(firstSpec.KeyspaceName, dest); err != nil {
-				return dest, fmt.Errorf("cannot write RESULT ROWS column spec global keyspace: %w", err)
+			if err = primitives.WriteString(firstSpec.KeyspaceName, dest); err != nil {
+				return fmt.Errorf("cannot write RESULT ROWS column spec global keyspace: %w", err)
 			}
-			if dest, err = primitives.WriteString(firstSpec.TableName, dest); err != nil {
-				return dest, fmt.Errorf("cannot write RESULT ROWS column spec global table: %w", err)
+			if err = primitives.WriteString(firstSpec.TableName, dest); err != nil {
+				return fmt.Errorf("cannot write RESULT ROWS column spec global table: %w", err)
 			}
 		}
 		for i, spec := range metadata.ColumnSpecs {
 			if !globalTable {
-				if dest, err = primitives.WriteString(spec.KeyspaceName, dest); err != nil {
-					return dest, fmt.Errorf("cannot write RESULT ROWS column spec %d keyspace: %w", i, err)
+				if err = primitives.WriteString(spec.KeyspaceName, dest); err != nil {
+					return fmt.Errorf("cannot write RESULT ROWS column spec %d keyspace: %w", i, err)
 				}
-				if dest, err = primitives.WriteString(spec.TableName, dest); err != nil {
-					return dest, fmt.Errorf("cannot write RESULT ROWS column spec %d table: %w", i, err)
+				if err = primitives.WriteString(spec.TableName, dest); err != nil {
+					return fmt.Errorf("cannot write RESULT ROWS column spec %d table: %w", i, err)
 				}
 			}
-			if dest, err = primitives.WriteString(spec.Name, dest); err != nil {
-				return dest, fmt.Errorf("cannot write RESULT ROWS column spec %d name: %w", i, err)
+			if err = primitives.WriteString(spec.Name, dest); err != nil {
+				return fmt.Errorf("cannot write RESULT ROWS column spec %d name: %w", i, err)
 			}
-			if dest, err = datatype.WriteDataType(spec.Type, dest, version); err != nil {
-				return dest, fmt.Errorf("cannot write RESULT ROWS column spec %d type: %w", i, err)
+			if err = datatype.WriteDataType(spec.Type, dest, version); err != nil {
+				return fmt.Errorf("cannot write RESULT ROWS column spec %d type: %w", i, err)
 			}
 		}
 	}
-	return dest, nil
+	return nil
 }
 
 func lengthOfRowsMetadata(metadata *RowsMetadata, encodePkIndices bool, version cassandraprotocol.ProtocolVersion) (length int, err error) {
@@ -573,37 +574,37 @@ func lengthOfRowsMetadata(metadata *RowsMetadata, encodePkIndices bool, version 
 	return length, nil
 }
 
-func decodeRowsMetadata(decodePkIndices bool, version cassandraprotocol.ProtocolVersion, source []byte) (metadata *RowsMetadata, remaining []byte, err error) {
+func decodeRowsMetadata(decodePkIndices bool, source io.Reader, version cassandraprotocol.ProtocolVersion) (metadata *RowsMetadata, err error) {
 	metadata = &RowsMetadata{}
-	if metadata.Flags, source, err = primitives.ReadInt(source); err != nil {
-		return nil, source, fmt.Errorf("cannot read RESULT ROWS metadata flags: %w", err)
+	if metadata.Flags, err = primitives.ReadInt(source); err != nil {
+		return nil, fmt.Errorf("cannot read RESULT ROWS metadata flags: %w", err)
 	}
 	var columnCount int32
-	if columnCount, source, err = primitives.ReadInt(source); err != nil {
-		return nil, source, fmt.Errorf("cannot read RESULT ROWS metadata column count: %w", err)
+	if columnCount, err = primitives.ReadInt(source); err != nil {
+		return nil, fmt.Errorf("cannot read RESULT ROWS metadata column count: %w", err)
 	}
 	if decodePkIndices {
 		var pkCount int32
-		if pkCount, source, err = primitives.ReadInt(source); err != nil {
-			return nil, source, fmt.Errorf("cannot read RESULT ROWS metadata pk indices length: %w", err)
+		if pkCount, err = primitives.ReadInt(source); err != nil {
+			return nil, fmt.Errorf("cannot read RESULT ROWS metadata pk indices length: %w", err)
 		}
 		if pkCount > 0 {
 			metadata.PkIndices = make([]uint16, pkCount)
 			for i := 0; i < int(pkCount); i++ {
-				if metadata.PkIndices[i], source, err = primitives.ReadShort(source); err != nil {
-					return nil, source, fmt.Errorf("cannot read RESULT ROWS metadata pk index element %d: %w", i, err)
+				if metadata.PkIndices[i], err = primitives.ReadShort(source); err != nil {
+					return nil, fmt.Errorf("cannot read RESULT ROWS metadata pk index element %d: %w", i, err)
 				}
 			}
 		}
 	}
 	if metadata.Flags&cassandraprotocol.RowsFlagHasMorePages > 0 {
-		if metadata.PagingState, source, err = primitives.ReadBytes(source); err != nil {
-			return nil, source, fmt.Errorf("cannot read RESULT ROWS metadata paging state: %w", err)
+		if metadata.PagingState, err = primitives.ReadBytes(source); err != nil {
+			return nil, fmt.Errorf("cannot read RESULT ROWS metadata paging state: %w", err)
 		}
 	}
 	if metadata.Flags&cassandraprotocol.RowsFlagMetadataChanged > 0 {
-		if metadata.NewResultMetadataId, source, err = primitives.ReadShortBytes(source); err != nil {
-			return nil, source, fmt.Errorf("cannot read RESULT ROWS metadata new result metadata id: %w", err)
+		if metadata.NewResultMetadataId, err = primitives.ReadShortBytes(source); err != nil {
+			return nil, fmt.Errorf("cannot read RESULT ROWS metadata new result metadata id: %w", err)
 		}
 	}
 	if metadata.Flags&cassandraprotocol.RowsFlagNoMetadata == 0 {
@@ -612,11 +613,11 @@ func decodeRowsMetadata(decodePkIndices bool, version cassandraprotocol.Protocol
 		var globalKsName string
 		var globalTableName string
 		if globalTableSpec {
-			if globalKsName, source, err = primitives.ReadString(source); err != nil {
-				return nil, source, fmt.Errorf("cannot read RESULT ROWS column spec global keyspace: %w", err)
+			if globalKsName, err = primitives.ReadString(source); err != nil {
+				return nil, fmt.Errorf("cannot read RESULT ROWS column spec global keyspace: %w", err)
 			}
-			if globalTableName, source, err = primitives.ReadString(source); err != nil {
-				return nil, source, fmt.Errorf("cannot read RESULT ROWS column spec global table: %w", err)
+			if globalTableName, err = primitives.ReadString(source); err != nil {
+				return nil, fmt.Errorf("cannot read RESULT ROWS column spec global table: %w", err)
 			}
 		}
 		for i := 0; i < int(columnCount); i++ {
@@ -624,26 +625,26 @@ func decodeRowsMetadata(decodePkIndices bool, version cassandraprotocol.Protocol
 			if globalTableSpec {
 				metadata.ColumnSpecs[i].KeyspaceName = globalKsName
 			} else {
-				if metadata.ColumnSpecs[i].KeyspaceName, source, err = primitives.ReadString(source); err != nil {
-					return nil, source, fmt.Errorf("cannot read RESULT ROWS column spec %d keyspace: %w", i, err)
+				if metadata.ColumnSpecs[i].KeyspaceName, err = primitives.ReadString(source); err != nil {
+					return nil, fmt.Errorf("cannot read RESULT ROWS column spec %d keyspace: %w", i, err)
 				}
 			}
 			if globalTableSpec {
 				metadata.ColumnSpecs[i].TableName = globalTableName
 			} else {
-				if metadata.ColumnSpecs[i].TableName, source, err = primitives.ReadString(source); err != nil {
-					return nil, source, fmt.Errorf("cannot read RESULT ROWS column spec %d table: %w", i, err)
+				if metadata.ColumnSpecs[i].TableName, err = primitives.ReadString(source); err != nil {
+					return nil, fmt.Errorf("cannot read RESULT ROWS column spec %d table: %w", i, err)
 				}
 			}
-			if metadata.ColumnSpecs[i].Name, source, err = primitives.ReadString(source); err != nil {
-				return nil, source, fmt.Errorf("cannot read RESULT ROWS column spec %d name: %w", i, err)
+			if metadata.ColumnSpecs[i].Name, err = primitives.ReadString(source); err != nil {
+				return nil, fmt.Errorf("cannot read RESULT ROWS column spec %d name: %w", i, err)
 			}
-			if metadata.ColumnSpecs[i].Type, source, err = datatype.ReadDataType(source, version); err != nil {
-				return nil, source, fmt.Errorf("cannot read RESULT ROWS column spec %d type: %w", i, err)
+			if metadata.ColumnSpecs[i].Type, err = datatype.ReadDataType(source, version); err != nil {
+				return nil, fmt.Errorf("cannot read RESULT ROWS column spec %d type: %w", i, err)
 			}
 		}
 	}
-	return metadata, source, nil
+	return metadata, nil
 }
 
 func computeFlags(

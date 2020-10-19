@@ -2,6 +2,7 @@ package datatype
 
 import (
 	"go-cassandra-native-protocol/cassandraprotocol"
+	"io"
 )
 
 type primitiveType struct {
@@ -62,14 +63,14 @@ type primitiveTypeCodec struct {
 	primitiveType *primitiveType
 }
 
-func (c *primitiveTypeCodec) Encode(_ DataType, dest []byte, _ cassandraprotocol.ProtocolVersion) (remaining []byte, err error) {
-	return dest, nil
+func (c *primitiveTypeCodec) Encode(_ DataType, dest io.Writer, _ cassandraprotocol.ProtocolVersion) (err error) {
+	return nil
 }
 
 func (c *primitiveTypeCodec) EncodedLength(_ DataType, _ cassandraprotocol.ProtocolVersion) (int, error) {
 	return 0, nil
 }
 
-func (c *primitiveTypeCodec) Decode(source []byte, _ cassandraprotocol.ProtocolVersion) (t DataType, remaining []byte, err error) {
-	return c.primitiveType, source, nil
+func (c *primitiveTypeCodec) Decode(source io.Reader, _ cassandraprotocol.ProtocolVersion) (t DataType, err error) {
+	return c.primitiveType, nil
 }

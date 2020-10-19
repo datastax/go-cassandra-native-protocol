@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go-cassandra-native-protocol/cassandraprotocol"
 	"go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"io"
 )
 
 type Query struct {
@@ -22,16 +23,16 @@ func (q Query) GetOpCode() cassandraprotocol.OpCode {
 type QueryCodec struct {
 }
 
-func (c *QueryCodec) Encode(msg Message, dest []byte, version cassandraprotocol.ProtocolVersion) (err error) {
+func (c *QueryCodec) Encode(msg Message, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
 	query := msg.(*Query)
-	dest, err = primitives.WriteLongString(query.Query, dest)
+	err = primitives.WriteLongString(query.Query, dest)
 	if err == nil {
-		_, err = EncodeQueryOptions(query.Options, dest, version)
+		err = EncodeQueryOptions(query.Options, dest, version)
 	}
 	return err
 }
 
-func (q QueryCodec) EncodedLength(msg Message, version cassandraprotocol.ProtocolVersion) (int, error) {
+func (c *QueryCodec) EncodedLength(msg Message, version cassandraprotocol.ProtocolVersion) (int, error) {
 	query := msg.(*Query)
 	lengthOfQuery := primitives.LengthOfLongString(query.Query)
 	lengthOfQueryOptions, err := LengthOfQueryOptions(query.Options, version)
@@ -41,12 +42,12 @@ func (q QueryCodec) EncodedLength(msg Message, version cassandraprotocol.Protoco
 	return lengthOfQuery + lengthOfQueryOptions, nil
 }
 
-func (q QueryCodec) Decode(source []byte, version cassandraprotocol.ProtocolVersion) (msg Message, err error) {
+func (c *QueryCodec) Decode(source io.Reader, version cassandraprotocol.ProtocolVersion) (msg Message, err error) {
 	var query string
-	query, source, err = primitives.ReadLongString(source)
+	query, err = primitives.ReadLongString(source)
 	if err == nil {
 		var options *QueryOptions
-		options, source, err = DecodeQueryOptions(source, version)
+		options, err = DecodeQueryOptions(source, version)
 		if err == nil {
 			return Query{Query: query, Options: options}, nil
 		}

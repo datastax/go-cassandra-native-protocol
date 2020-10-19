@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go-cassandra-native-protocol/cassandraprotocol"
 	"go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"io"
 )
 
 type Execute struct {
@@ -27,17 +28,17 @@ func (m *Execute) String() string {
 
 type ExecuteCodec struct{}
 
-func (c *ExecuteCodec) Encode(msg Message, dest []byte, version cassandraprotocol.ProtocolVersion) (err error) {
+func (c *ExecuteCodec) Encode(msg Message, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
 	execute := msg.(*Execute)
-	if dest, err = primitives.WriteShortBytes(execute.QueryId, dest); err != nil {
+	if err = primitives.WriteShortBytes(execute.QueryId, dest); err != nil {
 		return fmt.Errorf("cannot write EXECUTE query id: %w", err)
 	}
 	if version >= cassandraprotocol.ProtocolVersion5 {
-		if dest, err = primitives.WriteShortBytes(execute.ResultMetadataId, dest); err != nil {
+		if err = primitives.WriteShortBytes(execute.ResultMetadataId, dest); err != nil {
 			return fmt.Errorf("cannot write EXECUTE result metadata id: %w", err)
 		}
 	}
-	if dest, err = EncodeQueryOptions(execute.Options, dest, version); err != nil {
+	if err = EncodeQueryOptions(execute.Options, dest, version); err != nil {
 		return fmt.Errorf("cannot write EXECUTE query id: %w", err)
 	}
 	return
@@ -56,19 +57,19 @@ func (c *ExecuteCodec) EncodedLength(msg Message, version cassandraprotocol.Prot
 	}
 }
 
-func (c *ExecuteCodec) Decode(source []byte, version cassandraprotocol.ProtocolVersion) (msg Message, err error) {
+func (c *ExecuteCodec) Decode(source io.Reader, version cassandraprotocol.ProtocolVersion) (msg Message, err error) {
 	var queryId []byte
-	if queryId, source, err = primitives.ReadShortBytes(source); err != nil {
+	if queryId, err = primitives.ReadShortBytes(source); err != nil {
 		return nil, fmt.Errorf("cannot read EXECUTE query id: %w", err)
 	}
 	var resultMetadataId []byte
 	if version >= cassandraprotocol.ProtocolVersion5 {
-		if resultMetadataId, source, err = primitives.ReadShortBytes(source); err != nil {
+		if resultMetadataId, err = primitives.ReadShortBytes(source); err != nil {
 			return nil, fmt.Errorf("cannot read EXECUTE result metadata id: %w", err)
 		}
 	}
 	var options *QueryOptions
-	if options, source, err = DecodeQueryOptions(source, version); err != nil {
+	if options, err = DecodeQueryOptions(source, version); err != nil {
 		return nil, fmt.Errorf("cannot read EXECUTE query options: %w", err)
 	}
 	return &Execute{

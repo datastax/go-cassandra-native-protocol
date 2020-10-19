@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go-cassandra-native-protocol/cassandraprotocol"
 	"go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"io"
 )
 
 type Error interface {
@@ -604,15 +605,15 @@ func (m *AlreadyExists) String() string {
 
 type ErrorCodec struct{}
 
-func (c *ErrorCodec) Encode(msg Message, dest []byte, version cassandraprotocol.ProtocolVersion) (err error) {
+func (c *ErrorCodec) Encode(msg Message, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
 	errMsg, ok := msg.(Error)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected Error interface, got %T", msg))
 	}
-	if dest, err = primitives.WriteInt(errMsg.GetErrorCode(), dest); err != nil {
+	if err = primitives.WriteInt(errMsg.GetErrorCode(), dest); err != nil {
 		return fmt.Errorf("cannot write ERROR code: %w", err)
 	}
-	if dest, err = primitives.WriteString(errMsg.GetErrorMessage(), dest); err != nil {
+	if err = primitives.WriteString(errMsg.GetErrorMessage(), dest); err != nil {
 		return fmt.Errorf("cannot write ERROR message: %w", err)
 	}
 	switch errMsg.GetErrorCode() {
@@ -632,13 +633,13 @@ func (c *ErrorCodec) Encode(msg Message, dest []byte, version cassandraprotocol.
 		if !ok {
 			return errors.New(fmt.Sprintf("expected Unavailable, got %T", msg))
 		}
-		if dest, err = primitives.WriteShort(unavailable.Consistency, dest); err != nil {
+		if err = primitives.WriteShort(unavailable.Consistency, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR UNAVAILABLE consistency: %w", err)
 		}
-		if dest, err = primitives.WriteInt(unavailable.Required, dest); err != nil {
+		if err = primitives.WriteInt(unavailable.Required, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR UNAVAILABLE required: %w", err)
 		}
-		if dest, err = primitives.WriteInt(unavailable.Alive, dest); err != nil {
+		if err = primitives.WriteInt(unavailable.Alive, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR UNAVAILABLE alive: %w", err)
 		}
 
@@ -647,19 +648,19 @@ func (c *ErrorCodec) Encode(msg Message, dest []byte, version cassandraprotocol.
 		if !ok {
 			return errors.New(fmt.Sprintf("expected ReadTimeout, got %T", msg))
 		}
-		if dest, err = primitives.WriteShort(readTimeout.Consistency, dest); err != nil {
+		if err = primitives.WriteShort(readTimeout.Consistency, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR READ TIMEOUT consistency: %w", err)
 		}
-		if dest, err = primitives.WriteInt(readTimeout.Received, dest); err != nil {
+		if err = primitives.WriteInt(readTimeout.Received, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR READ TIMEOUT received: %w", err)
 		}
-		if dest, err = primitives.WriteInt(readTimeout.BlockFor, dest); err != nil {
+		if err = primitives.WriteInt(readTimeout.BlockFor, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR READ TIMEOUT block for: %w", err)
 		}
 		if readTimeout.DataPresent {
-			dest, err = primitives.WriteByte(1, dest)
+			err = primitives.WriteByte(1, dest)
 		} else {
-			dest, err = primitives.WriteByte(0, dest)
+			err = primitives.WriteByte(0, dest)
 		}
 		if err != nil {
 			return fmt.Errorf("cannot write ERROR READ TIMEOUT data present: %w", err)
@@ -670,16 +671,16 @@ func (c *ErrorCodec) Encode(msg Message, dest []byte, version cassandraprotocol.
 		if !ok {
 			return errors.New(fmt.Sprintf("expected WriteTimeout, got %T", msg))
 		}
-		if dest, err = primitives.WriteShort(writeTimeout.Consistency, dest); err != nil {
+		if err = primitives.WriteShort(writeTimeout.Consistency, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR WRITE TIMEOUT consistency: %w", err)
 		}
-		if dest, err = primitives.WriteInt(writeTimeout.Received, dest); err != nil {
+		if err = primitives.WriteInt(writeTimeout.Received, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR WRITE TIMEOUT received: %w", err)
 		}
-		if dest, err = primitives.WriteInt(writeTimeout.BlockFor, dest); err != nil {
+		if err = primitives.WriteInt(writeTimeout.BlockFor, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR WRITE TIMEOUT block for: %w", err)
 		}
-		if dest, err = primitives.WriteString(writeTimeout.WriteType, dest); err != nil {
+		if err = primitives.WriteString(writeTimeout.WriteType, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR WRITE TIMEOUT write type: %w", err)
 		}
 
@@ -688,28 +689,28 @@ func (c *ErrorCodec) Encode(msg Message, dest []byte, version cassandraprotocol.
 		if !ok {
 			return errors.New(fmt.Sprintf("expected ReadFailure, got %T", msg))
 		}
-		if dest, err = primitives.WriteShort(readFailure.Consistency, dest); err != nil {
+		if err = primitives.WriteShort(readFailure.Consistency, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR READ FAILURE consistency: %w", err)
 		}
-		if dest, err = primitives.WriteInt(readFailure.Received, dest); err != nil {
+		if err = primitives.WriteInt(readFailure.Received, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR READ FAILURE received: %w", err)
 		}
-		if dest, err = primitives.WriteInt(readFailure.BlockFor, dest); err != nil {
+		if err = primitives.WriteInt(readFailure.BlockFor, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR READ FAILURE block for: %w", err)
 		}
 		if version > cassandraprotocol.ProtocolVersion5 {
-			if dest, err = primitives.WriteReasonMap(readFailure.ReasonMap, dest); err != nil {
+			if err = primitives.WriteReasonMap(readFailure.ReasonMap, dest); err != nil {
 				return fmt.Errorf("cannot write ERROR READ FAILURE reason map: %w", err)
 			}
 		} else {
-			if dest, err = primitives.WriteInt(readFailure.NumFailures, dest); err != nil {
+			if err = primitives.WriteInt(readFailure.NumFailures, dest); err != nil {
 				return fmt.Errorf("cannot write ERROR READ FAILURE num failures: %w", err)
 			}
 		}
 		if readFailure.DataPresent {
-			dest, err = primitives.WriteByte(1, dest)
+			err = primitives.WriteByte(1, dest)
 		} else {
-			dest, err = primitives.WriteByte(0, dest)
+			err = primitives.WriteByte(0, dest)
 		}
 		if err != nil {
 			return fmt.Errorf("cannot write ERROR READ FAILURE data present: %w", err)
@@ -720,25 +721,25 @@ func (c *ErrorCodec) Encode(msg Message, dest []byte, version cassandraprotocol.
 		if !ok {
 			return errors.New(fmt.Sprintf("expected WriteFailure, got %T", msg))
 		}
-		if dest, err = primitives.WriteShort(writeFailure.Consistency, dest); err != nil {
+		if err = primitives.WriteShort(writeFailure.Consistency, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR WRITE FAILURE consistency: %w", err)
 		}
-		if dest, err = primitives.WriteInt(writeFailure.Received, dest); err != nil {
+		if err = primitives.WriteInt(writeFailure.Received, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR WRITE FAILURE received: %w", err)
 		}
-		if dest, err = primitives.WriteInt(writeFailure.BlockFor, dest); err != nil {
+		if err = primitives.WriteInt(writeFailure.BlockFor, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR WRITE FAILURE block for: %w", err)
 		}
 		if version > cassandraprotocol.ProtocolVersion5 {
-			if dest, err = primitives.WriteReasonMap(writeFailure.ReasonMap, dest); err != nil {
+			if err = primitives.WriteReasonMap(writeFailure.ReasonMap, dest); err != nil {
 				return fmt.Errorf("cannot write ERROR WRITE FAILURE reason map: %w", err)
 			}
 		} else {
-			if dest, err = primitives.WriteInt(writeFailure.NumFailures, dest); err != nil {
+			if err = primitives.WriteInt(writeFailure.NumFailures, dest); err != nil {
 				return fmt.Errorf("cannot write ERROR WRITE FAILURE num failures: %w", err)
 			}
 		}
-		if dest, err = primitives.WriteString(writeFailure.WriteType, dest); err != nil {
+		if err = primitives.WriteString(writeFailure.WriteType, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR WRITE FAILURE write type: %w", err)
 		}
 
@@ -747,13 +748,13 @@ func (c *ErrorCodec) Encode(msg Message, dest []byte, version cassandraprotocol.
 		if !ok {
 			return errors.New(fmt.Sprintf("expected FunctionFailure, got %T", msg))
 		}
-		if dest, err = primitives.WriteString(functionFailure.Keyspace, dest); err != nil {
+		if err = primitives.WriteString(functionFailure.Keyspace, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR FUNCTION FAILURE keyspace: %w", err)
 		}
-		if dest, err = primitives.WriteString(functionFailure.Function, dest); err != nil {
+		if err = primitives.WriteString(functionFailure.Function, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR FUNCTION FAILURE function: %w", err)
 		}
-		if dest, err = primitives.WriteStringList(functionFailure.Arguments, dest); err != nil {
+		if err = primitives.WriteStringList(functionFailure.Arguments, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR FUNCTION FAILURE arguments: %w", err)
 		}
 
@@ -762,10 +763,10 @@ func (c *ErrorCodec) Encode(msg Message, dest []byte, version cassandraprotocol.
 		if !ok {
 			return errors.New(fmt.Sprintf("expected AlreadyExists, got %T", msg))
 		}
-		if dest, err = primitives.WriteString(alreadyExists.Keyspace, dest); err != nil {
+		if err = primitives.WriteString(alreadyExists.Keyspace, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR ALREADY EXISTS keyspace: %w", err)
 		}
-		if dest, err = primitives.WriteString(alreadyExists.Table, dest); err != nil {
+		if err = primitives.WriteString(alreadyExists.Table, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR ALREADY EXISTS table: %w", err)
 		}
 
@@ -774,7 +775,7 @@ func (c *ErrorCodec) Encode(msg Message, dest []byte, version cassandraprotocol.
 		if !ok {
 			return errors.New(fmt.Sprintf("expected Unprepared, got %T", msg))
 		}
-		if dest, err = primitives.WriteShortBytes(unprepared.Id, dest); err != nil {
+		if err = primitives.WriteShortBytes(unprepared.Id, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR UNPREPARED id: %w", err)
 		}
 
@@ -877,13 +878,13 @@ func (c *ErrorCodec) EncodedLength(msg Message, version cassandraprotocol.Protoc
 	return
 }
 
-func (c *ErrorCodec) Decode(source []byte, version cassandraprotocol.ProtocolVersion) (msg Message, err error) {
+func (c *ErrorCodec) Decode(source io.Reader, version cassandraprotocol.ProtocolVersion) (msg Message, err error) {
 	var code cassandraprotocol.ErrorCode
-	if code, source, err = primitives.ReadInt(source); err != nil {
+	if code, err = primitives.ReadInt(source); err != nil {
 		return nil, fmt.Errorf("cannot read ERROR code: %w", err)
 	}
 	var errorMsg string
-	if errorMsg, source, err = primitives.ReadString(source); err != nil {
+	if errorMsg, err = primitives.ReadString(source); err != nil {
 		return nil, fmt.Errorf("cannot read ERROR message: %w", err)
 	}
 	switch code {
@@ -910,30 +911,30 @@ func (c *ErrorCodec) Decode(source []byte, version cassandraprotocol.ProtocolVer
 
 	case cassandraprotocol.ErrorCodeUnavailable:
 		var msg = &Unavailable{}
-		if msg.Consistency, source, err = primitives.ReadShort(source); err != nil {
+		if msg.Consistency, err = primitives.ReadShort(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR UNAVAILABLE consistency: %w", err)
 		}
-		if msg.Required, source, err = primitives.ReadInt(source); err != nil {
+		if msg.Required, err = primitives.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR UNAVAILABLE required: %w", err)
 		}
-		if msg.Alive, source, err = primitives.ReadInt(source); err != nil {
+		if msg.Alive, err = primitives.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR UNAVAILABLE alive: %w", err)
 		}
 		return msg, nil
 
 	case cassandraprotocol.ErrorCodeReadTimeout:
 		var msg = &ReadTimeout{}
-		if msg.Consistency, source, err = primitives.ReadShort(source); err != nil {
+		if msg.Consistency, err = primitives.ReadShort(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR READ TIMEOUT consistency: %w", err)
 		}
-		if msg.Received, source, err = primitives.ReadInt(source); err != nil {
+		if msg.Received, err = primitives.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR READ TIMEOUT received: %w", err)
 		}
-		if msg.BlockFor, source, err = primitives.ReadInt(source); err != nil {
+		if msg.BlockFor, err = primitives.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR READ TIMEOUT block for: %w", err)
 		}
 		var b byte
-		if b, source, err = primitives.ReadByte(source); err != nil {
+		if b, err = primitives.ReadByte(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR READ TIMEOUT data present: %w", err)
 		}
 		if b > 0 {
@@ -945,42 +946,42 @@ func (c *ErrorCodec) Decode(source []byte, version cassandraprotocol.ProtocolVer
 
 	case cassandraprotocol.ErrorCodeWriteTimeout:
 		var msg = &WriteTimeout{}
-		if msg.Consistency, source, err = primitives.ReadShort(source); err != nil {
+		if msg.Consistency, err = primitives.ReadShort(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR WRITE TIMEOUT consistency: %w", err)
 		}
-		if msg.Received, source, err = primitives.ReadInt(source); err != nil {
+		if msg.Received, err = primitives.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR WRITE TIMEOUT received: %w", err)
 		}
-		if msg.BlockFor, source, err = primitives.ReadInt(source); err != nil {
+		if msg.BlockFor, err = primitives.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR WRITE TIMEOUT block for: %w", err)
 		}
-		if msg.WriteType, source, err = primitives.ReadString(source); err != nil {
+		if msg.WriteType, err = primitives.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR WRITE TIMEOUT write type: %w", err)
 		}
 		return msg, nil
 
 	case cassandraprotocol.ErrorCodeReadFailure:
 		var msg = &ReadFailure{}
-		if msg.Consistency, source, err = primitives.ReadShort(source); err != nil {
+		if msg.Consistency, err = primitives.ReadShort(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR READ FAILURE consistency: %w", err)
 		}
-		if msg.Received, source, err = primitives.ReadInt(source); err != nil {
+		if msg.Received, err = primitives.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR READ FAILURE received: %w", err)
 		}
-		if msg.BlockFor, source, err = primitives.ReadInt(source); err != nil {
+		if msg.BlockFor, err = primitives.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR READ FAILURE block for: %w", err)
 		}
 		if version > cassandraprotocol.ProtocolVersion5 {
-			if msg.ReasonMap, source, err = primitives.ReadReasonMap(source); err != nil {
+			if msg.ReasonMap, err = primitives.ReadReasonMap(source); err != nil {
 				return nil, fmt.Errorf("cannot read ERROR READ FAILURE reason map: %w", err)
 			}
 		} else {
-			if msg.NumFailures, source, err = primitives.ReadInt(source); err != nil {
+			if msg.NumFailures, err = primitives.ReadInt(source); err != nil {
 				return nil, fmt.Errorf("cannot read ERROR READ FAILURE num failures: %w", err)
 			}
 		}
 		var b byte
-		if b, source, err = primitives.ReadByte(source); err != nil {
+		if b, err = primitives.ReadByte(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR READ FAILURE data present: %w", err)
 		}
 		if b > 0 {
@@ -992,55 +993,55 @@ func (c *ErrorCodec) Decode(source []byte, version cassandraprotocol.ProtocolVer
 
 	case cassandraprotocol.ErrorCodeWriteFailure:
 		var msg = &WriteFailure{}
-		if msg.Consistency, source, err = primitives.ReadShort(source); err != nil {
+		if msg.Consistency, err = primitives.ReadShort(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR WRITE FAILURE consistency: %w", err)
 		}
-		if msg.Received, source, err = primitives.ReadInt(source); err != nil {
+		if msg.Received, err = primitives.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR WRITE FAILURE received: %w", err)
 		}
-		if msg.BlockFor, source, err = primitives.ReadInt(source); err != nil {
+		if msg.BlockFor, err = primitives.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR WRITE FAILURE block for: %w", err)
 		}
 		if version > cassandraprotocol.ProtocolVersion5 {
-			if msg.ReasonMap, source, err = primitives.ReadReasonMap(source); err != nil {
+			if msg.ReasonMap, err = primitives.ReadReasonMap(source); err != nil {
 				return nil, fmt.Errorf("cannot read ERROR WRITE FAILURE reason map: %w", err)
 			}
 		} else {
-			if msg.NumFailures, source, err = primitives.ReadInt(source); err != nil {
+			if msg.NumFailures, err = primitives.ReadInt(source); err != nil {
 				return nil, fmt.Errorf("cannot read ERROR WRITE FAILURE num failures: %w", err)
 			}
 		}
-		if msg.WriteType, source, err = primitives.ReadString(source); err != nil {
+		if msg.WriteType, err = primitives.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR WRITE FAILURE write type: %w", err)
 		}
 		return msg, nil
 
 	case cassandraprotocol.ErrorCodeFunctionFailure:
 		var msg = &FunctionFailure{}
-		if msg.Keyspace, source, err = primitives.ReadString(source); err != nil {
+		if msg.Keyspace, err = primitives.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR FUNCTION FAILURE keyspace: %w", err)
 		}
-		if msg.Function, source, err = primitives.ReadString(source); err != nil {
+		if msg.Function, err = primitives.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR FUNCTION FAILURE function: %w", err)
 		}
-		if msg.Arguments, source, err = primitives.ReadStringList(source); err != nil {
+		if msg.Arguments, err = primitives.ReadStringList(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR FUNCTION FAILURE arguments: %w", err)
 		}
 		return msg, nil
 
 	case cassandraprotocol.ErrorCodeAlreadyExists:
 		var msg = &AlreadyExists{}
-		if msg.Keyspace, source, err = primitives.ReadString(source); err != nil {
+		if msg.Keyspace, err = primitives.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR ALREADY EXISTS keyspace: %w", err)
 		}
-		if msg.Table, source, err = primitives.ReadString(source); err != nil {
+		if msg.Table, err = primitives.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR ALREADY EXISTS table: %w", err)
 		}
 		return msg, nil
 
 	case cassandraprotocol.ErrorCodeUnprepared:
 		var msg = &Unprepared{}
-		if msg.Id, source, err = primitives.ReadShortBytes(source); err != nil {
+		if msg.Id, err = primitives.ReadShortBytes(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR UNPREPARED id: %w", err)
 		}
 		return msg, nil

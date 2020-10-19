@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go-cassandra-native-protocol/cassandraprotocol"
 	"go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"io"
 )
 
 type userDefinedType struct {
@@ -23,25 +24,25 @@ func (t *userDefinedType) String() string {
 
 type userDefinedTypeCodec struct{}
 
-func (c *userDefinedTypeCodec) Encode(t DataType, dest []byte, version cassandraprotocol.ProtocolVersion) (remaining []byte, err error) {
+func (c *userDefinedTypeCodec) Encode(t DataType, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
 	userDefinedType, ok := t.(*userDefinedType)
 	if !ok {
-		return dest, errors.New(fmt.Sprintf("expected userDefinedType struct, got %T", t))
-	} else if dest, err = primitives.WriteString(userDefinedType.keyspace, dest); err != nil {
-		return dest, fmt.Errorf("cannot write udt keyspace: %w", err)
-	} else if dest, err = primitives.WriteString(userDefinedType.table, dest); err != nil {
-		return dest, fmt.Errorf("cannot write udt table: %w", err)
-	} else if dest, err = primitives.WriteShort(uint16(len(userDefinedType.fieldTypes)), dest); err != nil {
-		return dest, fmt.Errorf("cannot write udt field count: %w", err)
+		return errors.New(fmt.Sprintf("expected userDefinedType struct, got %T", t))
+	} else if err = primitives.WriteString(userDefinedType.keyspace, dest); err != nil {
+		return fmt.Errorf("cannot write udt keyspace: %w", err)
+	} else if err = primitives.WriteString(userDefinedType.table, dest); err != nil {
+		return fmt.Errorf("cannot write udt table: %w", err)
+	} else if err = primitives.WriteShort(uint16(len(userDefinedType.fieldTypes)), dest); err != nil {
+		return fmt.Errorf("cannot write udt field count: %w", err)
 	}
 	for fieldName, fieldType := range userDefinedType.fieldTypes {
-		if dest, err = primitives.WriteString(fieldName, dest); err != nil {
-			return dest, fmt.Errorf("cannot write udt field %v name: %w", fieldName, err)
-		} else if dest, err = WriteDataType(fieldType, dest, version); err != nil {
-			return dest, fmt.Errorf("cannot write udt field %v: %w", fieldName, err)
+		if err = primitives.WriteString(fieldName, dest); err != nil {
+			return fmt.Errorf("cannot write udt field %v name: %w", fieldName, err)
+		} else if err = WriteDataType(fieldType, dest, version); err != nil {
+			return fmt.Errorf("cannot write udt field %v: %w", fieldName, err)
 		}
 	}
-	return dest, nil
+	return nil
 }
 
 func (c *userDefinedTypeCodec) EncodedLength(t DataType, version cassandraprotocol.ProtocolVersion) (length int, err error) {
@@ -63,23 +64,23 @@ func (c *userDefinedTypeCodec) EncodedLength(t DataType, version cassandraprotoc
 	return length, nil
 }
 
-func (c *userDefinedTypeCodec) Decode(source []byte, version cassandraprotocol.ProtocolVersion) (decoded DataType, remaining []byte, err error) {
+func (c *userDefinedTypeCodec) Decode(source io.Reader, version cassandraprotocol.ProtocolVersion) (decoded DataType, err error) {
 	userDefinedType := &userDefinedType{}
-	if userDefinedType.keyspace, source, err = primitives.ReadString(source); err != nil {
-		return nil, source, fmt.Errorf("cannot read udt keyspace: %w", err)
-	} else if userDefinedType.table, source, err = primitives.ReadString(source); err != nil {
-		return nil, source, fmt.Errorf("cannot read udt table: %w", err)
-	} else if fieldCount, source, err := primitives.ReadShort(source); err != nil {
-		return nil, source, fmt.Errorf("cannot read udt field count: %w", err)
+	if userDefinedType.keyspace, err = primitives.ReadString(source); err != nil {
+		return nil, fmt.Errorf("cannot read udt keyspace: %w", err)
+	} else if userDefinedType.table, err = primitives.ReadString(source); err != nil {
+		return nil, fmt.Errorf("cannot read udt table: %w", err)
+	} else if fieldCount, err := primitives.ReadShort(source); err != nil {
+		return nil, fmt.Errorf("cannot read udt field count: %w", err)
 	} else {
 		userDefinedType.fieldTypes = make(map[string]DataType, fieldCount)
 		for i := 0; i < int(fieldCount); i++ {
-			if fieldName, source, err := primitives.ReadString(source); err != nil {
-				return nil, source, fmt.Errorf("cannot read udt field %d name: %w", i, err)
-			} else if userDefinedType.fieldTypes[fieldName], source, err = ReadDataType(source, version); err != nil {
-				return nil, source, fmt.Errorf("cannot read udt field %v: %w", fieldName, err)
+			if fieldName, err := primitives.ReadString(source); err != nil {
+				return nil, fmt.Errorf("cannot read udt field %d name: %w", i, err)
+			} else if userDefinedType.fieldTypes[fieldName], err = ReadDataType(source, version); err != nil {
+				return nil, fmt.Errorf("cannot read udt field %v: %w", fieldName, err)
 			}
 		}
-		return userDefinedType, source, nil
+		return userDefinedType, nil
 	}
 }

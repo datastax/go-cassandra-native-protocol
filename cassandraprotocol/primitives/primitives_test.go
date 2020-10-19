@@ -1,6 +1,7 @@
 package primitives
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
@@ -11,22 +12,21 @@ import (
 
 func TestReadByte(t *testing.T) {
 	tests := []struct {
-		name      string
-		source    []byte
-		expected  byte
-		remaining []byte
-		err       error
+		name     string
+		source   []byte
+		expected byte
+		err      error
 	}{
-		{"simple byte", []byte{5}, byte(5), []byte{}, nil},
-		{"zero byte", []byte{0}, byte(0), []byte{}, nil},
-		{"byte with remaining", []byte{5, 1, 2, 3, 4}, byte(5), []byte{1, 2, 3, 4}, nil},
-		{"cannot read byte", []byte{}, byte(0), []byte{}, errors.New("not enough bytes to read [byte]")},
+		{"simple byte", []byte{5}, byte(5), nil},
+		{"zero byte", []byte{0}, byte(0), nil},
+		{"byte with remaining", []byte{5, 1, 2, 3, 4}, byte(5), nil},
+		{"cannot read byte", []byte{}, byte(0), fmt.Errorf("cannot read [byte]: %w", errors.New("EOF"))},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual, remaining, err := ReadByte(tt.source)
+			buf := bytes.NewBuffer(tt.source)
+			actual, err := ReadByte(buf)
 			assert.Equal(t, tt.expected, actual)
-			assert.Equal(t, tt.remaining, remaining)
 			assert.Equal(t, tt.err, err)
 		})
 	}
@@ -34,22 +34,18 @@ func TestReadByte(t *testing.T) {
 
 func TestWriteByte(t *testing.T) {
 	tests := []struct {
-		name      string
-		input     byte
-		dest      []byte
-		expected  []byte
-		remaining []byte
-		err       error
+		name     string
+		input    byte
+		expected []byte
+		err      error
 	}{
-		{"simple byte", byte(5), make([]byte, 1), []byte{5}, []byte{}, nil},
-		{"byte with remaining", byte(5), make([]byte, 4), []byte{5, 0, 0, 0}, []byte{0, 0, 0}, nil},
-		{"cannot write byte", byte(5), []byte{}, []byte{}, []byte{}, errors.New("not enough capacity to write [byte]")},
+		{"simple byte", byte(5), []byte{5}, nil},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			remaining, err := WriteByte(tt.input, tt.dest)
-			assert.Equal(t, tt.expected, tt.dest)
-			assert.Equal(t, tt.remaining, remaining)
+			buf := &bytes.Buffer{}
+			err := WriteByte(tt.input, buf)
+			assert.Equal(t, tt.expected, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}
@@ -66,13 +62,14 @@ func TestReadShort(t *testing.T) {
 		{"simple short", []byte{0, 5}, uint16(5), []byte{}, nil},
 		{"zero short", []byte{0, 0}, uint16(0), []byte{}, nil},
 		{"short with remaining", []byte{0, 5, 1, 2, 3, 4}, uint16(5), []byte{1, 2, 3, 4}, nil},
-		{"cannot read short", []byte{0}, uint16(0), []byte{0}, errors.New("not enough bytes to read [short]")},
+		{"cannot read short", []byte{0}, uint16(0), []byte{}, fmt.Errorf("cannot read [short]: %w", errors.New("unexpected EOF"))},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual, remaining, err := ReadShort(tt.source)
+			buf := bytes.NewBuffer(tt.source)
+			actual, err := ReadShort(buf)
 			assert.Equal(t, tt.expected, actual)
-			assert.Equal(t, tt.remaining, remaining)
+			assert.Equal(t, tt.remaining, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}
@@ -80,22 +77,18 @@ func TestReadShort(t *testing.T) {
 
 func TestWriteShort(t *testing.T) {
 	tests := []struct {
-		name      string
-		input     uint16
-		dest      []byte
-		expected  []byte
-		remaining []byte
-		err       error
+		name     string
+		input    uint16
+		expected []byte
+		err      error
 	}{
-		{"simple short", uint16(5), make([]byte, LengthOfShort), []byte{0, 5}, []byte{}, nil},
-		{"short with remaining", uint16(5), make([]byte, LengthOfShort+1), []byte{0, 5, 0}, []byte{0}, nil},
-		{"cannot write short", uint16(5), make([]byte, LengthOfShort-1), []byte{0}, []byte{0}, errors.New("not enough capacity to write [short]")},
+		{"simple short", uint16(5), []byte{0, 5}, nil},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			remaining, err := WriteShort(tt.input, tt.dest)
-			assert.Equal(t, tt.expected, tt.dest)
-			assert.Equal(t, tt.remaining, remaining)
+			buf := &bytes.Buffer{}
+			err := WriteShort(tt.input, buf)
+			assert.Equal(t, tt.expected, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}
@@ -113,13 +106,14 @@ func TestReadInt(t *testing.T) {
 		{"zero int", []byte{0, 0, 0, 0}, int32(0), []byte{}, nil},
 		{"negative int", []byte{0xff, 0xff, 0xff, 0xff & -5}, int32(-5), []byte{}, nil},
 		{"int with remaining", []byte{0, 0, 0, 5, 1, 2, 3, 4}, int32(5), []byte{1, 2, 3, 4}, nil},
-		{"cannot read int", []byte{0, 0, 0}, int32(0), []byte{0, 0, 0}, errors.New("not enough bytes to read [int]")},
+		{"cannot read int", []byte{0, 0, 0}, int32(0), []byte{}, fmt.Errorf("cannot read [int]: %w", errors.New("unexpected EOF"))},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual, remaining, err := ReadInt(tt.source)
+			buf := bytes.NewBuffer(tt.source)
+			actual, err := ReadInt(buf)
 			assert.Equal(t, tt.expected, actual)
-			assert.Equal(t, tt.remaining, remaining)
+			assert.Equal(t, tt.remaining, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}
@@ -127,23 +121,19 @@ func TestReadInt(t *testing.T) {
 
 func TestWriteInt(t *testing.T) {
 	tests := []struct {
-		name      string
-		input     int32
-		dest      []byte
-		expected  []byte
-		remaining []byte
-		err       error
+		name     string
+		input    int32
+		expected []byte
+		err      error
 	}{
-		{"simple int", int32(5), make([]byte, LengthOfInt), []byte{0, 0, 0, 5}, []byte{}, nil},
-		{"negative int", int32(-5), make([]byte, LengthOfInt), []byte{0xff, 0xff, 0xff, 0xff & -5}, []byte{}, nil},
-		{"int with remaining", int32(5), make([]byte, LengthOfInt+1), []byte{0, 0, 0, 5, 0}, []byte{0}, nil},
-		{"cannot write int", int32(5), make([]byte, LengthOfInt-1), []byte{0, 0, 0}, []byte{0, 0, 0}, errors.New("not enough capacity to write [int]")},
+		{"simple int", int32(5), []byte{0, 0, 0, 5}, nil},
+		{"negative int", int32(-5), []byte{0xff, 0xff, 0xff, 0xff & -5}, nil},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			remaining, err := WriteInt(tt.input, tt.dest)
-			assert.Equal(t, tt.expected, tt.dest)
-			assert.Equal(t, tt.remaining, remaining)
+			buf := &bytes.Buffer{}
+			err := WriteInt(tt.input, buf)
+			assert.Equal(t, tt.expected, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}
@@ -161,13 +151,14 @@ func TestReadLong(t *testing.T) {
 		{"zero long", []byte{0, 0, 0, 0, 0, 0, 0, 0}, int64(0), []byte{}, nil},
 		{"negative long", []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff & -5}, int64(-5), []byte{}, nil},
 		{"long with remaining", []byte{0, 0, 0, 0, 0, 0, 0, 5, 1, 2, 3, 4}, int64(5), []byte{1, 2, 3, 4}, nil},
-		{"cannot read long", []byte{0, 0, 0, 0, 0, 0, 0}, int64(0), []byte{0, 0, 0, 0, 0, 0, 0}, errors.New("not enough bytes to read [long]")},
+		{"cannot read long", []byte{0, 0, 0, 0, 0, 0, 0}, int64(0), []byte{}, fmt.Errorf("cannot read [long]: %w", errors.New("unexpected EOF"))},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual, remaining, err := ReadLong(tt.source)
+			buf := bytes.NewBuffer(tt.source)
+			actual, err := ReadLong(buf)
 			assert.Equal(t, tt.expected, actual)
-			assert.Equal(t, tt.remaining, remaining)
+			assert.Equal(t, tt.remaining, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}
@@ -175,23 +166,19 @@ func TestReadLong(t *testing.T) {
 
 func TestWriteLong(t *testing.T) {
 	tests := []struct {
-		name      string
-		input     int64
-		dest      []byte
-		expected  []byte
-		remaining []byte
-		err       error
+		name     string
+		input    int64
+		expected []byte
+		err      error
 	}{
-		{"simple long", int64(5), make([]byte, LengthOfLong), []byte{0, 0, 0, 0, 0, 0, 0, 5}, []byte{}, nil},
-		{"negative long", int64(-5), make([]byte, LengthOfLong), []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff & -5}, []byte{}, nil},
-		{"long with remaining", int64(5), make([]byte, LengthOfLong+1), []byte{0, 0, 0, 0, 0, 0, 0, 5, 0}, []byte{0}, nil},
-		{"cannot write long", int64(5), make([]byte, LengthOfLong-1), []byte{0, 0, 0, 0, 0, 0, 0}, []byte{0, 0, 0, 0, 0, 0, 0}, errors.New("not enough capacity to write [long]")},
+		{"simple long", int64(5), []byte{0, 0, 0, 0, 0, 0, 0, 5}, nil},
+		{"negative long", int64(-5), []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff & -5}, nil},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			remaining, err := WriteLong(tt.input, tt.dest)
-			assert.Equal(t, tt.expected, tt.dest)
-			assert.Equal(t, tt.remaining, remaining)
+			buf := &bytes.Buffer{}
+			err := WriteLong(tt.input, buf)
+			assert.Equal(t, tt.expected, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}
@@ -232,22 +219,23 @@ func TestReadString(t *testing.T) {
 			"cannot read length",
 			[]byte{0},
 			"",
-			[]byte{0},
-			fmt.Errorf("cannot read [string] length: %w", errors.New("not enough bytes to read [short]")),
+			[]byte{},
+			fmt.Errorf("cannot read [string] length: %w", fmt.Errorf("cannot read [short]: %w", errors.New("unexpected EOF"))),
 		},
 		{
 			"cannot read string",
 			[]byte{0, 5, h, e, l, l},
 			"",
-			[]byte{h, e, l, l},
+			[]byte{},
 			errors.New("not enough bytes to read [string] content"),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual, remaining, err := ReadString(tt.source)
+			buf := bytes.NewBuffer(tt.source)
+			actual, err := ReadString(buf)
 			assert.Equal(t, tt.expected, actual)
-			assert.Equal(t, tt.remaining, remaining)
+			assert.Equal(t, tt.remaining, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}
@@ -255,58 +243,30 @@ func TestReadString(t *testing.T) {
 
 func TestWriteString(t *testing.T) {
 	tests := []struct {
-		name      string
-		input     string
-		dest      []byte
-		expected  []byte
-		remaining []byte
-		err       error
+		name     string
+		input    string
+		expected []byte
+		err      error
 	}{
 		{
 			"simple string",
 			"hello",
-			make([]byte, LengthOfString("hello")),
 			[]byte{0, 5, h, e, l, l, o},
-			[]byte{},
 			nil,
 		},
-		{"empty string", "", make([]byte, LengthOfString("")), []byte{0, 0}, []byte{}, nil},
-		{"non-ASCII string", "γειά σου", make([]byte, LengthOfString("γειά σου")), []byte{
+		{"empty string", "", []byte{0, 0}, nil},
+		{"non-ASCII string", "γειά σου", []byte{
 			0, 15, // length
 			0xce, 0xb3, 0xce, 0xb5, 0xce, 0xb9, 0xce, 0xac, //γειά
 			0x20,                               // space
 			0xcf, 0x83, 0xce, 0xbf, 0xcf, 0x85, // σου
-		}, []byte{}, nil},
-		{
-			"string with remaining",
-			"hello",
-			make([]byte, LengthOfString("hello")+1),
-			[]byte{0, 5, h, e, l, l, o, 0},
-			[]byte{0},
-			nil,
-		},
-		{
-			"cannot write string length",
-			"hello",
-			make([]byte, LengthOfShort-1),
-			[]byte{0},
-			[]byte{0},
-			fmt.Errorf("cannot write [string] length: %w", errors.New("not enough capacity to write [short]")),
-		},
-		{
-			"cannot write string",
-			"hello",
-			make([]byte, LengthOfString("hello")-1),
-			[]byte{0, 5, 0, 0, 0, 0},
-			[]byte{0, 0, 0, 0},
-			errors.New("not enough capacity to write [string] content"),
-		},
+		}, nil},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			remaining, err := WriteString(tt.input, tt.dest)
-			assert.Equal(t, tt.expected, tt.dest)
-			assert.Equal(t, tt.remaining, remaining)
+			buf := &bytes.Buffer{}
+			err := WriteString(tt.input, buf)
+			assert.Equal(t, tt.expected, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}
@@ -333,22 +293,23 @@ func TestReadLongString(t *testing.T) {
 			"cannot read length",
 			[]byte{0, 0, 0},
 			"",
-			[]byte{0, 0, 0},
-			fmt.Errorf("cannot read [long string] length: %w", errors.New("not enough bytes to read [int]")),
+			[]byte{},
+			fmt.Errorf("cannot read [long string] length: %w", fmt.Errorf("cannot read [int]: %w", errors.New("unexpected EOF"))),
 		},
 		{
 			"cannot read string",
 			[]byte{0, 0, 0, 5, h, e, l, l},
 			"",
-			[]byte{h, e, l, l},
+			[]byte{},
 			errors.New("not enough bytes to read [long string] content"),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual, remaining, err := ReadLongString(tt.source)
+			buf := bytes.NewBuffer(tt.source)
+			actual, err := ReadLongString(buf)
 			assert.Equal(t, tt.expected, actual)
-			assert.Equal(t, tt.remaining, remaining)
+			assert.Equal(t, tt.remaining, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}
@@ -356,51 +317,40 @@ func TestReadLongString(t *testing.T) {
 
 func TestWriteLongString(t *testing.T) {
 	tests := []struct {
-		name      string
-		input     string
-		dest      []byte
-		expected  []byte
-		remaining []byte
-		err       error
+		name     string
+		input    string
+		expected []byte
+		err      error
 	}{
-		{"simple string", "hello", make([]byte, LengthOfLongString("hello")), []byte{0, 0, 0, 5, h, e, l, l, o}, []byte{}, nil},
-		{"empty string", "", make([]byte, LengthOfLongString("")), []byte{0, 0, 0, 0}, []byte{}, nil},
-		{"non-ASCII string", "γειά σου", make([]byte, LengthOfLongString("γειά σου")), []byte{
-			0, 0, 0, 15, // length
-			0xce, 0xb3, 0xce, 0xb5, 0xce, 0xb9, 0xce, 0xac, //γειά
-			0x20,                               // space
-			0xcf, 0x83, 0xce, 0xbf, 0xcf, 0x85, // σου
-		}, []byte{}, nil},
 		{
-			"string with remaining",
+			"simple string",
 			"hello",
-			make([]byte, LengthOfLongString("hello")+1),
-			[]byte{0, 0, 0, 5, h, e, l, l, o, 0},
-			[]byte{0},
+			[]byte{0, 0, 0, 5, h, e, l, l, o},
 			nil,
 		},
 		{
-			"cannot write string length",
-			"hello",
-			make([]byte, LengthOfInt-1),
-			[]byte{0, 0, 0},
-			[]byte{0, 0, 0},
-			fmt.Errorf("cannot write [long string] length: %w", errors.New("not enough capacity to write [int]")),
+			"empty string",
+			"",
+			[]byte{0, 0, 0, 0},
+			nil,
 		},
 		{
-			"cannot write string",
-			"hello",
-			make([]byte, LengthOfLongString("hello")-1),
-			[]byte{0, 0, 0, 5, 0, 0, 0, 0},
-			[]byte{0, 0, 0, 0},
-			errors.New("not enough capacity to write [long string] content"),
+			"non-ASCII string",
+			"γειά σου",
+			[]byte{
+				0, 0, 0, 15, // length
+				0xce, 0xb3, 0xce, 0xb5, 0xce, 0xb9, 0xce, 0xac, //γειά
+				0x20,                               // space
+				0xcf, 0x83, 0xce, 0xbf, 0xcf, 0x85, // σου
+			},
+			nil,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			remaining, err := WriteLongString(tt.input, tt.dest)
-			assert.Equal(t, tt.expected, tt.dest)
-			assert.Equal(t, tt.remaining, remaining)
+			buf := &bytes.Buffer{}
+			err := WriteLongString(tt.input, buf)
+			assert.Equal(t, tt.expected, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}
@@ -433,22 +383,23 @@ func TestReadStringList(t *testing.T) {
 			"cannot read list length",
 			[]byte{0},
 			nil,
-			[]byte{0},
-			fmt.Errorf("cannot read [string list] length: %w", errors.New("not enough bytes to read [short]")),
+			[]byte{},
+			fmt.Errorf("cannot read [string list] length: %w", fmt.Errorf("cannot read [short]: %w", errors.New("unexpected EOF"))),
 		},
 		{
 			"cannot read list element",
 			[]byte{0, 1, 0, 5, h, e, l, l},
 			nil,
-			[]byte{h, e, l, l},
+			[]byte{},
 			fmt.Errorf("cannot read [string list] element: %w", errors.New("not enough bytes to read [string] content")),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual, remaining, err := ReadStringList(tt.source)
+			buf := bytes.NewBuffer(tt.source)
+			actual, err := ReadStringList(buf)
 			assert.Equal(t, tt.expected, actual)
-			assert.Equal(t, tt.remaining, remaining)
+			assert.Equal(t, tt.remaining, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}
@@ -456,86 +407,58 @@ func TestReadStringList(t *testing.T) {
 
 func TestWriteStringList(t *testing.T) {
 	tests := []struct {
-		name      string
-		input     []string
-		dest      []byte
-		expected  []byte
-		remaining []byte
-		err       error
+		name     string
+		input    []string
+		expected []byte
+		err      error
 	}{
 		{
 			"empty string list",
 			[]string{},
-			make([]byte, LengthOfStringList([]string{})),
 			[]byte{0, 0},
-			[]byte{},
 			nil,
 		},
 		{
 			"nil string list",
 			nil,
-			make([]byte, LengthOfStringList(nil)),
 			[]byte{0, 0},
-			[]byte{},
 			nil,
 		},
 		{
 			"singleton string list",
 			[]string{"hello"},
-			make([]byte, LengthOfStringList([]string{"hello"})),
 			[]byte{
 				0, 1, // length
 				0, 5, h, e, l, l, o, // hello
 			},
-			[]byte{},
 			nil,
 		},
 		{
 			"simple string list",
 			[]string{"hello", "world"},
-			make([]byte, LengthOfStringList([]string{"hello", "world"})),
 			[]byte{
 				0, 2, // length
 				0, 5, h, e, l, l, o, // hello
 				0, 5, w, o, r, l, d, // world
 			},
-			[]byte{},
 			nil,
 		},
 		{
 			"empty elements",
 			[]string{"", ""},
-			make([]byte, LengthOfStringList([]string{"", ""})),
 			[]byte{
 				0, 2, // length
 				0, 0, // elt 1
 				0, 0, // elt 2
 			},
-			[]byte{},
 			nil,
-		},
-		{
-			"cannot write list length",
-			[]string{"hello"},
-			make([]byte, LengthOfShort-1),
-			[]byte{0},
-			[]byte{0},
-			fmt.Errorf("cannot write [string list] length: %w", errors.New("not enough capacity to write [short]")),
-		},
-		{
-			"cannot write list element",
-			[]string{"hello"},
-			make([]byte, LengthOfStringList([]string{"hello"})-1),
-			[]byte{0, 1, 0, 5, 0, 0, 0, 0},
-			[]byte{0, 0, 0, 0},
-			fmt.Errorf("cannot write [string list] element: %w", errors.New("not enough capacity to write [string] content")),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			remaining, err := WriteStringList(tt.input, tt.dest)
-			assert.Equal(t, tt.expected, tt.dest)
-			assert.Equal(t, tt.remaining, remaining)
+			buf := &bytes.Buffer{}
+			err := WriteStringList(tt.input, buf)
+			assert.Equal(t, tt.expected, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}
@@ -557,22 +480,23 @@ func TestReadBytes(t *testing.T) {
 			"cannot read bytes length",
 			[]byte{0, 0, 0},
 			nil,
-			[]byte{0, 0, 0},
-			fmt.Errorf("cannot read [bytes] length: %w", errors.New("not enough bytes to read [int]")),
+			[]byte{},
+			fmt.Errorf("cannot read [bytes] length: %w", fmt.Errorf("cannot read [int]: %w", errors.New("unexpected EOF"))),
 		},
 		{
 			"cannot read bytes content",
 			[]byte{0, 0, 0, 2, 1},
 			nil,
-			[]byte{1},
+			[]byte{},
 			fmt.Errorf("not enough bytes to read [bytes] content"),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual, remaining, err := ReadBytes(tt.source)
+			buf := bytes.NewBuffer(tt.source)
+			actual, err := ReadBytes(buf)
 			assert.Equal(t, tt.expected, actual)
-			assert.Equal(t, tt.remaining, remaining)
+			assert.Equal(t, tt.remaining, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}
@@ -580,67 +504,41 @@ func TestReadBytes(t *testing.T) {
 
 func TestWriteBytes(t *testing.T) {
 	tests := []struct {
-		name      string
-		input     []byte
-		dest      []byte
-		expected  []byte
-		remaining []byte
-		err       error
+		name     string
+		input    []byte
+		expected []byte
+		err      error
 	}{
 		{
 			"empty bytes",
 			[]byte{},
-			make([]byte, LengthOfBytes([]byte{})),
 			[]byte{0, 0, 0, 0},
-			[]byte{},
 			nil,
 		},
 		{
 			"nil bytes",
 			nil,
-			make([]byte, LengthOfBytes([]byte{})),
 			[]byte{0xff, 0xff, 0xff, 0xff},
-			[]byte{},
 			nil,
 		},
 		{
 			"singleton bytes",
 			[]byte{1},
-			make([]byte, LengthOfBytes([]byte{1})),
 			[]byte{0, 0, 0, 1, 1},
-			[]byte{},
 			nil,
 		},
 		{
 			"simple bytes",
 			[]byte{1, 2},
-			make([]byte, LengthOfBytes([]byte{1, 2})),
 			[]byte{0, 0, 0, 2, 1, 2},
-			[]byte{},
 			nil,
-		},
-		{
-			"cannot write bytes length",
-			[]byte{1},
-			make([]byte, LengthOfInt-1),
-			[]byte{0, 0, 0},
-			[]byte{0, 0, 0},
-			fmt.Errorf("cannot write [bytes] length: %w", errors.New("not enough capacity to write [int]")),
-		},
-		{
-			"cannot write list element",
-			[]byte{1, 2},
-			make([]byte, LengthOfBytes([]byte{1, 2})-1),
-			[]byte{0, 0, 0, 2, 0},
-			[]byte{0},
-			fmt.Errorf("not enough capacity to write [bytes] content"),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			remaining, err := WriteBytes(tt.input, tt.dest)
-			assert.Equal(t, tt.expected, tt.dest)
-			assert.Equal(t, tt.remaining, remaining)
+			buf := &bytes.Buffer{}
+			err := WriteBytes(tt.input, buf)
+			assert.Equal(t, tt.expected, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}
@@ -661,22 +559,23 @@ func TestReadShortBytes(t *testing.T) {
 			"cannot read short bytes length",
 			[]byte{0},
 			nil,
-			[]byte{0},
-			fmt.Errorf("cannot read [short bytes] length: %w", errors.New("not enough bytes to read [short]")),
+			[]byte{},
+			fmt.Errorf("cannot read [short bytes] length: %w", fmt.Errorf("cannot read [short]: %w", errors.New("unexpected EOF"))),
 		},
 		{
 			"cannot read short bytes content",
 			[]byte{0, 2, 1},
 			nil,
-			[]byte{1},
+			[]byte{},
 			fmt.Errorf("not enough bytes to read [short bytes] content"),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual, remaining, err := ReadShortBytes(tt.source)
+			buf := bytes.NewBuffer(tt.source)
+			actual, err := ReadShortBytes(buf)
 			assert.Equal(t, tt.expected, actual)
-			assert.Equal(t, tt.remaining, remaining)
+			assert.Equal(t, tt.remaining, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}
@@ -684,68 +583,42 @@ func TestReadShortBytes(t *testing.T) {
 
 func TestWriteShortBytes(t *testing.T) {
 	tests := []struct {
-		name      string
-		input     []byte
-		dest      []byte
-		expected  []byte
-		remaining []byte
-		err       error
+		name     string
+		input    []byte
+		expected []byte
+		err      error
 	}{
 		{
 			"empty short bytes",
 			[]byte{},
-			make([]byte, LengthOfShortBytes([]byte{})),
 			[]byte{0, 0},
-			[]byte{},
 			nil,
 		},
 		// not officially allowed by the specs, but better safe than sorry
 		{
 			"nil short bytes",
 			nil,
-			make([]byte, LengthOfShortBytes(nil)),
 			[]byte{0, 0},
-			[]byte{},
 			nil,
 		},
 		{
 			"singleton short bytes",
 			[]byte{1},
-			make([]byte, LengthOfShortBytes([]byte{1})),
 			[]byte{0, 1, 1},
-			[]byte{},
 			nil,
 		},
 		{
 			"simple short bytes",
 			[]byte{1, 2},
-			make([]byte, LengthOfShortBytes([]byte{1, 2})),
 			[]byte{0, 2, 1, 2},
-			[]byte{},
 			nil,
-		},
-		{
-			"cannot write short bytes length",
-			[]byte{1},
-			make([]byte, LengthOfShort-1),
-			[]byte{0},
-			[]byte{0},
-			fmt.Errorf("cannot write [short bytes] length: %w", errors.New("not enough capacity to write [short]")),
-		},
-		{
-			"cannot write list element",
-			[]byte{1, 2},
-			make([]byte, LengthOfShortBytes([]byte{1, 2})-1),
-			[]byte{0, 2, 0},
-			[]byte{0},
-			fmt.Errorf("not enough capacity to write [short bytes] content"),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			remaining, err := WriteShortBytes(tt.input, tt.dest)
-			assert.Equal(t, tt.expected, tt.dest)
-			assert.Equal(t, tt.remaining, remaining)
+			buf := &bytes.Buffer{}
+			err := WriteShortBytes(tt.input, buf)
+			assert.Equal(t, tt.expected, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}
@@ -768,15 +641,16 @@ func TestReadUuid(t *testing.T) {
 			"cannot read UUID",
 			uuidBytes[:15],
 			nil,
-			uuidBytes[:15],
+			[]byte{},
 			errors.New("not enough bytes to read [uuid] content"),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual, remaining, err := ReadUuid(tt.source)
+			buf := bytes.NewBuffer(tt.source)
+			actual, err := ReadUuid(buf)
 			assert.Equal(t, tt.expected, actual)
-			assert.Equal(t, tt.remaining, remaining)
+			assert.Equal(t, tt.remaining, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}
@@ -784,51 +658,35 @@ func TestReadUuid(t *testing.T) {
 
 func TestWriteUuid(t *testing.T) {
 	tests := []struct {
-		name      string
-		input     *cassandraprotocol.UUID
-		dest      []byte
-		expected  []byte
-		remaining []byte
-		err       error
+		name     string
+		input    *cassandraprotocol.UUID
+		expected []byte
+		err      error
 	}{
 		{
 			"simple UUID",
 			&uuid,
-			make([]byte, LengthOfUuid),
 			uuidBytes[:],
-			[]byte{},
 			nil,
 		},
 		{
 			"UUID with remaining",
 			&uuid,
-			make([]byte, LengthOfUuid+1),
-			append(uuidBytes[:], 0),
-			[]byte{0},
+			uuidBytes[:],
 			nil,
 		},
 		{
 			"nil UUID",
 			nil,
-			make([]byte, LengthOfUuid),
-			make([]byte, LengthOfUuid),
-			make([]byte, LengthOfUuid),
+			nil,
 			errors.New("cannot write nil [uuid]"),
-		},
-		{
-			"cannot write UUID content",
-			&uuid,
-			make([]byte, LengthOfUuid-1),
-			make([]byte, LengthOfUuid-1),
-			make([]byte, LengthOfUuid-1),
-			errors.New("not enough capacity to write [uuid] content"),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			remaining, err := WriteUuid(tt.input, tt.dest)
-			assert.Equal(t, tt.expected, tt.dest)
-			assert.Equal(t, tt.remaining, remaining)
+			buf := &bytes.Buffer{}
+			err := WriteUuid(tt.input, buf)
+			assert.Equal(t, tt.expected, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}
@@ -867,12 +725,6 @@ var inet6Bytes = append(inetAddr6Bytes,
 	0, 0, 0x23, 0x52, //port
 )
 
-var inetAddr4Length, _ = LengthOfInetAddr(inetAddr4)
-var inetAddr6Length, _ = LengthOfInetAddr(inetAddr6)
-
-var inet4Length, _ = LengthOfInet(&inet4)
-var inet6Length, _ = LengthOfInet(&inet6)
-
 func TestReadInetAddr(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -889,28 +741,29 @@ func TestReadInetAddr(t *testing.T) {
 			[]byte{},
 			nil,
 			[]byte{},
-			fmt.Errorf("cannot read [inetaddr] length: %w", errors.New("not enough bytes to read [byte]")),
+			fmt.Errorf("cannot read [inetaddr] length: %w", fmt.Errorf("cannot read [byte]: %w", errors.New("EOF"))),
 		},
 		{
 			"not enough bytes to read [inetaddr] IPv4 content",
 			[]byte{4, 192, 168, 1},
 			nil,
-			[]byte{192, 168, 1},
+			[]byte{},
 			errors.New("not enough bytes to read [inetaddr] IPv4 content"),
 		},
 		{
 			"not enough bytes to read [inetaddr] IPv6 content",
 			[]byte{16, 0x20, 0x01, 0x0d, 0xb8, 0x85, 0xa3, 0x00, 0x00, 0x00, 0x00, 0x8a, 0x2e, 0x03, 0x70, 0x73},
 			nil,
-			[]byte{0x20, 0x01, 0x0d, 0xb8, 0x85, 0xa3, 0x00, 0x00, 0x00, 0x00, 0x8a, 0x2e, 0x03, 0x70, 0x73},
+			[]byte{},
 			errors.New("not enough bytes to read [inetaddr] IPv6 content"),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual, remaining, err := ReadInetAddr(tt.source)
+			buf := bytes.NewBuffer(tt.source)
+			actual, err := ReadInetAddr(buf)
 			assert.Equal(t, tt.expected, actual)
-			assert.Equal(t, tt.remaining, remaining)
+			assert.Equal(t, tt.remaining, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}
@@ -918,75 +771,35 @@ func TestReadInetAddr(t *testing.T) {
 
 func TestWriteInetAddr(t *testing.T) {
 	tests := []struct {
-		name      string
-		input     net.IP
-		dest      []byte
-		expected  []byte
-		remaining []byte
-		err       error
+		name     string
+		input    net.IP
+		expected []byte
+		err      error
 	}{
 		{
 			"IPv4 InetAddr",
 			inetAddr4,
-			make([]byte, inetAddr4Length),
 			inetAddr4Bytes,
-			[]byte{},
 			nil,
 		},
 		{
 			"IPv6 InetAddr",
 			inetAddr6,
-			make([]byte, inetAddr6Length),
 			inetAddr6Bytes,
-			[]byte{},
-			nil,
-		},
-		{
-			"InetAddr with remaining",
-			inetAddr4,
-			make([]byte, inetAddr4Length+1),
-			append(inetAddr4Bytes, 0),
-			[]byte{0},
 			nil,
 		},
 		{
 			"cannot write nil InetAddr",
 			nil,
-			[]byte{},
-			[]byte{},
-			[]byte{},
+			nil,
 			errors.New("cannot write nil [inetaddr]"),
-		},
-		{
-			"cannot write InetAddr length",
-			inetAddr4,
-			[]byte{},
-			[]byte{},
-			[]byte{},
-			fmt.Errorf("cannot write [inetaddr] length: %w", errors.New("not enough capacity to write [byte]")),
-		},
-		{
-			"not enough capacity to write [inetaddr] IPv4 content",
-			inetAddr4,
-			make([]byte, inetAddr4Length-1),
-			[]byte{4, 0, 0, 0},
-			[]byte{0, 0, 0},
-			errors.New("not enough capacity to write [inetaddr] IPv4 content"),
-		},
-		{
-			"not enough capacity to write [inetaddr] IPv6 content",
-			inetAddr6,
-			make([]byte, inetAddr6Length-1),
-			[]byte{16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			[]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			errors.New("not enough capacity to write [inetaddr] IPv6 content"),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			remaining, err := WriteInetAddr(tt.input, tt.dest)
-			assert.Equal(t, tt.expected, tt.dest)
-			assert.Equal(t, tt.remaining, remaining)
+			buf := &bytes.Buffer{}
+			err := WriteInetAddr(tt.input, buf)
+			assert.Equal(t, tt.expected, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}
@@ -1043,35 +856,36 @@ func TestReadInet(t *testing.T) {
 			[]byte{},
 			nil,
 			[]byte{},
-			fmt.Errorf("cannot read [inet] address: %w", fmt.Errorf("cannot read [inetaddr] length: %w", errors.New("not enough bytes to read [byte]"))),
+			fmt.Errorf("cannot read [inet] address: %w", fmt.Errorf("cannot read [inetaddr] length: %w", fmt.Errorf("cannot read [byte]: %w", errors.New("EOF")))),
 		},
 		{
 			"not enough bytes to read [inet] IPv4 content",
 			[]byte{4, 192, 168, 1},
 			nil,
-			[]byte{192, 168, 1},
+			[]byte{},
 			fmt.Errorf("cannot read [inet] address: %w", errors.New("not enough bytes to read [inetaddr] IPv4 content")),
 		},
 		{
 			"not enough bytes to read [inet] IPv6 content",
 			[]byte{16, 0x20, 0x01, 0x0d, 0xb8, 0x85, 0xa3, 0x00, 0x00, 0x00, 0x00, 0x8a, 0x2e, 0x03, 0x70, 0x73},
 			nil,
-			[]byte{0x20, 0x01, 0x0d, 0xb8, 0x85, 0xa3, 0x00, 0x00, 0x00, 0x00, 0x8a, 0x2e, 0x03, 0x70, 0x73},
+			[]byte{},
 			fmt.Errorf("cannot read [inet] address: %w", errors.New("not enough bytes to read [inetaddr] IPv6 content")),
 		},
 		{
 			"cannot read [inet] port number",
 			[]byte{4, 192, 168, 1, 1, 0, 0, 0},
 			nil,
-			[]byte{0, 0, 0},
-			fmt.Errorf("cannot read [inet] port number: %w", errors.New("not enough bytes to read [int]")),
+			[]byte{},
+			fmt.Errorf("cannot read [inet] port number: %w", fmt.Errorf("cannot read [int]: %w", errors.New("unexpected EOF"))),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual, remaining, err := ReadInet(tt.source)
+			buf := bytes.NewBuffer(tt.source)
+			actual, err := ReadInet(buf)
 			assert.Equal(t, tt.expected, actual)
-			assert.Equal(t, tt.remaining, remaining)
+			assert.Equal(t, tt.remaining, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}
@@ -1079,87 +893,41 @@ func TestReadInet(t *testing.T) {
 
 func TestWriteInet(t *testing.T) {
 	tests := []struct {
-		name      string
-		input     *cassandraprotocol.Inet
-		dest      []byte
-		expected  []byte
-		remaining []byte
-		err       error
+		name     string
+		input    *cassandraprotocol.Inet
+		expected []byte
+		err      error
 	}{
 		{
 			"IPv4 INET",
 			&inet4,
-			make([]byte, inet4Length),
 			inet4Bytes,
-			[]byte{},
 			nil,
 		},
 		{
 			"IPv6 INET",
 			&inet6,
-			make([]byte, inet6Length),
 			inet6Bytes,
-			[]byte{},
 			nil,
 		},
 		{
 			"INET with remaining",
 			&inet4,
-			make([]byte, inet4Length+1),
-			append(inet4Bytes, 0),
-			[]byte{0},
+			inet4Bytes,
 			nil,
 		},
 		{
 			"cannot write nil INET",
 			nil,
-			[]byte{},
-			[]byte{},
-			[]byte{},
+			nil,
 			errors.New("cannot write nil [inet]"),
-		},
-		{
-			"cannot write INET length",
-			&inet4,
-			[]byte{},
-			[]byte{},
-			[]byte{},
-			fmt.Errorf("cannot write [inet] address: %w", fmt.Errorf("cannot write [inetaddr] length: %w", errors.New("not enough capacity to write [byte]"))),
-		},
-		{
-			"not enough capacity to write [inet] IPv4 content",
-			&inet4,
-			make([]byte, inet4Length-LengthOfInt-1),
-			[]byte{4, 0, 0, 0},
-			[]byte{0, 0, 0},
-			fmt.Errorf("cannot write [inet] address: %w", errors.New("not enough capacity to write [inetaddr] IPv4 content")),
-		},
-		{
-			"not enough capacity to write [inet] IPv6 content",
-			&inet6,
-			make([]byte, inet6Length-LengthOfInt-1),
-			[]byte{16, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			[]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			fmt.Errorf("cannot write [inet] address: %w", errors.New("not enough capacity to write [inetaddr] IPv6 content")),
-		},
-		{
-			"cannot write port number",
-			&inet6,
-			make([]byte, inet6Length-1),
-			[]byte{
-				16,                                                                                             // length of IP
-				0x20, 0x01, 0x0d, 0xb8, 0x85, 0xa3, 0x00, 0x00, 0x00, 0x00, 0x8a, 0x2e, 0x03, 0x70, 0x73, 0x34, // IP
-				0, 0, 0,
-			},
-			[]byte{0, 0, 0},
-			fmt.Errorf("cannot write [inet] port number: %w", errors.New("not enough capacity to write [int]")),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			remaining, err := WriteInet(tt.input, tt.dest)
-			assert.Equal(t, tt.expected, tt.dest)
-			assert.Equal(t, tt.remaining, remaining)
+			buf := &bytes.Buffer{}
+			err := WriteInet(tt.input, buf)
+			assert.Equal(t, tt.expected, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}
@@ -1234,49 +1002,43 @@ func TestReadStringMap(t *testing.T) {
 			"cannot read map length",
 			[]byte{0},
 			nil,
-			[]byte{0},
-			fmt.Errorf(
-				"cannot read [string map] length: %w",
-				errors.New("not enough bytes to read [short]"),
-			),
+			[]byte{},
+			fmt.Errorf("cannot read [string map] length: %w",
+				fmt.Errorf("cannot read [short]: %w",
+					errors.New("unexpected EOF"))),
 		},
 		{
 			"cannot read key length",
 			[]byte{0, 1, 0},
 			nil,
-			[]byte{0},
-			fmt.Errorf(
-				"cannot read [string map] key: %w",
+			[]byte{},
+			fmt.Errorf("cannot read [string map] key: %w",
 				fmt.Errorf("cannot read [string] length: %w",
-					errors.New("not enough bytes to read [short]")),
-			),
+					fmt.Errorf("cannot read [short]: %w",
+						errors.New("unexpected EOF")))),
 		},
 		{
 			"cannot read key",
 			[]byte{0, 1, 0, 2, 0},
 			nil,
-			[]byte{0},
-			fmt.Errorf(
-				"cannot read [string map] key: %w",
-				errors.New("not enough bytes to read [string] content"),
-			),
+			[]byte{},
+			fmt.Errorf("cannot read [string map] key: %w",
+				errors.New("not enough bytes to read [string] content")),
 		},
 		{
 			"cannot read value length",
 			[]byte{0, 1, 0, 1, k, 0},
 			nil,
-			[]byte{0},
-			fmt.Errorf(
-				"cannot read [string map] value: %w",
+			[]byte{},
+			fmt.Errorf("cannot read [string map] value: %w",
 				fmt.Errorf("cannot read [string] length: %w",
-					errors.New("not enough bytes to read [short]")),
-			),
+					fmt.Errorf("cannot read [short]: %w", errors.New("unexpected EOF")))),
 		},
 		{
 			"cannot read value",
 			[]byte{0, 1, 0, 1, k, 0, 2, 0},
 			nil,
-			[]byte{0},
+			[]byte{},
 			fmt.Errorf(
 				"cannot read [string map] value: %w",
 				errors.New("not enough bytes to read [string] content"),
@@ -1285,9 +1047,10 @@ func TestReadStringMap(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual, remaining, err := ReadStringMap(tt.source)
+			buf := bytes.NewBuffer(tt.source)
+			actual, err := ReadStringMap(buf)
 			assert.Equal(t, tt.expected, actual)
-			assert.Equal(t, tt.remaining, remaining)
+			assert.Equal(t, tt.remaining, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}
@@ -1295,110 +1058,41 @@ func TestReadStringMap(t *testing.T) {
 
 func TestWriteStringMap(t *testing.T) {
 	tests := []struct {
-		name      string
-		input     map[string]string
-		dest      []byte
-		expected  []byte
-		remaining []byte
-		err       error
+		name     string
+		input    map[string]string
+		expected []byte
+		err      error
 	}{
 		{
 			"empty string map",
 			map[string]string{},
-			make([]byte, LengthOfStringMap(map[string]string{})),
 			[]byte{0, 0},
-			[]byte{},
 			nil,
 		},
 		// not officially allowed by the specs, but better safe than sorry
 		{
 			"nil string map",
 			nil,
-			make([]byte, LengthOfStringMap(nil)),
 			[]byte{0, 0},
-			[]byte{},
 			nil,
 		},
 		{
 			"map 1 key",
 			map[string]string{"hello": "world"},
-			make([]byte, LengthOfStringMap(map[string]string{"hello": "world"})),
 			[]byte{
 				0, 1, // map length
 				0, 5, h, e, l, l, o, // key: hello
 				0, 5, w, o, r, l, d, // value1: world
 			},
-			[]byte{},
-			nil,
-		},
-		{
-			"map 1 key with remaining",
-			map[string]string{"hello": "world"},
-			make([]byte, LengthOfStringMap(map[string]string{"hello": "world"})+1),
-			[]byte{
-				0, 1, // map length
-				0, 5, h, e, l, l, o, // key: hello
-				0, 5, w, o, r, l, d, // value1: world
-				0, // extra
-			},
-			[]byte{0},
 			nil,
 		},
 		// Cannot test maps with > 1 key since map entry iteration order is not deterministic :-(
-		{
-			"cannot write map length",
-			map[string]string{},
-			make([]byte, LengthOfShort-1),
-			[]byte{0},
-			[]byte{0},
-			fmt.Errorf("cannot write [string map] length: %w",
-				errors.New("not enough capacity to write [short]")),
-		},
-		{
-			"cannot write key length",
-			map[string]string{"hello": "world"},
-			make([]byte, LengthOfShort+LengthOfShort-1),
-			[]byte{0, 1, 0},
-			[]byte{0},
-			fmt.Errorf("cannot write [string map] key: %w",
-				fmt.Errorf("cannot write [string] length: %w",
-					errors.New("not enough capacity to write [short]"))),
-		},
-		{
-			"cannot write key",
-			map[string]string{"hello": "world"},
-			make([]byte, LengthOfShort+LengthOfString("hello")-1),
-			[]byte{0, 1, 0, 5, 0, 0, 0, 0},
-			[]byte{0, 0, 0, 0},
-			fmt.Errorf("cannot write [string map] key: %w",
-				errors.New("not enough capacity to write [string] content")),
-		},
-		{
-			"cannot write value length",
-			map[string]string{"hello": "world"},
-			make([]byte, LengthOfShort+LengthOfString("hello")+LengthOfShort-1),
-			[]byte{0, 1, 0, 5, h, e, l, l, o, 0},
-			[]byte{0},
-			fmt.Errorf("cannot write [string map] value: %w",
-				fmt.Errorf("cannot write [string] length: %w",
-					errors.New("not enough capacity to write [short]"))),
-		},
-		{
-			"cannot write value",
-			map[string]string{"hello": "world"},
-			make([]byte, LengthOfShort+LengthOfString("hello")+LengthOfString("world")-1),
-			[]byte{0, 1, 0, 5, h, e, l, l, o, 0, 5, 0, 0, 0, 0},
-			[]byte{0, 0, 0, 0},
-			fmt.Errorf(
-				"cannot write [string map] value: %w",
-				errors.New("not enough capacity to write [string] content")),
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			remaining, err := WriteStringMap(tt.input, tt.dest)
-			assert.Equal(t, tt.expected, tt.dest)
-			assert.Equal(t, tt.remaining, remaining)
+			buf := &bytes.Buffer{}
+			err := WriteStringMap(tt.input, buf)
+			assert.Equal(t, tt.expected, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}
@@ -1444,51 +1138,51 @@ func TestReadStringMultiMap(t *testing.T) {
 			"cannot read map length",
 			[]byte{0},
 			nil,
-			[]byte{0},
+			[]byte{},
 			fmt.Errorf(
 				"cannot read [string multimap] length: %w",
-				errors.New("not enough bytes to read [short]"),
+				fmt.Errorf("cannot read [short]: %w", errors.New("unexpected EOF")),
 			),
 		},
 		{
 			"cannot read key length",
 			[]byte{0, 1, 0},
 			nil,
-			[]byte{0},
+			[]byte{},
 			fmt.Errorf(
 				"cannot read [string multimap] key: %w",
 				fmt.Errorf("cannot read [string] length: %w",
-					errors.New("not enough bytes to read [short]")),
+					fmt.Errorf("cannot read [short]: %w", errors.New("unexpected EOF"))),
 			),
 		},
 		{
 			"cannot read list length",
 			[]byte{0, 1, 0, 1, k, 0},
 			nil,
-			[]byte{0},
+			[]byte{},
 			fmt.Errorf(
 				"cannot read [string multimap] value: %w",
 				fmt.Errorf("cannot read [string list] length: %w",
-					errors.New("not enough bytes to read [short]")),
+					fmt.Errorf("cannot read [short]: %w", errors.New("unexpected EOF"))),
 			),
 		},
 		{
 			"cannot read element length",
 			[]byte{0, 1, 0, 1, k, 0, 1, 0},
 			nil,
-			[]byte{0},
+			[]byte{},
 			fmt.Errorf(
 				"cannot read [string multimap] value: %w",
 				fmt.Errorf("cannot read [string list] element: %w",
 					fmt.Errorf("cannot read [string] length: %w",
-						errors.New("not enough bytes to read [short]"))),
+						fmt.Errorf("cannot read [short]: %w", errors.New("unexpected EOF")))),
 			),
 		},
 		{
 			"cannot read list",
 			[]byte{0, 1, 0, 1, k, 0, 1, 0, 5, h, e, l, l},
 			nil,
-			[]byte{h, e, l, l},
+			[]byte{},
 			fmt.Errorf("cannot read [string multimap] value: %w",
 				fmt.Errorf("cannot read [string list] element: %w",
 					errors.New("not enough bytes to read [string] content"))),
@@ -1496,9 +1190,10 @@ func TestReadStringMultiMap(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual, remaining, err := ReadStringMultiMap(tt.source)
+			buf := bytes.NewBuffer(tt.source)
+			actual, err := ReadStringMultiMap(buf)
 			assert.Equal(t, tt.expected, actual)
-			assert.Equal(t, tt.remaining, remaining)
+			assert.Equal(t, tt.remaining, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}
@@ -1506,61 +1201,38 @@ func TestReadStringMultiMap(t *testing.T) {
 
 func TestWriteStringMultiMap(t *testing.T) {
 	tests := []struct {
-		name      string
-		input     map[string][]string
-		dest      []byte
-		expected  []byte
-		remaining []byte
-		err       error
+		name     string
+		input    map[string][]string
+		expected []byte
+		err      error
 	}{
 		{
 			"empty string multimap",
 			map[string][]string{},
-			make([]byte, LengthOfStringMultiMap(map[string][]string{})),
 			[]byte{0, 0},
-			[]byte{},
 			nil,
 		},
 		// not officially allowed by the specs, but better safe than sorry
 		{
 			"nil string multimap",
 			nil,
-			make([]byte, LengthOfStringMultiMap(nil)),
 			[]byte{0, 0},
-			[]byte{},
 			nil,
 		},
 		{
 			"multimap 1 key 1 value",
 			map[string][]string{"hello": {"world"}},
-			make([]byte, LengthOfStringMultiMap(map[string][]string{"hello": {"world"}})),
 			[]byte{
 				0, 1, // map length
 				0, 5, h, e, l, l, o, // key: hello
 				0, 1, // list length
 				0, 5, w, o, r, l, d, // value1: world
 			},
-			[]byte{},
-			nil,
-		},
-		{
-			"multimap 1 key 1 value with remaining",
-			map[string][]string{"hello": {"world"}},
-			make([]byte, LengthOfStringMultiMap(map[string][]string{"hello": {"world"}})+1),
-			[]byte{
-				0, 1, // map length
-				0, 5, h, e, l, l, o, // key: hello
-				0, 1, // list length
-				0, 5, w, o, r, l, d, // value1: world
-				0, // extra
-			},
-			[]byte{0},
 			nil,
 		},
 		{
 			"multimap 1 key 2 values",
 			map[string][]string{"hello": {"world", "mundo"}},
-			make([]byte, LengthOfStringMultiMap(map[string][]string{"hello": {"world", "mundo"}})),
 			[]byte{
 				0, 1, // map length
 				0, 5, h, e, l, l, o, // key: hello
@@ -1568,77 +1240,15 @@ func TestWriteStringMultiMap(t *testing.T) {
 				0, 5, w, o, r, l, d, // value1: world
 				0, 5, m, u, n, d, o, // value2: mundo
 			},
-			[]byte{},
 			nil,
 		},
 		// Cannot test maps with > 1 key since map entry iteration order is not deterministic :-(
-		{
-			"cannot write map length",
-			map[string][]string{},
-			make([]byte, LengthOfShort-1),
-			[]byte{0},
-			[]byte{0},
-			fmt.Errorf("cannot write [string multimap] length: %w",
-				errors.New("not enough capacity to write [short]")),
-		},
-		{
-			"cannot write key length",
-			map[string][]string{"hello": {"world"}},
-			make([]byte, LengthOfShort+LengthOfShort-1),
-			[]byte{0, 1, 0},
-			[]byte{0},
-			fmt.Errorf("cannot write [string multimap] key: %w",
-				fmt.Errorf("cannot write [string] length: %w",
-					errors.New("not enough capacity to write [short]"))),
-		},
-		{
-			"cannot write key",
-			map[string][]string{"hello": {"world"}},
-			make([]byte, LengthOfShort+LengthOfString("hello")-1),
-			[]byte{0, 1, 0, 5, 0, 0, 0, 0},
-			[]byte{0, 0, 0, 0},
-			fmt.Errorf("cannot write [string multimap] key: %w",
-				errors.New("not enough capacity to write [string] content")),
-		},
-		{
-			"cannot write list length",
-			map[string][]string{"hello": {"world"}},
-			make([]byte, LengthOfShort+LengthOfString("hello")+LengthOfShort-1),
-			[]byte{0, 1, 0, 5, h, e, l, l, o, 0},
-			[]byte{0},
-			fmt.Errorf("cannot write [string multimap] value: %w",
-				fmt.Errorf("cannot write [string list] length: %w",
-					errors.New("not enough capacity to write [short]"))),
-		},
-		{
-			"cannot write element length",
-			map[string][]string{"hello": {"world"}},
-			make([]byte, LengthOfShort+LengthOfString("hello")+LengthOfShort+LengthOfShort-1),
-			[]byte{0, 1, 0, 5, h, e, l, l, o, 0, 1, 0},
-			[]byte{0},
-			fmt.Errorf("cannot write [string multimap] value: %w",
-				fmt.Errorf("cannot write [string list] element: %w",
-					fmt.Errorf("cannot write [string] length: %w",
-						errors.New("not enough capacity to write [short]")))),
-		},
-		{
-			"cannot write list element",
-			map[string][]string{"hello": {"world"}},
-			make([]byte, LengthOfShort+LengthOfString("hello")+LengthOfShort+LengthOfString("world")-1),
-			[]byte{0, 1, 0, 5, h, e, l, l, o, 0, 1, 0, 5, 0, 0, 0, 0},
-			[]byte{0, 0, 0, 0},
-			fmt.Errorf(
-				"cannot write [string multimap] value: %w",
-				fmt.Errorf("cannot write [string list] element: %w",
-					errors.New("not enough capacity to write [string] content")),
-			),
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			remaining, err := WriteStringMultiMap(tt.input, tt.dest)
-			assert.Equal(t, tt.expected, tt.dest)
-			assert.Equal(t, tt.remaining, remaining)
+			buf := &bytes.Buffer{}
+			err := WriteStringMultiMap(tt.input, buf)
+			assert.Equal(t, tt.expected, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}
@@ -1672,28 +1282,28 @@ func TestReadBytesMap(t *testing.T) {
 			"cannot read map length",
 			[]byte{0},
 			nil,
-			[]byte{0},
+			[]byte{},
 			fmt.Errorf(
 				"cannot read [bytes map] length: %w",
-				errors.New("not enough bytes to read [short]"),
+				fmt.Errorf("cannot read [short]: %w", errors.New("unexpected EOF")),
 			),
 		},
 		{
 			"cannot read key length",
 			[]byte{0, 1, 0},
 			nil,
-			[]byte{0},
+			[]byte{},
 			fmt.Errorf(
 				"cannot read [bytes map] key: %w",
 				fmt.Errorf("cannot read [string] length: %w",
-					errors.New("not enough bytes to read [short]")),
+					fmt.Errorf("cannot read [short]: %w", errors.New("unexpected EOF"))),
 			),
 		},
 		{
 			"cannot read key",
 			[]byte{0, 1, 0, 2, 0},
 			nil,
-			[]byte{0},
+			[]byte{},
 			fmt.Errorf(
 				"cannot read [bytes map] key: %w",
 				errors.New("not enough bytes to read [string] content"),
@@ -1703,18 +1313,18 @@ func TestReadBytesMap(t *testing.T) {
 			"cannot read value length",
 			[]byte{0, 1, 0, 1, k, 0, 0, 0},
 			nil,
-			[]byte{0, 0, 0},
+			[]byte{},
 			fmt.Errorf(
 				"cannot read [bytes map] value: %w",
 				fmt.Errorf("cannot read [bytes] length: %w",
-					errors.New("not enough bytes to read [int]")),
+					fmt.Errorf("cannot read [int]: %w", errors.New("unexpected EOF"))),
 			),
 		},
 		{
 			"cannot read value",
 			[]byte{0, 1, 0, 1, k, 0, 0, 0, 2, 0},
 			nil,
-			[]byte{0},
+			[]byte{},
 			fmt.Errorf(
 				"cannot read [bytes map] value: %w",
 				errors.New("not enough bytes to read [bytes] content"),
@@ -1723,9 +1333,10 @@ func TestReadBytesMap(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual, remaining, err := ReadBytesMap(tt.source)
+			buf := bytes.NewBuffer(tt.source)
+			actual, err := ReadBytesMap(buf)
 			assert.Equal(t, tt.expected, actual)
-			assert.Equal(t, tt.remaining, remaining)
+			assert.Equal(t, tt.remaining, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}
@@ -1733,110 +1344,41 @@ func TestReadBytesMap(t *testing.T) {
 
 func TestWriteBytesMap(t *testing.T) {
 	tests := []struct {
-		name      string
-		input     map[string][]byte
-		dest      []byte
-		expected  []byte
-		remaining []byte
-		err       error
+		name     string
+		input    map[string][]byte
+		expected []byte
+		err      error
 	}{
 		{
 			"empty bytes map",
 			map[string][]byte{},
-			make([]byte, LengthOfBytesMap(map[string][]byte{})),
 			[]byte{0, 0},
-			[]byte{},
 			nil,
 		},
 		// not officially allowed by the specs, but better safe than sorry
 		{
 			"nil bytes map",
 			nil,
-			make([]byte, LengthOfBytesMap(nil)),
 			[]byte{0, 0},
-			[]byte{},
 			nil,
 		},
 		{
 			"map 1 key",
 			map[string][]byte{"hello": {w, o, r, l, d}},
-			make([]byte, LengthOfBytesMap(map[string][]byte{"hello": {w, o, r, l, d}})),
 			[]byte{
 				0, 1, // map length
 				0, 5, h, e, l, l, o, // key: hello
 				0, 0, 0, 5, w, o, r, l, d, // value1: world
 			},
-			[]byte{},
-			nil,
-		},
-		{
-			"map 1 key with remaining",
-			map[string][]byte{"hello": {w, o, r, l, d}},
-			make([]byte, LengthOfBytesMap(map[string][]byte{"hello": {w, o, r, l, d}})+1),
-			[]byte{
-				0, 1, // map length
-				0, 5, h, e, l, l, o, // key: hello
-				0, 0, 0, 5, w, o, r, l, d, // value1: world
-				0, // extra
-			},
-			[]byte{0},
 			nil,
 		},
 		// Cannot test maps with > 1 key since map entry iteration order is not deterministic :-(
-		{
-			"cannot write map length",
-			map[string][]byte{},
-			make([]byte, LengthOfShort-1),
-			[]byte{0},
-			[]byte{0},
-			fmt.Errorf("cannot write [bytes map] length: %w",
-				errors.New("not enough capacity to write [short]")),
-		},
-		{
-			"cannot write key length",
-			map[string][]byte{"hello": {w, o, r, l, d}},
-			make([]byte, LengthOfShort+LengthOfShort-1),
-			[]byte{0, 1, 0},
-			[]byte{0},
-			fmt.Errorf("cannot write [bytes map] key: %w",
-				fmt.Errorf("cannot write [string] length: %w",
-					errors.New("not enough capacity to write [short]"))),
-		},
-		{
-			"cannot write key",
-			map[string][]byte{"hello": {w, o, r, l, d}},
-			make([]byte, LengthOfShort+LengthOfString("hello")-1),
-			[]byte{0, 1, 0, 5, 0, 0, 0, 0},
-			[]byte{0, 0, 0, 0},
-			fmt.Errorf("cannot write [bytes map] key: %w",
-				errors.New("not enough capacity to write [string] content")),
-		},
-		{
-			"cannot write value length",
-			map[string][]byte{"hello": {w, o, r, l, d}},
-			make([]byte, LengthOfShort+LengthOfString("hello")+LengthOfInt-1),
-			[]byte{0, 1, 0, 5, h, e, l, l, o, 0, 0, 0},
-			[]byte{0, 0, 0},
-			fmt.Errorf("cannot write [bytes map] value: %w",
-				fmt.Errorf("cannot write [bytes] length: %w",
-					errors.New("not enough capacity to write [int]"))),
-		},
-		{
-			"cannot write value",
-			map[string][]byte{"hello": {w, o, r, l, d}},
-			make([]byte, LengthOfShort+LengthOfString("hello")+LengthOfBytes([]byte{w, o, r, l, d})-1),
-			[]byte{0, 1, 0, 5, h, e, l, l, o, 0, 0, 0, 5, 0, 0, 0, 0},
-			[]byte{0, 0, 0, 0},
-			fmt.Errorf(
-				"cannot write [bytes map] value: %w",
-				errors.New("not enough capacity to write [bytes] content")),
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			remaining, err := WriteBytesMap(tt.input, tt.dest)
-			assert.Equal(t, tt.expected, tt.dest)
-			assert.Equal(t, tt.remaining, remaining)
+			buf := &bytes.Buffer{}
+			err := WriteBytesMap(tt.input, buf)
+			assert.Equal(t, tt.expected, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}

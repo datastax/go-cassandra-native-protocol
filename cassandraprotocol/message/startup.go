@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go-cassandra-native-protocol/cassandraprotocol"
 	"go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"io"
 )
 
 type Startup struct {
@@ -48,10 +49,9 @@ func (m *Startup) String() string {
 
 type StartupCodec struct{}
 
-func (c *StartupCodec) Encode(msg Message, dest []byte, _ cassandraprotocol.ProtocolVersion) error {
+func (c *StartupCodec) Encode(msg Message, dest io.Writer, _ cassandraprotocol.ProtocolVersion) error {
 	startup := msg.(*Startup)
-	_, err := primitives.WriteStringMap(startup.Options, dest)
-	return err
+	return primitives.WriteStringMap(startup.Options, dest)
 }
 
 func (c *StartupCodec) EncodedLength(msg Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
@@ -59,12 +59,12 @@ func (c *StartupCodec) EncodedLength(msg Message, _ cassandraprotocol.ProtocolVe
 	return primitives.LengthOfStringMap(startup.Options), nil
 }
 
-func (c *StartupCodec) Decode(source []byte, _ cassandraprotocol.ProtocolVersion) (Message, error) {
-	options, _, err := primitives.ReadStringMap(source)
-	if err != nil {
+func (c *StartupCodec) Decode(source io.Reader, _ cassandraprotocol.ProtocolVersion) (Message, error) {
+	if options, err := primitives.ReadStringMap(source); err != nil {
 		return nil, err
+	} else {
+		return NewStartup(WithOptions(options)), nil
 	}
-	return NewStartup(WithOptions(options)), nil
 }
 
 func (c *StartupCodec) GetOpCode() cassandraprotocol.OpCode {

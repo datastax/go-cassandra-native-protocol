@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go-cassandra-native-protocol/cassandraprotocol"
 	"go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"io"
 )
 
 type DataType interface {
@@ -11,12 +12,12 @@ type DataType interface {
 }
 
 type Encoder interface {
-	Encode(t DataType, dest []byte, version cassandraprotocol.ProtocolVersion) (remaining []byte, err error)
+	Encode(t DataType, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error)
 	EncodedLength(t DataType, version cassandraprotocol.ProtocolVersion) (length int, err error)
 }
 
 type Decoder interface {
-	Decode(source []byte, version cassandraprotocol.ProtocolVersion) (t DataType, remaining []byte, err error)
+	Decode(source io.Reader, version cassandraprotocol.ProtocolVersion) (t DataType, err error)
 }
 
 type Codec interface {
@@ -24,15 +25,15 @@ type Codec interface {
 	Decoder
 }
 
-func WriteDataType(t DataType, dest []byte, version cassandraprotocol.ProtocolVersion) (remaining []byte, err error) {
-	if dest, err = primitives.WriteShort(t.GetDataTypeCode(), dest); err != nil {
-		return dest, fmt.Errorf("cannot write data type code %v: %w", t.GetDataTypeCode(), err)
+func WriteDataType(t DataType, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
+	if err = primitives.WriteShort(t.GetDataTypeCode(), dest); err != nil {
+		return fmt.Errorf("cannot write data type code %v: %w", t.GetDataTypeCode(), err)
 	} else if codec, found := codecs[t.GetDataTypeCode()]; !found {
-		return dest, fmt.Errorf("cannot find codec for data type %v", t)
-	} else if dest, err = codec.Encode(t, dest, version); err != nil {
-		return dest, fmt.Errorf("cannot write data type %v: %w", t, err)
+		return fmt.Errorf("cannot find codec for data type %v", t)
+	} else if err = codec.Encode(t, dest, version); err != nil {
+		return fmt.Errorf("cannot write data type %v: %w", t, err)
 	} else {
-		return dest, nil
+		return nil
 	}
 }
 
@@ -47,16 +48,16 @@ func LengthOfDataType(t DataType, version cassandraprotocol.ProtocolVersion) (le
 	}
 }
 
-func ReadDataType(source []byte, version cassandraprotocol.ProtocolVersion) (decoded DataType, remaining []byte, err error) {
+func ReadDataType(source io.Reader, version cassandraprotocol.ProtocolVersion) (decoded DataType, err error) {
 	var typeCode cassandraprotocol.DataTypeCode
-	if typeCode, source, err = primitives.ReadShort(source); err != nil {
-		return nil, source, fmt.Errorf("cannot read data type code: %w", err)
+	if typeCode, err = primitives.ReadShort(source); err != nil {
+		return nil, fmt.Errorf("cannot read data type code: %w", err)
 	} else if codec, found := codecs[typeCode]; !found {
-		return nil, source, fmt.Errorf("cannot find codec for type code %v", typeCode)
-	} else if decoded, source, err = codec.Decode(source, version); err != nil {
-		return nil, source, fmt.Errorf("cannot read data type code %v: %w", typeCode, err)
+		return nil, fmt.Errorf("cannot find codec for type code %v", typeCode)
+	} else if decoded, err = codec.Decode(source, version); err != nil {
+		return nil, fmt.Errorf("cannot read data type code %v: %w", typeCode, err)
 	} else {
-		return decoded, source, nil
+		return decoded, nil
 	}
 }
 

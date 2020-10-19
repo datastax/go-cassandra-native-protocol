@@ -3,6 +3,7 @@ package primitives
 import (
 	"errors"
 	"fmt"
+	"io"
 	"net"
 )
 
@@ -11,44 +12,38 @@ import (
 // <endpoint> is an [inetaddr] and <failurecode> is a [short].
 // Note that [inetaddr] is used as a map key, and is rendered as string since net.IP is not a valid map key type.
 
-func ReadReasonMap(source []byte) (reasonMap map[string]uint16, remaining []byte, err error) {
-	var reasonMapLength int32
-	reasonMapLength, source, err = ReadInt(source)
-	if err != nil {
-		return nil, source, fmt.Errorf("cannot read reason map length: %w", err)
-	}
-	reasonMap = make(map[string]uint16, reasonMapLength)
-	for i := 0; i < int(reasonMapLength); i++ {
-		var addr net.IP
-		var code uint16
-		if addr, source, err = ReadInetAddr(source); err != nil {
-			return nil, source, fmt.Errorf("cannot read reason map key: %w", err)
-		} else if code, source, err = ReadShort(source); err != nil {
-			return nil, source, fmt.Errorf("cannot read reason map value: %w", err)
+func ReadReasonMap(source io.Reader) (map[string]uint16, error) {
+	if length, err := ReadInt(source); err != nil {
+		return nil, fmt.Errorf("cannot read reason map length: %w", err)
+	} else {
+		reasonMap := make(map[string]uint16, length)
+		for i := 0; i < int(length); i++ {
+			if addr, err := ReadInetAddr(source); err != nil {
+				return nil, fmt.Errorf("cannot read reason map key: %w", err)
+			} else if code, err := ReadShort(source); err != nil {
+				return nil, fmt.Errorf("cannot read reason map value: %w", err)
+			} else {
+				reasonMap[addr.String()] = code
+			}
 		}
-		reasonMap[addr.String()] = code
+		return reasonMap, err
 	}
-	return reasonMap, source, err
 }
 
-func WriteReasonMap(reasonMap map[string]uint16, dest []byte) (remaining []byte, err error) {
-	dest, err = WriteInt(int32(len(reasonMap)), dest)
-	if err != nil {
-		return dest, fmt.Errorf("cannot write reason map length: %w", err)
+func WriteReasonMap(reasonMap map[string]uint16, dest io.Writer) error {
+	if err := WriteInt(int32(len(reasonMap)), dest); err != nil {
+		return fmt.Errorf("cannot write reason map length: %w", err)
 	}
 	for addrStr, code := range reasonMap {
 		if addr := net.ParseIP(addrStr); addr == nil {
-			return dest, errors.New("cannot parse reason map key as net.IP: " + addrStr)
-		} else {
-			if dest, err = WriteInetAddr(addr, dest); err != nil {
-				return dest, fmt.Errorf("cannot write reason map key: %w", err)
-			}
-			if dest, err = WriteShort(code, dest); err != nil {
-				return dest, fmt.Errorf("cannot write reason map value: %w", err)
-			}
+			return errors.New("cannot parse reason map key as net.IP: " + addrStr)
+		} else if err := WriteInetAddr(addr, dest); err != nil {
+			return fmt.Errorf("cannot write reason map key: %w", err)
+		} else if err = WriteShort(code, dest); err != nil {
+			return fmt.Errorf("cannot write reason map value: %w", err)
 		}
 	}
-	return dest, err
+	return nil
 }
 
 func LengthOfReasonMap(reasonMap map[string]uint16) (int, error) {

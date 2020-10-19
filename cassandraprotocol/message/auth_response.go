@@ -3,6 +3,7 @@ package message
 import (
 	"go-cassandra-native-protocol/cassandraprotocol"
 	"go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"io"
 )
 
 type AuthResponse struct {
@@ -23,10 +24,9 @@ func (m *AuthResponse) String() string {
 
 type AuthResponseCodec struct{}
 
-func (c *AuthResponseCodec) Encode(msg Message, dest []byte, _ cassandraprotocol.ProtocolVersion) error {
+func (c *AuthResponseCodec) Encode(msg Message, dest io.Writer, _ cassandraprotocol.ProtocolVersion) error {
 	authResponse := msg.(*AuthResponse)
-	_, err := primitives.WriteBytes(authResponse.Token, dest)
-	return err
+	return primitives.WriteBytes(authResponse.Token, dest)
 }
 
 func (c *AuthResponseCodec) EncodedLength(msg Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
@@ -34,12 +34,12 @@ func (c *AuthResponseCodec) EncodedLength(msg Message, _ cassandraprotocol.Proto
 	return primitives.LengthOfBytes(authResponse.Token), nil
 }
 
-func (c *AuthResponseCodec) Decode(source []byte, _ cassandraprotocol.ProtocolVersion) (Message, error) {
-	token, _, err := primitives.ReadBytes(source)
-	if err != nil {
+func (c *AuthResponseCodec) Decode(source io.Reader, _ cassandraprotocol.ProtocolVersion) (Message, error) {
+	if token, err := primitives.ReadBytes(source); err != nil {
 		return nil, err
+	} else {
+		return &AuthResponse{Token: token}, nil
 	}
-	return &AuthResponse{Token: token}, nil
 }
 
 func (c *AuthResponseCodec) GetOpCode() cassandraprotocol.OpCode {

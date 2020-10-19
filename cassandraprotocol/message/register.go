@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go-cassandra-native-protocol/cassandraprotocol"
 	"go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"io"
 )
 
 type Register struct {
@@ -24,10 +25,9 @@ func (m *Register) String() string {
 
 type RegisterCodec struct{}
 
-func (c *RegisterCodec) Encode(msg Message, dest []byte, _ cassandraprotocol.ProtocolVersion) error {
+func (c *RegisterCodec) Encode(msg Message, dest io.Writer, _ cassandraprotocol.ProtocolVersion) error {
 	register := msg.(*Register)
-	_, err := primitives.WriteStringList(register.EventTypes, dest)
-	return err
+	return primitives.WriteStringList(register.EventTypes, dest)
 }
 
 func (c *RegisterCodec) EncodedLength(msg Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
@@ -35,12 +35,12 @@ func (c *RegisterCodec) EncodedLength(msg Message, _ cassandraprotocol.ProtocolV
 	return primitives.LengthOfStringList(register.EventTypes), nil
 }
 
-func (c *RegisterCodec) Decode(source []byte, _ cassandraprotocol.ProtocolVersion) (Message, error) {
-	eventTypes, _, err := primitives.ReadStringList(source)
-	if err != nil {
+func (c *RegisterCodec) Decode(source io.Reader, _ cassandraprotocol.ProtocolVersion) (Message, error) {
+	if eventTypes, err := primitives.ReadStringList(source); err != nil {
 		return nil, err
+	} else {
+		return &Register{EventTypes: eventTypes}, nil
 	}
-	return &Register{EventTypes: eventTypes}, nil
 }
 
 func (c *RegisterCodec) GetOpCode() cassandraprotocol.OpCode {

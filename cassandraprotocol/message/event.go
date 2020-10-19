@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go-cassandra-native-protocol/cassandraprotocol"
 	"go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"io"
 )
 
 type Event interface {
@@ -93,12 +94,12 @@ func (m *TopologyChangeEvent) String() string {
 
 type EventCodec struct{}
 
-func (c *EventCodec) Encode(msg Message, dest []byte, version cassandraprotocol.ProtocolVersion) (err error) {
+func (c *EventCodec) Encode(msg Message, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
 	event, ok := msg.(Event)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected Event interface, got %T", msg))
 	}
-	if dest, err = primitives.WriteString(event.GetEventType(), dest); err != nil {
+	if err = primitives.WriteString(event.GetEventType(), dest); err != nil {
 		return err
 	}
 	switch event.GetEventType() {
@@ -114,13 +115,13 @@ func (c *EventCodec) Encode(msg Message, dest []byte, version cassandraprotocol.
 		default:
 			return errors.New(fmt.Sprintf("unknown schema change type: %v", sce.Target))
 		}
-		if dest, err = primitives.WriteString(sce.ChangeType, dest); err != nil {
+		if err = primitives.WriteString(sce.ChangeType, dest); err != nil {
 			return fmt.Errorf("cannot write SchemaChangeEvent.ChangeType: %w", err)
 		}
-		if dest, err = primitives.WriteString(sce.Target, dest); err != nil {
+		if err = primitives.WriteString(sce.Target, dest); err != nil {
 			return fmt.Errorf("cannot write SchemaChangeEvent.Target: %w", err)
 		}
-		if dest, err = primitives.WriteString(sce.Keyspace, dest); err != nil {
+		if err = primitives.WriteString(sce.Keyspace, dest); err != nil {
 			return fmt.Errorf("cannot write SchemaChangeEvent.Keyspace: %w", err)
 		}
 		switch sce.Target {
@@ -128,7 +129,7 @@ func (c *EventCodec) Encode(msg Message, dest []byte, version cassandraprotocol.
 		case cassandraprotocol.SchemaChangeTargetTable:
 			fallthrough
 		case cassandraprotocol.SchemaChangeTargetType:
-			if dest, err = primitives.WriteString(sce.Object, dest); err != nil {
+			if err = primitives.WriteString(sce.Object, dest); err != nil {
 				return fmt.Errorf("cannot write SchemaChangeEvent.Object: %w", err)
 			}
 		case cassandraprotocol.SchemaChangeTargetAggregate:
@@ -137,10 +138,10 @@ func (c *EventCodec) Encode(msg Message, dest []byte, version cassandraprotocol.
 			if version < cassandraprotocol.ProtocolVersion4 {
 				return errors.New(fmt.Sprintf("%s schema change events are not supported in protocol version %d", sce.Target, version))
 			}
-			if dest, err = primitives.WriteString(sce.Object, dest); err != nil {
+			if err = primitives.WriteString(sce.Object, dest); err != nil {
 				return fmt.Errorf("cannot write SchemaChangeEvent.Object: %w", err)
 			}
-			if dest, err = primitives.WriteStringList(sce.Arguments, dest); err != nil {
+			if err = primitives.WriteStringList(sce.Arguments, dest); err != nil {
 				return fmt.Errorf("cannot write SchemaChangeEvent.Arguments: %w", err)
 			}
 		default:
@@ -158,10 +159,10 @@ func (c *EventCodec) Encode(msg Message, dest []byte, version cassandraprotocol.
 		default:
 			return errors.New(fmt.Sprintf("unknown status change type: %v", sce.ChangeType))
 		}
-		if dest, err = primitives.WriteString(sce.ChangeType, dest); err != nil {
+		if err = primitives.WriteString(sce.ChangeType, dest); err != nil {
 			return fmt.Errorf("cannot write StatusChangeEvent.ChangeType: %w", err)
 		}
-		if dest, err = primitives.WriteInet(sce.Address, dest); err != nil {
+		if err = primitives.WriteInet(sce.Address, dest); err != nil {
 			return fmt.Errorf("cannot write StatusChangeEvent.Address: %w", err)
 		}
 		return nil
@@ -176,10 +177,10 @@ func (c *EventCodec) Encode(msg Message, dest []byte, version cassandraprotocol.
 		default:
 			return errors.New(fmt.Sprintf("unknown topology change type: %v", tce.ChangeType))
 		}
-		if dest, err = primitives.WriteString(tce.ChangeType, dest); err != nil {
+		if err = primitives.WriteString(tce.ChangeType, dest); err != nil {
 			return fmt.Errorf("cannot write TopologyChangeEvent.ChangeType: %w", err)
 		}
-		if dest, err = primitives.WriteInet(tce.Address, dest); err != nil {
+		if err = primitives.WriteInet(tce.Address, dest); err != nil {
 			return fmt.Errorf("cannot write TopologyChangeEvent.Address: %w", err)
 		}
 		return nil
@@ -248,21 +249,21 @@ func (c *EventCodec) EncodedLength(msg Message, version cassandraprotocol.Protoc
 	return -1, errors.New("unknown EVENT type: " + event.GetEventType())
 }
 
-func (c *EventCodec) Decode(source []byte, version cassandraprotocol.ProtocolVersion) (Message, error) {
-	eventType, _, err := primitives.ReadString(source)
+func (c *EventCodec) Decode(source io.Reader, version cassandraprotocol.ProtocolVersion) (Message, error) {
+	eventType, err := primitives.ReadString(source)
 	if err != nil {
 		return nil, err
 	}
 	switch eventType {
 	case cassandraprotocol.EventTypeSchemaChange:
 		sce := &SchemaChangeEvent{}
-		if sce.ChangeType, source, err = primitives.ReadString(source); err != nil {
+		if sce.ChangeType, err = primitives.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read SchemaChangeEvent.ChangeType: %w", err)
 		}
-		if sce.Target, source, err = primitives.ReadString(source); err != nil {
+		if sce.Target, err = primitives.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read SchemaChangeEvent.Target: %w", err)
 		}
-		if sce.Keyspace, source, err = primitives.ReadString(source); err != nil {
+		if sce.Keyspace, err = primitives.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read SchemaChangeEvent.Keyspace: %w", err)
 		}
 		switch sce.Target {
@@ -270,7 +271,7 @@ func (c *EventCodec) Decode(source []byte, version cassandraprotocol.ProtocolVer
 		case cassandraprotocol.SchemaChangeTargetTable:
 			fallthrough
 		case cassandraprotocol.SchemaChangeTargetType:
-			if sce.Object, source, err = primitives.ReadString(source); err != nil {
+			if sce.Object, err = primitives.ReadString(source); err != nil {
 				return nil, fmt.Errorf("cannot read SchemaChangeEvent.Object: %w", err)
 			}
 		case cassandraprotocol.SchemaChangeTargetAggregate:
@@ -279,10 +280,10 @@ func (c *EventCodec) Decode(source []byte, version cassandraprotocol.ProtocolVer
 			if version < cassandraprotocol.ProtocolVersion4 {
 				return nil, errors.New(fmt.Sprintf("%s schema change events are not supported in protocol version %d", sce.Target, version))
 			}
-			if sce.Object, source, err = primitives.ReadString(source); err != nil {
+			if sce.Object, err = primitives.ReadString(source); err != nil {
 				return nil, fmt.Errorf("cannot read SchemaChangeEvent.Object: %w", err)
 			}
-			if sce.Arguments, source, err = primitives.ReadStringList(source); err != nil {
+			if sce.Arguments, err = primitives.ReadStringList(source); err != nil {
 				return nil, fmt.Errorf("cannot read SchemaChangeEvent.Arguments: %w", err)
 			}
 		default:
@@ -291,19 +292,19 @@ func (c *EventCodec) Decode(source []byte, version cassandraprotocol.ProtocolVer
 		return sce, nil
 	case cassandraprotocol.EventTypeStatusChange:
 		sce := &StatusChangeEvent{}
-		if sce.ChangeType, source, err = primitives.ReadString(source); err != nil {
+		if sce.ChangeType, err = primitives.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read StatusChangeEvent.ChangeType: %w", err)
 		}
-		if sce.Address, source, err = primitives.ReadInet(source); err != nil {
+		if sce.Address, err = primitives.ReadInet(source); err != nil {
 			return nil, fmt.Errorf("cannot read StatusChangeEvent.Address: %w", err)
 		}
 		return sce, nil
 	case cassandraprotocol.EventTypeTopologyChange:
 		tce := &TopologyChangeEvent{}
-		if tce.ChangeType, source, err = primitives.ReadString(source); err != nil {
+		if tce.ChangeType, err = primitives.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read TopologyChangeEvent.ChangeType: %w", err)
 		}
-		if tce.Address, source, err = primitives.ReadInet(source); err != nil {
+		if tce.Address, err = primitives.ReadInet(source); err != nil {
 			return nil, fmt.Errorf("cannot read TopologyChangeEvent.Address: %w", err)
 		}
 		return tce, nil

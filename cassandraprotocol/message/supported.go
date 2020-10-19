@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go-cassandra-native-protocol/cassandraprotocol"
 	"go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"io"
 )
 
 type Supported struct {
@@ -24,10 +25,9 @@ func (m *Supported) String() string {
 
 type SupportedCodec struct{}
 
-func (c *SupportedCodec) Encode(msg Message, dest []byte, _ cassandraprotocol.ProtocolVersion) error {
+func (c *SupportedCodec) Encode(msg Message, dest io.Writer, _ cassandraprotocol.ProtocolVersion) error {
 	supported := msg.(*Supported)
-	_, err := primitives.WriteStringMultiMap(supported.Options, dest)
-	if err != nil {
+	if err := primitives.WriteStringMultiMap(supported.Options, dest); err != nil {
 		return err
 	}
 	return nil
@@ -38,12 +38,12 @@ func (c *SupportedCodec) EncodedLength(msg Message, _ cassandraprotocol.Protocol
 	return primitives.LengthOfStringMultiMap(supported.Options), nil
 }
 
-func (c *SupportedCodec) Decode(source []byte, _ cassandraprotocol.ProtocolVersion) (Message, error) {
-	options, _, err := primitives.ReadStringMultiMap(source)
-	if err != nil {
+func (c *SupportedCodec) Decode(source io.Reader, _ cassandraprotocol.ProtocolVersion) (Message, error) {
+	if options, err := primitives.ReadStringMultiMap(source); err != nil {
 		return nil, err
+	} else {
+		return &Supported{Options: options}, nil
 	}
-	return &Supported{Options: options}, nil
 }
 
 func (c *SupportedCodec) GetOpCode() cassandraprotocol.OpCode {

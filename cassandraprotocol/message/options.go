@@ -1,6 +1,9 @@
 package message
 
-import "go-cassandra-native-protocol/cassandraprotocol"
+import (
+	"go-cassandra-native-protocol/cassandraprotocol"
+	"io"
+)
 
 type Options struct {
 }
@@ -19,7 +22,7 @@ func (m *Options) String() string {
 
 type OptionsCodec struct{}
 
-func (c *OptionsCodec) Encode(_ Message, _ []byte, _ cassandraprotocol.ProtocolVersion) error {
+func (c *OptionsCodec) Encode(_ Message, _ io.Writer, _ cassandraprotocol.ProtocolVersion) error {
 	return nil
 }
 
@@ -27,7 +30,7 @@ func (c *OptionsCodec) EncodedLength(_ Message, _ cassandraprotocol.ProtocolVers
 	return 0, nil
 }
 
-func (c *OptionsCodec) Decode(_ []byte, _ cassandraprotocol.ProtocolVersion) (Message, error) {
+func (c *OptionsCodec) Decode(_ io.Reader, _ cassandraprotocol.ProtocolVersion) (Message, error) {
 	return &Options{}, nil
 }
 
