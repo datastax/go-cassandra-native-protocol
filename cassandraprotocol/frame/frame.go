@@ -93,3 +93,15 @@ func newFrame(header *Header, body *Body) (*Frame, error) {
 	// Body message conformity with protocol specs will be tested by the message codecs
 	return &Frame{header, body}, nil
 }
+
+func (f *Frame) String() string {
+	return fmt.Sprintf("{header:%v,body:%v}", f.Header, f.Body)
+}
+
+func (h *Header) String() string {
+	return fmt.Sprintf("{version:%v,streamdid:%v,tracing:%v}", h.Version, h.StreamId, h.TracingRequested)
+}
+
+func (b *Body) String() string {
+	return fmt.Sprintf("{tracingid:%v,payload:%v,warnings:%v,message:%v}", b.TracingId, b.CustomPayload, b.Warnings, b.Message)
+}
