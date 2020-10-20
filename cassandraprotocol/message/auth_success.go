@@ -29,7 +29,7 @@ type AuthSuccessCodec struct{}
 func (c *AuthSuccessCodec) Encode(msg Message, dest io.Writer, _ cassandraprotocol.ProtocolVersion) error {
 	authSuccess, ok := msg.(*AuthSuccess)
 	if !ok {
-		return errors.New(fmt.Sprintf("expected *AuthSuccess struct, got %T", msg))
+		return errors.New(fmt.Sprintf("expected *AuthSuccess, got %T", msg))
 	}
 	return primitives.WriteBytes(authSuccess.Token, dest)
 }
@@ -37,7 +37,7 @@ func (c *AuthSuccessCodec) Encode(msg Message, dest io.Writer, _ cassandraprotoc
 func (c *AuthSuccessCodec) EncodedLength(msg Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
 	authSuccess, ok := msg.(*AuthSuccess)
 	if !ok {
-		return -1, errors.New(fmt.Sprintf("expected *AuthSuccess struct, got %T", msg))
+		return -1, errors.New(fmt.Sprintf("expected *AuthSuccess, got %T", msg))
 	}
 	return primitives.LengthOfBytes(authSuccess.Token), nil
 }

@@ -608,7 +608,7 @@ type ErrorCodec struct{}
 func (c *ErrorCodec) Encode(msg Message, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
 	errMsg, ok := msg.(Error)
 	if !ok {
-		return errors.New(fmt.Sprintf("expected Error interface, got %T", msg))
+		return errors.New(fmt.Sprintf("expected Error, got %T", msg))
 	}
 	if err = primitives.WriteInt(errMsg.GetErrorCode(), dest); err != nil {
 		return fmt.Errorf("cannot write ERROR code: %w", err)

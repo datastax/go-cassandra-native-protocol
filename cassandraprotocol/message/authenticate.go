@@ -29,7 +29,7 @@ type AuthenticateCodec struct{}
 func (c *AuthenticateCodec) Encode(msg Message, dest io.Writer, _ cassandraprotocol.ProtocolVersion) error {
 	authenticate, ok := msg.(*Authenticate)
 	if !ok {
-		return errors.New(fmt.Sprintf("expected *Authenticate struct, got %T", msg))
+		return errors.New(fmt.Sprintf("expected *Authenticate, got %T", msg))
 	}
 	return primitives.WriteString(authenticate.Authenticator, dest)
 }
@@ -37,7 +37,7 @@ func (c *AuthenticateCodec) Encode(msg Message, dest io.Writer, _ cassandraproto
 func (c *AuthenticateCodec) EncodedLength(msg Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
 	authenticate, ok := msg.(*Authenticate)
 	if !ok {
-		return -1, errors.New(fmt.Sprintf("expected *Authenticate struct, got %T", msg))
+		return -1, errors.New(fmt.Sprintf("expected *Authenticate, got %T", msg))
 	}
 	return primitives.LengthOfString(authenticate.Authenticator), nil
 }

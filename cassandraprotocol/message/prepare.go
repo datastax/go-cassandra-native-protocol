@@ -30,7 +30,7 @@ type PrepareCodec struct{}
 func (c *PrepareCodec) Encode(msg Message, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
 	prepare, ok := msg.(*Prepare)
 	if !ok {
-		return errors.New(fmt.Sprintf("expected *Prepare struct, got %T", msg))
+		return errors.New(fmt.Sprintf("expected *Prepare, got %T", msg))
 	}
 	if err = primitives.WriteLongString(prepare.Query, dest); err != nil {
 		return fmt.Errorf("cannot write PREPARE query: %w", err)
@@ -55,7 +55,7 @@ func (c *PrepareCodec) Encode(msg Message, dest io.Writer, version cassandraprot
 func (c *PrepareCodec) EncodedLength(msg Message, version cassandraprotocol.ProtocolVersion) (size int, err error) {
 	prepare, ok := msg.(*Prepare)
 	if !ok {
-		return -1, errors.New(fmt.Sprintf("expected *Prepare struct, got %T", msg))
+		return -1, errors.New(fmt.Sprintf("expected *Prepare, got %T", msg))
 	}
 	size += primitives.LengthOfLongString(prepare.Query)
 	if version >= cassandraprotocol.ProtocolVersion5 {

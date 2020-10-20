@@ -27,7 +27,7 @@ type ReadyCodec struct{}
 func (c *ReadyCodec) Encode(msg Message, _ io.Writer, _ cassandraprotocol.ProtocolVersion) error {
 	_, ok := msg.(*Ready)
 	if !ok {
-		return errors.New(fmt.Sprintf("expected *Ready struct, got %T", msg))
+		return errors.New(fmt.Sprintf("expected *Ready, got %T", msg))
 	}
 	return nil
 }
@@ -35,7 +35,7 @@ func (c *ReadyCodec) Encode(msg Message, _ io.Writer, _ cassandraprotocol.Protoc
 func (c *ReadyCodec) EncodedLength(msg Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
 	_, ok := msg.(*Ready)
 	if !ok {
-		return -1, errors.New(fmt.Sprintf("expected *Ready struct, got %T", msg))
+		return -1, errors.New(fmt.Sprintf("expected *Ready, got %T", msg))
 	}
 	return 0, nil
 }

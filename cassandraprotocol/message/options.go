@@ -27,7 +27,7 @@ type OptionsCodec struct{}
 func (c *OptionsCodec) Encode(msg Message, _ io.Writer, _ cassandraprotocol.ProtocolVersion) error {
 	_, ok := msg.(*Options)
 	if !ok {
-		return errors.New(fmt.Sprintf("expected *Options struct, got %T", msg))
+		return errors.New(fmt.Sprintf("expected *Options, got %T", msg))
 	}
 	return nil
 }
@@ -35,7 +35,7 @@ func (c *OptionsCodec) Encode(msg Message, _ io.Writer, _ cassandraprotocol.Prot
 func (c *OptionsCodec) EncodedLength(msg Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
 	_, ok := msg.(*Options)
 	if !ok {
-		return -1, errors.New(fmt.Sprintf("expected *Options struct, got %T", msg))
+		return -1, errors.New(fmt.Sprintf("expected *Options, got %T", msg))
 	}
 	return 0, nil
 }

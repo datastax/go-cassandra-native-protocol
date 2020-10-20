@@ -29,7 +29,7 @@ type AuthChallengeCodec struct{}
 func (c *AuthChallengeCodec) Encode(msg Message, dest io.Writer, _ cassandraprotocol.ProtocolVersion) error {
 	authChallenge, ok := msg.(*AuthChallenge)
 	if !ok {
-		return errors.New(fmt.Sprintf("expected *AuthChallenge struct, got %T", msg))
+		return errors.New(fmt.Sprintf("expected *AuthChallenge, got %T", msg))
 	}
 	return primitives.WriteBytes(authChallenge.Token, dest)
 }
@@ -37,7 +37,7 @@ func (c *AuthChallengeCodec) Encode(msg Message, dest io.Writer, _ cassandraprot
 func (c *AuthChallengeCodec) EncodedLength(msg Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
 	authChallenge, ok := msg.(*AuthChallenge)
 	if !ok {
-		return -1, errors.New(fmt.Sprintf("expected *AuthChallenge struct, got %T", msg))
+		return -1, errors.New(fmt.Sprintf("expected *AuthChallenge, got %T", msg))
 	}
 	return primitives.LengthOfBytes(authChallenge.Token), nil
 }

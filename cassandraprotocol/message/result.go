@@ -205,7 +205,7 @@ func (c *ResultCodec) Encode(msg Message, dest io.Writer, version cassandraproto
 	case cassandraprotocol.ResultTypeSetKeyspace:
 		sk, ok := result.(*SetKeyspace)
 		if !ok {
-			return errors.New(fmt.Sprintf("expected SetKeyspace struct, got %T", result))
+			return errors.New(fmt.Sprintf("expected SetKeyspace, got %T", result))
 		}
 		if err = primitives.WriteString(sk.Keyspace, dest); err != nil {
 			return fmt.Errorf("cannot write RESULT SET KEYSPACE keyspace: %w", err)
@@ -213,7 +213,7 @@ func (c *ResultCodec) Encode(msg Message, dest io.Writer, version cassandraproto
 	case cassandraprotocol.ResultTypeSchemaChange:
 		sce, ok := msg.(*SchemaChangeEvent)
 		if !ok {
-			return errors.New(fmt.Sprintf("expected SchemaChange struct, got %T", msg))
+			return errors.New(fmt.Sprintf("expected SchemaChange, got %T", msg))
 		}
 		switch sce.ChangeType {
 		case cassandraprotocol.SchemaChangeTypeCreated:
@@ -257,7 +257,7 @@ func (c *ResultCodec) Encode(msg Message, dest io.Writer, version cassandraproto
 	case cassandraprotocol.ResultTypePrepared:
 		p, ok := msg.(*Prepared)
 		if !ok {
-			return errors.New(fmt.Sprintf("expected Prepared struct, got %T", msg))
+			return errors.New(fmt.Sprintf("expected Prepared, got %T", msg))
 		}
 		if err = primitives.WriteShortBytes(p.PreparedQueryId, dest); err != nil {
 			return fmt.Errorf("cannot write RESULT PREPARED prepared query id: %w", err)
@@ -276,7 +276,7 @@ func (c *ResultCodec) Encode(msg Message, dest io.Writer, version cassandraproto
 	case cassandraprotocol.ResultTypeRows:
 		rows, ok := msg.(*Rows)
 		if !ok {
-			return errors.New(fmt.Sprintf("expected Rows struct, got %T", msg))
+			return errors.New(fmt.Sprintf("expected Rows, got %T", msg))
 		}
 		if err = encodeRowsMetadata(rows.Metadata, false, dest, version); err != nil {
 			return fmt.Errorf("cannot write RESULT ROWS metadata: %w", err)
@@ -309,13 +309,13 @@ func (c *ResultCodec) EncodedLength(msg Message, version cassandraprotocol.Proto
 	case cassandraprotocol.ResultTypeSetKeyspace:
 		sk, ok := result.(*SetKeyspace)
 		if !ok {
-			return -1, errors.New(fmt.Sprintf("expected SetKeyspace struct, got %T", result))
+			return -1, errors.New(fmt.Sprintf("expected SetKeyspace, got %T", result))
 		}
 		length += primitives.LengthOfString(sk.Keyspace)
 	case cassandraprotocol.ResultTypeSchemaChange:
 		sc, ok := msg.(*SchemaChange)
 		if !ok {
-			return -1, errors.New(fmt.Sprintf("expected SchemaChange struct, got %T", msg))
+			return -1, errors.New(fmt.Sprintf("expected SchemaChange, got %T", msg))
 		}
 		length += primitives.LengthOfString(sc.ChangeType)
 		length += primitives.LengthOfString(sc.Target)
@@ -340,7 +340,7 @@ func (c *ResultCodec) EncodedLength(msg Message, version cassandraprotocol.Proto
 	case cassandraprotocol.ResultTypePrepared:
 		p, ok := msg.(*Prepared)
 		if !ok {
-			return -1, errors.New(fmt.Sprintf("expected Prepared struct, got %T", msg))
+			return -1, errors.New(fmt.Sprintf("expected Prepared, got %T", msg))
 		}
 		length += primitives.LengthOfShortBytes(p.PreparedQueryId)
 		if version >= cassandraprotocol.ProtocolVersion5 {
@@ -359,7 +359,7 @@ func (c *ResultCodec) EncodedLength(msg Message, version cassandraprotocol.Proto
 	case cassandraprotocol.ResultTypeRows:
 		rows, ok := msg.(*Rows)
 		if !ok {
-			return -1, errors.New(fmt.Sprintf("expected Rows struct, got %T", msg))
+			return -1, errors.New(fmt.Sprintf("expected Rows, got %T", msg))
 		}
 		var lengthOfMetadata int
 		if lengthOfMetadata, err = lengthOfRowsMetadata(rows.Metadata, false, version); err != nil {
