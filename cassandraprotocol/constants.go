@@ -29,6 +29,22 @@ type Value struct {
 	Contents []byte
 }
 
+func NewValue(contents []byte) *Value {
+	if contents == nil {
+		return &Value{Type: ValueTypeNull}
+	} else {
+		return &Value{Type: ValueTypeRegular, Contents: contents}
+	}
+}
+
+func NewNullValue() *Value {
+	return NewValue(nil)
+}
+
+func NewUnsetValue() *Value {
+	return &Value{Type: ValueTypeUnset}
+}
+
 type ValueType = int32
 
 const (
