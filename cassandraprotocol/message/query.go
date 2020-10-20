@@ -49,7 +49,7 @@ func (c *QueryCodec) Decode(source io.Reader, version cassandraprotocol.Protocol
 		var options *QueryOptions
 		options, err = DecodeQueryOptions(source, version)
 		if err == nil {
-			return Query{Query: query, Options: options}, nil
+			return &Query{Query: query, Options: options}, nil
 		}
 	}
 	return nil, err
