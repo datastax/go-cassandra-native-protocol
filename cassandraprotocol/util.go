@@ -1,6 +1,9 @@
 package cassandraprotocol
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 func CheckConsistencyLevel(consistency ConsistencyLevel) error {
 	switch consistency {
@@ -50,4 +53,15 @@ func CheckWriteType(writeType WriteType) error {
 	default:
 		return fmt.Errorf("invalid write type: %v", writeType)
 	}
+}
+
+func CheckBatchType(batchType BatchType) error {
+	switch batchType {
+	case BatchTypeLogged:
+	case BatchTypeUnlogged:
+	case BatchTypeCounter:
+	default:
+		return errors.New(fmt.Sprintf("invalid BATCH type: %v", batchType))
+	}
+	return nil
 }

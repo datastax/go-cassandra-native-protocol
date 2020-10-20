@@ -178,12 +178,8 @@ func (c *BatchCodec) Decode(source io.Reader, version cassandraprotocol.Protocol
 	if batch.Type, err = primitives.ReadByte(source); err != nil {
 		return nil, fmt.Errorf("cannot read BATCH type: %w", err)
 	}
-	switch batch.Type {
-	case cassandraprotocol.BatchTypeLogged:
-	case cassandraprotocol.BatchTypeUnlogged:
-	case cassandraprotocol.BatchTypeCounter:
-	default:
-		return nil, errors.New(fmt.Sprintf("unknown BATCH type: %v", batch.Type))
+	if err = cassandraprotocol.CheckBatchType(batch.Type); err != nil {
+		return nil, err
 	}
 	var childrenCount uint16
 	if childrenCount, err = primitives.ReadShort(source); err != nil {
