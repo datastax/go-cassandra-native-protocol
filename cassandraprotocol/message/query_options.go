@@ -278,7 +278,7 @@ func DecodeQueryOptions(source io.Reader, version cassandraprotocol.ProtocolVers
 	skipMetadata := flags&cassandraprotocol.QueryFlagSkipMetadata != 0
 	var pageSize int32 = -1
 	if flags&cassandraprotocol.QueryFlagPageSize != 0 {
-		flags, err = primitives.ReadInt(source)
+		pageSize, err = primitives.ReadInt(source)
 		if err != nil {
 			return nil, fmt.Errorf("cannot read query page size: %w", err)
 		}
