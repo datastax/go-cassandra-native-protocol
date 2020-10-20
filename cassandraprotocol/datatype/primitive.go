@@ -101,7 +101,7 @@ func (c *primitiveTypeCodec) Encode(t DataType, _ io.Writer, version cassandrapr
 	if !ok {
 		return errors.New(fmt.Sprintf("expected PrimitiveType, got %T", t))
 	}
-	if err := CheckPrimitiveDataTypeCode(t.GetDataTypeCode()); err != nil {
+	if err := cassandraprotocol.CheckPrimitiveDataTypeCode(t.GetDataTypeCode()); err != nil {
 		return err
 	}
 	if version < cassandraprotocol.ProtocolVersion5 && c.primitiveType.GetDataTypeCode() == cassandraprotocol.DataTypeCodeDuration {
@@ -115,7 +115,7 @@ func (c *primitiveTypeCodec) EncodedLength(t DataType, _ cassandraprotocol.Proto
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected PrimitiveType, got %T", t))
 	}
-	if err := CheckPrimitiveDataTypeCode(t.GetDataTypeCode()); err != nil {
+	if err := cassandraprotocol.CheckPrimitiveDataTypeCode(t.GetDataTypeCode()); err != nil {
 		return -1, err
 	}
 	return 0, nil
@@ -126,50 +126,4 @@ func (c *primitiveTypeCodec) Decode(_ io.Reader, version cassandraprotocol.Proto
 		return nil, fmt.Errorf("cannot use duration type with protocol version %v", version)
 	}
 	return c.primitiveType, nil
-}
-
-func CheckPrimitiveDataTypeCode(code cassandraprotocol.DataTypeCode) error {
-	switch code {
-	case cassandraprotocol.DataTypeCodeAscii:
-		return nil
-	case cassandraprotocol.DataTypeCodeBigint:
-		return nil
-	case cassandraprotocol.DataTypeCodeBlob:
-		return nil
-	case cassandraprotocol.DataTypeCodeBoolean:
-		return nil
-	case cassandraprotocol.DataTypeCodeCounter:
-		return nil
-	case cassandraprotocol.DataTypeCodeDecimal:
-		return nil
-	case cassandraprotocol.DataTypeCodeDouble:
-		return nil
-	case cassandraprotocol.DataTypeCodeFloat:
-		return nil
-	case cassandraprotocol.DataTypeCodeInt:
-		return nil
-	case cassandraprotocol.DataTypeCodeTimestamp:
-		return nil
-	case cassandraprotocol.DataTypeCodeUuid:
-		return nil
-	case cassandraprotocol.DataTypeCodeVarchar:
-		return nil
-	case cassandraprotocol.DataTypeCodeVarint:
-		return nil
-	case cassandraprotocol.DataTypeCodeTimeuuid:
-		return nil
-	case cassandraprotocol.DataTypeCodeInet:
-		return nil
-	case cassandraprotocol.DataTypeCodeDate:
-		return nil
-	case cassandraprotocol.DataTypeCodeTime:
-		return nil
-	case cassandraprotocol.DataTypeCodeSmallint:
-		return nil
-	case cassandraprotocol.DataTypeCodeTinyint:
-		return nil
-	case cassandraprotocol.DataTypeCodeDuration:
-		return nil
-	}
-	return fmt.Errorf("invalid primitive data type code: %v", code)
 }

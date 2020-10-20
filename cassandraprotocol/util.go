@@ -65,3 +65,31 @@ func CheckBatchType(batchType BatchType) error {
 	}
 	return nil
 }
+
+func CheckPrimitiveDataTypeCode(code DataTypeCode) error {
+	switch code {
+	case DataTypeCodeAscii:
+	case DataTypeCodeBigint:
+	case DataTypeCodeBlob:
+	case DataTypeCodeBoolean:
+	case DataTypeCodeCounter:
+	case DataTypeCodeDecimal:
+	case DataTypeCodeDouble:
+	case DataTypeCodeFloat:
+	case DataTypeCodeInt:
+	case DataTypeCodeTimestamp:
+	case DataTypeCodeUuid:
+	case DataTypeCodeVarchar:
+	case DataTypeCodeVarint:
+	case DataTypeCodeTimeuuid:
+	case DataTypeCodeInet:
+	case DataTypeCodeDate:
+	case DataTypeCodeTime:
+	case DataTypeCodeSmallint:
+	case DataTypeCodeTinyint:
+	case DataTypeCodeDuration:
+	default:
+		return fmt.Errorf("invalid primitive data type code: %v", code)
+	}
+	return nil
+}
