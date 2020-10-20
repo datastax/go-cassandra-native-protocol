@@ -7,26 +7,28 @@ import (
 	"io"
 )
 
-var Ascii PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeAscii}
-var Bigint PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeBigint}
-var Blob PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeBlob}
-var Boolean PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeBoolean}
-var Counter PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeCounter}
-var Decimal PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeDecimal}
-var Double PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeDouble}
-var Float PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeFloat}
-var Int PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeInt}
-var Timestamp PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeTimestamp}
-var Uuid PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeUuid}
-var Varchar PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeVarchar}
-var Varint PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeVarint}
-var Timeuuid PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeTimeuuid}
-var Inet PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeInet}
-var Date PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeDate}
-var Time PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeTime}
-var Smallint PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeSmallint}
-var Tinyint PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeTinyint}
-var Duration PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeDuration}
+var (
+	Ascii     PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeAscii}
+	Bigint    PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeBigint}
+	Blob      PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeBlob}
+	Boolean   PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeBoolean}
+	Counter   PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeCounter}
+	Decimal   PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeDecimal}
+	Double    PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeDouble}
+	Float     PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeFloat}
+	Int       PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeInt}
+	Timestamp PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeTimestamp}
+	Uuid      PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeUuid}
+	Varchar   PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeVarchar}
+	Varint    PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeVarint}
+	Timeuuid  PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeTimeuuid}
+	Inet      PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeInet}
+	Date      PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeDate}
+	Time      PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeTime}
+	Smallint  PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeSmallint}
+	Tinyint   PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeTinyint}
+	Duration  PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeDuration}
+)
 
 type PrimitiveType interface {
 	DataType
