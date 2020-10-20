@@ -1,6 +1,8 @@
 package message
 
 import (
+	"errors"
+	"fmt"
 	"go-cassandra-native-protocol/cassandraprotocol"
 	"io"
 )
@@ -22,11 +24,19 @@ func (m *Options) String() string {
 
 type OptionsCodec struct{}
 
-func (c *OptionsCodec) Encode(_ Message, _ io.Writer, _ cassandraprotocol.ProtocolVersion) error {
+func (c *OptionsCodec) Encode(msg Message, _ io.Writer, _ cassandraprotocol.ProtocolVersion) error {
+	_, ok := msg.(*Options)
+	if !ok {
+		return errors.New(fmt.Sprintf("expected *Options struct, got %T", msg))
+	}
 	return nil
 }
 
-func (c *OptionsCodec) EncodedLength(_ Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
+func (c *OptionsCodec) EncodedLength(msg Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
+	_, ok := msg.(*Options)
+	if !ok {
+		return -1, errors.New(fmt.Sprintf("expected *Options struct, got %T", msg))
+	}
 	return 0, nil
 }
 

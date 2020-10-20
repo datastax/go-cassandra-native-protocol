@@ -1,6 +1,7 @@
 package message
 
 import (
+	"errors"
 	"fmt"
 	"go-cassandra-native-protocol/cassandraprotocol"
 	"go-cassandra-native-protocol/cassandraprotocol/primitives"
@@ -26,12 +27,18 @@ func (m *Register) String() string {
 type RegisterCodec struct{}
 
 func (c *RegisterCodec) Encode(msg Message, dest io.Writer, _ cassandraprotocol.ProtocolVersion) error {
-	register := msg.(*Register)
+	register, ok := msg.(*Register)
+	if !ok {
+		return errors.New(fmt.Sprintf("expected *Register struct, got %T", msg))
+	}
 	return primitives.WriteStringList(register.EventTypes, dest)
 }
 
 func (c *RegisterCodec) EncodedLength(msg Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
-	register := msg.(*Register)
+	register, ok := msg.(*Register)
+	if !ok {
+		return -1, errors.New(fmt.Sprintf("expected *Register struct, got %T", msg))
+	}
 	return primitives.LengthOfStringList(register.EventTypes), nil
 }
 

@@ -43,13 +43,12 @@ func (m *Batch) String() string {
 type BatchCodec struct{}
 
 func (c *BatchCodec) Encode(msg Message, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
-	batch := msg.(*Batch)
-	switch batch.Type {
-	case cassandraprotocol.BatchTypeLogged:
-	case cassandraprotocol.BatchTypeUnlogged:
-	case cassandraprotocol.BatchTypeCounter:
-	default:
-		return errors.New(fmt.Sprintf("unknown BATCH type: %v", batch.Type))
+	batch, ok := msg.(*Batch)
+	if !ok {
+		return errors.New(fmt.Sprintf("expected *Batch struct, got %T", msg))
+	}
+	if err = cassandraprotocol.CheckBatchType(batch.Type); err != nil {
+		return err
 	}
 	if err = primitives.WriteByte(batch.Type, dest); err != nil {
 		return fmt.Errorf("cannot write BATCH type: %w", err)
@@ -128,7 +127,10 @@ func (c *BatchCodec) Encode(msg Message, dest io.Writer, version cassandraprotoc
 }
 
 func (c *BatchCodec) EncodedLength(msg Message, version cassandraprotocol.ProtocolVersion) (length int, err error) {
-	batch := msg.(*Batch)
+	batch, ok := msg.(*Batch)
+	if !ok {
+		return -1, errors.New(fmt.Sprintf("expected *Batch struct, got %T", msg))
+	}
 	childrenCount := len(batch.Children)
 	if childrenCount > 0xFFFF {
 		return -1, errors.New(fmt.Sprintf("BATCH messages can contain at most %d queries", 0xFFFF))

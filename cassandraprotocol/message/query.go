@@ -1,6 +1,7 @@
 package message
 
 import (
+	"errors"
 	"fmt"
 	"go-cassandra-native-protocol/cassandraprotocol"
 	"go-cassandra-native-protocol/cassandraprotocol/primitives"
@@ -24,7 +25,10 @@ type QueryCodec struct {
 }
 
 func (c *QueryCodec) Encode(msg Message, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
-	query := msg.(*Query)
+	query, ok := msg.(*Query)
+	if !ok {
+		return errors.New(fmt.Sprintf("expected *Query struct, got %T", msg))
+	}
 	err = primitives.WriteLongString(query.Query, dest)
 	if err == nil {
 		err = EncodeQueryOptions(query.Options, dest, version)
@@ -33,7 +37,10 @@ func (c *QueryCodec) Encode(msg Message, dest io.Writer, version cassandraprotoc
 }
 
 func (c *QueryCodec) EncodedLength(msg Message, version cassandraprotocol.ProtocolVersion) (int, error) {
-	query := msg.(*Query)
+	query, ok := msg.(*Query)
+	if !ok {
+		return -1, errors.New(fmt.Sprintf("expected *Query struct, got %T", msg))
+	}
 	lengthOfQuery := primitives.LengthOfLongString(query.Query)
 	lengthOfQueryOptions, err := LengthOfQueryOptions(query.Options, version)
 	if err != nil {

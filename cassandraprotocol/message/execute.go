@@ -2,6 +2,7 @@ package message
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"go-cassandra-native-protocol/cassandraprotocol"
 	"go-cassandra-native-protocol/cassandraprotocol/primitives"
@@ -29,7 +30,10 @@ func (m *Execute) String() string {
 type ExecuteCodec struct{}
 
 func (c *ExecuteCodec) Encode(msg Message, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
-	execute := msg.(*Execute)
+	execute, ok := msg.(*Execute)
+	if !ok {
+		return errors.New(fmt.Sprintf("expected *Execute struct, got %T", msg))
+	}
 	if err = primitives.WriteShortBytes(execute.QueryId, dest); err != nil {
 		return fmt.Errorf("cannot write EXECUTE query id: %w", err)
 	}
@@ -45,7 +49,10 @@ func (c *ExecuteCodec) Encode(msg Message, dest io.Writer, version cassandraprot
 }
 
 func (c *ExecuteCodec) EncodedLength(msg Message, version cassandraprotocol.ProtocolVersion) (size int, err error) {
-	execute := msg.(*Execute)
+	execute, ok := msg.(*Execute)
+	if !ok {
+		return -1, errors.New(fmt.Sprintf("expected *Execute struct, got %T", msg))
+	}
 	size += primitives.LengthOfShortBytes(execute.QueryId)
 	if version >= cassandraprotocol.ProtocolVersion5 {
 		size += primitives.LengthOfShortBytes(execute.ResultMetadataId)

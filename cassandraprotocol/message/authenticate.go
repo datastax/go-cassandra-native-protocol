@@ -1,6 +1,8 @@
 package message
 
 import (
+	"errors"
+	"fmt"
 	"go-cassandra-native-protocol/cassandraprotocol"
 	"go-cassandra-native-protocol/cassandraprotocol/primitives"
 	"io"
@@ -25,12 +27,18 @@ func (m *Authenticate) String() string {
 type AuthenticateCodec struct{}
 
 func (c *AuthenticateCodec) Encode(msg Message, dest io.Writer, _ cassandraprotocol.ProtocolVersion) error {
-	authenticate := msg.(*Authenticate)
+	authenticate, ok := msg.(*Authenticate)
+	if !ok {
+		return errors.New(fmt.Sprintf("expected *Authenticate struct, got %T", msg))
+	}
 	return primitives.WriteString(authenticate.Authenticator, dest)
 }
 
 func (c *AuthenticateCodec) EncodedLength(msg Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
-	authenticate := msg.(*Authenticate)
+	authenticate, ok := msg.(*Authenticate)
+	if !ok {
+		return -1, errors.New(fmt.Sprintf("expected *Authenticate struct, got %T", msg))
+	}
 	return primitives.LengthOfString(authenticate.Authenticator), nil
 }
 

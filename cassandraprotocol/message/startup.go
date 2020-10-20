@@ -1,6 +1,7 @@
 package message
 
 import (
+	"errors"
 	"fmt"
 	"go-cassandra-native-protocol/cassandraprotocol"
 	"go-cassandra-native-protocol/cassandraprotocol/primitives"
@@ -50,12 +51,18 @@ func (m *Startup) String() string {
 type StartupCodec struct{}
 
 func (c *StartupCodec) Encode(msg Message, dest io.Writer, _ cassandraprotocol.ProtocolVersion) error {
-	startup := msg.(*Startup)
+	startup, ok := msg.(*Startup)
+	if !ok {
+		return errors.New(fmt.Sprintf("expected *Startup struct, got %T", msg))
+	}
 	return primitives.WriteStringMap(startup.Options, dest)
 }
 
 func (c *StartupCodec) EncodedLength(msg Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
-	startup := msg.(*Startup)
+	startup, ok := msg.(*Startup)
+	if !ok {
+		return -1, errors.New(fmt.Sprintf("expected *Startup struct, got %T", msg))
+	}
 	return primitives.LengthOfStringMap(startup.Options), nil
 }
 

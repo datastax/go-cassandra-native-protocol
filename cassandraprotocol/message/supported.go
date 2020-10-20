@@ -1,6 +1,7 @@
 package message
 
 import (
+	"errors"
 	"fmt"
 	"go-cassandra-native-protocol/cassandraprotocol"
 	"go-cassandra-native-protocol/cassandraprotocol/primitives"
@@ -26,7 +27,10 @@ func (m *Supported) String() string {
 type SupportedCodec struct{}
 
 func (c *SupportedCodec) Encode(msg Message, dest io.Writer, _ cassandraprotocol.ProtocolVersion) error {
-	supported := msg.(*Supported)
+	supported, ok := msg.(*Supported)
+	if !ok {
+		return errors.New(fmt.Sprintf("expected *Supported struct, got %T", msg))
+	}
 	if err := primitives.WriteStringMultiMap(supported.Options, dest); err != nil {
 		return err
 	}
@@ -34,7 +38,10 @@ func (c *SupportedCodec) Encode(msg Message, dest io.Writer, _ cassandraprotocol
 }
 
 func (c *SupportedCodec) EncodedLength(msg Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
-	supported := msg.(*Supported)
+	supported, ok := msg.(*Supported)
+	if !ok {
+		return -1, errors.New(fmt.Sprintf("expected *Supported struct, got %T", msg))
+	}
 	return primitives.LengthOfStringMultiMap(supported.Options), nil
 }
 
