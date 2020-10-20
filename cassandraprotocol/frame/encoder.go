@@ -12,7 +12,7 @@ import (
 
 const encodedHeaderLength = 9
 
-func (c *Codec) Encode(frame *Frame) ([]byte, error) {
+func (c *Codec) Encode(frame *Frame) (*bytes.Buffer, error) {
 	version := frame.Header.Version
 	if version < cassandraprotocol.ProtocolVersion4 && frame.Body.CustomPayload != nil {
 		return nil, fmt.Errorf("custom payloads are not supported in protocol version %v", version)
@@ -43,7 +43,7 @@ func (c *Codec) shouldCompress(frame *Frame) bool {
 		opCode != cassandraprotocol.OpCodeOptions
 }
 
-func (c *Codec) encodeFrameUncompressed(frame *Frame) ([]byte, error) {
+func (c *Codec) encodeFrameUncompressed(frame *Frame) (*bytes.Buffer, error) {
 	var err error
 	var encodedBodyLength int
 	if encodedBodyLength, err = c.uncompressedBodyLength(frame); err != nil {
@@ -56,10 +56,10 @@ func (c *Codec) encodeFrameUncompressed(frame *Frame) ([]byte, error) {
 	if err = c.encodeBodyUncompressed(frame, encodedFrame); err != nil {
 		return nil, fmt.Errorf("cannot encode frame body: %w", err)
 	}
-	return encodedFrame.Bytes(), nil
+	return encodedFrame, nil
 }
 
-func (c *Codec) encodeFrameCompressed(frame *Frame) ([]byte, error) {
+func (c *Codec) encodeFrameCompressed(frame *Frame) (*bytes.Buffer, error) {
 	var err error
 	// 1) Encode uncompressed body
 	var uncompressedBodyLength int
@@ -71,19 +71,19 @@ func (c *Codec) encodeFrameCompressed(frame *Frame) ([]byte, error) {
 		return nil, fmt.Errorf("cannot encode frame body: %w", err)
 	}
 	// 2) Compress body
-	var compressedBody []byte
+	var compressedBody *bytes.Buffer
 	if compressedBody, err = c.compressor.Compress(uncompressedBody); err != nil {
 		return nil, fmt.Errorf("cannot compress frame body: %w", err)
 	}
-	compressedBodyLength := len(compressedBody)
+	compressedBodyLength := compressedBody.Len()
 	// 3) Encode header
 	encodedFrame := bytes.NewBuffer(make([]byte, 0, encodedHeaderLength+compressedBodyLength))
 	if err = c.encodeHeader(frame, compressedBodyLength, encodedFrame); err != nil {
 		return nil, fmt.Errorf("cannot encode frame header: %w", err)
 	}
 	// 4) join header and compressed body
-	encodedFrame.Write(compressedBody)
-	return encodedFrame.Bytes(), nil
+	compressedBody.WriteTo(encodedFrame)
+	return encodedFrame, nil
 }
 
 func (c *Codec) encodeHeader(frame *Frame, bodyLength int, dest io.Writer) error {

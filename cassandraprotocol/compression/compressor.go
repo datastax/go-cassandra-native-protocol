@@ -1,8 +1,10 @@
 package compression
 
-import "io"
+import (
+	"bytes"
+)
 
 type MessageCompressor interface {
-	Compress(uncompressedMessage io.Reader) (compressedMessage []byte, err error)
-	Decompress(compressedMessage io.Reader) (decompressedMessage []byte, err error)
+	Compress(uncompressedMessage *bytes.Buffer) (compressedMessage *bytes.Buffer, err error)
+	Decompress(compressedMessage *bytes.Buffer) (decompressedMessage *bytes.Buffer, err error)
 }

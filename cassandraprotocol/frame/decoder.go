@@ -10,10 +10,9 @@ import (
 	"io"
 )
 
-func (c *Codec) Decode(frame []byte) (*Frame, error) {
-	actualLength := len(frame)
-	frameBuffer := bytes.NewBuffer(frame)
-	if isResponse, version, flags, streamId, opCode, bodyLength, err := c.decodeHeader(frameBuffer); err != nil {
+func (c *Codec) Decode(frame *bytes.Buffer) (*Frame, error) {
+	actualLength := frame.Len()
+	if isResponse, version, flags, streamId, opCode, bodyLength, err := c.decodeHeader(frame); err != nil {
 		return nil, fmt.Errorf("cannot decode frame header: %w", err)
 	} else {
 		if int(bodyLength) != actualLength {
@@ -23,13 +22,11 @@ func (c *Codec) Decode(frame []byte) (*Frame, error) {
 				actualLength))
 		}
 		if compressed := flags&cassandraprotocol.HeaderFlagCompressed > 0; compressed {
-			if frame, err := c.compressor.Decompress(frameBuffer); err != nil {
+			if frame, err = c.compressor.Decompress(frame); err != nil {
 				return nil, fmt.Errorf("cannot decompress frame body: %w", err)
-			} else {
-				frameBuffer = bytes.NewBuffer(frame)
 			}
 		}
-		if tracingId, customPayload, warnings, msg, err := c.decodeBody(isResponse, version, flags, opCode, frameBuffer); err != nil {
+		if tracingId, customPayload, warnings, msg, err := c.decodeBody(isResponse, version, flags, opCode, frame); err != nil {
 			return nil, fmt.Errorf("cannot decompress frame body: %w", err)
 		} else {
 			header := &Header{
