@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"go-cassandra-native-protocol/cassandraprotocol"
-	"go-cassandra-native-protocol/cassandraprotocol/datatype"
 	"go-cassandra-native-protocol/cassandraprotocol/frame"
 	"go-cassandra-native-protocol/cassandraprotocol/message"
 )
@@ -46,22 +45,8 @@ func main() {
 		map[string][]byte{"hello": {0xca, 0xfe, 0xba, 0xbe}},
 		[]string{"you naughty boy"},
 		&message.Rows{
-			Metadata: message.NewRowsMetadata(
-				message.WithColumnSpecs(
-					[]*message.ColumnSpec{
-						{
-							KeyspaceName: "ks",
-							TableName:    "t1",
-							Name:         "col1",
-							Index:        0,
-							Type:         datatype.NewListType(datatype.Int),
-						},
-					},
-					nil,
-					[]uint16{0},
-					nil,
-				)),
-			Data: [][][]byte{},
+			Metadata: message.NewRowsMetadata(message.WithoutColumnSpecs(1, nil, nil, nil)),
+			Data:     [][][]byte{},
 		},
 	); err != nil {
 		panic(err)
