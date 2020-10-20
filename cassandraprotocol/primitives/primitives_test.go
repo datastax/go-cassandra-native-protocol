@@ -391,7 +391,7 @@ func TestReadStringList(t *testing.T) {
 			[]byte{0, 1, 0, 5, h, e, l, l},
 			nil,
 			[]byte{},
-			fmt.Errorf("cannot read [string list] element: %w", errors.New("not enough bytes to read [string] content")),
+			fmt.Errorf("cannot read [string list] element 0: %w", errors.New("not enough bytes to read [string] content")),
 		},
 	}
 	for _, tt := range tests {
@@ -1012,7 +1012,7 @@ func TestReadStringMap(t *testing.T) {
 			[]byte{0, 1, 0},
 			nil,
 			[]byte{},
-			fmt.Errorf("cannot read [string map] key: %w",
+			fmt.Errorf("cannot read [string map] entry 0 key: %w",
 				fmt.Errorf("cannot read [string] length: %w",
 					fmt.Errorf("cannot read [short]: %w",
 						errors.New("unexpected EOF")))),
@@ -1022,7 +1022,7 @@ func TestReadStringMap(t *testing.T) {
 			[]byte{0, 1, 0, 2, 0},
 			nil,
 			[]byte{},
-			fmt.Errorf("cannot read [string map] key: %w",
+			fmt.Errorf("cannot read [string map] entry 0 key: %w",
 				errors.New("not enough bytes to read [string] content")),
 		},
 		{
@@ -1030,7 +1030,7 @@ func TestReadStringMap(t *testing.T) {
 			[]byte{0, 1, 0, 1, k, 0},
 			nil,
 			[]byte{},
-			fmt.Errorf("cannot read [string map] value: %w",
+			fmt.Errorf("cannot read [string map] entry 0 value: %w",
 				fmt.Errorf("cannot read [string] length: %w",
 					fmt.Errorf("cannot read [short]: %w", errors.New("unexpected EOF")))),
 		},
@@ -1040,7 +1040,7 @@ func TestReadStringMap(t *testing.T) {
 			nil,
 			[]byte{},
 			fmt.Errorf(
-				"cannot read [string map] value: %w",
+				"cannot read [string map] entry 0 value: %w",
 				errors.New("not enough bytes to read [string] content"),
 			),
 		},
@@ -1086,13 +1086,24 @@ func TestWriteStringMap(t *testing.T) {
 			},
 			nil,
 		},
-		// Cannot test maps with > 1 key since map entry iteration order is not deterministic :-(
+		{"map 2 keys",
+			map[string]string{
+				"hello": "world",
+				"holà!": "mundo",
+			},
+			[]byte{
+				0, 2, // map length
+				0, 5, h, e, l, l, o, // key1: hello
+				0, 5, w, o, r, l, d, // value1: world
+				0, 6, h, o, l, 0xc3, 0xa0, 0x21, // key2: holà!
+				0, 5, m, u, n, d, o, // value2: mundo
+			}, nil},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			buf := &bytes.Buffer{}
 			err := WriteStringMap(tt.input, buf)
-			assert.Equal(t, tt.expected, buf.Bytes())
+			assert.EqualValues(t, tt.expected, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}
@@ -1150,7 +1161,7 @@ func TestReadStringMultiMap(t *testing.T) {
 			nil,
 			[]byte{},
 			fmt.Errorf(
-				"cannot read [string multimap] key: %w",
+				"cannot read [string multimap] entry 0 key: %w",
 				fmt.Errorf("cannot read [string] length: %w",
 					fmt.Errorf("cannot read [short]: %w", errors.New("unexpected EOF"))),
 			),
@@ -1161,7 +1172,7 @@ func TestReadStringMultiMap(t *testing.T) {
 			nil,
 			[]byte{},
 			fmt.Errorf(
-				"cannot read [string multimap] value: %w",
+				"cannot read [string multimap] entry 0 value: %w",
 				fmt.Errorf("cannot read [string list] length: %w",
 					fmt.Errorf("cannot read [short]: %w", errors.New("unexpected EOF"))),
 			),
@@ -1172,8 +1183,8 @@ func TestReadStringMultiMap(t *testing.T) {
 			nil,
 			[]byte{},
 			fmt.Errorf(
-				"cannot read [string multimap] value: %w",
-				fmt.Errorf("cannot read [string list] element: %w",
+				"cannot read [string multimap] entry 0 value: %w",
+				fmt.Errorf("cannot read [string list] element 0: %w",
 					fmt.Errorf("cannot read [string] length: %w",
 						fmt.Errorf("cannot read [short]: %w", errors.New("unexpected EOF")))),
 			),
@@ -1183,8 +1194,8 @@ func TestReadStringMultiMap(t *testing.T) {
 			[]byte{0, 1, 0, 1, k, 0, 1, 0, 5, h, e, l, l},
 			nil,
 			[]byte{},
-			fmt.Errorf("cannot read [string multimap] value: %w",
-				fmt.Errorf("cannot read [string list] element: %w",
+			fmt.Errorf("cannot read [string multimap] entry 0 value: %w",
+				fmt.Errorf("cannot read [string list] element 0: %w",
 					errors.New("not enough bytes to read [string] content"))),
 		},
 	}
@@ -1242,13 +1253,29 @@ func TestWriteStringMultiMap(t *testing.T) {
 			},
 			nil,
 		},
-		// Cannot test maps with > 1 key since map entry iteration order is not deterministic :-(
+		{"multimap 2 keys 2 values",
+			map[string][]string{
+				"hello": {"world", "mundo"},
+				"holà!": {"world", "mundo"},
+			},
+			[]byte{
+				0, 2, // map length
+				0, 5, h, e, l, l, o, // key1: hello
+				0, 2, // list length
+				0, 5, w, o, r, l, d, // value1: world
+				0, 5, m, u, n, d, o, // value2: mundo
+				0, 6, h, o, l, 0xc3, 0xa0, 0x21, // key2: holà!
+				0, 2, // list length
+				0, 5, w, o, r, l, d, // value1: world
+				0, 5, m, u, n, d, o, // value2: mundo
+			},
+			nil},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			buf := &bytes.Buffer{}
 			err := WriteStringMultiMap(tt.input, buf)
-			assert.Equal(t, tt.expected, buf.Bytes())
+			assert.EqualValues(t, tt.expected, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}
@@ -1294,7 +1321,7 @@ func TestReadBytesMap(t *testing.T) {
 			nil,
 			[]byte{},
 			fmt.Errorf(
-				"cannot read [bytes map] key: %w",
+				"cannot read [bytes map] entry 0 key: %w",
 				fmt.Errorf("cannot read [string] length: %w",
 					fmt.Errorf("cannot read [short]: %w", errors.New("unexpected EOF"))),
 			),
@@ -1305,7 +1332,7 @@ func TestReadBytesMap(t *testing.T) {
 			nil,
 			[]byte{},
 			fmt.Errorf(
-				"cannot read [bytes map] key: %w",
+				"cannot read [bytes map] entry 0 key: %w",
 				errors.New("not enough bytes to read [string] content"),
 			),
 		},
@@ -1315,7 +1342,7 @@ func TestReadBytesMap(t *testing.T) {
 			nil,
 			[]byte{},
 			fmt.Errorf(
-				"cannot read [bytes map] value: %w",
+				"cannot read [bytes map] entry 0 value: %w",
 				fmt.Errorf("cannot read [bytes] length: %w",
 					fmt.Errorf("cannot read [int]: %w", errors.New("unexpected EOF"))),
 			),
@@ -1326,7 +1353,7 @@ func TestReadBytesMap(t *testing.T) {
 			nil,
 			[]byte{},
 			fmt.Errorf(
-				"cannot read [bytes map] value: %w",
+				"cannot read [bytes map] entry 0 value: %w",
 				errors.New("not enough bytes to read [bytes] content"),
 			),
 		},
@@ -1372,13 +1399,24 @@ func TestWriteBytesMap(t *testing.T) {
 			},
 			nil,
 		},
-		// Cannot test maps with > 1 key since map entry iteration order is not deterministic :-(
+		{"map 2 keys",
+			map[string][]byte{
+				"hello": {w, o, r, l, d},
+				"holà!": {m, u, n, d, o},
+			},
+			[]byte{
+				0, 2, // map length
+				0, 5, h, e, l, l, o, // key1: hello
+				0, 0, 0, 5, w, o, r, l, d, // value1: world
+				0, 6, h, o, l, 0xc3, 0xa0, 0x21, // key2: holà!
+				0, 0, 0, 5, m, u, n, d, o, // value2: mundo
+			}, nil},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			buf := &bytes.Buffer{}
 			err := WriteBytesMap(tt.input, buf)
-			assert.Equal(t, tt.expected, buf.Bytes())
+			assert.EqualValues(t, tt.expected, buf.Bytes())
 			assert.Equal(t, tt.err, err)
 		})
 	}

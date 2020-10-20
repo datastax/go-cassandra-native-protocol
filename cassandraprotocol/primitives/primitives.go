@@ -161,7 +161,7 @@ func ReadStringList(source io.Reader) (decoded []string, err error) {
 		var str string
 		str, err = ReadString(source)
 		if err != nil {
-			return nil, fmt.Errorf("cannot read [string list] element: %w", err)
+			return nil, fmt.Errorf("cannot read [string list] element %d: %w", i, err)
 		}
 		decoded[i] = str
 	}
@@ -173,9 +173,9 @@ func WriteStringList(list []string, dest io.Writer) error {
 	if err := WriteShort(uint16(length), dest); err != nil {
 		return fmt.Errorf("cannot write [string list] length: %w", err)
 	}
-	for _, s := range list {
+	for i, s := range list {
 		if err := WriteString(s, dest); err != nil {
-			return fmt.Errorf("cannot write [string list] element: %w", err)
+			return fmt.Errorf("cannot write [string list] element %d: %w", i, err)
 		}
 	}
 	return nil
@@ -398,9 +398,9 @@ func ReadStringMap(source io.Reader) (map[string]string, error) {
 		decoded := make(map[string]string, length)
 		for i := uint16(0); i < length; i++ {
 			if key, err := ReadString(source); err != nil {
-				return nil, fmt.Errorf("cannot read [string map] key: %w", err)
+				return nil, fmt.Errorf("cannot read [string map] entry %d key: %w", i, err)
 			} else if value, err := ReadString(source); err != nil {
-				return nil, fmt.Errorf("cannot read [string map] value: %w", err)
+				return nil, fmt.Errorf("cannot read [string map] entry %d value: %w", i, err)
 			} else {
 				decoded[key] = value
 			}
@@ -415,10 +415,10 @@ func WriteStringMap(m map[string]string, dest io.Writer) error {
 	}
 	for key, value := range m {
 		if err := WriteString(key, dest); err != nil {
-			return fmt.Errorf("cannot write [string map] key: %w", err)
+			return fmt.Errorf("cannot write [string map] entry '%v' key: %w", key, err)
 		}
 		if err := WriteString(value, dest); err != nil {
-			return fmt.Errorf("cannot write [string map] value: %w", err)
+			return fmt.Errorf("cannot write [string map] entry '%v' value: %w", key, err)
 		}
 	}
 	return nil
@@ -441,9 +441,9 @@ func ReadStringMultiMap(source io.Reader) (decoded map[string][]string, err erro
 		decoded := make(map[string][]string, length)
 		for i := uint16(0); i < length; i++ {
 			if key, err := ReadString(source); err != nil {
-				return nil, fmt.Errorf("cannot read [string multimap] key: %w", err)
+				return nil, fmt.Errorf("cannot read [string multimap] entry %d key: %w", i, err)
 			} else if value, err := ReadStringList(source); err != nil {
-				return nil, fmt.Errorf("cannot read [string multimap] value: %w", err)
+				return nil, fmt.Errorf("cannot read [string multimap] entry %d value: %w", i, err)
 			} else {
 				decoded[key] = value
 			}
@@ -458,10 +458,10 @@ func WriteStringMultiMap(m map[string][]string, dest io.Writer) error {
 	}
 	for key, value := range m {
 		if err := WriteString(key, dest); err != nil {
-			return fmt.Errorf("cannot write [string multimap] key: %w", err)
+			return fmt.Errorf("cannot write [string multimap] entry '%v' key: %w", key, err)
 		}
 		if err := WriteStringList(value, dest); err != nil {
-			return fmt.Errorf("cannot write [string multimap] value: %w", err)
+			return fmt.Errorf("cannot write [string multimap] entry '%v' value: %w", key, err)
 		}
 	}
 	return nil
@@ -484,9 +484,9 @@ func ReadBytesMap(source io.Reader) (map[string][]byte, error) {
 		decoded := make(map[string][]byte, length)
 		for i := uint16(0); i < length; i++ {
 			if key, err := ReadString(source); err != nil {
-				return nil, fmt.Errorf("cannot read [bytes map] key: %w", err)
+				return nil, fmt.Errorf("cannot read [bytes map] entry %d key: %w", i, err)
 			} else if value, err := ReadBytes(source); err != nil {
-				return nil, fmt.Errorf("cannot read [bytes map] value: %w", err)
+				return nil, fmt.Errorf("cannot read [bytes map] entry %d value: %w", i, err)
 			} else {
 				decoded[key] = value
 			}
@@ -501,10 +501,10 @@ func WriteBytesMap(m map[string][]byte, dest io.Writer) error {
 	}
 	for key, value := range m {
 		if err := WriteString(key, dest); err != nil {
-			return fmt.Errorf("cannot write [bytes map] key: %w", err)
+			return fmt.Errorf("cannot write [bytes map] entry '%v' key: %w", key, err)
 		}
 		if err := WriteBytes(value, dest); err != nil {
-			return fmt.Errorf("cannot write [bytes map] value: %w", err)
+			return fmt.Errorf("cannot write [bytes map] entry '%v' value: %w", value, err)
 		}
 	}
 	return nil
