@@ -12,6 +12,36 @@ type Frame struct {
 	Body   *Body
 }
 
+// Flags return the header flags for this frame. Flags are dynamically computed from the frame's internal state.
+// It is a method declared at frame level even if the flags are encoded in the header, because some flags also
+// affect how the body is encoded.
+func (f *Frame) Flags(compress bool) cassandraprotocol.HeaderFlag {
+	var flags cassandraprotocol.HeaderFlag = 0
+	if compress && f.IsCompressible() {
+		flags |= cassandraprotocol.HeaderFlagCompressed
+	}
+	if f.Body.TracingId != nil || f.Header.TracingRequested {
+		flags |= cassandraprotocol.HeaderFlagTracing
+	}
+	if f.Body.CustomPayload != nil {
+		flags |= cassandraprotocol.HeaderFlagCustomPayload
+	}
+	if f.Body.Warnings != nil {
+		flags |= cassandraprotocol.HeaderFlagWarning
+	}
+	if f.Header.Version == cassandraprotocol.ProtocolVersionBeta {
+		flags |= cassandraprotocol.HeaderFlagUseBeta
+	}
+	return flags
+}
+
+// IsCompressible returns true if the frame contains a body that can be compressed. Bodies containing STARTUP and
+// OPTIONS messages should indeed never be compressed, even if compression is in use.
+func (f Frame) IsCompressible() bool {
+	opCode := f.Body.Message.GetOpCode()
+	return opCode != cassandraprotocol.OpCodeStartup && opCode != cassandraprotocol.OpCodeOptions
+}
+
 type Header struct {
 	Version cassandraprotocol.ProtocolVersion
 	// The protocol spec states that the stream id is a [short], but this is wrong: the stream id
@@ -96,7 +126,12 @@ func newFrame(header *Header, body *Body) (*Frame, error) {
 }
 
 func (f *Frame) String() string {
-	return fmt.Sprintf("{header: %v, body: %v}", f.Header, f.Body)
+	return fmt.Sprintf(
+		"{header: %v, flags: %08b, body: %v}",
+		f.Header,
+		f.Flags(false),
+		f.Body,
+	)
 }
 
 func (h *Header) String() string {

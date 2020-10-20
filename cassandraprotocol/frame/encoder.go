@@ -20,7 +20,7 @@ func (c *codec) Encode(frame *Frame) (*bytes.Buffer, error) {
 	if version < cassandraprotocol.ProtocolVersion4 && frame.Body.Warnings != nil {
 		return nil, fmt.Errorf("warnings are not supported in protocol version %v", version)
 	}
-	if c.shouldCompress(frame) {
+	if c.compressor != nil && frame.IsCompressible() {
 		return c.encodeFrameCompressed(frame)
 	} else {
 		return c.encodeFrameUncompressed(frame)
@@ -34,13 +34,6 @@ func (c *codec) findEncoder(frame *Frame) (encoder message.Encoder, err error) {
 		err = errors.New(fmt.Sprintf("unsupported opcode %d", opCode))
 	}
 	return encoder, err
-}
-
-func (c *codec) shouldCompress(frame *Frame) bool {
-	opCode := frame.Body.Message.GetOpCode()
-	return c.compressor != nil &&
-		opCode != cassandraprotocol.OpCodeStartup &&
-		opCode != cassandraprotocol.OpCodeOptions
 }
 
 func (c *codec) encodeFrameUncompressed(frame *Frame) (*bytes.Buffer, error) {
@@ -96,7 +89,7 @@ func (c *codec) encodeHeader(frame *Frame, bodyLength int, dest io.Writer) error
 	if err := primitives.WriteByte(versionAndDirection, dest); err != nil {
 		return fmt.Errorf("cannot encode header version and direction: %w", err)
 	}
-	flags := c.encodeFlags(frame)
+	flags := frame.Flags(c.compressor != nil)
 	if err := primitives.WriteByte(flags, dest); err != nil {
 		return fmt.Errorf("cannot encode header flags: %w", err)
 	} else if err = primitives.WriteShort(uint16(frame.Header.StreamId), dest); err != nil {
@@ -150,24 +143,4 @@ func (c *codec) encodeBodyUncompressed(frame *Frame, dest io.Writer) error {
 		return fmt.Errorf("cannot encode body message: %w", err)
 	}
 	return nil
-}
-
-func (c *codec) encodeFlags(frame *Frame) cassandraprotocol.HeaderFlag {
-	var flags cassandraprotocol.HeaderFlag = 0
-	if c.shouldCompress(frame) {
-		flags |= cassandraprotocol.HeaderFlagCompressed
-	}
-	if frame.Body.TracingId != nil || frame.Header.TracingRequested {
-		flags |= cassandraprotocol.HeaderFlagTracing
-	}
-	if frame.Body.CustomPayload != nil {
-		flags |= cassandraprotocol.HeaderFlagCustomPayload
-	}
-	if frame.Body.Warnings != nil {
-		flags |= cassandraprotocol.HeaderFlagWarning
-	}
-	if frame.Header.Version == cassandraprotocol.ProtocolVersionBeta {
-		flags |= cassandraprotocol.HeaderFlagUseBeta
-	}
-	return flags
 }
