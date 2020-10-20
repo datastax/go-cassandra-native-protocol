@@ -59,7 +59,7 @@ func (c *PrepareCodec) EncodedLength(msg Message, version cassandraprotocol.Prot
 }
 
 func (c *PrepareCodec) Decode(source io.Reader, version cassandraprotocol.ProtocolVersion) (msg Message, err error) {
-	prepare := Prepare{}
+	prepare := &Prepare{}
 	if prepare.Query, err = primitives.ReadLongString(source); err != nil {
 		return nil, fmt.Errorf("cannot read PREPARE query: %w", err)
 	}
@@ -74,7 +74,7 @@ func (c *PrepareCodec) Decode(source io.Reader, version cassandraprotocol.Protoc
 			}
 		}
 	}
-	return &prepare, nil
+	return prepare, nil
 }
 
 func (c *PrepareCodec) GetOpCode() cassandraprotocol.OpCode {
