@@ -11,17 +11,11 @@ import (
 )
 
 func TestUserDefinedType(t *testing.T) {
-	fieldTypes := map[string]DataType{
-		"f1": Varchar,
-		"f2": Int,
-	}
-	userDefinedType := NewUserDefinedType(
-		"ks1",
-		"udt1",
-		fieldTypes,
-	)
-	assert.Equal(t, cassandraprotocol.DataTypeCodeUdt, userDefinedType.GetDataTypeCode())
-	assert.Equal(t, fieldTypes, userDefinedType.GetFieldTypes())
+	fieldNames := []string{"f1", "f2"}
+	fieldTypes := []DataType{Varchar, Int}
+	udtType := NewUserDefinedType("ks1", "udt1", fieldNames, fieldTypes)
+	assert.Equal(t, cassandraprotocol.DataTypeCodeUdt, udtType.GetDataTypeCode())
+	assert.Equal(t, fieldTypes, udtType.GetFieldTypes())
 }
 
 func TestUserDefinedTypeCodecEncode(t *testing.T) {
@@ -32,39 +26,24 @@ func TestUserDefinedTypeCodecEncode(t *testing.T) {
 		err      error
 	}{
 		{
-			"simple userDefined",
-			NewUserDefinedType(
-				"ks1",
-				"udt1",
-				map[string]DataType{
-					"f1": Varchar,
-					//"f2": Int, FIXME cannot test map with two keys
-				}),
+			"simple udt",
+			NewUserDefinedType("ks1", "udt1", []string{"f1", "f2"}, []DataType{Varchar, Int}),
 			[]byte{
 				0, 3, byte('k'), byte('s'), byte('1'),
 				0, 4, byte('u'), byte('d'), byte('t'), byte('1'),
-				0, 1, // field count
+				0, 2, // field count
 				0, 2, byte('f'), byte('1'),
 				0, byte(cassandraprotocol.DataTypeCodeVarchar & 0xFF),
-				//0, 2, byte('f'), byte('2'),
-				//0, byte(cassandraprotocol.DataTypeCodeInt & 0xFF),
+				0, 2, byte('f'), byte('2'),
+				0, byte(cassandraprotocol.DataTypeCodeInt & 0xFF),
 			},
 			nil,
 		},
 		{
-			"complex userDefined",
-			NewUserDefinedType(
-				"ks1",
-				"udt1",
-				map[string]DataType{
-					"f1": NewUserDefinedType(
-						"ks1",
-						"udt2",
-						map[string]DataType{
-							"f2": Varchar,
-							//"f3": Int,
-						}),
-				}),
+			"complex udt",
+			NewUserDefinedType("ks1", "udt1", []string{"f1"}, []DataType{
+				NewUserDefinedType("ks1", "udt2", []string{"f2", "f3"}, []DataType{Varchar, Int}),
+			}),
 			[]byte{
 				0, 3, byte('k'), byte('s'), byte('1'),
 				0, 4, byte('u'), byte('d'), byte('t'), byte('1'),
@@ -73,15 +52,15 @@ func TestUserDefinedTypeCodecEncode(t *testing.T) {
 				0, byte(cassandraprotocol.DataTypeCodeUdt & 0xFF),
 				0, 3, byte('k'), byte('s'), byte('1'),
 				0, 4, byte('u'), byte('d'), byte('t'), byte('2'),
-				0, 1, // field count
+				0, 2, // field count
 				0, 2, byte('f'), byte('2'),
 				0, byte(cassandraprotocol.DataTypeCodeVarchar & 0xFF),
-				//0, 2, byte('f'), byte('3'),
-				//0, byte(cassandraprotocol.DataTypeCodeInt & 0xFF),
+				0, 2, byte('f'), byte('3'),
+				0, byte(cassandraprotocol.DataTypeCodeInt & 0xFF),
 			},
 			nil,
 		},
-		{"nil userDefined", nil, nil, errors.New("expected UserDefinedType, got <nil>")},
+		{"nil udt", nil, nil, errors.New("expected UserDefinedType, got <nil>")},
 	}
 	codec, _ := FindCodec(cassandraprotocol.DataTypeCodeUdt)
 	for _, test := range tests {
@@ -92,7 +71,7 @@ func TestUserDefinedTypeCodecEncode(t *testing.T) {
 					var err error
 					err = codec.Encode(test.input, dest, version)
 					actual := dest.Bytes()
-					assert.EqualValues(t, test.expected, actual)
+					assert.Equal(t, test.expected, actual)
 					assert.Equal(t, test.err, err)
 				})
 			}
@@ -108,14 +87,8 @@ func TestUserDefinedTypeCodecEncodedLength(t *testing.T) {
 		err      error
 	}{
 		{
-			"simple userDefined",
-			NewUserDefinedType(
-				"ks1",
-				"udt1",
-				map[string]DataType{
-					"f1": Varchar,
-					"f2": Int,
-				}),
+			"simple udt",
+			NewUserDefinedType("ks1", "udt1", []string{"f1", "f2"}, []DataType{Varchar, Int}),
 			primitives.LengthOfString("ks1") +
 				primitives.LengthOfString("udt1") +
 				primitives.LengthOfShort + // field count
@@ -126,19 +99,10 @@ func TestUserDefinedTypeCodecEncodedLength(t *testing.T) {
 			nil,
 		},
 		{
-			"complex userDefined",
-			NewUserDefinedType(
-				"ks1",
-				"udt1",
-				map[string]DataType{
-					"f1": NewUserDefinedType(
-						"ks1",
-						"udt2",
-						map[string]DataType{
-							"f2": Varchar,
-							"f3": Int,
-						}),
-				}),
+			"complex udt",
+			NewUserDefinedType("ks1", "udt1", []string{"f1"}, []DataType{
+				NewUserDefinedType("ks1", "udt2", []string{"f2", "f3"}, []DataType{Varchar, Int}),
+			}),
 			primitives.LengthOfString("ks1") +
 				primitives.LengthOfString("udt1") +
 				primitives.LengthOfShort + // field count
@@ -153,7 +117,7 @@ func TestUserDefinedTypeCodecEncodedLength(t *testing.T) {
 				primitives.LengthOfShort, // int
 			nil,
 		},
-		{"nil userDefined", nil, -1, errors.New("expected UserDefinedType, got <nil>")},
+		{"nil udt", nil, -1, errors.New("expected UserDefinedType, got <nil>")},
 	}
 	codec, _ := FindCodec(cassandraprotocol.DataTypeCodeUdt)
 	for _, test := range tests {
@@ -179,7 +143,7 @@ func TestUserDefinedTypeCodecDecode(t *testing.T) {
 		err      error
 	}{
 		{
-			"simple userDefined",
+			"simple udt",
 			[]byte{
 				0, 3, byte('k'), byte('s'), byte('1'),
 				0, 4, byte('u'), byte('d'), byte('t'), byte('1'),
@@ -189,17 +153,11 @@ func TestUserDefinedTypeCodecDecode(t *testing.T) {
 				0, 2, byte('f'), byte('2'),
 				0, byte(cassandraprotocol.DataTypeCodeInt & 0xFF),
 			},
-			NewUserDefinedType(
-				"ks1",
-				"udt1",
-				map[string]DataType{
-					"f1": Varchar,
-					"f2": Int,
-				}),
+			NewUserDefinedType("ks1", "udt1", []string{"f1", "f2"}, []DataType{Varchar, Int}),
 			nil,
 		},
 		{
-			"complex userDefined",
+			"complex udt",
 			[]byte{
 				0, 3, byte('k'), byte('s'), byte('1'),
 				0, 4, byte('u'), byte('d'), byte('t'), byte('1'),
@@ -214,22 +172,13 @@ func TestUserDefinedTypeCodecDecode(t *testing.T) {
 				0, 2, byte('f'), byte('3'),
 				0, byte(cassandraprotocol.DataTypeCodeInt & 0xFF),
 			},
-			NewUserDefinedType(
-				"ks1",
-				"udt1",
-				map[string]DataType{
-					"f1": NewUserDefinedType(
-						"ks1",
-						"udt2",
-						map[string]DataType{
-							"f2": Varchar,
-							"f3": Int,
-						}),
-				}),
+			NewUserDefinedType("ks1", "udt1", []string{"f1"}, []DataType{
+				NewUserDefinedType("ks1", "udt2", []string{"f2", "f3"}, []DataType{Varchar, Int}),
+			}),
 			nil,
 		},
 		{
-			"cannot read userDefined",
+			"cannot read udt",
 			[]byte{},
 			nil,
 			fmt.Errorf("cannot read udt keyspace: %w",

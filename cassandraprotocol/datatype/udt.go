@@ -12,13 +12,16 @@ type UserDefinedType interface {
 	DataType
 	GetKeyspace() string
 	GetName() string
-	GetFieldTypes() map[string]DataType
+	// names and types are not modeled as a map because iteration order matters
+	GetFieldNames() []string
+	GetFieldTypes() []DataType
 }
 
 type userDefinedType struct {
 	keyspace   string
 	name       string
-	fieldTypes map[string]DataType
+	fieldNames []string
+	fieldTypes []DataType
 }
 
 func (t *userDefinedType) GetKeyspace() string {
@@ -29,12 +32,16 @@ func (t *userDefinedType) GetName() string {
 	return t.name
 }
 
-func (t *userDefinedType) GetFieldTypes() map[string]DataType {
+func (t *userDefinedType) GetFieldNames() []string {
+	return t.fieldNames
+}
+
+func (t *userDefinedType) GetFieldTypes() []DataType {
 	return t.fieldTypes
 }
 
-func NewUserDefinedType(keyspace string, table string, fieldTypes map[string]DataType) UserDefinedType {
-	return &userDefinedType{keyspace: keyspace, name: table, fieldTypes: fieldTypes}
+func NewUserDefinedType(keyspace string, table string, fieldNames []string, fieldTypes []DataType) UserDefinedType {
+	return &userDefinedType{keyspace: keyspace, name: table, fieldNames: fieldNames, fieldTypes: fieldTypes}
 }
 
 func (t *userDefinedType) GetDataTypeCode() cassandraprotocol.DataTypeCode {
@@ -62,7 +69,11 @@ func (c *userDefinedTypeCodec) Encode(t DataType, dest io.Writer, version cassan
 	} else if err = primitives.WriteShort(uint16(len(userDefinedType.GetFieldTypes())), dest); err != nil {
 		return fmt.Errorf("cannot write udt field count: %w", err)
 	}
-	for fieldName, fieldType := range userDefinedType.GetFieldTypes() {
+	if len(userDefinedType.GetFieldNames()) != len(userDefinedType.GetFieldTypes()) {
+		return fmt.Errorf("invalid user-defined type: length of field names is not equal to length of field types")
+	}
+	for i, fieldName := range userDefinedType.GetFieldNames() {
+		fieldType := userDefinedType.GetFieldTypes()[i]
 		if err = primitives.WriteString(fieldName, dest); err != nil {
 			return fmt.Errorf("cannot write udt field %v name: %w", fieldName, err)
 		} else if err = WriteDataType(fieldType, dest, version); err != nil {
@@ -80,7 +91,11 @@ func (c *userDefinedTypeCodec) EncodedLength(t DataType, version cassandraprotoc
 	length += primitives.LengthOfString(userDefinedType.GetKeyspace())
 	length += primitives.LengthOfString(userDefinedType.GetName())
 	length += primitives.LengthOfShort // field count
-	for fieldName, fieldType := range userDefinedType.GetFieldTypes() {
+	if len(userDefinedType.GetFieldNames()) != len(userDefinedType.GetFieldTypes()) {
+		return -1, fmt.Errorf("invalid user-defined type: length of field names is not equal to length of field types")
+	}
+	for i, fieldName := range userDefinedType.GetFieldNames() {
+		fieldType := userDefinedType.GetFieldTypes()[i]
 		length += primitives.LengthOfString(fieldName)
 		if fieldLength, err := LengthOfDataType(fieldType, version); err != nil {
 			return -1, fmt.Errorf("cannot compute length of udt field %v: %w", fieldName, err)
@@ -100,12 +115,13 @@ func (c *userDefinedTypeCodec) Decode(source io.Reader, version cassandraprotoco
 	} else if fieldCount, err := primitives.ReadShort(source); err != nil {
 		return nil, fmt.Errorf("cannot read udt field count: %w", err)
 	} else {
-		userDefinedType.fieldTypes = make(map[string]DataType, fieldCount)
+		userDefinedType.fieldNames = make([]string, fieldCount)
+		userDefinedType.fieldTypes = make([]DataType, fieldCount)
 		for i := 0; i < int(fieldCount); i++ {
-			if fieldName, err := primitives.ReadString(source); err != nil {
+			if userDefinedType.fieldNames[i], err = primitives.ReadString(source); err != nil {
 				return nil, fmt.Errorf("cannot read udt field %d name: %w", i, err)
-			} else if userDefinedType.fieldTypes[fieldName], err = ReadDataType(source, version); err != nil {
-				return nil, fmt.Errorf("cannot read udt field %v: %w", fieldName, err)
+			} else if userDefinedType.fieldTypes[i], err = ReadDataType(source, version); err != nil {
+				return nil, fmt.Errorf("cannot read udt field %d: %w", i, err)
 			}
 		}
 		return userDefinedType, nil
