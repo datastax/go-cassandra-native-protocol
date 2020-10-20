@@ -82,7 +82,9 @@ func (c *codec) encodeFrameCompressed(frame *Frame) (*bytes.Buffer, error) {
 		return nil, fmt.Errorf("cannot encode frame header: %w", err)
 	}
 	// 4) join header and compressed body
-	compressedBody.WriteTo(encodedFrame)
+	if _, err := compressedBody.WriteTo(encodedFrame); err != nil {
+		return nil, fmt.Errorf("cannot concat frame body to frame header: %w", err)
+	}
 	return encodedFrame, nil
 }
 
