@@ -579,8 +579,7 @@ func decodeRowsMetadata(decodePkIndices bool, source io.Reader, version cassandr
 	if metadata.Flags, err = primitives.ReadInt(source); err != nil {
 		return nil, fmt.Errorf("cannot read RESULT ROWS metadata flags: %w", err)
 	}
-	var columnCount int32
-	if columnCount, err = primitives.ReadInt(source); err != nil {
+	if metadata.ColumnCount, err = primitives.ReadInt(source); err != nil {
 		return nil, fmt.Errorf("cannot read RESULT ROWS metadata column count: %w", err)
 	}
 	if decodePkIndices {
@@ -608,7 +607,7 @@ func decodeRowsMetadata(decodePkIndices bool, source io.Reader, version cassandr
 		}
 	}
 	if metadata.Flags&cassandraprotocol.RowsFlagNoMetadata == 0 {
-		metadata.ColumnSpecs = make([]*ColumnSpec, columnCount)
+		metadata.ColumnSpecs = make([]*ColumnSpec, metadata.ColumnCount)
 		globalTableSpec := metadata.Flags&cassandraprotocol.RowsFlagGlobalTablesSpec > 0
 		var globalKsName string
 		var globalTableName string
@@ -620,7 +619,7 @@ func decodeRowsMetadata(decodePkIndices bool, source io.Reader, version cassandr
 				return nil, fmt.Errorf("cannot read RESULT ROWS column spec global table: %w", err)
 			}
 		}
-		for i := 0; i < int(columnCount); i++ {
+		for i := 0; i < int(metadata.ColumnCount); i++ {
 			metadata.ColumnSpecs[i] = &ColumnSpec{}
 			if globalTableSpec {
 				metadata.ColumnSpecs[i].KeyspaceName = globalKsName
