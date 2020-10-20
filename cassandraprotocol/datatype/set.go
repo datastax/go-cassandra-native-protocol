@@ -19,6 +19,14 @@ func (t *setType) String() string {
 	return fmt.Sprintf("set<%v>", t.elementType)
 }
 
+func (t *setType) MarshalJSON() ([]byte, error) {
+	return []byte("\"" + t.String() + "\""), nil
+}
+
+func NewSetType(elementType DataType) DataType {
+	return &setType{elementType: elementType}
+}
+
 type setTypeCodec struct{}
 
 func (c *setTypeCodec) Encode(t DataType, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {

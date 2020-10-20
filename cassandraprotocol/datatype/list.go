@@ -11,12 +11,20 @@ type listType struct {
 	elementType DataType
 }
 
+func NewListType(elementType DataType) DataType {
+	return &listType{elementType: elementType}
+}
+
 func (t *listType) GetDataTypeCode() cassandraprotocol.DataTypeCode {
 	return cassandraprotocol.DataTypeCodeList
 }
 
 func (t *listType) String() string {
 	return fmt.Sprintf("list<%v>", t.elementType)
+}
+
+func (t *listType) MarshalJSON() ([]byte, error) {
+	return []byte("\"" + t.String() + "\""), nil
 }
 
 type listTypeCodec struct{}

@@ -12,12 +12,20 @@ type customType struct {
 	className string
 }
 
+func NewCustomType(className string) DataType {
+	return &customType{className: className}
+}
+
 func (t *customType) GetDataTypeCode() cassandraprotocol.DataTypeCode {
 	return cassandraprotocol.DataTypeCodeCustom
 }
 
 func (t *customType) String() string {
 	return fmt.Sprintf("custom(%v)", t.className)
+}
+
+func (t *customType) MarshalJSON() ([]byte, error) {
+	return []byte("\"" + t.String() + "\""), nil
 }
 
 type customTypeCodec struct{}

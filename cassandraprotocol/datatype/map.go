@@ -20,6 +20,14 @@ func (t *mapType) String() string {
 	return fmt.Sprintf("map<%v,%v>", t.keyType, t.valueType)
 }
 
+func (t *mapType) MarshalJSON() ([]byte, error) {
+	return []byte("\"" + t.String() + "\""), nil
+}
+
+func NewMapType(keyType DataType, valueType DataType) DataType {
+	return &mapType{keyType: keyType, valueType: valueType}
+}
+
 type mapTypeCodec struct{}
 
 func (c *mapTypeCodec) Encode(t DataType, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {

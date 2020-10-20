@@ -12,12 +12,20 @@ type tupleType struct {
 	FieldTypes []DataType
 }
 
+func NewTupleType(fieldTypes ...DataType) DataType {
+	return &tupleType{FieldTypes: fieldTypes}
+}
+
 func (t *tupleType) GetDataTypeCode() cassandraprotocol.DataTypeCode {
 	return cassandraprotocol.DataTypeCodeTuple
 }
 
 func (t *tupleType) String() string {
 	return fmt.Sprintf("tuple<%v>", t.FieldTypes)
+}
+
+func (t *tupleType) MarshalJSON() ([]byte, error) {
+	return []byte("\"" + t.String() + "\""), nil
 }
 
 type tupleTypeCodec struct{}

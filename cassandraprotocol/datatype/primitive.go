@@ -6,6 +6,27 @@ import (
 	"io"
 )
 
+var Ascii DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeAscii}
+var Bigint DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeBigint}
+var Blob DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeBlob}
+var Boolean DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeBoolean}
+var Counter DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeCounter}
+var Decimal DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeDecimal}
+var Double DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeDouble}
+var Float DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeFloat}
+var Int DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeInt}
+var Timestamp DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeTimestamp}
+var Uuid DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeUuid}
+var Varchar DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeVarchar}
+var Varint DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeVarint}
+var Timeuuid DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeTimeuuid}
+var Inet DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeInet}
+var Date DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeDate}
+var Time DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeTime}
+var Smallint DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeSmallint}
+var Tinyint DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeTinyint}
+var Duration DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeDuration}
+
 type primitiveType struct {
 	code cassandraprotocol.DataTypeCode
 }
@@ -58,6 +79,10 @@ func (t *primitiveType) String() string {
 		return "duration"
 	}
 	return "?"
+}
+
+func (t *primitiveType) MarshalJSON() ([]byte, error) {
+	return []byte("\"" + t.String() + "\""), nil
 }
 
 type primitiveTypeCodec struct {

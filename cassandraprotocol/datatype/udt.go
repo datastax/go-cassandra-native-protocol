@@ -14,12 +14,20 @@ type userDefinedType struct {
 	fieldTypes map[string]DataType
 }
 
+func NewUserDefinedType(keyspace string, table string, fieldTypes map[string]DataType) DataType {
+	return &userDefinedType{keyspace: keyspace, table: table, fieldTypes: fieldTypes}
+}
+
 func (t *userDefinedType) GetDataTypeCode() cassandraprotocol.DataTypeCode {
 	return cassandraprotocol.DataTypeCodeUdt
 }
 
 func (t *userDefinedType) String() string {
 	return fmt.Sprintf("%v.%v<%v>", t.keyspace, t.table, t.fieldTypes)
+}
+
+func (t *userDefinedType) MarshalJSON() ([]byte, error) {
+	return []byte("\"" + t.String() + "\""), nil
 }
 
 type userDefinedTypeCodec struct{}
