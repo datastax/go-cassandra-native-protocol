@@ -1,31 +1,36 @@
 package datatype
 
 import (
+	"errors"
 	"fmt"
 	"go-cassandra-native-protocol/cassandraprotocol"
 	"io"
 )
 
-var Ascii DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeAscii}
-var Bigint DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeBigint}
-var Blob DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeBlob}
-var Boolean DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeBoolean}
-var Counter DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeCounter}
-var Decimal DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeDecimal}
-var Double DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeDouble}
-var Float DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeFloat}
-var Int DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeInt}
-var Timestamp DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeTimestamp}
-var Uuid DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeUuid}
-var Varchar DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeVarchar}
-var Varint DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeVarint}
-var Timeuuid DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeTimeuuid}
-var Inet DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeInet}
-var Date DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeDate}
-var Time DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeTime}
-var Smallint DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeSmallint}
-var Tinyint DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeTinyint}
-var Duration DataType = &primitiveType{code: cassandraprotocol.DataTypeCodeDuration}
+var Ascii PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeAscii}
+var Bigint PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeBigint}
+var Blob PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeBlob}
+var Boolean PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeBoolean}
+var Counter PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeCounter}
+var Decimal PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeDecimal}
+var Double PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeDouble}
+var Float PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeFloat}
+var Int PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeInt}
+var Timestamp PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeTimestamp}
+var Uuid PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeUuid}
+var Varchar PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeVarchar}
+var Varint PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeVarint}
+var Timeuuid PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeTimeuuid}
+var Inet PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeInet}
+var Date PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeDate}
+var Time PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeTime}
+var Smallint PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeSmallint}
+var Tinyint PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeTinyint}
+var Duration PrimitiveType = &primitiveType{code: cassandraprotocol.DataTypeCodeDuration}
+
+type PrimitiveType interface {
+	DataType
+}
 
 type primitiveType struct {
 	code cassandraprotocol.DataTypeCode
@@ -89,14 +94,28 @@ type primitiveTypeCodec struct {
 	primitiveType *primitiveType
 }
 
-func (c *primitiveTypeCodec) Encode(_ DataType, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
+func (c *primitiveTypeCodec) Encode(t DataType, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
+	_, ok := t.(PrimitiveType)
+	if !ok {
+		return errors.New(fmt.Sprintf("expected PrimitiveType, got %T", t))
+	}
+	if err := CheckPrimitiveDataTypeCode(t.GetDataTypeCode()); err != nil {
+		return err
+	}
 	if version < cassandraprotocol.ProtocolVersion5 && c.primitiveType.GetDataTypeCode() == cassandraprotocol.DataTypeCodeDuration {
 		return fmt.Errorf("cannot use duration type with protocol version %v", version)
 	}
 	return nil
 }
 
-func (c *primitiveTypeCodec) EncodedLength(_ DataType, _ cassandraprotocol.ProtocolVersion) (int, error) {
+func (c *primitiveTypeCodec) EncodedLength(t DataType, _ cassandraprotocol.ProtocolVersion) (int, error) {
+	_, ok := t.(PrimitiveType)
+	if !ok {
+		return -1, errors.New(fmt.Sprintf("expected PrimitiveType, got %T", t))
+	}
+	if err := CheckPrimitiveDataTypeCode(t.GetDataTypeCode()); err != nil {
+		return -1, err
+	}
 	return 0, nil
 }
 
@@ -105,4 +124,31 @@ func (c *primitiveTypeCodec) Decode(source io.Reader, version cassandraprotocol.
 		return nil, fmt.Errorf("cannot use duration type with protocol version %v", version)
 	}
 	return c.primitiveType, nil
+}
+
+func CheckPrimitiveDataTypeCode(code cassandraprotocol.DataTypeCode) error {
+	switch code {
+	case cassandraprotocol.DataTypeCodeAscii:
+	case cassandraprotocol.DataTypeCodeBigint:
+	case cassandraprotocol.DataTypeCodeBlob:
+	case cassandraprotocol.DataTypeCodeBoolean:
+	case cassandraprotocol.DataTypeCodeCounter:
+	case cassandraprotocol.DataTypeCodeDecimal:
+	case cassandraprotocol.DataTypeCodeDouble:
+	case cassandraprotocol.DataTypeCodeFloat:
+	case cassandraprotocol.DataTypeCodeInt:
+	case cassandraprotocol.DataTypeCodeTimestamp:
+	case cassandraprotocol.DataTypeCodeUuid:
+	case cassandraprotocol.DataTypeCodeVarchar:
+	case cassandraprotocol.DataTypeCodeVarint:
+	case cassandraprotocol.DataTypeCodeTimeuuid:
+	case cassandraprotocol.DataTypeCodeInet:
+	case cassandraprotocol.DataTypeCodeDate:
+	case cassandraprotocol.DataTypeCodeTime:
+	case cassandraprotocol.DataTypeCodeSmallint:
+	case cassandraprotocol.DataTypeCodeTinyint:
+	case cassandraprotocol.DataTypeCodeDuration:
+		return nil
+	}
+	return fmt.Errorf("invalid primitive data type code: %v", code)
 }

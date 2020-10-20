@@ -8,11 +8,20 @@ import (
 	"io"
 )
 
+type CustomType interface {
+	DataType
+	GetClassName() string
+}
+
 type customType struct {
 	className string
 }
 
-func NewCustomType(className string) DataType {
+func (t *customType) GetClassName() string {
+	return t.className
+}
+
+func NewCustomType(className string) CustomType {
 	return &customType{className: className}
 }
 
@@ -31,19 +40,19 @@ func (t *customType) MarshalJSON() ([]byte, error) {
 type customTypeCodec struct{}
 
 func (c *customTypeCodec) Encode(t DataType, dest io.Writer, _ cassandraprotocol.ProtocolVersion) (err error) {
-	if customType, ok := t.(*customType); !ok {
-		return errors.New(fmt.Sprintf("expected customType struct, got %T", t))
-	} else if err = primitives.WriteString(customType.className, dest); err != nil {
+	if customType, ok := t.(CustomType); !ok {
+		return errors.New(fmt.Sprintf("expected CustomType, got %T", t))
+	} else if err = primitives.WriteString(customType.GetClassName(), dest); err != nil {
 		return fmt.Errorf("cannot write custom type class name: %w", err)
 	}
 	return nil
 }
 
 func (c *customTypeCodec) EncodedLength(t DataType, _ cassandraprotocol.ProtocolVersion) (length int, err error) {
-	if customType, ok := t.(*customType); !ok {
-		return -1, errors.New(fmt.Sprintf("expected customType struct, got %T", t))
+	if customType, ok := t.(CustomType); !ok {
+		return -1, errors.New(fmt.Sprintf("expected CustomType, got %T", t))
 	} else {
-		length += primitives.LengthOfString(customType.className)
+		length += primitives.LengthOfString(customType.GetClassName())
 	}
 	return length, nil
 }

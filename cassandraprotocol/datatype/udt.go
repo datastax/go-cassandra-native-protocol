@@ -8,14 +8,33 @@ import (
 	"io"
 )
 
+type UserDefinedType interface {
+	DataType
+	GetKeyspace() string
+	GetName() string
+	GetFieldTypes() map[string]DataType
+}
+
 type userDefinedType struct {
 	keyspace   string
-	table      string
+	name       string
 	fieldTypes map[string]DataType
 }
 
-func NewUserDefinedType(keyspace string, table string, fieldTypes map[string]DataType) DataType {
-	return &userDefinedType{keyspace: keyspace, table: table, fieldTypes: fieldTypes}
+func (t *userDefinedType) GetKeyspace() string {
+	return t.keyspace
+}
+
+func (t *userDefinedType) GetName() string {
+	return t.name
+}
+
+func (t *userDefinedType) GetFieldTypes() map[string]DataType {
+	return t.fieldTypes
+}
+
+func NewUserDefinedType(keyspace string, table string, fieldTypes map[string]DataType) UserDefinedType {
+	return &userDefinedType{keyspace: keyspace, name: table, fieldTypes: fieldTypes}
 }
 
 func (t *userDefinedType) GetDataTypeCode() cassandraprotocol.DataTypeCode {
@@ -23,7 +42,7 @@ func (t *userDefinedType) GetDataTypeCode() cassandraprotocol.DataTypeCode {
 }
 
 func (t *userDefinedType) String() string {
-	return fmt.Sprintf("%v.%v<%v>", t.keyspace, t.table, t.fieldTypes)
+	return fmt.Sprintf("%v.%v<%v>", t.keyspace, t.name, t.fieldTypes)
 }
 
 func (t *userDefinedType) MarshalJSON() ([]byte, error) {
@@ -33,17 +52,17 @@ func (t *userDefinedType) MarshalJSON() ([]byte, error) {
 type userDefinedTypeCodec struct{}
 
 func (c *userDefinedTypeCodec) Encode(t DataType, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
-	userDefinedType, ok := t.(*userDefinedType)
+	userDefinedType, ok := t.(UserDefinedType)
 	if !ok {
-		return errors.New(fmt.Sprintf("expected userDefinedType struct, got %T", t))
-	} else if err = primitives.WriteString(userDefinedType.keyspace, dest); err != nil {
+		return errors.New(fmt.Sprintf("expected UserDefinedType, got %T", t))
+	} else if err = primitives.WriteString(userDefinedType.GetKeyspace(), dest); err != nil {
 		return fmt.Errorf("cannot write udt keyspace: %w", err)
-	} else if err = primitives.WriteString(userDefinedType.table, dest); err != nil {
-		return fmt.Errorf("cannot write udt table: %w", err)
-	} else if err = primitives.WriteShort(uint16(len(userDefinedType.fieldTypes)), dest); err != nil {
+	} else if err = primitives.WriteString(userDefinedType.GetName(), dest); err != nil {
+		return fmt.Errorf("cannot write udt name: %w", err)
+	} else if err = primitives.WriteShort(uint16(len(userDefinedType.GetFieldTypes())), dest); err != nil {
 		return fmt.Errorf("cannot write udt field count: %w", err)
 	}
-	for fieldName, fieldType := range userDefinedType.fieldTypes {
+	for fieldName, fieldType := range userDefinedType.GetFieldTypes() {
 		if err = primitives.WriteString(fieldName, dest); err != nil {
 			return fmt.Errorf("cannot write udt field %v name: %w", fieldName, err)
 		} else if err = WriteDataType(fieldType, dest, version); err != nil {
@@ -54,14 +73,14 @@ func (c *userDefinedTypeCodec) Encode(t DataType, dest io.Writer, version cassan
 }
 
 func (c *userDefinedTypeCodec) EncodedLength(t DataType, version cassandraprotocol.ProtocolVersion) (length int, err error) {
-	userDefinedType, ok := t.(*userDefinedType)
+	userDefinedType, ok := t.(UserDefinedType)
 	if !ok {
-		return -1, errors.New(fmt.Sprintf("expected userDefinedType struct, got %T", t))
+		return -1, errors.New(fmt.Sprintf("expected UserDefinedType, got %T", t))
 	}
-	length += primitives.LengthOfString(userDefinedType.keyspace)
-	length += primitives.LengthOfString(userDefinedType.table)
+	length += primitives.LengthOfString(userDefinedType.GetKeyspace())
+	length += primitives.LengthOfString(userDefinedType.GetName())
 	length += primitives.LengthOfShort // field count
-	for fieldName, fieldType := range userDefinedType.fieldTypes {
+	for fieldName, fieldType := range userDefinedType.GetFieldTypes() {
 		length += primitives.LengthOfString(fieldName)
 		if fieldLength, err := LengthOfDataType(fieldType, version); err != nil {
 			return -1, fmt.Errorf("cannot compute length of udt field %v: %w", fieldName, err)
@@ -76,8 +95,8 @@ func (c *userDefinedTypeCodec) Decode(source io.Reader, version cassandraprotoco
 	userDefinedType := &userDefinedType{}
 	if userDefinedType.keyspace, err = primitives.ReadString(source); err != nil {
 		return nil, fmt.Errorf("cannot read udt keyspace: %w", err)
-	} else if userDefinedType.table, err = primitives.ReadString(source); err != nil {
-		return nil, fmt.Errorf("cannot read udt table: %w", err)
+	} else if userDefinedType.name, err = primitives.ReadString(source); err != nil {
+		return nil, fmt.Errorf("cannot read udt name: %w", err)
 	} else if fieldCount, err := primitives.ReadShort(source); err != nil {
 		return nil, fmt.Errorf("cannot read udt field count: %w", err)
 	} else {

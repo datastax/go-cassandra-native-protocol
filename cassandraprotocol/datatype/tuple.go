@@ -8,11 +8,20 @@ import (
 	"io"
 )
 
+type TupleType interface {
+	DataType
+	GetFieldTypes() []DataType
+}
+
 type tupleType struct {
 	FieldTypes []DataType
 }
 
-func NewTupleType(fieldTypes ...DataType) DataType {
+func (t *tupleType) GetFieldTypes() []DataType {
+	return t.FieldTypes
+}
+
+func NewTupleType(fieldTypes ...DataType) TupleType {
 	return &tupleType{FieldTypes: fieldTypes}
 }
 
@@ -31,13 +40,13 @@ func (t *tupleType) MarshalJSON() ([]byte, error) {
 type tupleTypeCodec struct{}
 
 func (c *tupleTypeCodec) Encode(t DataType, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
-	tupleType, ok := t.(*tupleType)
+	tupleType, ok := t.(TupleType)
 	if !ok {
-		return errors.New(fmt.Sprintf("expected tupleType struct, got %T", t))
-	} else if err = primitives.WriteShort(uint16(len(tupleType.FieldTypes)), dest); err != nil {
+		return errors.New(fmt.Sprintf("expected TupleType, got %T", t))
+	} else if err = primitives.WriteShort(uint16(len(tupleType.GetFieldTypes())), dest); err != nil {
 		return fmt.Errorf("cannot write tuple type field count: %w", err)
 	}
-	for i, fieldType := range tupleType.FieldTypes {
+	for i, fieldType := range tupleType.GetFieldTypes() {
 		if err = WriteDataType(fieldType, dest, version); err != nil {
 			return fmt.Errorf("cannot write tuple field %d: %w", i, err)
 		}
@@ -46,11 +55,11 @@ func (c *tupleTypeCodec) Encode(t DataType, dest io.Writer, version cassandrapro
 }
 
 func (c *tupleTypeCodec) EncodedLength(t DataType, version cassandraprotocol.ProtocolVersion) (int, error) {
-	if tupleType, ok := t.(*tupleType); !ok {
-		return -1, errors.New(fmt.Sprintf("expected tupleType struct, got %T", t))
+	if tupleType, ok := t.(TupleType); !ok {
+		return -1, errors.New(fmt.Sprintf("expected TupleType, got %T", t))
 	} else {
 		length := primitives.LengthOfShort // field count
-		for i, fieldType := range tupleType.FieldTypes {
+		for i, fieldType := range tupleType.GetFieldTypes() {
 			if fieldLength, err := LengthOfDataType(fieldType, version); err != nil {
 				return -1, fmt.Errorf("cannot compute length of tuple field %d: %w", i, err)
 			} else {

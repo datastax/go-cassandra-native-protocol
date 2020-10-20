@@ -7,9 +7,23 @@ import (
 	"io"
 )
 
+type MapType interface {
+	DataType
+	GetKeyType() DataType
+	GetValueType() DataType
+}
+
 type mapType struct {
 	keyType   DataType
 	valueType DataType
+}
+
+func (t *mapType) GetKeyType() DataType {
+	return t.keyType
+}
+
+func (t *mapType) GetValueType() DataType {
+	return t.valueType
 }
 
 func (t *mapType) GetDataTypeCode() cassandraprotocol.DataTypeCode {
@@ -24,35 +38,35 @@ func (t *mapType) MarshalJSON() ([]byte, error) {
 	return []byte("\"" + t.String() + "\""), nil
 }
 
-func NewMapType(keyType DataType, valueType DataType) DataType {
+func NewMapType(keyType DataType, valueType DataType) MapType {
 	return &mapType{keyType: keyType, valueType: valueType}
 }
 
 type mapTypeCodec struct{}
 
 func (c *mapTypeCodec) Encode(t DataType, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
-	mapType, ok := t.(*mapType)
+	mapType, ok := t.(MapType)
 	if !ok {
-		return errors.New(fmt.Sprintf("expected mapType struct, got %T", t))
-	} else if err = WriteDataType(mapType.keyType, dest, version); err != nil {
+		return errors.New(fmt.Sprintf("expected MapType, got %T", t))
+	} else if err = WriteDataType(mapType.GetKeyType(), dest, version); err != nil {
 		return fmt.Errorf("cannot write map key type: %w", err)
-	} else if err = WriteDataType(mapType.valueType, dest, version); err != nil {
+	} else if err = WriteDataType(mapType.GetValueType(), dest, version); err != nil {
 		return fmt.Errorf("cannot write map value type: %w", err)
 	}
 	return nil
 }
 
 func (c *mapTypeCodec) EncodedLength(t DataType, version cassandraprotocol.ProtocolVersion) (length int, err error) {
-	mapType, ok := t.(*mapType)
+	mapType, ok := t.(MapType)
 	if !ok {
-		return -1, errors.New(fmt.Sprintf("expected mapType struct, got %T", t))
+		return -1, errors.New(fmt.Sprintf("expected MapType, got %T", t))
 	}
-	if keyLength, err := LengthOfDataType(mapType.keyType, version); err != nil {
+	if keyLength, err := LengthOfDataType(mapType.GetKeyType(), version); err != nil {
 		return -1, fmt.Errorf("cannot compute length of map key type: %w", err)
 	} else {
 		length += keyLength
 	}
-	if valueLength, err := LengthOfDataType(mapType.valueType, version); err != nil {
+	if valueLength, err := LengthOfDataType(mapType.GetValueType(), version); err != nil {
 		return -1, fmt.Errorf("cannot compute length of map value type: %w", err)
 	} else {
 		length += valueLength
