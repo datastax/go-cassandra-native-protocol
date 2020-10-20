@@ -68,8 +68,9 @@ func NewResponseFrame(
 	}
 	return newFrame(
 		&Header{
-			Version:  version,
-			StreamId: streamId,
+			Version:          version,
+			StreamId:         streamId,
+			TracingRequested: tracingId != nil,
 		},
 		&Body{
 			TracingId:     tracingId,
