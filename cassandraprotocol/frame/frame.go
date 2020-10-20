@@ -2,6 +2,7 @@ package frame
 
 import (
 	"errors"
+	"fmt"
 	"go-cassandra-native-protocol/cassandraprotocol"
 	"go-cassandra-native-protocol/cassandraprotocol/message"
 )
@@ -80,6 +81,9 @@ func NewResponseFrame(
 
 func newFrame(header *Header, body *Body) (*Frame, error) {
 	// Check header and body global conformity with protocol specs
+	if header.Version < cassandraprotocol.ProtocolVersionMin || header.Version > cassandraprotocol.ProtocolVersionMax {
+		return nil, fmt.Errorf("unsupported protocol version: %v", header.Version)
+	}
 	if body.CustomPayload != nil && header.Version < cassandraprotocol.ProtocolVersion4 {
 		return nil, errors.New("custom payloads require protocol version 4 or higher")
 	}
