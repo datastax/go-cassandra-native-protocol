@@ -15,7 +15,7 @@ func (c *codec) Decode(frame *bytes.Buffer) (*Frame, error) {
 	if isResponse, version, flags, streamId, opCode, bodyLength, err := c.decodeHeader(frame); err != nil {
 		return nil, fmt.Errorf("cannot decode frame header: %w", err)
 	} else {
-		if int(bodyLength) != actualLength {
+		if encodedHeaderLength+int(bodyLength) != actualLength {
 			return nil, errors.New(fmt.Sprintf(
 				"declared length in header (%d) does not match actual length (%d)",
 				bodyLength,
