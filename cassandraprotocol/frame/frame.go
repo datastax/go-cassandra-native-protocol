@@ -1,6 +1,7 @@
 package frame
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"go-cassandra-native-protocol/cassandraprotocol"
@@ -37,9 +38,18 @@ func (f *Frame) Flags(compress bool) cassandraprotocol.HeaderFlag {
 
 // IsCompressible returns true if the frame contains a body that can be compressed. Bodies containing STARTUP and
 // OPTIONS messages should indeed never be compressed, even if compression is in use.
-func (f Frame) IsCompressible() bool {
+func (f *Frame) IsCompressible() bool {
 	opCode := f.Body.Message.GetOpCode()
 	return opCode != cassandraprotocol.OpCodeStartup && opCode != cassandraprotocol.OpCodeOptions
+}
+
+// Dump encodes and dumps the contents of this frame, for debugging purposes.
+func (f *Frame) Dump() (string, error) {
+	if encoded, err := NewCodec().Encode(f); err != nil {
+		return "", err
+	} else {
+		return hex.Dump(encoded.Bytes()), nil
+	}
 }
 
 type Header struct {
