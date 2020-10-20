@@ -32,7 +32,7 @@ func (c *codec) Decode(frame *bytes.Buffer) (*Frame, error) {
 			header := &Header{
 				Version:          version,
 				StreamId:         int16(streamId & 0xFFFF),
-				TracingRequested: tracingId != nil,
+				TracingRequested: tracingId != nil || flags&cassandraprotocol.HeaderFlagTracing != 0,
 			}
 			body := Body{
 				TracingId:     tracingId,
