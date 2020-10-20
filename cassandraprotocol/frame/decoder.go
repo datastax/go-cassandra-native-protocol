@@ -10,7 +10,7 @@ import (
 	"io"
 )
 
-func (c *Codec) Decode(frame *bytes.Buffer) (*Frame, error) {
+func (c *codec) Decode(frame *bytes.Buffer) (*Frame, error) {
 	actualLength := frame.Len()
 	if isResponse, version, flags, streamId, opCode, bodyLength, err := c.decodeHeader(frame); err != nil {
 		return nil, fmt.Errorf("cannot decode frame header: %w", err)
@@ -45,7 +45,7 @@ func (c *Codec) Decode(frame *bytes.Buffer) (*Frame, error) {
 	}
 }
 
-func (c *Codec) decodeHeader(source io.Reader) (
+func (c *codec) decodeHeader(source io.Reader) (
 	isResponse bool,
 	version cassandraprotocol.ProtocolVersion,
 	flags cassandraprotocol.HeaderFlag,
@@ -74,7 +74,7 @@ func (c *Codec) decodeHeader(source io.Reader) (
 	return isResponse, version, flags, streamId, opCode, bodyLength, err
 }
 
-func (c *Codec) decodeBody(
+func (c *codec) decodeBody(
 	isResponse bool,
 	version cassandraprotocol.ProtocolVersion,
 	flags cassandraprotocol.HeaderFlag,

@@ -12,7 +12,7 @@ import (
 
 const encodedHeaderLength = 9
 
-func (c *Codec) Encode(frame *Frame) (*bytes.Buffer, error) {
+func (c *codec) Encode(frame *Frame) (*bytes.Buffer, error) {
 	version := frame.Header.Version
 	if version < cassandraprotocol.ProtocolVersion4 && frame.Body.CustomPayload != nil {
 		return nil, fmt.Errorf("custom payloads are not supported in protocol version %v", version)
@@ -27,7 +27,7 @@ func (c *Codec) Encode(frame *Frame) (*bytes.Buffer, error) {
 	}
 }
 
-func (c *Codec) findEncoder(frame *Frame) (encoder message.Encoder, err error) {
+func (c *codec) findEncoder(frame *Frame) (encoder message.Encoder, err error) {
 	opCode := frame.Body.Message.GetOpCode()
 	encoder, found := c.codecs[opCode]
 	if !found {
@@ -36,14 +36,14 @@ func (c *Codec) findEncoder(frame *Frame) (encoder message.Encoder, err error) {
 	return encoder, err
 }
 
-func (c *Codec) shouldCompress(frame *Frame) bool {
+func (c *codec) shouldCompress(frame *Frame) bool {
 	opCode := frame.Body.Message.GetOpCode()
 	return c.compressor != nil &&
 		opCode != cassandraprotocol.OpCodeStartup &&
 		opCode != cassandraprotocol.OpCodeOptions
 }
 
-func (c *Codec) encodeFrameUncompressed(frame *Frame) (*bytes.Buffer, error) {
+func (c *codec) encodeFrameUncompressed(frame *Frame) (*bytes.Buffer, error) {
 	var err error
 	var encodedBodyLength int
 	if encodedBodyLength, err = c.uncompressedBodyLength(frame); err != nil {
@@ -59,7 +59,7 @@ func (c *Codec) encodeFrameUncompressed(frame *Frame) (*bytes.Buffer, error) {
 	return encodedFrame, nil
 }
 
-func (c *Codec) encodeFrameCompressed(frame *Frame) (*bytes.Buffer, error) {
+func (c *codec) encodeFrameCompressed(frame *Frame) (*bytes.Buffer, error) {
 	var err error
 	// 1) Encode uncompressed body
 	var uncompressedBodyLength int
@@ -86,7 +86,7 @@ func (c *Codec) encodeFrameCompressed(frame *Frame) (*bytes.Buffer, error) {
 	return encodedFrame, nil
 }
 
-func (c *Codec) encodeHeader(frame *Frame, bodyLength int, dest io.Writer) error {
+func (c *codec) encodeHeader(frame *Frame, bodyLength int, dest io.Writer) error {
 	versionAndDirection := frame.Header.Version
 	if frame.Body.Message.IsResponse() {
 		versionAndDirection |= 0b1000_0000
@@ -107,7 +107,7 @@ func (c *Codec) encodeHeader(frame *Frame, bodyLength int, dest io.Writer) error
 	return nil
 }
 
-func (c *Codec) uncompressedBodyLength(frame *Frame) (length int, err error) {
+func (c *codec) uncompressedBodyLength(frame *Frame) (length int, err error) {
 	if encoder, err := c.findEncoder(frame); err != nil {
 		return -1, err
 	} else if length, err = encoder.EncodedLength(frame.Body.Message, frame.Header.Version); err != nil {
@@ -125,7 +125,7 @@ func (c *Codec) uncompressedBodyLength(frame *Frame) (length int, err error) {
 	return length, nil
 }
 
-func (c *Codec) encodeBodyUncompressed(frame *Frame, dest io.Writer) error {
+func (c *codec) encodeBodyUncompressed(frame *Frame, dest io.Writer) error {
 	var err error
 	if frame.Body.Message.IsResponse() && frame.Body.TracingId != nil {
 		if err = primitives.WriteUuid(frame.Body.TracingId, dest); err != nil {
@@ -150,7 +150,7 @@ func (c *Codec) encodeBodyUncompressed(frame *Frame, dest io.Writer) error {
 	return nil
 }
 
-func (c *Codec) encodeFlags(frame *Frame) cassandraprotocol.HeaderFlag {
+func (c *codec) encodeFlags(frame *Frame) cassandraprotocol.HeaderFlag {
 	var flags cassandraprotocol.HeaderFlag = 0
 	if c.shouldCompress(frame) {
 		flags |= cassandraprotocol.HeaderFlagCompressed

@@ -6,7 +6,7 @@ import (
 	"go-cassandra-native-protocol/cassandraprotocol/message"
 )
 
-type Codec struct {
+type codec struct {
 	compressor compression.MessageCompressor
 	codecs     map[cassandraprotocol.OpCode]message.Codec
 }
@@ -30,10 +30,10 @@ var defaultCodecs = []message.Codec{
 	&message.AuthSuccessCodec{},
 }
 
-type CodecCustomizer func(*Codec)
+type CodecCustomizer func(*codec)
 
-func NewCodec(customizers ...CodecCustomizer) *Codec {
-	codec := &Codec{codecs: makeCodecsMap(defaultCodecs)}
+func NewCodec(customizers ...CodecCustomizer) *codec {
+	codec := &codec{codecs: makeCodecsMap(defaultCodecs)}
 	for _, customizer := range customizers {
 		customizer(codec)
 	}
@@ -41,13 +41,13 @@ func NewCodec(customizers ...CodecCustomizer) *Codec {
 }
 
 func WithCompressor(compressor compression.MessageCompressor) CodecCustomizer {
-	return func(codec *Codec) {
+	return func(codec *codec) {
 		codec.compressor = compressor
 	}
 }
 
 func WithMessageCodecs(codecs ...message.Codec) CodecCustomizer {
-	return func(codec *Codec) {
+	return func(codec *codec) {
 		codec.codecs = makeCodecsMap(codecs)
 	}
 }
