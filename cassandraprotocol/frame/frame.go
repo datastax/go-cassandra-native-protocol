@@ -95,13 +95,13 @@ func newFrame(header *Header, body *Body) (*Frame, error) {
 }
 
 func (f *Frame) String() string {
-	return fmt.Sprintf("{header:%v,body:%v}", f.Header, f.Body)
+	return fmt.Sprintf("{header: %v, body: %v}", f.Header, f.Body)
 }
 
 func (h *Header) String() string {
-	return fmt.Sprintf("{version:%v,streamdid:%v,tracing:%v}", h.Version, h.StreamId, h.TracingRequested)
+	return fmt.Sprintf("{version: %v, streamdid: %v, tracing: %v}", h.Version, h.StreamId, h.TracingRequested)
 }
 
 func (b *Body) String() string {
-	return fmt.Sprintf("{tracingid:%v,payload:%v,warnings:%v,message:%v}", b.TracingId, b.CustomPayload, b.Warnings, b.Message)
+	return fmt.Sprintf("{tracingid: %v, payload: %v, warnings: %v, message: %v}", b.TracingId, b.CustomPayload, b.Warnings, b.Message)
 }
