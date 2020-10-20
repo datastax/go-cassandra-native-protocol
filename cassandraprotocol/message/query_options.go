@@ -249,6 +249,9 @@ func DecodeQueryOptions(source io.Reader, version cassandraprotocol.ProtocolVers
 	if err != nil {
 		return nil, fmt.Errorf("cannot read query consistency: %w", err)
 	}
+	if err = cassandraprotocol.CheckConsistencyLevel(consistency); err != nil {
+		return nil, err
+	}
 	var flags cassandraprotocol.QueryFlag
 	if version >= cassandraprotocol.ProtocolVersion5 {
 		flags, err = primitives.ReadInt(source)
@@ -292,6 +295,9 @@ func DecodeQueryOptions(source io.Reader, version cassandraprotocol.ProtocolVers
 		serialConsistency, err = primitives.ReadShort(source)
 		if err != nil {
 			return nil, fmt.Errorf("cannot read query serial consistency: %w", err)
+		}
+		if err = cassandraprotocol.CheckConsistencyLevel(consistency); err != nil {
+			return nil, err
 		}
 	}
 	var defaultTimestamp = DefaultTimestampNone

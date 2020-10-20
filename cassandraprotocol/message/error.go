@@ -1014,6 +1014,9 @@ func (c *ErrorCodec) Decode(source io.Reader, version cassandraprotocol.Protocol
 		if msg.WriteType, err = primitives.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR WRITE FAILURE write type: %w", err)
 		}
+		if err = cassandraprotocol.CheckWriteType(msg.WriteType); err != nil {
+			return nil, err
+		}
 		return msg, nil
 
 	case cassandraprotocol.ErrorCodeFunctionFailure:
