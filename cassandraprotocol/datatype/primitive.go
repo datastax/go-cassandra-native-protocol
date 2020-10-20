@@ -96,7 +96,7 @@ type primitiveTypeCodec struct {
 	primitiveType PrimitiveType
 }
 
-func (c *primitiveTypeCodec) Encode(t DataType, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
+func (c *primitiveTypeCodec) Encode(t DataType, _ io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
 	_, ok := t.(PrimitiveType)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected PrimitiveType, got %T", t))
@@ -121,7 +121,7 @@ func (c *primitiveTypeCodec) EncodedLength(t DataType, _ cassandraprotocol.Proto
 	return 0, nil
 }
 
-func (c *primitiveTypeCodec) Decode(source io.Reader, version cassandraprotocol.ProtocolVersion) (t DataType, err error) {
+func (c *primitiveTypeCodec) Decode(_ io.Reader, version cassandraprotocol.ProtocolVersion) (t DataType, err error) {
 	if version < cassandraprotocol.ProtocolVersion5 && c.primitiveType.GetDataTypeCode() == cassandraprotocol.DataTypeCodeDuration {
 		return nil, fmt.Errorf("cannot use duration type with protocol version %v", version)
 	}
