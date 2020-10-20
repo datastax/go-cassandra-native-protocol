@@ -1,6 +1,7 @@
 package datatype
 
 import (
+	"fmt"
 	"go-cassandra-native-protocol/cassandraprotocol"
 	"io"
 )
@@ -63,7 +64,10 @@ type primitiveTypeCodec struct {
 	primitiveType *primitiveType
 }
 
-func (c *primitiveTypeCodec) Encode(_ DataType, dest io.Writer, _ cassandraprotocol.ProtocolVersion) (err error) {
+func (c *primitiveTypeCodec) Encode(_ DataType, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
+	if version < cassandraprotocol.ProtocolVersion5 && c.primitiveType.GetDataTypeCode() == cassandraprotocol.DataTypeCodeDuration {
+		return fmt.Errorf("cannot use duration type with protocol version %v", version)
+	}
 	return nil
 }
 
@@ -71,6 +75,9 @@ func (c *primitiveTypeCodec) EncodedLength(_ DataType, _ cassandraprotocol.Proto
 	return 0, nil
 }
 
-func (c *primitiveTypeCodec) Decode(source io.Reader, _ cassandraprotocol.ProtocolVersion) (t DataType, err error) {
+func (c *primitiveTypeCodec) Decode(source io.Reader, version cassandraprotocol.ProtocolVersion) (t DataType, err error) {
+	if version < cassandraprotocol.ProtocolVersion5 && c.primitiveType.GetDataTypeCode() == cassandraprotocol.DataTypeCodeDuration {
+		return nil, fmt.Errorf("cannot use duration type with protocol version %v", version)
+	}
 	return c.primitiveType, nil
 }
