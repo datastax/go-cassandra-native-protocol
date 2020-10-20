@@ -91,7 +91,7 @@ func (t *primitiveType) MarshalJSON() ([]byte, error) {
 }
 
 type primitiveTypeCodec struct {
-	primitiveType *primitiveType
+	primitiveType PrimitiveType
 }
 
 func (c *primitiveTypeCodec) Encode(t DataType, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
@@ -129,24 +129,43 @@ func (c *primitiveTypeCodec) Decode(source io.Reader, version cassandraprotocol.
 func CheckPrimitiveDataTypeCode(code cassandraprotocol.DataTypeCode) error {
 	switch code {
 	case cassandraprotocol.DataTypeCodeAscii:
+		return nil
 	case cassandraprotocol.DataTypeCodeBigint:
+		return nil
 	case cassandraprotocol.DataTypeCodeBlob:
+		return nil
 	case cassandraprotocol.DataTypeCodeBoolean:
+		return nil
 	case cassandraprotocol.DataTypeCodeCounter:
+		return nil
 	case cassandraprotocol.DataTypeCodeDecimal:
+		return nil
 	case cassandraprotocol.DataTypeCodeDouble:
+		return nil
 	case cassandraprotocol.DataTypeCodeFloat:
+		return nil
 	case cassandraprotocol.DataTypeCodeInt:
+		return nil
 	case cassandraprotocol.DataTypeCodeTimestamp:
+		return nil
 	case cassandraprotocol.DataTypeCodeUuid:
+		return nil
 	case cassandraprotocol.DataTypeCodeVarchar:
+		return nil
 	case cassandraprotocol.DataTypeCodeVarint:
+		return nil
 	case cassandraprotocol.DataTypeCodeTimeuuid:
+		return nil
 	case cassandraprotocol.DataTypeCodeInet:
+		return nil
 	case cassandraprotocol.DataTypeCodeDate:
+		return nil
 	case cassandraprotocol.DataTypeCodeTime:
+		return nil
 	case cassandraprotocol.DataTypeCodeSmallint:
+		return nil
 	case cassandraprotocol.DataTypeCodeTinyint:
+		return nil
 	case cassandraprotocol.DataTypeCodeDuration:
 		return nil
 	}

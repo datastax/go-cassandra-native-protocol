@@ -25,6 +25,14 @@ type Codec interface {
 	Decoder
 }
 
+func FindCodec(code cassandraprotocol.DataTypeCode) (Codec, error) {
+	codec, ok := codecs[code]
+	if !ok {
+		return nil, fmt.Errorf("cannot find codec for data type code %v", code)
+	}
+	return codec, nil
+}
+
 func WriteDataType(t DataType, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
 	if err = primitives.WriteShort(t.GetDataTypeCode(), dest); err != nil {
 		return fmt.Errorf("cannot write data type code %v: %w", t.GetDataTypeCode(), err)
@@ -61,50 +69,27 @@ func ReadDataType(source io.Reader, version cassandraprotocol.ProtocolVersion) (
 	}
 }
 
-var primitiveTypes = map[cassandraprotocol.DataTypeCode]*primitiveType{
-	cassandraprotocol.DataTypeCodeAscii:     {cassandraprotocol.DataTypeCodeAscii},
-	cassandraprotocol.DataTypeCodeBigint:    {cassandraprotocol.DataTypeCodeBigint},
-	cassandraprotocol.DataTypeCodeBlob:      {cassandraprotocol.DataTypeCodeBlob},
-	cassandraprotocol.DataTypeCodeBoolean:   {cassandraprotocol.DataTypeCodeBoolean},
-	cassandraprotocol.DataTypeCodeCounter:   {cassandraprotocol.DataTypeCodeCounter},
-	cassandraprotocol.DataTypeCodeDecimal:   {cassandraprotocol.DataTypeCodeDecimal},
-	cassandraprotocol.DataTypeCodeDouble:    {cassandraprotocol.DataTypeCodeDouble},
-	cassandraprotocol.DataTypeCodeFloat:     {cassandraprotocol.DataTypeCodeFloat},
-	cassandraprotocol.DataTypeCodeInt:       {cassandraprotocol.DataTypeCodeInt},
-	cassandraprotocol.DataTypeCodeTimestamp: {cassandraprotocol.DataTypeCodeTimestamp},
-	cassandraprotocol.DataTypeCodeUuid:      {cassandraprotocol.DataTypeCodeUuid},
-	cassandraprotocol.DataTypeCodeVarchar:   {cassandraprotocol.DataTypeCodeVarchar},
-	cassandraprotocol.DataTypeCodeVarint:    {cassandraprotocol.DataTypeCodeVarint},
-	cassandraprotocol.DataTypeCodeTimeuuid:  {cassandraprotocol.DataTypeCodeTimeuuid},
-	cassandraprotocol.DataTypeCodeInet:      {cassandraprotocol.DataTypeCodeInet},
-	cassandraprotocol.DataTypeCodeDate:      {cassandraprotocol.DataTypeCodeDate},
-	cassandraprotocol.DataTypeCodeTime:      {cassandraprotocol.DataTypeCodeTime},
-	cassandraprotocol.DataTypeCodeSmallint:  {cassandraprotocol.DataTypeCodeSmallint},
-	cassandraprotocol.DataTypeCodeTinyint:   {cassandraprotocol.DataTypeCodeTinyint},
-	cassandraprotocol.DataTypeCodeDuration:  {cassandraprotocol.DataTypeCodeDuration},
-}
-
 var codecs = map[cassandraprotocol.DataTypeCode]Codec{
-	cassandraprotocol.DataTypeCodeAscii:     &primitiveTypeCodec{primitiveTypes[cassandraprotocol.DataTypeCodeAscii]},
-	cassandraprotocol.DataTypeCodeBigint:    &primitiveTypeCodec{primitiveTypes[cassandraprotocol.DataTypeCodeBigint]},
-	cassandraprotocol.DataTypeCodeBlob:      &primitiveTypeCodec{primitiveTypes[cassandraprotocol.DataTypeCodeBlob]},
-	cassandraprotocol.DataTypeCodeBoolean:   &primitiveTypeCodec{primitiveTypes[cassandraprotocol.DataTypeCodeBoolean]},
-	cassandraprotocol.DataTypeCodeCounter:   &primitiveTypeCodec{primitiveTypes[cassandraprotocol.DataTypeCodeCounter]},
-	cassandraprotocol.DataTypeCodeDecimal:   &primitiveTypeCodec{primitiveTypes[cassandraprotocol.DataTypeCodeDecimal]},
-	cassandraprotocol.DataTypeCodeDouble:    &primitiveTypeCodec{primitiveTypes[cassandraprotocol.DataTypeCodeDouble]},
-	cassandraprotocol.DataTypeCodeFloat:     &primitiveTypeCodec{primitiveTypes[cassandraprotocol.DataTypeCodeFloat]},
-	cassandraprotocol.DataTypeCodeInt:       &primitiveTypeCodec{primitiveTypes[cassandraprotocol.DataTypeCodeInt]},
-	cassandraprotocol.DataTypeCodeTimestamp: &primitiveTypeCodec{primitiveTypes[cassandraprotocol.DataTypeCodeTimestamp]},
-	cassandraprotocol.DataTypeCodeUuid:      &primitiveTypeCodec{primitiveTypes[cassandraprotocol.DataTypeCodeUuid]},
-	cassandraprotocol.DataTypeCodeVarchar:   &primitiveTypeCodec{primitiveTypes[cassandraprotocol.DataTypeCodeVarchar]},
-	cassandraprotocol.DataTypeCodeVarint:    &primitiveTypeCodec{primitiveTypes[cassandraprotocol.DataTypeCodeVarint]},
-	cassandraprotocol.DataTypeCodeTimeuuid:  &primitiveTypeCodec{primitiveTypes[cassandraprotocol.DataTypeCodeTimeuuid]},
-	cassandraprotocol.DataTypeCodeInet:      &primitiveTypeCodec{primitiveTypes[cassandraprotocol.DataTypeCodeInet]},
-	cassandraprotocol.DataTypeCodeDate:      &primitiveTypeCodec{primitiveTypes[cassandraprotocol.DataTypeCodeDate]},
-	cassandraprotocol.DataTypeCodeTime:      &primitiveTypeCodec{primitiveTypes[cassandraprotocol.DataTypeCodeTime]},
-	cassandraprotocol.DataTypeCodeSmallint:  &primitiveTypeCodec{primitiveTypes[cassandraprotocol.DataTypeCodeSmallint]},
-	cassandraprotocol.DataTypeCodeTinyint:   &primitiveTypeCodec{primitiveTypes[cassandraprotocol.DataTypeCodeTinyint]},
-	cassandraprotocol.DataTypeCodeDuration:  &primitiveTypeCodec{primitiveTypes[cassandraprotocol.DataTypeCodeDuration]},
+	cassandraprotocol.DataTypeCodeAscii:     &primitiveTypeCodec{Ascii},
+	cassandraprotocol.DataTypeCodeBigint:    &primitiveTypeCodec{Bigint},
+	cassandraprotocol.DataTypeCodeBlob:      &primitiveTypeCodec{Blob},
+	cassandraprotocol.DataTypeCodeBoolean:   &primitiveTypeCodec{Boolean},
+	cassandraprotocol.DataTypeCodeCounter:   &primitiveTypeCodec{Counter},
+	cassandraprotocol.DataTypeCodeDecimal:   &primitiveTypeCodec{Decimal},
+	cassandraprotocol.DataTypeCodeDouble:    &primitiveTypeCodec{Double},
+	cassandraprotocol.DataTypeCodeFloat:     &primitiveTypeCodec{Float},
+	cassandraprotocol.DataTypeCodeInt:       &primitiveTypeCodec{Int},
+	cassandraprotocol.DataTypeCodeTimestamp: &primitiveTypeCodec{Timestamp},
+	cassandraprotocol.DataTypeCodeUuid:      &primitiveTypeCodec{Uuid},
+	cassandraprotocol.DataTypeCodeVarchar:   &primitiveTypeCodec{Varchar},
+	cassandraprotocol.DataTypeCodeVarint:    &primitiveTypeCodec{Varint},
+	cassandraprotocol.DataTypeCodeTimeuuid:  &primitiveTypeCodec{Timeuuid},
+	cassandraprotocol.DataTypeCodeInet:      &primitiveTypeCodec{Inet},
+	cassandraprotocol.DataTypeCodeDate:      &primitiveTypeCodec{Date},
+	cassandraprotocol.DataTypeCodeTime:      &primitiveTypeCodec{Time},
+	cassandraprotocol.DataTypeCodeSmallint:  &primitiveTypeCodec{Smallint},
+	cassandraprotocol.DataTypeCodeTinyint:   &primitiveTypeCodec{Tinyint},
+	cassandraprotocol.DataTypeCodeDuration:  &primitiveTypeCodec{Duration},
 	cassandraprotocol.DataTypeCodeList:      &listTypeCodec{},
 	cassandraprotocol.DataTypeCodeSet:       &setTypeCodec{},
 	cassandraprotocol.DataTypeCodeMap:       &mapTypeCodec{},

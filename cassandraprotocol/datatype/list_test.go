@@ -10,23 +10,36 @@ import (
 	"testing"
 )
 
-func TestCustomType(t *testing.T) {
-	customType := NewCustomType("foo.bar.qix")
-	assert.Equal(t, cassandraprotocol.DataTypeCodeCustom, customType.GetDataTypeCode())
-	assert.Equal(t, "foo.bar.qix", customType.GetClassName())
+func TestListType(t *testing.T) {
+	listType := NewListType(Varchar)
+	assert.Equal(t, cassandraprotocol.DataTypeCodeList, listType.GetDataTypeCode())
+	assert.Equal(t, Varchar, listType.GetElementType())
 }
 
-func TestCustomTypeCodecEncode(t *testing.T) {
+func TestListTypeCodecEncode(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    CustomType
+		input    ListType
 		expected []byte
 		err      error
 	}{
-		{"simple custom", NewCustomType("hello"), []byte{0, 5, byte('h'), byte('e'), byte('l'), byte('l'), byte('o')}, nil},
-		{"nil custom", nil, nil, errors.New("expected CustomType, got <nil>")},
+		{
+			"simple list",
+			NewListType(Varchar),
+			[]byte{0, byte(cassandraprotocol.DataTypeCodeVarchar & 0xFF)},
+			nil,
+		},
+		{
+			"complex list",
+			NewListType(NewListType(Varchar)),
+			[]byte{
+				0, byte(cassandraprotocol.DataTypeCodeList & 0xFF),
+				0, byte(cassandraprotocol.DataTypeCodeVarchar & 0xFF)},
+			nil,
+		},
+		{"nil list", nil, nil, errors.New("expected ListType, got <nil>")},
 	}
-	codec, _ := FindCodec(cassandraprotocol.DataTypeCodeCustom)
+	codec, _ := FindCodec(cassandraprotocol.DataTypeCodeList)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionMax; version++ {
@@ -43,17 +56,18 @@ func TestCustomTypeCodecEncode(t *testing.T) {
 	}
 }
 
-func TestCustomTypeCodecEncodedLength(t *testing.T) {
+func TestListTypeCodecEncodedLength(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    CustomType
+		input    ListType
 		expected int
 		err      error
 	}{
-		{"simple custom", NewCustomType("hello"), primitives.LengthOfString("hello"), nil},
-		{"nil custom", nil, -1, errors.New("expected CustomType, got <nil>")},
+		{"simple list", NewListType(Varchar), primitives.LengthOfShort, nil},
+		{"complex list", NewListType(NewListType(Varchar)), primitives.LengthOfShort + primitives.LengthOfShort, nil},
+		{"nil list", nil, -1, errors.New("expected ListType, got <nil>")},
 	}
-	codec, _ := FindCodec(cassandraprotocol.DataTypeCodeCustom)
+	codec, _ := FindCodec(cassandraprotocol.DataTypeCodeList)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionMax; version++ {
@@ -69,25 +83,38 @@ func TestCustomTypeCodecEncodedLength(t *testing.T) {
 	}
 }
 
-func TestCustomTypeCodecDecode(t *testing.T) {
+func TestListTypeCodecDecode(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    []byte
-		expected CustomType
+		expected ListType
 		err      error
 	}{
-		{"simple custom", []byte{0, 5, byte('h'), byte('e'), byte('l'), byte('l'), byte('o')}, NewCustomType("hello"), nil},
 		{
-			"cannot read custom",
+			"simple list",
+			[]byte{0, byte(cassandraprotocol.DataTypeCodeVarchar & 0xff)},
+			NewListType(Varchar),
+			nil,
+		},
+		{
+			"complex list",
+			[]byte{
+				0, byte(cassandraprotocol.DataTypeCodeList & 0xff),
+				0, byte(cassandraprotocol.DataTypeCodeVarchar & 0xff)},
+			NewListType(NewListType(Varchar)),
+			nil,
+		},
+		{
+			"cannot read list",
 			[]byte{},
 			nil,
-			fmt.Errorf("cannot read custom type class name: %w",
-				fmt.Errorf("cannot read [string] length: %w",
+			fmt.Errorf("cannot read list element type: %w",
+				fmt.Errorf("cannot read data type code: %w",
 					fmt.Errorf("cannot read [short]: %w",
 						errors.New("EOF")))),
 		},
 	}
-	codec, _ := FindCodec(cassandraprotocol.DataTypeCodeCustom)
+	codec, _ := FindCodec(cassandraprotocol.DataTypeCodeList)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionMax; version++ {
