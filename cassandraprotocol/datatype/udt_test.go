@@ -62,14 +62,14 @@ func TestUserDefinedTypeCodecEncode(t *testing.T) {
 		},
 		{"nil udt", nil, nil, errors.New("expected UserDefinedType, got <nil>")},
 	}
-	codec, _ := FindCodec(cassandraprotocol.DataTypeCodeUdt)
+	codec, _ := findCodec(cassandraprotocol.DataTypeCodeUdt)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionMax; version++ {
 				t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 					var dest = &bytes.Buffer{}
 					var err error
-					err = codec.Encode(test.input, dest, version)
+					err = codec.encode(test.input, dest, version)
 					actual := dest.Bytes()
 					assert.Equal(t, test.expected, actual)
 					assert.Equal(t, test.err, err)
@@ -119,14 +119,14 @@ func TestUserDefinedTypeCodecEncodedLength(t *testing.T) {
 		},
 		{"nil udt", nil, -1, errors.New("expected UserDefinedType, got <nil>")},
 	}
-	codec, _ := FindCodec(cassandraprotocol.DataTypeCodeUdt)
+	codec, _ := findCodec(cassandraprotocol.DataTypeCodeUdt)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionMax; version++ {
 				t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 					var actual int
 					var err error
-					actual, err = codec.EncodedLength(test.input, version)
+					actual, err = codec.encodedLength(test.input, version)
 					assert.Equal(t, test.expected, actual)
 					assert.Equal(t, test.err, err)
 				})
@@ -187,7 +187,7 @@ func TestUserDefinedTypeCodecDecode(t *testing.T) {
 						errors.New("EOF")))),
 		},
 	}
-	codec, _ := FindCodec(cassandraprotocol.DataTypeCodeUdt)
+	codec, _ := findCodec(cassandraprotocol.DataTypeCodeUdt)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionMax; version++ {
@@ -195,7 +195,7 @@ func TestUserDefinedTypeCodecDecode(t *testing.T) {
 					var source = bytes.NewBuffer(test.input)
 					var actual DataType
 					var err error
-					actual, err = codec.Decode(source, version)
+					actual, err = codec.decode(source, version)
 					assert.Equal(t, test.expected, actual)
 					assert.Equal(t, test.err, err)
 				})

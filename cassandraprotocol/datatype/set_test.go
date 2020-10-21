@@ -39,14 +39,14 @@ func TestSetTypeCodecEncode(t *testing.T) {
 		},
 		{"nil set", nil, nil, errors.New("expected SetType, got <nil>")},
 	}
-	codec, _ := FindCodec(cassandraprotocol.DataTypeCodeSet)
+	codec, _ := findCodec(cassandraprotocol.DataTypeCodeSet)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionMax; version++ {
 				t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 					var dest = &bytes.Buffer{}
 					var err error
-					err = codec.Encode(test.input, dest, version)
+					err = codec.encode(test.input, dest, version)
 					actual := dest.Bytes()
 					assert.Equal(t, test.expected, actual)
 					assert.Equal(t, test.err, err)
@@ -67,14 +67,14 @@ func TestSetTypeCodecEncodedLength(t *testing.T) {
 		{"complex set", NewSetType(NewSetType(Varchar)), primitives.LengthOfShort + primitives.LengthOfShort, nil},
 		{"nil set", nil, -1, errors.New("expected SetType, got <nil>")},
 	}
-	codec, _ := FindCodec(cassandraprotocol.DataTypeCodeSet)
+	codec, _ := findCodec(cassandraprotocol.DataTypeCodeSet)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionMax; version++ {
 				t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 					var actual int
 					var err error
-					actual, err = codec.EncodedLength(test.input, version)
+					actual, err = codec.encodedLength(test.input, version)
 					assert.Equal(t, test.expected, actual)
 					assert.Equal(t, test.err, err)
 				})
@@ -114,7 +114,7 @@ func TestSetTypeCodecDecode(t *testing.T) {
 						errors.New("EOF")))),
 		},
 	}
-	codec, _ := FindCodec(cassandraprotocol.DataTypeCodeSet)
+	codec, _ := findCodec(cassandraprotocol.DataTypeCodeSet)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionMax; version++ {
@@ -122,7 +122,7 @@ func TestSetTypeCodecDecode(t *testing.T) {
 					var source = bytes.NewBuffer(test.input)
 					var actual DataType
 					var err error
-					actual, err = codec.Decode(source, version)
+					actual, err = codec.decode(source, version)
 					assert.Equal(t, test.expected, actual)
 					assert.Equal(t, test.err, err)
 				})

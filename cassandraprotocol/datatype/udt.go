@@ -58,7 +58,7 @@ func (t *userDefinedType) MarshalJSON() ([]byte, error) {
 
 type userDefinedTypeCodec struct{}
 
-func (c *userDefinedTypeCodec) Encode(t DataType, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
+func (c *userDefinedTypeCodec) encode(t DataType, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
 	userDefinedType, ok := t.(UserDefinedType)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected UserDefinedType, got %T", t))
@@ -83,7 +83,7 @@ func (c *userDefinedTypeCodec) Encode(t DataType, dest io.Writer, version cassan
 	return nil
 }
 
-func (c *userDefinedTypeCodec) EncodedLength(t DataType, version cassandraprotocol.ProtocolVersion) (length int, err error) {
+func (c *userDefinedTypeCodec) encodedLength(t DataType, version cassandraprotocol.ProtocolVersion) (length int, err error) {
 	userDefinedType, ok := t.(UserDefinedType)
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected UserDefinedType, got %T", t))
@@ -106,7 +106,7 @@ func (c *userDefinedTypeCodec) EncodedLength(t DataType, version cassandraprotoc
 	return length, nil
 }
 
-func (c *userDefinedTypeCodec) Decode(source io.Reader, version cassandraprotocol.ProtocolVersion) (decoded DataType, err error) {
+func (c *userDefinedTypeCodec) decode(source io.Reader, version cassandraprotocol.ProtocolVersion) (decoded DataType, err error) {
 	userDefinedType := &userDefinedType{}
 	if userDefinedType.keyspace, err = primitives.ReadString(source); err != nil {
 		return nil, fmt.Errorf("cannot read udt keyspace: %w", err)

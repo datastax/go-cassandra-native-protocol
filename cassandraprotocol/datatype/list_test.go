@@ -39,14 +39,14 @@ func TestListTypeCodecEncode(t *testing.T) {
 		},
 		{"nil list", nil, nil, errors.New("expected ListType, got <nil>")},
 	}
-	codec, _ := FindCodec(cassandraprotocol.DataTypeCodeList)
+	codec, _ := findCodec(cassandraprotocol.DataTypeCodeList)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionMax; version++ {
 				t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 					var dest = &bytes.Buffer{}
 					var err error
-					err = codec.Encode(test.input, dest, version)
+					err = codec.encode(test.input, dest, version)
 					actual := dest.Bytes()
 					assert.Equal(t, test.expected, actual)
 					assert.Equal(t, test.err, err)
@@ -67,14 +67,14 @@ func TestListTypeCodecEncodedLength(t *testing.T) {
 		{"complex list", NewListType(NewListType(Varchar)), primitives.LengthOfShort + primitives.LengthOfShort, nil},
 		{"nil list", nil, -1, errors.New("expected ListType, got <nil>")},
 	}
-	codec, _ := FindCodec(cassandraprotocol.DataTypeCodeList)
+	codec, _ := findCodec(cassandraprotocol.DataTypeCodeList)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionMax; version++ {
 				t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 					var actual int
 					var err error
-					actual, err = codec.EncodedLength(test.input, version)
+					actual, err = codec.encodedLength(test.input, version)
 					assert.Equal(t, test.expected, actual)
 					assert.Equal(t, test.err, err)
 				})
@@ -114,7 +114,7 @@ func TestListTypeCodecDecode(t *testing.T) {
 						errors.New("EOF")))),
 		},
 	}
-	codec, _ := FindCodec(cassandraprotocol.DataTypeCodeList)
+	codec, _ := findCodec(cassandraprotocol.DataTypeCodeList)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionMax; version++ {
@@ -122,7 +122,7 @@ func TestListTypeCodecDecode(t *testing.T) {
 					var source = bytes.NewBuffer(test.input)
 					var actual DataType
 					var err error
-					actual, err = codec.Decode(source, version)
+					actual, err = codec.decode(source, version)
 					assert.Equal(t, test.expected, actual)
 					assert.Equal(t, test.err, err)
 				})

@@ -44,7 +44,7 @@ func NewMapType(keyType DataType, valueType DataType) MapType {
 
 type mapTypeCodec struct{}
 
-func (c *mapTypeCodec) Encode(t DataType, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
+func (c *mapTypeCodec) encode(t DataType, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
 	mapType, ok := t.(MapType)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected MapType, got %T", t))
@@ -56,7 +56,7 @@ func (c *mapTypeCodec) Encode(t DataType, dest io.Writer, version cassandraproto
 	return nil
 }
 
-func (c *mapTypeCodec) EncodedLength(t DataType, version cassandraprotocol.ProtocolVersion) (length int, err error) {
+func (c *mapTypeCodec) encodedLength(t DataType, version cassandraprotocol.ProtocolVersion) (length int, err error) {
 	mapType, ok := t.(MapType)
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected MapType, got %T", t))
@@ -74,7 +74,7 @@ func (c *mapTypeCodec) EncodedLength(t DataType, version cassandraprotocol.Proto
 	return length, nil
 }
 
-func (c *mapTypeCodec) Decode(source io.Reader, version cassandraprotocol.ProtocolVersion) (decoded DataType, err error) {
+func (c *mapTypeCodec) decode(source io.Reader, version cassandraprotocol.ProtocolVersion) (decoded DataType, err error) {
 	mapType := &mapType{}
 	if mapType.keyType, err = ReadDataType(source, version); err != nil {
 		return nil, fmt.Errorf("cannot read map key type: %w", err)

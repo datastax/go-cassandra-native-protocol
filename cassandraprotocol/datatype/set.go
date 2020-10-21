@@ -38,7 +38,7 @@ func NewSetType(elementType DataType) SetType {
 
 type setTypeCodec struct{}
 
-func (c *setTypeCodec) Encode(t DataType, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
+func (c *setTypeCodec) encode(t DataType, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
 	if setType, ok := t.(SetType); !ok {
 		return errors.New(fmt.Sprintf("expected SetType, got %T", t))
 	} else if err = WriteDataType(setType.GetElementType(), dest, version); err != nil {
@@ -47,7 +47,7 @@ func (c *setTypeCodec) Encode(t DataType, dest io.Writer, version cassandraproto
 	return nil
 }
 
-func (c *setTypeCodec) EncodedLength(t DataType, version cassandraprotocol.ProtocolVersion) (length int, err error) {
+func (c *setTypeCodec) encodedLength(t DataType, version cassandraprotocol.ProtocolVersion) (length int, err error) {
 	if setType, ok := t.(SetType); !ok {
 		return -1, errors.New(fmt.Sprintf("expected SetType, got %T", t))
 	} else if elementLength, err := LengthOfDataType(setType.GetElementType(), version); err != nil {
@@ -58,7 +58,7 @@ func (c *setTypeCodec) EncodedLength(t DataType, version cassandraprotocol.Proto
 	return length, nil
 }
 
-func (c *setTypeCodec) Decode(source io.Reader, version cassandraprotocol.ProtocolVersion) (decoded DataType, err error) {
+func (c *setTypeCodec) decode(source io.Reader, version cassandraprotocol.ProtocolVersion) (decoded DataType, err error) {
 	setType := &setType{}
 	if setType.elementType, err = ReadDataType(source, version); err != nil {
 		return nil, fmt.Errorf("cannot read set element type: %w", err)

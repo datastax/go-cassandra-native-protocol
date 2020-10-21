@@ -39,7 +39,7 @@ func (t *customType) MarshalJSON() ([]byte, error) {
 
 type customTypeCodec struct{}
 
-func (c *customTypeCodec) Encode(t DataType, dest io.Writer, _ cassandraprotocol.ProtocolVersion) (err error) {
+func (c *customTypeCodec) encode(t DataType, dest io.Writer, _ cassandraprotocol.ProtocolVersion) (err error) {
 	if customType, ok := t.(CustomType); !ok {
 		return errors.New(fmt.Sprintf("expected CustomType, got %T", t))
 	} else if err = primitives.WriteString(customType.GetClassName(), dest); err != nil {
@@ -48,7 +48,7 @@ func (c *customTypeCodec) Encode(t DataType, dest io.Writer, _ cassandraprotocol
 	return nil
 }
 
-func (c *customTypeCodec) EncodedLength(t DataType, _ cassandraprotocol.ProtocolVersion) (length int, err error) {
+func (c *customTypeCodec) encodedLength(t DataType, _ cassandraprotocol.ProtocolVersion) (length int, err error) {
 	if customType, ok := t.(CustomType); !ok {
 		return -1, errors.New(fmt.Sprintf("expected CustomType, got %T", t))
 	} else {
@@ -57,7 +57,7 @@ func (c *customTypeCodec) EncodedLength(t DataType, _ cassandraprotocol.Protocol
 	return length, nil
 }
 
-func (c *customTypeCodec) Decode(source io.Reader, _ cassandraprotocol.ProtocolVersion) (t DataType, err error) {
+func (c *customTypeCodec) decode(source io.Reader, _ cassandraprotocol.ProtocolVersion) (t DataType, err error) {
 	customType := &customType{}
 	if customType.className, err = primitives.ReadString(source); err != nil {
 		return nil, fmt.Errorf("cannot read custom type class name: %w", err)
