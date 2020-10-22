@@ -54,22 +54,25 @@ func (f *Frame) Dump() (string, error) {
 
 type Header struct {
 	Version cassandraprotocol.ProtocolVersion
-	// The protocol spec states that the stream id is a [short], but this is wrong: the stream id
+	// The stream id. The protocol spec states that the stream id is a [short], but this is wrong: the stream id
 	// is signed and can be negative, which is why it has type int16.
 	StreamId int16
-	// Whether tracing should be activated for this request. Only valid for request frames, ignored for response frames.
-	// Note that only QUERY, PREPARE and EXECUTE queries support tracing. Other requests will simply ignore the tracing flag if set.
+	// For request frames, indicates that tracing should be activated for this request.
+	// For response frames, this will be set to true if the frame body contains a tracing id.
+	// Note that only QUERY, PREPARE and EXECUTE messages support tracing.
+	// Cassandra will simply ignore the tracing flag if set for other message types.
 	TracingRequested bool
 }
 
 type Body struct {
-	// The tracing ID. Only valid for response frames, ignored otherwise.
+	// The tracing id. Only valid for response frames, ignored otherwise.
 	TracingId *cassandraprotocol.UUID
+	// The custom payload, or nil if no custom payload is defined.
 	// Custom payloads are only valid from Protocol Version 4 onwards.
 	CustomPayload map[string][]byte
 	// Query warnings, if any. Query warnings are only valid for response frames, and only from Protocol Version 4 onwards.
 	Warnings []string
-	// The body message
+	// The body message.
 	Message message.Message
 }
 
@@ -121,7 +124,8 @@ func NewResponseFrame(
 }
 
 func newFrame(header *Header, body *Body) (*Frame, error) {
-	// Check header and body global conformity with protocol specs
+	// Check header and body global conformity with protocol specs here.
+	// Body message conformity with protocol specs will be tested by the message codecs.
 	if header.Version < cassandraprotocol.ProtocolVersionMin || header.Version > cassandraprotocol.ProtocolVersionMax {
 		return nil, fmt.Errorf("unsupported protocol version: %v", header.Version)
 	}
@@ -131,23 +135,17 @@ func newFrame(header *Header, body *Body) (*Frame, error) {
 	if body.Warnings != nil && header.Version < cassandraprotocol.ProtocolVersion4 {
 		return nil, errors.New("warnings require protocol version 4 or higher")
 	}
-	// Body message conformity with protocol specs will be tested by the message codecs
 	return &Frame{header, body}, nil
 }
 
 func (f *Frame) String() string {
-	return fmt.Sprintf(
-		"{header: %v, flags: %08b, body: %v}",
-		f.Header,
-		f.Flags(false),
-		f.Body,
-	)
+	return fmt.Sprintf("{header: %v, body: %v}", f.Header, f.Body)
 }
 
 func (h *Header) String() string {
-	return fmt.Sprintf("{version: %v, streamdid: %v, tracing: %v}", h.Version, h.StreamId, h.TracingRequested)
+	return fmt.Sprintf("{version: %v, stream id: %v, tracing: %v}", h.Version, h.StreamId, h.TracingRequested)
 }
 
 func (b *Body) String() string {
-	return fmt.Sprintf("{tracingid: %v, payload: %v, warnings: %v, message: %v}", b.TracingId, b.CustomPayload, b.Warnings, b.Message)
+	return fmt.Sprintf("{tracing id: %v, payload: %v, warnings: %v, message: %v}", b.TracingId, b.CustomPayload, b.Warnings, b.Message)
 }
