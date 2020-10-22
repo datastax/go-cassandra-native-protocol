@@ -45,7 +45,7 @@ type BatchCodec struct{}
 func (c *BatchCodec) Encode(msg Message, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
 	batch, ok := msg.(*Batch)
 	if !ok {
-		return errors.New(fmt.Sprintf("expected *Batch, got %T", msg))
+		return errors.New(fmt.Sprintf("expected *message.Batch, got %T", msg))
 	}
 	if err = cassandraprotocol.CheckBatchType(batch.Type); err != nil {
 		return err
@@ -129,7 +129,7 @@ func (c *BatchCodec) Encode(msg Message, dest io.Writer, version cassandraprotoc
 func (c *BatchCodec) EncodedLength(msg Message, version cassandraprotocol.ProtocolVersion) (length int, err error) {
 	batch, ok := msg.(*Batch)
 	if !ok {
-		return -1, errors.New(fmt.Sprintf("expected *Batch, got %T", msg))
+		return -1, errors.New(fmt.Sprintf("expected *message.Batch, got %T", msg))
 	}
 	childrenCount := len(batch.Children)
 	if childrenCount > 0xFFFF {

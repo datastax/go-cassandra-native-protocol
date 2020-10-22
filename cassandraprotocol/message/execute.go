@@ -32,7 +32,7 @@ type ExecuteCodec struct{}
 func (c *ExecuteCodec) Encode(msg Message, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
 	execute, ok := msg.(*Execute)
 	if !ok {
-		return errors.New(fmt.Sprintf("expected *Execute, got %T", msg))
+		return errors.New(fmt.Sprintf("expected *message.Execute, got %T", msg))
 	}
 	if err = primitives.WriteShortBytes(execute.QueryId, dest); err != nil {
 		return fmt.Errorf("cannot write EXECUTE query id: %w", err)
@@ -51,7 +51,7 @@ func (c *ExecuteCodec) Encode(msg Message, dest io.Writer, version cassandraprot
 func (c *ExecuteCodec) EncodedLength(msg Message, version cassandraprotocol.ProtocolVersion) (size int, err error) {
 	execute, ok := msg.(*Execute)
 	if !ok {
-		return -1, errors.New(fmt.Sprintf("expected *Execute, got %T", msg))
+		return -1, errors.New(fmt.Sprintf("expected *message.Execute, got %T", msg))
 	}
 	size += primitives.LengthOfShortBytes(execute.QueryId)
 	if version >= cassandraprotocol.ProtocolVersion5 {

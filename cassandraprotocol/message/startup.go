@@ -53,7 +53,7 @@ type StartupCodec struct{}
 func (c *StartupCodec) Encode(msg Message, dest io.Writer, _ cassandraprotocol.ProtocolVersion) error {
 	startup, ok := msg.(*Startup)
 	if !ok {
-		return errors.New(fmt.Sprintf("expected *Startup, got %T", msg))
+		return errors.New(fmt.Sprintf("expected *message.Startup, got %T", msg))
 	}
 	return primitives.WriteStringMap(startup.Options, dest)
 }
@@ -61,7 +61,7 @@ func (c *StartupCodec) Encode(msg Message, dest io.Writer, _ cassandraprotocol.P
 func (c *StartupCodec) EncodedLength(msg Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
 	startup, ok := msg.(*Startup)
 	if !ok {
-		return -1, errors.New(fmt.Sprintf("expected *Startup, got %T", msg))
+		return -1, errors.New(fmt.Sprintf("expected *message.Startup, got %T", msg))
 	}
 	return primitives.LengthOfStringMap(startup.Options), nil
 }

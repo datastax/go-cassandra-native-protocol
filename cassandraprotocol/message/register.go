@@ -29,7 +29,7 @@ type RegisterCodec struct{}
 func (c *RegisterCodec) Encode(msg Message, dest io.Writer, _ cassandraprotocol.ProtocolVersion) error {
 	register, ok := msg.(*Register)
 	if !ok {
-		return errors.New(fmt.Sprintf("expected *Register, got %T", msg))
+		return errors.New(fmt.Sprintf("expected *message.Register, got %T", msg))
 	}
 	return primitives.WriteStringList(register.EventTypes, dest)
 }
@@ -37,7 +37,7 @@ func (c *RegisterCodec) Encode(msg Message, dest io.Writer, _ cassandraprotocol.
 func (c *RegisterCodec) EncodedLength(msg Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
 	register, ok := msg.(*Register)
 	if !ok {
-		return -1, errors.New(fmt.Sprintf("expected *Register, got %T", msg))
+		return -1, errors.New(fmt.Sprintf("expected *message.Register, got %T", msg))
 	}
 	return primitives.LengthOfStringList(register.EventTypes), nil
 }

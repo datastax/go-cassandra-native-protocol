@@ -29,7 +29,7 @@ type SupportedCodec struct{}
 func (c *SupportedCodec) Encode(msg Message, dest io.Writer, _ cassandraprotocol.ProtocolVersion) error {
 	supported, ok := msg.(*Supported)
 	if !ok {
-		return errors.New(fmt.Sprintf("expected *Supported, got %T", msg))
+		return errors.New(fmt.Sprintf("expected *message.Supported, got %T", msg))
 	}
 	if err := primitives.WriteStringMultiMap(supported.Options, dest); err != nil {
 		return err
@@ -40,7 +40,7 @@ func (c *SupportedCodec) Encode(msg Message, dest io.Writer, _ cassandraprotocol
 func (c *SupportedCodec) EncodedLength(msg Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
 	supported, ok := msg.(*Supported)
 	if !ok {
-		return -1, errors.New(fmt.Sprintf("expected *Supported, got %T", msg))
+		return -1, errors.New(fmt.Sprintf("expected *message.Supported, got %T", msg))
 	}
 	return primitives.LengthOfStringMultiMap(supported.Options), nil
 }
