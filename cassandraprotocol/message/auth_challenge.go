@@ -1,6 +1,7 @@
 package message
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"go-cassandra-native-protocol/cassandraprotocol"
@@ -21,7 +22,7 @@ func (m *AuthChallenge) GetOpCode() cassandraprotocol.OpCode {
 }
 
 func (m *AuthChallenge) String() string {
-	return "AUTH_CHALLENGE " + string(m.Token)
+	return "AUTH_CHALLENGE token: " + base64.StdEncoding.EncodeToString(m.Token)
 }
 
 type AuthChallengeCodec struct{}
