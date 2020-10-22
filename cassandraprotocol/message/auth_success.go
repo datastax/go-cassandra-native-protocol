@@ -32,6 +32,9 @@ func (c *AuthSuccessCodec) Encode(msg Message, dest io.Writer, _ cassandraprotoc
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.AuthSuccess, got %T", msg))
 	}
+	if authSuccess.Token == nil {
+		return errors.New("AUTH_SUCCESS token cannot be nil")
+	}
 	return primitives.WriteBytes(authSuccess.Token, dest)
 }
 

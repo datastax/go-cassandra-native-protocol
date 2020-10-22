@@ -32,6 +32,9 @@ func (c *AuthResponseCodec) Encode(msg Message, dest io.Writer, _ cassandraproto
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.AuthResponse, got %T", msg))
 	}
+	if authResponse.Token == nil {
+		return errors.New("AUTH_RESPONSE token cannot be nil")
+	}
 	return primitives.WriteBytes(authResponse.Token, dest)
 }
 

@@ -31,6 +31,9 @@ func (c *AuthenticateCodec) Encode(msg Message, dest io.Writer, _ cassandraproto
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.Authenticate, got %T", msg))
 	}
+	if authenticate.Authenticator == "" {
+		return errors.New("AUTHENTICATE authenticator cannot be empty")
+	}
 	return primitives.WriteString(authenticate.Authenticator, dest)
 }
 
