@@ -10,10 +10,11 @@ import (
 )
 
 func TestReadValue(t *testing.T) {
+	// versions < 4
 	tests := []struct {
 		name     string
 		source   []byte
-		expected *cassandraprotocol.Value
+		expected *Value
 		err      error
 	}{
 		{
@@ -21,7 +22,7 @@ func TestReadValue(t *testing.T) {
 			[]byte{
 				0xff, 0xff, 0xff, 0xff, // length -1
 			},
-			cassandraprotocol.NewNullValue(),
+			NewNullValue(),
 			nil,
 		},
 		{
@@ -29,15 +30,15 @@ func TestReadValue(t *testing.T) {
 			[]byte{
 				0xff, 0xff, 0xff, 0xfe, // length -2
 			},
-			cassandraprotocol.NewUnsetValue(),
 			nil,
+			fmt.Errorf("cannot use unset value in protocol version: 3"),
 		},
 		{
 			"value empty",
 			[]byte{
 				0, 0, 0, 0, // length
 			},
-			cassandraprotocol.NewValue([]byte{}),
+			NewValue([]byte{}),
 			nil,
 		},
 		{
@@ -46,7 +47,7 @@ func TestReadValue(t *testing.T) {
 				0, 0, 0, 5, // length
 				1, 2, 3, 4, 5, // contents
 			},
-			cassandraprotocol.NewValue([]byte{1, 2, 3, 4, 5}),
+			NewValue([]byte{1, 2, 3, 4, 5}),
 			nil,
 		},
 		{
@@ -78,20 +79,106 @@ func TestReadValue(t *testing.T) {
 			errors.New("not enough bytes to read [value] content"),
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			buf := bytes.NewBuffer(tt.source)
-			actual, err := ReadValue(buf)
-			assert.Equal(t, tt.expected, actual)
-			assert.Equal(t, tt.err, err)
+	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersion3; version++ {
+		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+			for _, tt := range tests {
+				t.Run(tt.name, func(t *testing.T) {
+					buf := bytes.NewBuffer(tt.source)
+					actual, err := ReadValue(buf, version)
+					assert.Equal(t, tt.expected, actual)
+					assert.Equal(t, tt.err, err)
+				})
+			}
+		})
+	}
+	// versions > 4
+	tests = []struct {
+		name     string
+		source   []byte
+		expected *Value
+		err      error
+	}{
+		{
+			"value length null",
+			[]byte{
+				0xff, 0xff, 0xff, 0xff, // length -1
+			},
+			NewNullValue(),
+			nil,
+		},
+		{
+			"value length unset",
+			[]byte{
+				0xff, 0xff, 0xff, 0xfe, // length -2
+			},
+			NewUnsetValue(),
+			nil,
+		},
+		{
+			"value empty",
+			[]byte{
+				0, 0, 0, 0, // length
+			},
+			NewValue([]byte{}),
+			nil,
+		},
+		{
+			"value non empty",
+			[]byte{
+				0, 0, 0, 5, // length
+				1, 2, 3, 4, 5, // contents
+			},
+			NewValue([]byte{1, 2, 3, 4, 5}),
+			nil,
+		},
+		{
+			"cannot read value length",
+			[]byte{
+				0, 0, 0,
+			},
+			nil,
+			fmt.Errorf("cannot read [value] length: %w",
+				fmt.Errorf("cannot read [int]: %w",
+					errors.New("unexpected EOF")),
+			),
+		},
+		{
+			"invalid value length",
+			[]byte{
+				0xff, 0xff, 0xff, 0xfd, // -3
+			},
+			nil,
+			errors.New("invalid [value] length: -3"),
+		},
+		{
+			"cannot read value contents",
+			[]byte{
+				0, 0, 0, 2, // length
+				1, // contents
+			},
+			nil,
+			errors.New("not enough bytes to read [value] content"),
+		},
+	}
+	for version := cassandraprotocol.ProtocolVersion4; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
+		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+			for _, tt := range tests {
+				t.Run(tt.name, func(t *testing.T) {
+					buf := bytes.NewBuffer(tt.source)
+					actual, err := ReadValue(buf, version)
+					assert.Equal(t, tt.expected, actual)
+					assert.Equal(t, tt.err, err)
+				})
+			}
 		})
 	}
 }
 
 func TestWriteValue(t *testing.T) {
+	// versions < 4
 	tests := []struct {
 		name     string
-		input    *cassandraprotocol.Value
+		input    *Value
 		expected []byte
 		err      error
 	}{
@@ -103,14 +190,14 @@ func TestWriteValue(t *testing.T) {
 		},
 		{
 			"empty value (type regular, nil contents)",
-			&cassandraprotocol.Value{},
+			&Value{},
 			[]byte{0xff, 0xff, 0xff, 0xff}, // length -1
 			nil,
 		},
 		{
 			"non empty value (type regular, non nil contents)",
-			&cassandraprotocol.Value{
-				Type:     cassandraprotocol.ValueTypeRegular,
+			&Value{
+				Type:     ValueTypeRegular,
 				Contents: []byte{1, 2, 3, 4},
 			},
 			[]byte{0, 0, 0, 4, 1, 2, 3, 4},
@@ -118,14 +205,14 @@ func TestWriteValue(t *testing.T) {
 		},
 		{
 			"empty value with type null",
-			&cassandraprotocol.Value{Type: cassandraprotocol.ValueTypeNull},
+			&Value{Type: ValueTypeNull},
 			[]byte{0xff, 0xff, 0xff, 0xff}, // length -1
 			nil,
 		},
 		{
 			"empty value with type null but non nil contents",
-			&cassandraprotocol.Value{
-				Type:     cassandraprotocol.ValueTypeNull,
+			&Value{
+				Type:     ValueTypeNull,
 				Contents: []byte{1, 2, 3, 4},
 			},
 			[]byte{0xff, 0xff, 0xff, 0xff}, // length -1
@@ -133,14 +220,91 @@ func TestWriteValue(t *testing.T) {
 		},
 		{
 			"empty value with type unset",
-			&cassandraprotocol.Value{Type: cassandraprotocol.ValueTypeUnset},
+			&Value{Type: ValueTypeUnset},
+			nil,
+			errors.New("cannot use unset value in protocol version: 3"),
+		},
+		{
+			"empty value with type unset but non nil contents",
+			&Value{
+				Type:     ValueTypeUnset,
+				Contents: []byte{1, 2, 3, 4},
+			},
+			nil,
+			errors.New("cannot use unset value in protocol version: 3"),
+		},
+		{
+			"unknown type",
+			&Value{Type: 1},
+			nil,
+			errors.New("unknown [value] type: 1"),
+		},
+	}
+	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersion3; version++ {
+		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+			for _, tt := range tests {
+				t.Run(tt.name, func(t *testing.T) {
+					buf := &bytes.Buffer{}
+					err := WriteValue(tt.input, buf, version)
+					assert.Equal(t, tt.expected, buf.Bytes())
+					assert.Equal(t, tt.err, err)
+				})
+			}
+		})
+	}
+	// versions >= 4
+	tests = []struct {
+		name     string
+		input    *Value
+		expected []byte
+		err      error
+	}{
+		{
+			"nil value",
+			nil,
+			nil,
+			errors.New("cannot write a nil [value]"),
+		},
+		{
+			"empty value (type regular, nil contents)",
+			&Value{},
+			[]byte{0xff, 0xff, 0xff, 0xff}, // length -1
+			nil,
+		},
+		{
+			"non empty value (type regular, non nil contents)",
+			&Value{
+				Type:     ValueTypeRegular,
+				Contents: []byte{1, 2, 3, 4},
+			},
+			[]byte{0, 0, 0, 4, 1, 2, 3, 4},
+			nil,
+		},
+		{
+			"empty value with type null",
+			&Value{Type: ValueTypeNull},
+			[]byte{0xff, 0xff, 0xff, 0xff}, // length -1
+			nil,
+		},
+		{
+			"empty value with type null but non nil contents",
+			&Value{
+				Type:     ValueTypeNull,
+				Contents: []byte{1, 2, 3, 4},
+			},
+			[]byte{0xff, 0xff, 0xff, 0xff}, // length -1
+			nil,
+		},
+		{
+			"empty value with type unset",
+			&Value{Type: ValueTypeUnset},
 			[]byte{0xff, 0xff, 0xff, 0xfe}, // length -2
 			nil,
 		},
 		{
 			"empty value with type unset but non nil contents",
-			&cassandraprotocol.Value{
-				Type:     cassandraprotocol.ValueTypeUnset,
+			&Value{
+				Type:     ValueTypeUnset,
 				Contents: []byte{1, 2, 3, 4},
 			},
 			[]byte{0xff, 0xff, 0xff, 0xfe}, // length -2
@@ -148,17 +312,21 @@ func TestWriteValue(t *testing.T) {
 		},
 		{
 			"unknown type",
-			&cassandraprotocol.Value{Type: 1},
+			&Value{Type: 1},
 			nil,
 			errors.New("unknown [value] type: 1"),
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			buf := &bytes.Buffer{}
-			err := WriteValue(tt.input, buf)
-			assert.Equal(t, tt.expected, buf.Bytes())
-			assert.Equal(t, tt.err, err)
+	for version := cassandraprotocol.ProtocolVersion4; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
+		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+			for _, tt := range tests {
+				t.Run(tt.name, func(t *testing.T) {
+					buf := &bytes.Buffer{}
+					err := WriteValue(tt.input, buf, version)
+					assert.Equal(t, tt.expected, buf.Bytes())
+					assert.Equal(t, tt.err, err)
+				})
+			}
 		})
 	}
 }
@@ -166,7 +334,7 @@ func TestWriteValue(t *testing.T) {
 func TestLengthOfValue(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    *cassandraprotocol.Value
+		input    *Value
 		expected int
 		err      error
 	}{
@@ -178,26 +346,26 @@ func TestLengthOfValue(t *testing.T) {
 		},
 		{
 			"empty value (type regular, nil contents)",
-			&cassandraprotocol.Value{},
+			&Value{},
 			LengthOfInt, // length -1
 			nil,
 		},
 		{
 			"non empty value (type regular, non nil contents)",
-			cassandraprotocol.NewValue([]byte{1, 2, 3, 4}),
+			NewValue([]byte{1, 2, 3, 4}),
 			LengthOfInt + len([]byte{1, 2, 3, 4}),
 			nil,
 		},
 		{
 			"empty value with type null",
-			cassandraprotocol.NewNullValue(),
+			NewNullValue(),
 			LengthOfInt,
 			nil,
 		},
 		{
 			"empty value with type null but non nil contents",
-			&cassandraprotocol.Value{
-				Type:     cassandraprotocol.ValueTypeNull,
+			&Value{
+				Type:     ValueTypeNull,
 				Contents: []byte{1, 2, 3, 4},
 			},
 			LengthOfInt,
@@ -205,14 +373,14 @@ func TestLengthOfValue(t *testing.T) {
 		},
 		{
 			"empty value with type unset",
-			cassandraprotocol.NewUnsetValue(),
+			NewUnsetValue(),
 			LengthOfInt,
 			nil,
 		},
 		{
 			"empty value with type unset but non nil contents",
-			&cassandraprotocol.Value{
-				Type:     cassandraprotocol.ValueTypeUnset,
+			&Value{
+				Type:     ValueTypeUnset,
 				Contents: []byte{1, 2, 3, 4},
 			},
 			LengthOfInt,
@@ -220,7 +388,7 @@ func TestLengthOfValue(t *testing.T) {
 		},
 		{
 			"unknown type",
-			&cassandraprotocol.Value{Type: 1},
+			&Value{Type: 1},
 			-1,
 			errors.New("unknown [value] type: 1"),
 		},
@@ -238,13 +406,13 @@ func TestReadPositionalValues(t *testing.T) {
 	tests := []struct {
 		name     string
 		source   []byte
-		expected []*cassandraprotocol.Value
+		expected []*Value
 		err      error
 	}{
 		{
 			"empty positional values",
 			[]byte{0, 0},
-			[]*cassandraprotocol.Value{},
+			[]*Value{},
 			nil,
 		},
 		{
@@ -253,8 +421,8 @@ func TestReadPositionalValues(t *testing.T) {
 				0, 1, // length of list
 				0, 0, 0, 0, // length of element
 			},
-			[]*cassandraprotocol.Value{{
-				Type:     cassandraprotocol.ValueTypeRegular,
+			[]*Value{{
+				Type:     ValueTypeRegular,
 				Contents: []byte{},
 			}},
 			nil,
@@ -266,8 +434,8 @@ func TestReadPositionalValues(t *testing.T) {
 				0, 0, 0, 5, // length of element
 				1, 2, 3, 4, 5, // contents of element
 			},
-			[]*cassandraprotocol.Value{{
-				Type:     cassandraprotocol.ValueTypeRegular,
+			[]*Value{{
+				Type:     ValueTypeRegular,
 				Contents: []byte{1, 2, 3, 4, 5},
 			}},
 			nil,
@@ -281,17 +449,17 @@ func TestReadPositionalValues(t *testing.T) {
 				0, 0, 0, 5, // length of element 3
 				1, 2, 3, 4, 5, // contents of element 3
 			},
-			[]*cassandraprotocol.Value{
+			[]*Value{
 				{
-					Type:     cassandraprotocol.ValueTypeNull,
+					Type:     ValueTypeNull,
 					Contents: nil,
 				},
 				{
-					Type:     cassandraprotocol.ValueTypeRegular,
+					Type:     ValueTypeRegular,
 					Contents: []byte{},
 				},
 				{
-					Type:     cassandraprotocol.ValueTypeRegular,
+					Type:     ValueTypeRegular,
 					Contents: []byte{1, 2, 3, 4, 5},
 				},
 			},
@@ -314,20 +482,25 @@ func TestReadPositionalValues(t *testing.T) {
 					errors.New("EOF"))),
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			buf := bytes.NewBuffer(tt.source)
-			actual, err := ReadPositionalValues(buf)
-			assert.Equal(t, tt.expected, actual)
-			assert.Equal(t, tt.err, err)
+	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
+		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+			for _, tt := range tests {
+				t.Run(tt.name, func(t *testing.T) {
+					buf := bytes.NewBuffer(tt.source)
+					actual, err := ReadPositionalValues(buf, version)
+					assert.Equal(t, tt.expected, actual)
+					assert.Equal(t, tt.err, err)
+				})
+			}
 		})
 	}
 }
 
 func TestWritePositionalValues(t *testing.T) {
+	// versions < 4
 	tests := []struct {
 		name     string
-		input    []*cassandraprotocol.Value
+		input    []*Value
 		expected []byte
 		err      error
 	}{
@@ -339,14 +512,14 @@ func TestWritePositionalValues(t *testing.T) {
 		},
 		{
 			"nil positional values",
-			[]*cassandraprotocol.Value{},
+			[]*Value{},
 			[]byte{0, 0},
 			nil,
 		},
 		{
 			"1 element, value empty",
-			[]*cassandraprotocol.Value{{
-				Type:     cassandraprotocol.ValueTypeRegular,
+			[]*Value{{
+				Type:     ValueTypeRegular,
 				Contents: []byte{},
 			}},
 			[]byte{
@@ -357,8 +530,8 @@ func TestWritePositionalValues(t *testing.T) {
 		},
 		{
 			"1 element, value null",
-			[]*cassandraprotocol.Value{{
-				Type:     cassandraprotocol.ValueTypeRegular,
+			[]*Value{{
+				Type:     ValueTypeRegular,
 				Contents: nil,
 			}},
 			[]byte{
@@ -369,8 +542,8 @@ func TestWritePositionalValues(t *testing.T) {
 		},
 		{
 			"1 element, value null",
-			[]*cassandraprotocol.Value{{
-				Type:     cassandraprotocol.ValueTypeNull,
+			[]*Value{{
+				Type:     ValueTypeNull,
 				Contents: nil,
 			}},
 			[]byte{
@@ -381,8 +554,114 @@ func TestWritePositionalValues(t *testing.T) {
 		},
 		{
 			"1 element, value non empty",
-			[]*cassandraprotocol.Value{{
-				Type:     cassandraprotocol.ValueTypeRegular,
+			[]*Value{{
+				Type:     ValueTypeRegular,
+				Contents: []byte{1, 2, 3, 4, 5},
+			}},
+			[]byte{
+				0, 1, // length of list
+				0, 0, 0, 5, // length of element
+				1, 2, 3, 4, 5, // contents of element
+			},
+			nil,
+		},
+		{
+			"3 elements",
+			[]*Value{
+				{
+					Type:     ValueTypeNull,
+					Contents: nil,
+				},
+				{
+					Type:     ValueTypeRegular,
+					Contents: []byte{},
+				},
+				{
+					Type:     ValueTypeRegular,
+					Contents: []byte{1, 2, 3, 4, 5},
+				},
+			},
+			[]byte{
+				0, 3, // length of list
+				0xff, 0xff, 0xff, 0xff, // length of element 1
+				0xff, 0xff, 0xff, 0xfe, // length of element 2
+				0, 0, 0, 5, // length of element 3
+				1, 2, 3, 4, 5, // contents of element 3
+			},
+			nil,
+		},
+	}
+	for version := cassandraprotocol.ProtocolVersionMin; version < cassandraprotocol.ProtocolVersion3; version++ {
+		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+			for _, tt := range tests {
+				t.Run(tt.name, func(t *testing.T) {
+					buf := &bytes.Buffer{}
+					err := WritePositionalValues(tt.input, buf, version)
+					assert.Equal(t, tt.expected, buf.Bytes())
+					assert.Equal(t, tt.err, err)
+				})
+			}
+		})
+	}
+	// versions >= 4
+	tests = []struct {
+		name     string
+		input    []*Value
+		expected []byte
+		err      error
+	}{
+		{
+			"nil positional values",
+			nil,
+			[]byte{0, 0},
+			nil,
+		},
+		{
+			"nil positional values",
+			[]*Value{},
+			[]byte{0, 0},
+			nil,
+		},
+		{
+			"1 element, value empty",
+			[]*Value{{
+				Type:     ValueTypeRegular,
+				Contents: []byte{},
+			}},
+			[]byte{
+				0, 1, // length of list
+				0, 0, 0, 0, // length of element
+			},
+			nil,
+		},
+		{
+			"1 element, value null",
+			[]*Value{{
+				Type:     ValueTypeRegular,
+				Contents: nil,
+			}},
+			[]byte{
+				0, 1, // length of list
+				0xff, 0xff, 0xff, 0xff, // length of element
+			},
+			nil,
+		},
+		{
+			"1 element, value null",
+			[]*Value{{
+				Type:     ValueTypeNull,
+				Contents: nil,
+			}},
+			[]byte{
+				0, 1, // length of list
+				0xff, 0xff, 0xff, 0xff, // length of element
+			},
+			nil,
+		},
+		{
+			"1 element, value non empty",
+			[]*Value{{
+				Type:     ValueTypeRegular,
 				Contents: []byte{1, 2, 3, 4, 5},
 			}},
 			[]byte{
@@ -394,21 +673,21 @@ func TestWritePositionalValues(t *testing.T) {
 		},
 		{
 			"4 elements",
-			[]*cassandraprotocol.Value{
+			[]*Value{
 				{
-					Type:     cassandraprotocol.ValueTypeNull,
+					Type:     ValueTypeNull,
 					Contents: nil,
 				},
 				{
-					Type:     cassandraprotocol.ValueTypeUnset,
+					Type:     ValueTypeUnset,
 					Contents: nil,
 				},
 				{
-					Type:     cassandraprotocol.ValueTypeRegular,
+					Type:     ValueTypeRegular,
 					Contents: []byte{},
 				},
 				{
-					Type:     cassandraprotocol.ValueTypeRegular,
+					Type:     ValueTypeRegular,
 					Contents: []byte{1, 2, 3, 4, 5},
 				},
 			},
@@ -423,12 +702,16 @@ func TestWritePositionalValues(t *testing.T) {
 			nil,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			buf := &bytes.Buffer{}
-			err := WritePositionalValues(tt.input, buf)
-			assert.Equal(t, tt.expected, buf.Bytes())
-			assert.Equal(t, tt.err, err)
+	for version := cassandraprotocol.ProtocolVersion4; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
+		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+			for _, tt := range tests {
+				t.Run(tt.name, func(t *testing.T) {
+					buf := &bytes.Buffer{}
+					err := WritePositionalValues(tt.input, buf, version)
+					assert.Equal(t, tt.expected, buf.Bytes())
+					assert.Equal(t, tt.err, err)
+				})
+			}
 		})
 	}
 }
@@ -436,7 +719,7 @@ func TestWritePositionalValues(t *testing.T) {
 func TestLengthOfPositionalValues(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    []*cassandraprotocol.Value
+		input    []*Value
 		expected int
 		err      error
 	}{
@@ -448,14 +731,14 @@ func TestLengthOfPositionalValues(t *testing.T) {
 		},
 		{
 			"nil positional values",
-			[]*cassandraprotocol.Value{},
+			[]*Value{},
 			LengthOfShort,
 			nil,
 		},
 		{
 			"1 element, value empty",
-			[]*cassandraprotocol.Value{{
-				Type:     cassandraprotocol.ValueTypeRegular,
+			[]*Value{{
+				Type:     ValueTypeRegular,
 				Contents: []byte{},
 			}},
 			LengthOfShort + LengthOfInt,
@@ -463,8 +746,8 @@ func TestLengthOfPositionalValues(t *testing.T) {
 		},
 		{
 			"1 element, value null",
-			[]*cassandraprotocol.Value{{
-				Type:     cassandraprotocol.ValueTypeRegular,
+			[]*Value{{
+				Type:     ValueTypeRegular,
 				Contents: nil,
 			}},
 			LengthOfShort + LengthOfInt,
@@ -472,8 +755,8 @@ func TestLengthOfPositionalValues(t *testing.T) {
 		},
 		{
 			"1 element, value null",
-			[]*cassandraprotocol.Value{{
-				Type:     cassandraprotocol.ValueTypeNull,
+			[]*Value{{
+				Type:     ValueTypeNull,
 				Contents: nil,
 			}},
 			LengthOfShort + LengthOfInt,
@@ -481,8 +764,8 @@ func TestLengthOfPositionalValues(t *testing.T) {
 		},
 		{
 			"1 element, value non empty",
-			[]*cassandraprotocol.Value{{
-				Type:     cassandraprotocol.ValueTypeRegular,
+			[]*Value{{
+				Type:     ValueTypeRegular,
 				Contents: []byte{1, 2, 3, 4, 5},
 			}},
 			LengthOfShort + LengthOfInt + len([]byte{1, 2, 3, 4, 5}),
@@ -490,21 +773,21 @@ func TestLengthOfPositionalValues(t *testing.T) {
 		},
 		{
 			"4 elements",
-			[]*cassandraprotocol.Value{
+			[]*Value{
 				{
-					Type:     cassandraprotocol.ValueTypeNull,
+					Type:     ValueTypeNull,
 					Contents: nil,
 				},
 				{
-					Type:     cassandraprotocol.ValueTypeUnset,
+					Type:     ValueTypeUnset,
 					Contents: nil,
 				},
 				{
-					Type:     cassandraprotocol.ValueTypeRegular,
+					Type:     ValueTypeRegular,
 					Contents: []byte{},
 				},
 				{
-					Type:     cassandraprotocol.ValueTypeRegular,
+					Type:     ValueTypeRegular,
 					Contents: []byte{1, 2, 3, 4, 5},
 				},
 			},
@@ -530,13 +813,13 @@ func TestReadNamedValues(t *testing.T) {
 	tests := []struct {
 		name     string
 		source   []byte
-		expected map[string]*cassandraprotocol.Value
+		expected map[string]*Value
 		err      error
 	}{
 		{
 			"empty named values",
 			[]byte{0, 0},
-			map[string]*cassandraprotocol.Value{},
+			map[string]*Value{},
 			nil,
 		},
 		{
@@ -546,9 +829,9 @@ func TestReadNamedValues(t *testing.T) {
 				0, 0, // length of element key
 				0, 0, 0, 0, // length of element
 			},
-			map[string]*cassandraprotocol.Value{
+			map[string]*Value{
 				"": {
-					Type:     cassandraprotocol.ValueTypeRegular,
+					Type:     ValueTypeRegular,
 					Contents: []byte{},
 				}},
 			nil,
@@ -562,9 +845,9 @@ func TestReadNamedValues(t *testing.T) {
 				0, 0, 0, 5, // length of element value
 				1, 2, 3, 4, 5, // contents of element value
 			},
-			map[string]*cassandraprotocol.Value{
+			map[string]*Value{
 				"hello": {
-					Type:     cassandraprotocol.ValueTypeRegular,
+					Type:     ValueTypeRegular,
 					Contents: []byte{1, 2, 3, 4, 5},
 				}},
 			nil,
@@ -579,22 +862,22 @@ func TestReadNamedValues(t *testing.T) {
 				0, 5, // length of element 2 key
 				w, o, r, l, d, // contents of element 2 key
 				0, 0, 0, 0, // length of element 2 value
-				0, 6, // length of element 2 key
-				h, o, l, 0xc3, 0xa0, 0x21, // contents of element 2 key: holà!
+				0, 6, // length of element 3 key
+				h, o, l, 0xc3, 0xa0, 0x21, // contents of element 3 key: holà!
 				0, 0, 0, 5, // length of element 3 value
 				1, 2, 3, 4, 5, // contents of element 3 value
 			},
-			map[string]*cassandraprotocol.Value{
+			map[string]*Value{
 				"hello": {
-					Type:     cassandraprotocol.ValueTypeNull,
+					Type:     ValueTypeNull,
 					Contents: nil,
 				},
 				"world": {
-					Type:     cassandraprotocol.ValueTypeRegular,
+					Type:     ValueTypeRegular,
 					Contents: []byte{},
 				},
 				"holà!": {
-					Type:     cassandraprotocol.ValueTypeRegular,
+					Type:     ValueTypeRegular,
 					Contents: []byte{1, 2, 3, 4, 5},
 				},
 			},
@@ -626,12 +909,16 @@ func TestReadNamedValues(t *testing.T) {
 						errors.New("unexpected EOF")))),
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			buf := bytes.NewBuffer(tt.source)
-			actual, err := ReadNamedValues(buf)
-			assert.EqualValues(t, tt.expected, actual)
-			assert.Equal(t, tt.err, err)
+	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionMax; version++ {
+		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+			for _, tt := range tests {
+				t.Run(tt.name, func(t *testing.T) {
+					buf := bytes.NewBuffer(tt.source)
+					actual, err := ReadNamedValues(buf, version)
+					assert.EqualValues(t, tt.expected, actual)
+					assert.Equal(t, tt.err, err)
+				})
+			}
 		})
 	}
 }
@@ -639,7 +926,7 @@ func TestReadNamedValues(t *testing.T) {
 func TestWriteNamedValues(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    map[string]*cassandraprotocol.Value
+		input    map[string]*Value
 		expected []byte
 		err      error
 	}{
@@ -651,15 +938,15 @@ func TestWriteNamedValues(t *testing.T) {
 		},
 		{
 			"nil named values",
-			map[string]*cassandraprotocol.Value{},
+			map[string]*Value{},
 			[]byte{0, 0},
 			nil,
 		},
 		{
 			"1 element, value empty",
-			map[string]*cassandraprotocol.Value{
+			map[string]*Value{
 				"": {
-					Type:     cassandraprotocol.ValueTypeRegular,
+					Type:     ValueTypeRegular,
 					Contents: []byte{},
 				}},
 			[]byte{
@@ -671,9 +958,9 @@ func TestWriteNamedValues(t *testing.T) {
 		},
 		{
 			"1 element, value non empty",
-			map[string]*cassandraprotocol.Value{
+			map[string]*Value{
 				"hello": {
-					Type:     cassandraprotocol.ValueTypeRegular,
+					Type:     ValueTypeRegular,
 					Contents: []byte{1, 2, 3, 4, 5},
 				}},
 			[]byte{
@@ -685,137 +972,102 @@ func TestWriteNamedValues(t *testing.T) {
 			},
 			nil,
 		},
+		// cannot reliably test maps with more than one key because iteration order is not deterministic
+	}
+	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionMax; version++ {
+		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+			for _, tt := range tests {
+				t.Run(tt.name, func(t *testing.T) {
+					buf := &bytes.Buffer{}
+					err := WriteNamedValues(tt.input, buf, version)
+					assert.Equal(t, tt.expected, buf.Bytes())
+					assert.Equal(t, tt.err, err)
+				})
+			}
+		})
+	}
+}
+
+func TestLengthOfNamedValues(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    map[string]*Value
+		expected int
+		err      error
+	}{
+		{
+			"nil named values",
+			nil,
+			LengthOfShort,
+			nil,
+		},
+		{
+			"nil named values",
+			map[string]*Value{},
+			LengthOfShort,
+			nil,
+		},
+		{
+			"1 element, value empty",
+			map[string]*Value{
+				"": {
+					Type:     ValueTypeRegular,
+					Contents: []byte{},
+				}},
+			LengthOfShort + // length of list
+				LengthOfShort + // length of element key
+				LengthOfInt, // length of element
+			nil,
+		},
+		{
+			"1 element, value non empty",
+			map[string]*Value{
+				"hello": {
+					Type:     ValueTypeRegular,
+					Contents: []byte{1, 2, 3, 4, 5},
+				}},
+			LengthOfShort + // length of list
+				LengthOfShort + // length of element key
+				len("hello") + // contents of element key
+				LengthOfInt + // length of element value
+				5, // contents of element value
+			nil,
+		},
 		{
 			"3 elements",
-			map[string]*cassandraprotocol.Value{
+			map[string]*Value{
 				"hello": {
-					Type:     cassandraprotocol.ValueTypeNull,
+					Type:     ValueTypeNull,
 					Contents: nil,
 				},
 				"world": {
-					Type:     cassandraprotocol.ValueTypeRegular,
+					Type:     ValueTypeRegular,
 					Contents: []byte{},
 				},
 				"holà!": {
-					Type:     cassandraprotocol.ValueTypeRegular,
+					Type:     ValueTypeRegular,
 					Contents: []byte{1, 2, 3, 4, 5},
 				},
 			},
-			[]byte{
-				0, 3, // length of list
-				0, 5, // length of element 1 key
-				h, e, l, l, o, // contents of element 1 key
-				0xff, 0xff, 0xff, 0xff, // length of element 1 value
-				0, 5, // length of element 2 key
-				w, o, r, l, d, // contents of element 2 key
-				0, 0, 0, 0, // length of element 2 value
-				0, 6, // length of element 2 key
-				h, o, l, 0xc3, 0xa0, 0x21, // contents of element 2 key: holà!
-				0, 0, 0, 5, // length of element 3 value
-				1, 2, 3, 4, 5, // contents of element 3 value
-			},
+			LengthOfShort + // length of list
+				LengthOfShort + // length of element 1 key
+				len("hello") + // contents of element 1 key
+				LengthOfInt + // length of element 1 value
+				LengthOfShort + // length of element 2 key
+				len("world") + // contents of element 2 key
+				LengthOfInt + // length of element 2 value
+				LengthOfShort + // length of element 3 key
+				len("holà!") + // contents of element 3 key: holà!
+				LengthOfInt + // length of element 3 value
+				5, // contents of element 3 value
 			nil,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			buf := &bytes.Buffer{}
-			err := WriteNamedValues(tt.input, buf)
-			assert.Equal(t, tt.expected, buf.Bytes())
+			actual, err := LengthOfNamedValues(tt.input)
+			assert.Equal(t, tt.expected, actual)
 			assert.Equal(t, tt.err, err)
 		})
 	}
 }
-
-//func TestLengthOfNamedValues(t *testing.T) {
-//	tests := []struct {
-//		name     string
-//		input    map[string]*cassandraprotocol.Value
-//		expected int
-//		err      error
-//	}{
-//		{
-//			"nil named values",
-//			nil,
-//			LengthOfShort,
-//			nil,
-//		},
-//		{
-//			"nil named values",
-//			map[string]*cassandraprotocol.Value{},
-//			LengthOfShort,
-//			nil,
-//		},
-//		{
-//			"1 element, value empty",
-//			map[string]*cassandraprotocol.Value{{
-//				Type:     cassandraprotocol.ValueTypeRegular,
-//				Contents: []byte{},
-//			}},
-//			LengthOfShort + LengthOfInt,
-//			nil,
-//		},
-//		{
-//			"1 element, value null",
-//			map[string]*cassandraprotocol.Value{{
-//				Type:     cassandraprotocol.ValueTypeRegular,
-//				Contents: nil,
-//			}},
-//			LengthOfShort + LengthOfInt,
-//			nil,
-//		},
-//		{
-//			"1 element, value null",
-//			map[string]*cassandraprotocol.Value{{
-//				Type:     cassandraprotocol.ValueTypeNull,
-//				Contents: nil,
-//			}},
-//			LengthOfShort + LengthOfInt,
-//			nil,
-//		},
-//		{
-//			"1 element, value non empty",
-//			map[string]*cassandraprotocol.Value{{
-//				Type:     cassandraprotocol.ValueTypeRegular,
-//				Contents: []byte{1, 2, 3, 4, 5},
-//			}},
-//			LengthOfShort + LengthOfInt + len([]byte{1, 2, 3, 4, 5}),
-//			nil,
-//		},
-//		{
-//			"4 elements",
-//			map[string]*cassandraprotocol.Value{
-//				{
-//					Type:     cassandraprotocol.ValueTypeNull,
-//					Contents: nil,
-//				},
-//				{
-//					Type:     cassandraprotocol.ValueTypeUnset,
-//					Contents: nil,
-//				},
-//				{
-//					Type:     cassandraprotocol.ValueTypeRegular,
-//					Contents: []byte{},
-//				},
-//				{
-//					Type:     cassandraprotocol.ValueTypeRegular,
-//					Contents: []byte{1, 2, 3, 4, 5},
-//				},
-//			},
-//			LengthOfShort + // length of list
-//				LengthOfInt + // length of element 1
-//				LengthOfInt + // length of element 2
-//				LengthOfInt + // length of element 3
-//				LengthOfInt + // length of element 4
-//				len([]byte{1, 2, 3, 4, 5}), // contents of element 4
-//			nil,
-//		},
-//	}
-//	for _, tt := range tests {
-//		t.Run(tt.name, func(t *testing.T) {
-//			actual, err := LengthOfNamedValues(tt.input)
-//			assert.Equal(t, tt.expected, actual)
-//			assert.Equal(t, tt.err, err)
-//		})
-//	}
-//}

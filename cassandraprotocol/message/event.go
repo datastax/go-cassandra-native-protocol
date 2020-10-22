@@ -48,7 +48,7 @@ func (m *SchemaChangeEvent) String() string {
 
 type StatusChangeEvent struct {
 	ChangeType cassandraprotocol.StatusChangeType
-	Address    *cassandraprotocol.Inet
+	Address    *primitives.Inet
 }
 
 func (m *StatusChangeEvent) IsResponse() bool {
@@ -71,7 +71,7 @@ func (m *StatusChangeEvent) String() string {
 
 type TopologyChangeEvent struct {
 	ChangeType cassandraprotocol.TopologyChangeType
-	Address    *cassandraprotocol.Inet
+	Address    *primitives.Inet
 }
 
 func (m *TopologyChangeEvent) IsResponse() bool {

@@ -24,16 +24,24 @@ func (q Query) GetOpCode() cassandraprotocol.OpCode {
 type QueryCodec struct {
 }
 
-func (c *QueryCodec) Encode(msg Message, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
+func (c *QueryCodec) Encode(msg Message, dest io.Writer, version cassandraprotocol.ProtocolVersion) error {
 	query, ok := msg.(*Query)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.Query, got %T", msg))
 	}
-	err = primitives.WriteLongString(query.Query, dest)
-	if err == nil {
-		err = EncodeQueryOptions(query.Options, dest, version)
+	if query.Query == "" {
+		return errors.New("QUERY missing query string")
+	} else if err := primitives.WriteLongString(query.Query, dest); err != nil {
+		return fmt.Errorf("cannot write QUERY query string: %w", err)
 	}
-	return err
+	options := query.Options
+	if options == nil {
+		options = NewQueryOptions() // use defaults if nil provided
+	}
+	if err := EncodeQueryOptions(query.Options, dest, version); err != nil {
+		return fmt.Errorf("cannot write QUERY options: %w", err)
+	}
+	return nil
 }
 
 func (c *QueryCodec) EncodedLength(msg Message, version cassandraprotocol.ProtocolVersion) (int, error) {
@@ -49,17 +57,16 @@ func (c *QueryCodec) EncodedLength(msg Message, version cassandraprotocol.Protoc
 	return lengthOfQuery + lengthOfQueryOptions, nil
 }
 
-func (c *QueryCodec) Decode(source io.Reader, version cassandraprotocol.ProtocolVersion) (msg Message, err error) {
-	var query string
-	query, err = primitives.ReadLongString(source)
-	if err == nil {
-		var options *QueryOptions
-		options, err = DecodeQueryOptions(source, version)
-		if err == nil {
-			return &Query{Query: query, Options: options}, nil
-		}
+func (c *QueryCodec) Decode(source io.Reader, version cassandraprotocol.ProtocolVersion) (Message, error) {
+	if query, err := primitives.ReadLongString(source); err != nil {
+		return nil, err
+	} else if query == "" {
+		return nil, fmt.Errorf("QUERY missing query string")
+	} else if options, err := DecodeQueryOptions(source, version); err != nil {
+		return nil, err
+	} else {
+		return &Query{Query: query, Options: options}, nil
 	}
-	return nil, err
 }
 
 func (c *QueryCodec) GetOpCode() cassandraprotocol.OpCode {

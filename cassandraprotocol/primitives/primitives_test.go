@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
-	"go-cassandra-native-protocol/cassandraprotocol"
 	"net"
 	"testing"
 )
@@ -624,14 +623,14 @@ func TestWriteShortBytes(t *testing.T) {
 	}
 }
 
-var uuid = cassandraprotocol.UUID{0xC0, 0xD1, 0xD2, 0x1E, 0xBB, 0x01, 0x41, 0x96, 0x86, 0xDB, 0xBC, 0x31, 0x7B, 0xC1, 0x79, 0x6A}
+var uuid = UUID{0xC0, 0xD1, 0xD2, 0x1E, 0xBB, 0x01, 0x41, 0x96, 0x86, 0xDB, 0xBC, 0x31, 0x7B, 0xC1, 0x79, 0x6A}
 var uuidBytes = [16]byte{0xC0, 0xD1, 0xD2, 0x1E, 0xBB, 0x01, 0x41, 0x96, 0x86, 0xDB, 0xBC, 0x31, 0x7B, 0xC1, 0x79, 0x6A}
 
 func TestReadUuid(t *testing.T) {
 	tests := []struct {
 		name      string
 		source    []byte
-		expected  *cassandraprotocol.UUID
+		expected  *UUID
 		remaining []byte
 		err       error
 	}{
@@ -659,7 +658,7 @@ func TestReadUuid(t *testing.T) {
 func TestWriteUuid(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    *cassandraprotocol.UUID
+		input    *UUID
 		expected []byte
 		err      error
 	}{
@@ -694,7 +693,7 @@ func TestWriteUuid(t *testing.T) {
 
 var inetAddr4 = net.IPv4(192, 168, 1, 1)
 
-var inet4 = cassandraprotocol.Inet{
+var inet4 = Inet{
 	Addr: inetAddr4,
 	Port: 9042,
 }
@@ -711,7 +710,7 @@ var inet4Bytes = append(inetAddr4Bytes,
 // 2001:0db8:85a3:0000:0000:8a2e:0370:7334
 var inetAddr6 = net.IP{0x20, 0x01, 0x0d, 0xb8, 0x85, 0xa3, 0x00, 0x00, 0x00, 0x00, 0x8a, 0x2e, 0x03, 0x70, 0x73, 0x34}
 
-var inet6 = cassandraprotocol.Inet{
+var inet6 = Inet{
 	Addr: inetAddr6,
 	Port: 9042,
 }
@@ -844,7 +843,7 @@ func TestReadInet(t *testing.T) {
 	tests := []struct {
 		name      string
 		source    []byte
-		expected  *cassandraprotocol.Inet
+		expected  *Inet
 		remaining []byte
 		err       error
 	}{
@@ -894,7 +893,7 @@ func TestReadInet(t *testing.T) {
 func TestWriteInet(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    *cassandraprotocol.Inet
+		input    *Inet
 		expected []byte
 		err      error
 	}{
@@ -936,7 +935,7 @@ func TestWriteInet(t *testing.T) {
 func TestLengthOfInet(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    *cassandraprotocol.Inet
+		input    *Inet
 		expected int
 		err      error
 	}{
@@ -960,7 +959,7 @@ func TestLengthOfInet(t *testing.T) {
 		},
 		{
 			"nil INET addr",
-			&cassandraprotocol.Inet{},
+			&Inet{},
 			-1,
 			errors.New("cannot compute nil [inetaddr] length"),
 		},

@@ -28,10 +28,7 @@ func main() {
 		1,
 		true,
 		nil,
-		&message.Query{
-			Query:   "SELECT * FROM system.local",
-			Options: message.QueryOptionsDefault,
-		},
+		&message.Query{Query: "SELECT * FROM system.local"},
 	); err != nil {
 		panic(err)
 	} else {

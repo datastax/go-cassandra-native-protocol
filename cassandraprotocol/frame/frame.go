@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"go-cassandra-native-protocol/cassandraprotocol"
 	"go-cassandra-native-protocol/cassandraprotocol/message"
+	"go-cassandra-native-protocol/cassandraprotocol/primitives"
 )
 
 type Frame struct {
@@ -66,7 +67,7 @@ type Header struct {
 
 type Body struct {
 	// The tracing id. Only valid for response frames, ignored otherwise.
-	TracingId *cassandraprotocol.UUID
+	TracingId *primitives.UUID
 	// The custom payload, or nil if no custom payload is defined.
 	// Custom payloads are only valid from Protocol Version 4 onwards.
 	CustomPayload map[string][]byte
@@ -101,7 +102,7 @@ func NewRequestFrame(
 func NewResponseFrame(
 	version cassandraprotocol.ProtocolVersion,
 	streamId int16,
-	tracingId *cassandraprotocol.UUID,
+	tracingId *primitives.UUID,
 	customPayload map[string][]byte,
 	warnings []string,
 	message message.Message,
