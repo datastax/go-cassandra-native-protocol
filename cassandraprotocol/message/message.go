@@ -1,7 +1,7 @@
 package message
 
 import (
-	"go-cassandra-native-protocol/cassandraprotocol"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"io"
 )
 
