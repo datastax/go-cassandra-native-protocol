@@ -1,4 +1,4 @@
-module go-cassandra-native-protocol
+module github.com/datastax/go-cassandra-native-protocol
 
 go 1.15
 
