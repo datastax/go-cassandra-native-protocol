@@ -209,6 +209,12 @@ const (
 	RowsFlagMetadataChanged  = RowsFlag(0x00000008)
 )
 
+type VariablesFlag = int32
+
+const (
+	VariablesFlagGlobalTablesSpec = VariablesFlag(0x00000001)
+)
+
 type PrepareFlag = int32
 
 const (

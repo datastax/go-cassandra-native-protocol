@@ -66,3 +66,24 @@ const (
 	Y   = byte('Y')
 	Z   = byte('Z')
 )
+
+type encodeTestCase struct {
+	name     string
+	input    Message
+	expected []byte
+	err      error
+}
+
+type decodeTestCase struct {
+	name     string
+	input    []byte
+	expected Message
+	err      error
+}
+
+type encodedLengthTestCase struct {
+	name     string
+	input    Message
+	expected int
+	err      error
+}

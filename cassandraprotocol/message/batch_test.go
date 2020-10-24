@@ -15,12 +15,7 @@ func TestBatchCodec_Encode(t *testing.T) {
 	// versions <= 4
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersion4; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    Message
-				expected []byte
-				err      error
-			}{
+			tests := []encodeTestCase{
 				{
 					"not a batch",
 					&AuthChallenge{[]byte{0xca, 0xfe, 0xba, 0xbe}},
@@ -98,12 +93,7 @@ func TestBatchCodec_Encode(t *testing.T) {
 	// versions >= 5
 	for version := cassandraprotocol.ProtocolVersion5; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    Message
-				expected []byte
-				err      error
-			}{
+			tests := []encodeTestCase{
 				{
 					"not a batch",
 					&AuthChallenge{[]byte{0xca, 0xfe, 0xba, 0xbe}},
@@ -192,12 +182,7 @@ func TestBatchCodec_EncodedLength(t *testing.T) {
 	// versions <= 4
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersion4; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    Message
-				expected int
-				err      error
-			}{
+			tests := []encodedLengthTestCase{
 				{
 					"not a batch",
 					&AuthChallenge{[]byte{0xca, 0xfe, 0xba, 0xbe}},
@@ -267,12 +252,7 @@ func TestBatchCodec_EncodedLength(t *testing.T) {
 	// versions >= 5
 	for version := cassandraprotocol.ProtocolVersion5; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    Message
-				expected int
-				err      error
-			}{
+			tests := []encodedLengthTestCase{
 				{
 					"not a batch",
 					&AuthChallenge{[]byte{0xca, 0xfe, 0xba, 0xbe}},
@@ -350,12 +330,7 @@ func TestBatchCodec_Decode(t *testing.T) {
 	// versions <= 4
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersion4; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    []byte
-				expected Message
-				err      error
-			}{
+			tests := []decodeTestCase{
 				{
 					"invalid batch type",
 					[]byte{
@@ -443,12 +418,7 @@ func TestBatchCodec_Decode(t *testing.T) {
 	// versions >= 5
 	for version := cassandraprotocol.ProtocolVersion5; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    []byte
-				expected Message
-				err      error
-			}{
+			tests := []decodeTestCase{
 				{
 					"invalid batch type",
 					[]byte{

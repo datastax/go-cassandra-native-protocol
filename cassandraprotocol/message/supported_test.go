@@ -121,12 +121,7 @@ func TestSupportedCodec_EncodedLength(test *testing.T) {
 	codec := &SupportedCodec{}
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
-			tests := []struct {
-				name     string
-				input    Message
-				expected int
-				err      error
-			}{
+			tests := []encodedLengthTestCase{
 				{
 					"supported with nil options",
 					&Supported{},
@@ -185,12 +180,7 @@ func TestSupportedCodec_Decode(test *testing.T) {
 	codec := &SupportedCodec{}
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
-			tests := []struct {
-				name     string
-				input    []byte
-				expected Message
-				err      error
-			}{
+			tests := []decodeTestCase{
 				{
 					"supported with empty options",
 					[]byte{0, 0},

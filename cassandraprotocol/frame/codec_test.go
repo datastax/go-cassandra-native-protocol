@@ -25,8 +25,8 @@ var response, _ = NewResponseFrame(
 	&uuid,
 	map[string][]byte{"hello": {0xca, 0xfe, 0xba, 0xbe}},
 	[]string{"I'm warning you!!"},
-	&message.Rows{
-		Metadata: message.NewRowsMetadata(message.WithoutColumnSpecs(1, nil, nil, nil)),
+	&message.RowsResult{
+		Metadata: message.NewRowsMetadata(message.NoColumnMetadata(1)),
 		Data:     [][][]byte{},
 	})
 

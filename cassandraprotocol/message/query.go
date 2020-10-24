@@ -13,6 +13,10 @@ type Query struct {
 	Options *QueryOptions
 }
 
+func (q *Query) String() string {
+	return fmt.Sprintf("QUERY %s", q.Query)
+}
+
 func (q Query) IsResponse() bool {
 	return false
 }

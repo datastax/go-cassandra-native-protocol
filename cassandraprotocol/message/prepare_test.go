@@ -15,12 +15,7 @@ func TestPrepareCodec_Encode(t *testing.T) {
 	// versions <= 4
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersion4; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    Message
-				expected []byte
-				err      error
-			}{
+			tests := []encodeTestCase{
 				{
 					"prepare simple",
 					&Prepare{"SELECT", ""},
@@ -55,12 +50,7 @@ func TestPrepareCodec_Encode(t *testing.T) {
 	// versions >= 5
 	for version := cassandraprotocol.ProtocolVersion5; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    Message
-				expected []byte
-				err      error
-			}{
+			tests := []encodeTestCase{
 				{
 					"prepare simple",
 					&Prepare{"SELECT", ""},
@@ -104,12 +94,7 @@ func TestPrepareCodec_EncodedLength(t *testing.T) {
 	// versions <= 4
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersion4; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    Message
-				expected int
-				err      error
-			}{
+			tests := []encodedLengthTestCase{
 				{
 					"prepare simple",
 					&Prepare{"SELECT", ""},
@@ -141,12 +126,7 @@ func TestPrepareCodec_EncodedLength(t *testing.T) {
 	// versions >= 5
 	for version := cassandraprotocol.ProtocolVersion5; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    Message
-				expected int
-				err      error
-			}{
+			tests := []encodedLengthTestCase{
 				{
 					"prepare simple",
 					&Prepare{"SELECT", ""},
@@ -185,12 +165,7 @@ func TestPrepareCodec_Decode(t *testing.T) {
 	// versions <= 4
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersion4; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    []byte
-				expected Message
-				err      error
-			}{
+			tests := []decodeTestCase{
 				{
 					"prepare simple",
 					[]byte{
@@ -213,12 +188,7 @@ func TestPrepareCodec_Decode(t *testing.T) {
 	// versions >= 5
 	for version := cassandraprotocol.ProtocolVersion5; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    []byte
-				expected Message
-				err      error
-			}{
+			tests := []decodeTestCase{
 				{
 					"prepare simple",
 					[]byte{

@@ -15,12 +15,7 @@ func TestErrorCodec_Encode(test *testing.T) {
 	// errors encoded the same in all versions
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
-			tests := []struct {
-				name     string
-				input    Message
-				expected []byte
-				err      error
-			}{
+			tests := []encodeTestCase{
 				{
 					"server error",
 					&ServerError{"BOOM"},
@@ -198,12 +193,7 @@ func TestErrorCodec_Encode(test *testing.T) {
 	// errors encoded differently in v5
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersion4; version++ {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
-			tests := []struct {
-				name     string
-				input    Message
-				expected []byte
-				err      error
-			}{
+			tests := []encodeTestCase{
 				{
 					"read failure",
 					&ReadFailure{
@@ -262,12 +252,7 @@ func TestErrorCodec_Encode(test *testing.T) {
 	// errors encoded differently in v5
 	for version := cassandraprotocol.ProtocolVersion5; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
-			tests := []struct {
-				name     string
-				input    Message
-				expected []byte
-				err      error
-			}{
+			tests := []encodeTestCase{
 				{
 					"read failure",
 					&ReadFailure{
@@ -334,12 +319,7 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 	// errors encoded the same in all versions
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
-			tests := []struct {
-				name     string
-				input    Message
-				expected int
-				err      error
-			}{
+			tests := []encodedLengthTestCase{
 				{
 					"server error",
 					&ServerError{"BOOM"},
@@ -472,12 +452,7 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 	// errors encoded differently in v5
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersion4; version++ {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
-			tests := []struct {
-				name     string
-				input    Message
-				expected int
-				err      error
-			}{
+			tests := []encodedLengthTestCase{
 				{
 					"read failure",
 					&ReadFailure{
@@ -531,12 +506,7 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 	// errors encoded differently in v5
 	for version := cassandraprotocol.ProtocolVersion5; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
-			tests := []struct {
-				name     string
-				input    Message
-				expected int
-				err      error
-			}{
+			tests := []encodedLengthTestCase{
 				{
 					"read failure",
 					&ReadFailure{
@@ -598,12 +568,7 @@ func TestErrorCodec_Decode(test *testing.T) {
 	// errors encoded the same in all versions
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
-			tests := []struct {
-				name     string
-				input    []byte
-				expected Message
-				err      error
-			}{
+			tests := []decodeTestCase{
 				{
 					"server error",
 					[]byte{
@@ -781,12 +746,7 @@ func TestErrorCodec_Decode(test *testing.T) {
 	// errors encoded differently in v5
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersion4; version++ {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
-			tests := []struct {
-				name     string
-				input    []byte
-				expected Message
-				err      error
-			}{
+			tests := []decodeTestCase{
 				{
 					"read failure",
 					[]byte{
@@ -845,12 +805,7 @@ func TestErrorCodec_Decode(test *testing.T) {
 	// errors encoded differently in v5
 	for version := cassandraprotocol.ProtocolVersion5; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
-			tests := []struct {
-				name     string
-				input    []byte
-				expected Message
-				err      error
-			}{
+			tests := []decodeTestCase{
 				{
 					"read failure",
 					[]byte{

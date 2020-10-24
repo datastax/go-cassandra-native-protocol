@@ -15,12 +15,7 @@ func TestAuthChallengeCodec_Encode(t *testing.T) {
 	codec := &AuthChallengeCodec{}
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    Message
-				expected []byte
-				err      error
-			}{
+			tests := []encodeTestCase{
 				{
 					"simple auth challenge",
 					&AuthChallenge{token},
@@ -57,12 +52,7 @@ func TestAuthChallengeCodec_EncodedLength(t *testing.T) {
 	codec := &AuthChallengeCodec{}
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    Message
-				expected int
-				err      error
-			}{
+			tests := []encodedLengthTestCase{
 				{
 					"simple auth challenge",
 					&AuthChallenge{token},
@@ -98,12 +88,7 @@ func TestAuthChallengeCodec_Decode(t *testing.T) {
 	codec := &AuthChallengeCodec{}
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    []byte
-				expected Message
-				err      error
-			}{
+			tests := []decodeTestCase{
 				{
 					"simple auth challenge",
 					[]byte{0, 0, 0, 4, 0xca, 0xfe, 0xba, 0xbe},

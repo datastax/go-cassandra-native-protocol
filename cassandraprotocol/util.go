@@ -270,3 +270,20 @@ func CheckTopologyChangeType(t TopologyChangeType) error {
 func IsTopologyChangeType(t TopologyChangeType) bool {
 	return CheckTopologyChangeType(t) == nil
 }
+
+func CheckResultType(t ResultType) error {
+	switch t {
+	case ResultTypeVoid:
+	case ResultTypeRows:
+	case ResultTypeSetKeyspace:
+	case ResultTypePrepared:
+	case ResultTypeSchemaChange:
+	default:
+		return fmt.Errorf("invalid result type: %v", t)
+	}
+	return nil
+}
+
+func IsResultType(t ResultType) bool {
+	return CheckResultType(t) == nil
+}

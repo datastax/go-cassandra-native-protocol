@@ -13,12 +13,7 @@ func TestReadyCodec_Encode(t *testing.T) {
 	codec := &ReadyCodec{}
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    Message
-				expected []byte
-				err      error
-			}{
+			tests := []encodeTestCase{
 				{
 					"ready simple",
 					&Ready{},
@@ -48,12 +43,7 @@ func TestReadyCodec_EncodedLength(t *testing.T) {
 	codec := &ReadyCodec{}
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    Message
-				expected int
-				err      error
-			}{
+			tests := []encodedLengthTestCase{
 				{
 					"ready simple",
 					&Ready{},
@@ -82,12 +72,7 @@ func TestReadyCodec_Decode(t *testing.T) {
 	codec := &ReadyCodec{}
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    []byte
-				expected Message
-				err      error
-			}{
+			tests := []decodeTestCase{
 				{
 					"ready simple",
 					[]byte{},

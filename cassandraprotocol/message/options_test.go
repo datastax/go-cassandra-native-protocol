@@ -13,12 +13,7 @@ func TestOptionsCodec_Encode(t *testing.T) {
 	codec := &OptionsCodec{}
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    Message
-				expected []byte
-				err      error
-			}{
+			tests := []encodeTestCase{
 				{
 					"options simple",
 					&Options{},
@@ -48,12 +43,7 @@ func TestOptionsCodec_EncodedLength(t *testing.T) {
 	codec := &OptionsCodec{}
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    Message
-				expected int
-				err      error
-			}{
+			tests := []encodedLengthTestCase{
 				{
 					"options simple",
 					&Options{},
@@ -82,12 +72,7 @@ func TestOptionsCodec_Decode(t *testing.T) {
 	codec := &OptionsCodec{}
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    []byte
-				expected Message
-				err      error
-			}{
+			tests := []decodeTestCase{
 				{
 					"options simple",
 					[]byte{},

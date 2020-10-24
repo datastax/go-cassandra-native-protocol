@@ -15,12 +15,7 @@ func TestExecuteCodec_Encode(t *testing.T) {
 	// tests for versions <= 3
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersion3; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    Message
-				expected []byte
-				err      error
-			}{
+			tests := []encodeTestCase{
 				{
 					"execute with default options",
 					&Execute{
@@ -253,12 +248,7 @@ func TestExecuteCodec_Encode(t *testing.T) {
 	// tests for version >= 5
 	for version := cassandraprotocol.ProtocolVersion5; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    Message
-				expected []byte
-				err      error
-			}{
+			tests := []encodeTestCase{
 				{
 					"execute with keyspace and now-in-seconds",
 					&Execute{
@@ -340,12 +330,7 @@ func TestExecuteCodec_EncodedLength(t *testing.T) {
 	// tests for versions <= 3
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersion3; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    Message
-				expected int
-				err      error
-			}{
+			tests := []encodedLengthTestCase{
 				{
 					"execute with default options",
 					&Execute{
@@ -548,12 +533,7 @@ func TestExecuteCodec_EncodedLength(t *testing.T) {
 	// tests for version >= 5
 	for version := cassandraprotocol.ProtocolVersion5; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    Message
-				expected int
-				err      error
-			}{
+			tests := []encodedLengthTestCase{
 				{
 					"execute with keyspace and now-in-seconds",
 					&Execute{
@@ -618,12 +598,7 @@ func TestExecuteCodec_Decode(t *testing.T) {
 	// tests for versions <= 3
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersion3; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    []byte
-				expected Message
-				err      error
-			}{
+			tests := []decodeTestCase{
 				{
 					"execute with default options",
 					[]byte{
@@ -852,12 +827,7 @@ func TestExecuteCodec_Decode(t *testing.T) {
 	// tests for version >= 5
 	for version := cassandraprotocol.ProtocolVersion5; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    []byte
-				expected Message
-				err      error
-			}{
+			tests := []decodeTestCase{
 				{
 					"execute with keyspace and now-in-seconds",
 					[]byte{

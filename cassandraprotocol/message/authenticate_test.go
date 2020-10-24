@@ -14,12 +14,7 @@ func TestAuthenticateCodec_Encode(t *testing.T) {
 	codec := &AuthenticateCodec{}
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    Message
-				expected []byte
-				err      error
-			}{
+			tests := []encodeTestCase{
 				{
 					"simple authenticate",
 					&Authenticate{"dummy"},
@@ -55,12 +50,7 @@ func TestAuthenticateCodec_EncodedLength(t *testing.T) {
 	codec := &AuthenticateCodec{}
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    Message
-				expected int
-				err      error
-			}{
+			tests := []encodedLengthTestCase{
 				{
 					"simple authenticate",
 					&Authenticate{"dummy"},
@@ -95,12 +85,7 @@ func TestAuthenticateCodec_Decode(t *testing.T) {
 	codec := &AuthenticateCodec{}
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    []byte
-				expected Message
-				err      error
-			}{
+			tests := []decodeTestCase{
 				{
 					"simple authenticate",
 					[]byte{0, 5, byte('d'), byte('u'), byte('m'), byte('m'), byte('y')},
