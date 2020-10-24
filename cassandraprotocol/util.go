@@ -1,7 +1,6 @@
 package cassandraprotocol
 
 import (
-	"errors"
 	"fmt"
 )
 
@@ -171,7 +170,7 @@ func CheckBatchType(batchType BatchType) error {
 	case BatchTypeUnlogged:
 	case BatchTypeCounter:
 	default:
-		return errors.New(fmt.Sprintf("invalid BATCH type: %v", batchType))
+		return fmt.Errorf("invalid BATCH type: %v", batchType)
 	}
 	return nil
 }
@@ -210,4 +209,64 @@ func CheckPrimitiveDataTypeCode(code DataTypeCode) error {
 
 func IsPrimitiveDataTypeCode(code DataTypeCode) bool {
 	return CheckPrimitiveDataTypeCode(code) == nil
+}
+
+func CheckSchemaChangeType(t SchemaChangeType) error {
+	switch t {
+	case SchemaChangeTypeCreated:
+	case SchemaChangeTypeUpdated:
+	case SchemaChangeTypeDropped:
+	default:
+		return fmt.Errorf("invalid schema change type: %v", t)
+	}
+	return nil
+}
+
+func IsSchemaChangeType(t SchemaChangeType) bool {
+	return CheckSchemaChangeType(t) == nil
+}
+
+func CheckSchemaChangeTarget(target SchemaChangeTarget) error {
+	switch target {
+	case SchemaChangeTargetKeyspace:
+	case SchemaChangeTargetTable:
+	case SchemaChangeTargetType:
+	case SchemaChangeTargetFunction:
+	case SchemaChangeTargetAggregate:
+	default:
+		return fmt.Errorf("invalid schema change target: %v", target)
+	}
+	return nil
+}
+
+func IsSchemaChangeTarget(target SchemaChangeTarget) bool {
+	return CheckSchemaChangeTarget(target) == nil
+}
+
+func CheckStatusChangeType(t StatusChangeType) error {
+	switch t {
+	case StatusChangeTypeUp:
+	case StatusChangeTypeDown:
+	default:
+		return fmt.Errorf("invalid status change type: %v", t)
+	}
+	return nil
+}
+
+func IsStatusChangeType(t StatusChangeType) bool {
+	return CheckStatusChangeType(t) == nil
+}
+
+func CheckTopologyChangeType(t TopologyChangeType) error {
+	switch t {
+	case TopologyChangeTypeNewNode:
+	case TopologyChangeTypeRemovedNode:
+	default:
+		return fmt.Errorf("invalid topology change type: %v", t)
+	}
+	return nil
+}
+
+func IsTopologyChangeType(t TopologyChangeType) bool {
+	return CheckTopologyChangeType(t) == nil
 }
