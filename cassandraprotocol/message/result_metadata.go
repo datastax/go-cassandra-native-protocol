@@ -81,7 +81,6 @@ func NoColumnMetadata(columnCount int32) func(metadata *RowsMetadata) {
 func WithResultPagingState(pagingState []byte) func(metadata *RowsMetadata) {
 	return func(metadata *RowsMetadata) {
 		metadata.PagingState = pagingState
-
 	}
 }
 

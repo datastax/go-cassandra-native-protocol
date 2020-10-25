@@ -66,7 +66,6 @@ func (c *PrepareCodec) EncodedLength(msg Message, version cassandraprotocol.Prot
 		if prepare.Keyspace != "" {
 			size += primitives.LengthOfString(prepare.Keyspace)
 		}
-
 	}
 	return size, nil
 }

@@ -259,11 +259,7 @@ func (c *BatchCodec) EncodedLength(msg Message, version cassandraprotocol.Protoc
 }
 
 func (c *BatchCodec) Decode(source io.Reader, version cassandraprotocol.ProtocolVersion) (msg Message, err error) {
-	var batch = &Batch{
-		SerialConsistency: cassandraprotocol.ConsistencyLevelSerial,
-		DefaultTimestamp:  DefaultTimestampNone,
-		NowInSeconds:      NowInSecondsNone,
-	}
+	batch := NewBatch()
 	if batch.Type, err = primitives.ReadByte(source); err != nil {
 		return nil, fmt.Errorf("cannot read BATCH type: %w", err)
 	} else if err = cassandraprotocol.CheckBatchType(batch.Type); err != nil {
