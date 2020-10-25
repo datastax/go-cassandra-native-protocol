@@ -1,8 +1,8 @@
 package datatype
 
 import (
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"github.com/stretchr/testify/assert"
-	"go-cassandra-native-protocol/cassandraprotocol"
 	"testing"
 )
 

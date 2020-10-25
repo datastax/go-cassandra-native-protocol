@@ -3,9 +3,9 @@ package message
 import (
 	"bytes"
 	"fmt"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
 	"github.com/stretchr/testify/assert"
-	"go-cassandra-native-protocol/cassandraprotocol"
-	"go-cassandra-native-protocol/cassandraprotocol/primitives"
 	"testing"
 )
 

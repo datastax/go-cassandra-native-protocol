@@ -3,8 +3,8 @@ package message
 import (
 	"errors"
 	"fmt"
-	"go-cassandra-native-protocol/cassandraprotocol"
-	"go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
 	"io"
 )
 

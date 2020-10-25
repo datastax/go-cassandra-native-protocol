@@ -1,9 +1,9 @@
 package frame
 
 import (
-	"go-cassandra-native-protocol/cassandraprotocol"
-	"go-cassandra-native-protocol/cassandraprotocol/compression"
-	"go-cassandra-native-protocol/cassandraprotocol/message"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/compression"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/message"
 )
 
 type codec struct {

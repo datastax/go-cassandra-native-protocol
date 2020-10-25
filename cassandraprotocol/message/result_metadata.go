@@ -2,9 +2,9 @@ package message
 
 import (
 	"fmt"
-	"go-cassandra-native-protocol/cassandraprotocol"
-	"go-cassandra-native-protocol/cassandraprotocol/datatype"
-	"go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/datatype"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
 	"io"
 )
 
