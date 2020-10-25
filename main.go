@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -63,11 +64,12 @@ func testMessage(originalFrame *frame.Frame, useJson bool) {
 		fmt.Printf("original frame:\n%v\n", originalFrame)
 	}
 	codec := frame.NewCodec()
-	if encodedFrame, err := codec.Encode(originalFrame); err != nil {
+	encodedFrame := bytes.Buffer{}
+	if err := codec.Encode(originalFrame, &encodedFrame); err != nil {
 		panic(err)
 	} else {
 		fmt.Print("encoded frame:\n", hex.Dump(encodedFrame.Bytes()))
-		if decodedFrame, err := codec.Decode(encodedFrame); err != nil {
+		if decodedFrame, err := codec.Decode(&encodedFrame); err != nil {
 			panic(err)
 		} else {
 			if useJson {

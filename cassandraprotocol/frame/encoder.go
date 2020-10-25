@@ -10,24 +10,25 @@ import (
 	"io"
 )
 
-const encodedHeaderLength = 9
-
-func (c *codec) Encode(frame *Frame) (*bytes.Buffer, error) {
+func (c *Codec) Encode(frame *Frame, dest io.Writer) error {
 	version := frame.Header.Version
+	if version < cassandraprotocol.ProtocolVersionMin || version > cassandraprotocol.ProtocolVersionMax {
+		return fmt.Errorf("unsupported protocol version: %v", version)
+	}
 	if version < cassandraprotocol.ProtocolVersion4 && frame.Body.CustomPayload != nil {
-		return nil, fmt.Errorf("custom payloads are not supported in protocol version %v", version)
+		return fmt.Errorf("custom payloads are not supported in protocol version %v", version)
 	}
 	if version < cassandraprotocol.ProtocolVersion4 && frame.Body.Warnings != nil {
-		return nil, fmt.Errorf("warnings are not supported in protocol version %v", version)
+		return fmt.Errorf("warnings are not supported in protocol version %v", version)
 	}
 	if c.compressor != nil && frame.IsCompressible() {
-		return c.encodeFrameCompressed(frame)
+		return c.encodeFrameCompressed(frame, dest)
 	} else {
-		return c.encodeFrameUncompressed(frame)
+		return c.encodeFrameUncompressed(frame, dest)
 	}
 }
 
-func (c *codec) findEncoder(frame *Frame) (encoder message.Encoder, err error) {
+func (c *Codec) findEncoder(frame *Frame) (encoder message.Encoder, err error) {
 	opCode := frame.Body.Message.GetOpCode()
 	encoder, found := c.codecs[opCode]
 	if !found {
@@ -36,52 +37,50 @@ func (c *codec) findEncoder(frame *Frame) (encoder message.Encoder, err error) {
 	return encoder, err
 }
 
-func (c *codec) encodeFrameUncompressed(frame *Frame) (*bytes.Buffer, error) {
+func (c *Codec) encodeFrameUncompressed(frame *Frame, dest io.Writer) error {
 	var err error
 	var encodedBodyLength int
 	if encodedBodyLength, err = c.uncompressedBodyLength(frame); err != nil {
-		return nil, fmt.Errorf("cannot compute length of uncompressed message body: %w", err)
+		return fmt.Errorf("cannot compute length of uncompressed message body: %w", err)
 	}
-	encodedFrame := bytes.NewBuffer(make([]byte, 0, encodedHeaderLength+encodedBodyLength))
-	if err = c.encodeHeader(frame, encodedBodyLength, encodedFrame); err != nil {
-		return nil, fmt.Errorf("cannot encode frame header: %w", err)
+	if err = c.encodeHeader(frame, encodedBodyLength, dest); err != nil {
+		return fmt.Errorf("cannot encode frame header: %w", err)
 	}
-	if err = c.encodeBodyUncompressed(frame, encodedFrame); err != nil {
-		return nil, fmt.Errorf("cannot encode frame body: %w", err)
+	if err = c.encodeBodyUncompressed(frame, dest); err != nil {
+		return fmt.Errorf("cannot encode frame body: %w", err)
 	}
-	return encodedFrame, nil
+	return nil
 }
 
-func (c *codec) encodeFrameCompressed(frame *Frame) (*bytes.Buffer, error) {
+func (c *Codec) encodeFrameCompressed(frame *Frame, dest io.Writer) error {
 	var err error
 	// 1) Encode uncompressed body
 	var uncompressedBodyLength int
 	if uncompressedBodyLength, err = c.uncompressedBodyLength(frame); err != nil {
-		return nil, fmt.Errorf("cannot compute length of uncompressed message body: %w", err)
+		return fmt.Errorf("cannot compute length of uncompressed message body: %w", err)
 	}
 	uncompressedBody := bytes.NewBuffer(make([]byte, 0, uncompressedBodyLength))
 	if err = c.encodeBodyUncompressed(frame, uncompressedBody); err != nil {
-		return nil, fmt.Errorf("cannot encode frame body: %w", err)
+		return fmt.Errorf("cannot encode frame body: %w", err)
 	}
 	// 2) Compress body
 	var compressedBody *bytes.Buffer
 	if compressedBody, err = c.compressor.Compress(uncompressedBody); err != nil {
-		return nil, fmt.Errorf("cannot compress frame body: %w", err)
+		return fmt.Errorf("cannot compress frame body: %w", err)
 	}
 	compressedBodyLength := compressedBody.Len()
 	// 3) Encode header
-	encodedFrame := bytes.NewBuffer(make([]byte, 0, encodedHeaderLength+compressedBodyLength))
-	if err = c.encodeHeader(frame, compressedBodyLength, encodedFrame); err != nil {
-		return nil, fmt.Errorf("cannot encode frame header: %w", err)
+	if err = c.encodeHeader(frame, compressedBodyLength, dest); err != nil {
+		return fmt.Errorf("cannot encode frame header: %w", err)
 	}
 	// 4) join header and compressed body
-	if _, err := compressedBody.WriteTo(encodedFrame); err != nil {
-		return nil, fmt.Errorf("cannot concat frame body to frame header: %w", err)
+	if _, err := compressedBody.WriteTo(dest); err != nil {
+		return fmt.Errorf("cannot concat frame body to frame header: %w", err)
 	}
-	return encodedFrame, nil
+	return nil
 }
 
-func (c *codec) encodeHeader(frame *Frame, bodyLength int, dest io.Writer) error {
+func (c *Codec) encodeHeader(frame *Frame, bodyLength int, dest io.Writer) error {
 	versionAndDirection := frame.Header.Version
 	if frame.Body.Message.IsResponse() {
 		versionAndDirection |= 0b1000_0000
@@ -102,7 +101,7 @@ func (c *codec) encodeHeader(frame *Frame, bodyLength int, dest io.Writer) error
 	return nil
 }
 
-func (c *codec) uncompressedBodyLength(frame *Frame) (length int, err error) {
+func (c *Codec) uncompressedBodyLength(frame *Frame) (length int, err error) {
 	if encoder, err := c.findEncoder(frame); err != nil {
 		return -1, err
 	} else if length, err = encoder.EncodedLength(frame.Body.Message, frame.Header.Version); err != nil {
@@ -120,7 +119,7 @@ func (c *codec) uncompressedBodyLength(frame *Frame) (length int, err error) {
 	return length, nil
 }
 
-func (c *codec) encodeBodyUncompressed(frame *Frame, dest io.Writer) error {
+func (c *Codec) encodeBodyUncompressed(frame *Frame, dest io.Writer) error {
 	var err error
 	if frame.Body.Message.IsResponse() && frame.Body.TracingId != nil {
 		if err = primitives.WriteUuid(frame.Body.TracingId, dest); err != nil {

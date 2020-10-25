@@ -1,6 +1,7 @@
 package frame
 
 import (
+	"bytes"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/compression"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/message"
@@ -46,9 +47,10 @@ func TestFrameEncodeDecode(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			if encodedFrame, err := codec.Encode(test.frame); err != nil {
+			encodedFrame := bytes.Buffer{}
+			if err := codec.Encode(test.frame, &encodedFrame); err != nil {
 				assert.Equal(t, test.err, err)
-			} else if decodedFrame, err := codec.Decode(encodedFrame); err != nil {
+			} else if decodedFrame, err := codec.Decode(&encodedFrame); err != nil {
 				assert.Equal(t, test.err, err)
 			} else {
 				assert.Equal(t, test.frame, decodedFrame)
@@ -58,7 +60,7 @@ func TestFrameEncodeDecode(t *testing.T) {
 }
 
 func TestFrameEncodeDecodeWithCompression(t *testing.T) {
-	codecs := map[string]*codec{
+	codecs := map[string]*Codec{
 		"lz4":    NewCodec(WithCompressor(compression.Lz4Compressor{})),
 		"snappy": NewCodec(WithCompressor(compression.SnappyCompressor{})),
 	}
@@ -74,9 +76,10 @@ func TestFrameEncodeDecodeWithCompression(t *testing.T) {
 		t.Run(algorithm, func(t *testing.T) {
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
-					if encodedFrame, err := codec.Encode(test.frame); err != nil {
+					encodedFrame := bytes.Buffer{}
+					if err := codec.Encode(test.frame, &encodedFrame); err != nil {
 						assert.Equal(t, test.err, err)
-					} else if decodedFrame, err := codec.Decode(encodedFrame); err != nil {
+					} else if decodedFrame, err := codec.Decode(&encodedFrame); err != nil {
 						assert.Equal(t, test.err, err)
 					} else {
 						assert.Equal(t, test.frame, decodedFrame)
