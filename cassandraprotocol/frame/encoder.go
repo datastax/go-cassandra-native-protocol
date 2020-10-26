@@ -28,6 +28,25 @@ func (c *Codec) Encode(frame *Frame, dest io.Writer) error {
 	}
 }
 
+func (c *Codec) EncodeRaw(frame *RawFrame, dest io.Writer) error {
+	version := frame.Header.Version
+	if version < cassandraprotocol.ProtocolVersionMin || version > cassandraprotocol.ProtocolVersionMax {
+		return fmt.Errorf("unsupported protocol version: %v", version)
+	}
+
+	// Encode header
+	if err := c.encodeRawHeader(frame.Header, len(frame.Body), dest); err != nil {
+		return err
+	}
+
+	// Append body
+	if _, err := dest.Write(frame.Body); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (c *Codec) findEncoder(frame *Frame) (encoder message.Encoder, err error) {
 	opCode := frame.Body.Message.GetOpCode()
 	encoder, found := c.codecs[opCode]
@@ -97,6 +116,27 @@ func (c *Codec) encodeHeader(frame *Frame, bodyLength int, dest io.Writer) error
 		return fmt.Errorf("cannot encode header opcode: %w", err)
 	} else if err = primitives.WriteInt(int32(bodyLength), dest); err != nil {
 		return fmt.Errorf("cannot encode header body length: %w", err)
+	}
+	return nil
+}
+
+func (c *Codec) encodeRawHeader(rawHeader *RawHeader, bodyLength int, dest io.Writer) error {
+	versionAndDirection := rawHeader.Version
+	if rawHeader.IsResponse {
+		versionAndDirection |= 0b1000_0000
+	}
+	if err := primitives.WriteByte(versionAndDirection, dest); err != nil {
+		return err
+	}
+	flags := rawHeader.Flags
+	if err := primitives.WriteByte(flags, dest); err != nil {
+		return err
+	} else if err = primitives.WriteShort(uint16(rawHeader.StreamId), dest); err != nil {
+		return err
+	} else if err = primitives.WriteByte(rawHeader.OpCode, dest); err != nil {
+		return err
+	} else if err = primitives.WriteInt(int32(bodyLength), dest); err != nil {
+		return err
 	}
 	return nil
 }

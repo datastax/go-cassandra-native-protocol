@@ -19,10 +19,21 @@ func (c *Codec) Decode(source io.Reader) (*Frame, error) {
 	} else {
 		header := &Header{
 			Version:          rawHeader.Version,
-			StreamId:         int16(rawHeader.StreamId & 0xFFFF),
+			StreamId:         rawHeader.StreamId,
 			TracingRequested: body.TracingId != nil || rawHeader.Flags&cassandraprotocol.HeaderFlagTracing != 0,
 		}
 		return &Frame{Header: header, Body: body}, nil
+	}
+}
+
+// Decode decodes the entre frame, decompressing the body if needed.
+func (c *Codec) DecodeRaw(source io.Reader) (*RawFrame, error) {
+	if rawHeader, err := c.DecodeHeader(source); err != nil {
+		return nil, err
+	} else if body, err := c.ReadBody(rawHeader.BodyLength, source); err != nil {
+		return nil, err
+	} else {
+		return &RawFrame{Header: rawHeader, Body: body}, nil
 	}
 }
 
@@ -31,7 +42,7 @@ type RawHeader struct {
 	IsResponse bool
 	Version    cassandraprotocol.ProtocolVersion
 	Flags      cassandraprotocol.HeaderFlag
-	StreamId   uint16
+	StreamId   int16
 	OpCode     cassandraprotocol.OpCode
 	BodyLength int32
 }
@@ -45,7 +56,7 @@ func (r RawHeader) String() string {
 // one must either call DecodeBody or DiscardBody to fully read or discard the body contents.
 func (c *Codec) DecodeHeader(source io.Reader) (*RawHeader, error) {
 	if versionAndDirection, err := primitives.ReadByte(source); err != nil {
-		return nil, fmt.Errorf("cannot decode header version and direction: %w", err)
+		return nil, err
 	} else {
 		isResponse := (versionAndDirection & 0b1000_0000) > 0
 		version := versionAndDirection & 0b0111_1111
@@ -53,19 +64,21 @@ func (c *Codec) DecodeHeader(source io.Reader) (*RawHeader, error) {
 			IsResponse: isResponse,
 			Version:    version,
 		}
+		var streamId uint16
 		if version < cassandraprotocol.ProtocolVersionMin || version > cassandraprotocol.ProtocolVersionMax {
 			return nil, fmt.Errorf("unsupported protocol version: %v", version)
 		} else if header.Flags, err = primitives.ReadByte(source); err != nil {
-			return nil, fmt.Errorf("cannot decode header flags: %w", err)
+			return nil, err
 		} else if version == cassandraprotocol.ProtocolVersionBeta && header.Flags&cassandraprotocol.HeaderFlagUseBeta == 0 {
 			return nil, fmt.Errorf("expected USE_BETA flag to be set for protocol version %v", version)
-		} else if header.StreamId, err = primitives.ReadShort(source); err != nil {
-			return nil, fmt.Errorf("cannot decode header stream id: %w", err)
+		} else if streamId, err = primitives.ReadShort(source); err != nil {
+			return nil, err
 		} else if header.OpCode, err = primitives.ReadByte(source); err != nil {
-			return nil, fmt.Errorf("cannot decode header opcode: %w", err)
+			return nil, err
 		} else if header.BodyLength, err = primitives.ReadInt(source); err != nil {
-			return nil, fmt.Errorf("cannot decode header body length: %w", err)
+			return nil, err
 		}
+		header.StreamId = int16(streamId)
 		return header, err
 	}
 }
@@ -115,6 +128,21 @@ func (c *Codec) DiscardBody(bodyLength int32, source io.Reader) (err error) {
 		_, err = io.CopyN(ioutil.Discard, r, count)
 	}
 	return err
+}
+
+// ReadBody reads the contents of a frame body without decoding them. It is illegal to call this method before calling
+// DecodeHeader.
+func (c *Codec) ReadBody(bodyLength int32, source io.Reader) (body []byte, err error) {
+	if bodyLength < 0 {
+		return nil, fmt.Errorf("invalid body length: %d", bodyLength)
+	} else if bodyLength == 0 {
+		return []byte{}, nil
+	}
+
+	count := int64(bodyLength)
+	buf := &bytes.Buffer{}
+	_, err = io.CopyN(buf, source, count)
+	return buf.Bytes(), err
 }
 
 // DecompressBody decompresses a compressed frame body and returns a new bytes.Buffer containing the decompressed body.
