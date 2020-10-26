@@ -1,6 +1,7 @@
 package client
 
 import (
+	"flag"
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/compression"
@@ -16,9 +17,17 @@ var compressors = map[string]*frame.Codec{
 	"NONE":   frame.NewCodec(),
 }
 
+var ccmAvailable bool
+
+func init() {
+	flag.BoolVar(&ccmAvailable, "ccm", false, "whether a CCM cluster is available on localhost:9042")
+}
+
 // This test requires a remote server listening on localhost:9042 without authentication.
 func TestRemoteServerNoAuth(t *testing.T) {
-
+	if !ccmAvailable {
+		t.Skip("No CCM cluster available")
+	}
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionMax; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 
@@ -56,6 +65,9 @@ func TestRemoteServerNoAuth(t *testing.T) {
 
 // This test requires a remote server listening on localhost:9042 with authentication.
 func TestRemoteServerAuth(t *testing.T) {
+	if !ccmAvailable {
+		t.Skip("No CCM cluster available")
+	}
 
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionMax; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
