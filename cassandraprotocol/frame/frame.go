@@ -1,6 +1,7 @@
 package frame
 
 import (
+	"bytes"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -37,19 +38,25 @@ func (f *Frame) Flags(compress bool) cassandraprotocol.HeaderFlag {
 	return flags
 }
 
-// IsCompressible returns true if the frame contains a body that can be compressed. Bodies containing STARTUP and
-// OPTIONS messages should indeed never be compressed, even if compression is in use.
+// IsCompressible returns true if the frame contains a body that can be compressed. Bodies containing STARTUP
+// should never be compressed. Empty messages like OPTIONS and READY also should not be compressed,
+// even if compression is in use.
 func (f *Frame) IsCompressible() bool {
 	opCode := f.Body.Message.GetOpCode()
-	return opCode != cassandraprotocol.OpCodeStartup && opCode != cassandraprotocol.OpCodeOptions
+	// STARTUP should never be compressed as per protocol specs
+	return opCode != cassandraprotocol.OpCodeStartup &&
+		// OPTIONS and READY are empty and as such do not benefit from compression
+		opCode != cassandraprotocol.OpCodeOptions &&
+		opCode != cassandraprotocol.OpCodeReady
 }
 
 // Dump encodes and dumps the contents of this frame, for debugging purposes.
 func (f *Frame) Dump() (string, error) {
-	if encoded, err := NewCodec().Encode(f); err != nil {
+	buffer := bytes.Buffer{}
+	if err := NewCodec().Encode(f, &buffer); err != nil {
 		return "", err
 	} else {
-		return hex.Dump(encoded.Bytes()), nil
+		return hex.Dump(buffer.Bytes()), nil
 	}
 }
 
@@ -87,16 +94,17 @@ func NewRequestFrame(
 	if message.IsResponse() {
 		return nil, errors.New("message is not a request: opcode " + string(message.GetOpCode()))
 	}
-	return newFrame(
-		&Header{
+	return &Frame{
+		Header: &Header{
 			Version:          version,
 			StreamId:         streamId,
 			TracingRequested: tracing,
 		},
-		&Body{
+		Body: &Body{
 			CustomPayload: customPayload,
 			Message:       message,
-		})
+		},
+	}, nil
 }
 
 func NewResponseFrame(
@@ -110,33 +118,19 @@ func NewResponseFrame(
 	if !message.IsResponse() {
 		return nil, errors.New("message is not a response: opcode " + string(message.GetOpCode()))
 	}
-	return newFrame(
-		&Header{
+	return &Frame{
+		Header: &Header{
 			Version:          version,
 			StreamId:         streamId,
 			TracingRequested: tracingId != nil,
 		},
-		&Body{
+		Body: &Body{
 			TracingId:     tracingId,
 			CustomPayload: customPayload,
 			Warnings:      warnings,
 			Message:       message,
-		})
-}
-
-func newFrame(header *Header, body *Body) (*Frame, error) {
-	// Check header and body global conformity with protocol specs here.
-	// Body message conformity with protocol specs will be tested by the message codecs.
-	if header.Version < cassandraprotocol.ProtocolVersionMin || header.Version > cassandraprotocol.ProtocolVersionMax {
-		return nil, fmt.Errorf("unsupported protocol version: %v", header.Version)
-	}
-	if body.CustomPayload != nil && header.Version < cassandraprotocol.ProtocolVersion4 {
-		return nil, errors.New("custom payloads require protocol version 4 or higher")
-	}
-	if body.Warnings != nil && header.Version < cassandraprotocol.ProtocolVersion4 {
-		return nil, errors.New("warnings require protocol version 4 or higher")
-	}
-	return &Frame{header, body}, nil
+		},
+	}, nil
 }
 
 func (f *Frame) String() string {

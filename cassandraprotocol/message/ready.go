@@ -11,7 +11,7 @@ type Ready struct {
 }
 
 func (m *Ready) IsResponse() bool {
-	return false
+	return true
 }
 
 func (m *Ready) GetOpCode() cassandraprotocol.OpCode {

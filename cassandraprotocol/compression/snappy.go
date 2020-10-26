@@ -7,6 +7,10 @@ import (
 
 type SnappyCompressor struct{}
 
+func (l SnappyCompressor) Algorithm() string {
+	return "SNAPPY"
+}
+
 func (l SnappyCompressor) Compress(uncompressedMessage *bytes.Buffer) (*bytes.Buffer, error) {
 	compressedMessage := snappy.Encode(nil, uncompressedMessage.Bytes())
 	return bytes.NewBuffer(compressedMessage), nil
