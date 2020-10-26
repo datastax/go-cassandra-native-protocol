@@ -7,7 +7,7 @@ import (
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/message"
 )
 
-func StartupRequest(c *CqlConnection, version cassandraprotocol.ProtocolVersion, streamId int16) *frame.Frame {
+func NewStartupRequest(c *CqlConnection, version cassandraprotocol.ProtocolVersion, streamId int16) *frame.Frame {
 	var startup *message.Startup
 	if c.codec.CompressionAlgorithm() == "NONE" {
 		startup = message.NewStartup()
@@ -19,7 +19,7 @@ func StartupRequest(c *CqlConnection, version cassandraprotocol.ProtocolVersion,
 }
 
 func Handshake(client *CqlConnection, version cassandraprotocol.ProtocolVersion, streamId int16) error {
-	if err := client.Send(StartupRequest(client, version, streamId)); err != nil {
+	if err := client.Send(NewStartupRequest(client, version, streamId)); err != nil {
 		return err
 	} else if response, err := client.Receive(); err != nil {
 		return err
@@ -35,7 +35,7 @@ func HandshakeAuth(client *CqlConnection, version cassandraprotocol.ProtocolVers
 		username: username,
 		password: password,
 	}
-	if err := client.Send(StartupRequest(client, version, streamId)); err != nil {
+	if err := client.Send(NewStartupRequest(client, version, streamId)); err != nil {
 		return err
 	} else if response, err := client.Receive(); err != nil {
 		return err

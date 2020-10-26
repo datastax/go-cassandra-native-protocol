@@ -110,7 +110,7 @@ func TestLocalServer(t *testing.T) {
 
 					defer func() { _ = clientConn.Close(); _ = serverConn.Close() }()
 
-					msg := StartupRequest(clientConn, version, 1)
+					msg := NewStartupRequest(clientConn, version, 1)
 					_ = clientConn.Send(msg)
 					fmt.Printf("CLIENT sent:     %v\n", msg)
 
@@ -189,7 +189,7 @@ func TestLocalServerDiscardBody(t *testing.T) {
 
 					defer func() { _ = clientConn.Close(); _ = serverConn.Close() }()
 
-					msg := StartupRequest(clientConn, version, 1)
+					msg := NewStartupRequest(clientConn, version, 1)
 					_ = clientConn.Send(msg)
 					fmt.Printf("CLIENT sent:     %v\n", msg)
 
