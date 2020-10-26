@@ -28,10 +28,7 @@ func main() {
 		1,
 		true,
 		nil,
-		&message.Query{
-			Query:   "SELECT * FROM system.local",
-			Options: message.QueryOptionsDefault,
-		},
+		&message.Query{Query: "SELECT * FROM system.local", Options: message.NewQueryOptions()},
 	); err != nil {
 		panic(err)
 	} else {
@@ -44,10 +41,12 @@ func main() {
 		nil,
 		map[string][]byte{"hello": {0xca, 0xfe, 0xba, 0xbe}},
 		[]string{"you naughty boy"},
-		&message.Rows{
-			Metadata: message.NewRowsMetadata(message.WithoutColumnSpecs(1, nil, nil, nil)),
-			Data:     [][][]byte{},
-		},
+		message.NewRowsResult(
+			message.WithRowsMetadata(
+				message.NewRowsMetadata(message.NoColumnMetadata(1)),
+			),
+			message.WithRowsData(),
+		),
 	); err != nil {
 		panic(err)
 	} else {

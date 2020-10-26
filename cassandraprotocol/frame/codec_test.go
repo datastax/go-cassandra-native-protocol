@@ -1,14 +1,15 @@
 package frame
 
 import (
-	"github.com/stretchr/testify/assert"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/compression"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/message"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-var uuid = cassandraprotocol.UUID{0xC0, 0xD1, 0xD2, 0x1E, 0xBB, 0x01, 0x41, 0x96, 0x86, 0xDB, 0xBC, 0x31, 0x7B, 0xC1, 0x79, 0x6A}
+var uuid = primitives.UUID{0xC0, 0xD1, 0xD2, 0x1E, 0xBB, 0x01, 0x41, 0x96, 0x86, 0xDB, 0xBC, 0x31, 0x7B, 0xC1, 0x79, 0x6A}
 
 var request, _ = NewRequestFrame(
 	cassandraprotocol.ProtocolVersion4,
@@ -24,8 +25,8 @@ var response, _ = NewResponseFrame(
 	&uuid,
 	map[string][]byte{"hello": {0xca, 0xfe, 0xba, 0xbe}},
 	[]string{"I'm warning you!!"},
-	&message.Rows{
-		Metadata: message.NewRowsMetadata(message.WithoutColumnSpecs(1, nil, nil, nil)),
+	&message.RowsResult{
+		Metadata: message.NewRowsMetadata(message.NoColumnMetadata(1)),
 		Data:     [][][]byte{},
 	})
 

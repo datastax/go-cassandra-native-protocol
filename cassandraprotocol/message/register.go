@@ -31,6 +31,14 @@ func (c *RegisterCodec) Encode(msg Message, dest io.Writer, _ cassandraprotocol.
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.Register, got %T", msg))
 	}
+	if len(register.EventTypes) == 0 {
+		return errors.New("REGISTER messages must have at least one event type")
+	}
+	for _, eventType := range register.EventTypes {
+		if err := cassandraprotocol.CheckEventType(eventType); err != nil {
+			return err
+		}
+	}
 	return primitives.WriteStringList(register.EventTypes, dest)
 }
 
@@ -46,6 +54,11 @@ func (c *RegisterCodec) Decode(source io.Reader, _ cassandraprotocol.ProtocolVer
 	if eventTypes, err := primitives.ReadStringList(source); err != nil {
 		return nil, err
 	} else {
+		for _, eventType := range eventTypes {
+			if err := cassandraprotocol.CheckEventType(eventType); err != nil {
+				return nil, err
+			}
+		}
 		return &Register{EventTypes: eventTypes}, nil
 	}
 }

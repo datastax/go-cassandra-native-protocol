@@ -82,7 +82,7 @@ func (c *codec) decodeBody(
 	opCode cassandraprotocol.OpCode,
 	source io.Reader,
 ) (
-	tracingId *cassandraprotocol.UUID,
+	tracingId *primitives.UUID,
 	customPayload map[string][]byte,
 	warnings []string,
 	message message.Message,

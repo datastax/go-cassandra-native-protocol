@@ -7,15 +7,48 @@ import (
 	"io"
 )
 
+type ValueType = int32
+
+const (
+	ValueTypeRegular = ValueType(0)
+	ValueTypeNull    = ValueType(-1)
+	ValueTypeUnset   = ValueType(-2)
+)
+
+// Models the [value] protocol primitive structure
+type Value struct {
+	Type     ValueType
+	Contents []byte
+}
+
+func NewValue(contents []byte) *Value {
+	if contents == nil {
+		return &Value{Type: ValueTypeNull}
+	} else {
+		return &Value{Type: ValueTypeRegular, Contents: contents}
+	}
+}
+
+func NewNullValue() *Value {
+	return NewValue(nil)
+}
+
+func NewUnsetValue() *Value {
+	return &Value{Type: ValueTypeUnset}
+}
+
 // [value]
 
-func ReadValue(source io.Reader) (*cassandraprotocol.Value, error) {
+func ReadValue(source io.Reader, version cassandraprotocol.ProtocolVersion) (*Value, error) {
 	if length, err := ReadInt(source); err != nil {
 		return nil, fmt.Errorf("cannot read [value] length: %w", err)
-	} else if length == cassandraprotocol.ValueTypeNull {
-		return cassandraprotocol.NewNullValue(), nil
-	} else if length == cassandraprotocol.ValueTypeUnset {
-		return cassandraprotocol.NewUnsetValue(), nil
+	} else if length == ValueTypeNull {
+		return NewNullValue(), nil
+	} else if length == ValueTypeUnset {
+		if version < cassandraprotocol.ProtocolVersion4 {
+			return nil, fmt.Errorf("cannot use unset value in protocol version: %v", version)
+		}
+		return NewUnsetValue(), nil
 	} else if length < 0 {
 		return nil, fmt.Errorf("invalid [value] length: %v", length)
 	} else {
@@ -25,22 +58,25 @@ func ReadValue(source io.Reader) (*cassandraprotocol.Value, error) {
 		} else if read != int(length) {
 			return nil, errors.New("not enough bytes to read [value] content")
 		}
-		return cassandraprotocol.NewValue(decoded), nil
+		return NewValue(decoded), nil
 	}
 }
 
-func WriteValue(value *cassandraprotocol.Value, dest io.Writer) error {
+func WriteValue(value *Value, dest io.Writer, version cassandraprotocol.ProtocolVersion) error {
 	if value == nil {
 		return errors.New("cannot write a nil [value]")
 	}
 	switch value.Type {
-	case cassandraprotocol.ValueTypeNull:
-		return WriteInt(cassandraprotocol.ValueTypeNull, dest)
-	case cassandraprotocol.ValueTypeUnset:
-		return WriteInt(cassandraprotocol.ValueTypeUnset, dest)
-	case cassandraprotocol.ValueTypeRegular:
+	case ValueTypeNull:
+		return WriteInt(ValueTypeNull, dest)
+	case ValueTypeUnset:
+		if version < cassandraprotocol.ProtocolVersion4 {
+			return fmt.Errorf("cannot use unset value in protocol version: %v", version)
+		}
+		return WriteInt(ValueTypeUnset, dest)
+	case ValueTypeRegular:
 		if value.Contents == nil {
-			return WriteInt(cassandraprotocol.ValueTypeNull, dest)
+			return WriteInt(ValueTypeNull, dest)
 		} else {
 			length := len(value.Contents)
 			if err := WriteInt(int32(length), dest); err != nil {
@@ -57,16 +93,16 @@ func WriteValue(value *cassandraprotocol.Value, dest io.Writer) error {
 	}
 }
 
-func LengthOfValue(value *cassandraprotocol.Value) (int, error) {
+func LengthOfValue(value *Value) (int, error) {
 	if value == nil {
 		return -1, errors.New("cannot compute length of a nil [value]")
 	}
 	switch value.Type {
-	case cassandraprotocol.ValueTypeNull:
+	case ValueTypeNull:
 		return LengthOfInt, nil
-	case cassandraprotocol.ValueTypeUnset:
+	case ValueTypeUnset:
 		return LengthOfInt, nil
-	case cassandraprotocol.ValueTypeRegular:
+	case ValueTypeRegular:
 		return LengthOfInt + len(value.Contents), nil
 	default:
 		return -1, fmt.Errorf("unknown [value] type: %v", value.Type)
@@ -75,13 +111,13 @@ func LengthOfValue(value *cassandraprotocol.Value) (int, error) {
 
 // positional [value]s
 
-func ReadPositionalValues(source io.Reader) ([]*cassandraprotocol.Value, error) {
+func ReadPositionalValues(source io.Reader, version cassandraprotocol.ProtocolVersion) ([]*Value, error) {
 	if length, err := ReadShort(source); err != nil {
 		return nil, fmt.Errorf("cannot read positional [value]s length: %w", err)
 	} else {
-		decoded := make([]*cassandraprotocol.Value, length)
+		decoded := make([]*Value, length)
 		for i := uint16(0); i < length; i++ {
-			if value, err := ReadValue(source); err != nil {
+			if value, err := ReadValue(source, version); err != nil {
 				return nil, fmt.Errorf("cannot read positional [value]s element %d content: %w", i, err)
 			} else {
 				decoded[i] = value
@@ -91,20 +127,20 @@ func ReadPositionalValues(source io.Reader) ([]*cassandraprotocol.Value, error) 
 	}
 }
 
-func WritePositionalValues(values []*cassandraprotocol.Value, dest io.Writer) error {
+func WritePositionalValues(values []*Value, dest io.Writer, version cassandraprotocol.ProtocolVersion) error {
 	length := len(values)
 	if err := WriteShort(uint16(length), dest); err != nil {
 		return fmt.Errorf("cannot write positional [value]s length: %w", err)
 	}
 	for i, value := range values {
-		if err := WriteValue(value, dest); err != nil {
+		if err := WriteValue(value, dest, version); err != nil {
 			return fmt.Errorf("cannot write positional [value]s element %d content: %w", i, err)
 		}
 	}
 	return nil
 }
 
-func LengthOfPositionalValues(values []*cassandraprotocol.Value) (length int, err error) {
+func LengthOfPositionalValues(values []*Value) (length int, err error) {
 	length += LengthOfShort
 	for i, value := range values {
 		var valueLength int
@@ -119,15 +155,15 @@ func LengthOfPositionalValues(values []*cassandraprotocol.Value) (length int, er
 
 // named [value]s
 
-func ReadNamedValues(source io.Reader) (map[string]*cassandraprotocol.Value, error) {
+func ReadNamedValues(source io.Reader, version cassandraprotocol.ProtocolVersion) (map[string]*Value, error) {
 	if length, err := ReadShort(source); err != nil {
 		return nil, fmt.Errorf("cannot read named [value]s length: %w", err)
 	} else {
-		decoded := make(map[string]*cassandraprotocol.Value, length)
+		decoded := make(map[string]*Value, length)
 		for i := uint16(0); i < length; i++ {
 			if name, err := ReadString(source); err != nil {
 				return nil, fmt.Errorf("cannot read named [value]s entry %d name: %w", i, err)
-			} else if value, err := ReadValue(source); err != nil {
+			} else if value, err := ReadValue(source, version); err != nil {
 				return nil, fmt.Errorf("cannot read named [value]s entry %d content: %w", i, err)
 			} else {
 				decoded[name] = value
@@ -137,7 +173,7 @@ func ReadNamedValues(source io.Reader) (map[string]*cassandraprotocol.Value, err
 	}
 }
 
-func WriteNamedValues(values map[string]*cassandraprotocol.Value, dest io.Writer) error {
+func WriteNamedValues(values map[string]*Value, dest io.Writer, version cassandraprotocol.ProtocolVersion) error {
 	length := len(values)
 	if err := WriteShort(uint16(length), dest); err != nil {
 		return fmt.Errorf("cannot write named [value]s length: %w", err)
@@ -146,14 +182,14 @@ func WriteNamedValues(values map[string]*cassandraprotocol.Value, dest io.Writer
 		if err := WriteString(name, dest); err != nil {
 			return fmt.Errorf("cannot write named [value]s entry '%v' name: %w", name, err)
 		}
-		if err := WriteValue(value, dest); err != nil {
+		if err := WriteValue(value, dest, version); err != nil {
 			return fmt.Errorf("cannot write named [value]s entry '%v' content: %w", name, err)
 		}
 	}
 	return nil
 }
 
-func LengthOfNamedValues(values map[string]*cassandraprotocol.Value) (length int, err error) {
+func LengthOfNamedValues(values map[string]*Value) (length int, err error) {
 	length += LengthOfShort
 	for name, value := range values {
 		var nameLength = LengthOfString(name)

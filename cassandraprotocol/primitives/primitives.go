@@ -2,12 +2,29 @@ package primitives
 
 import (
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"io"
 	"net"
 )
+
+// Models the [inet] protocol primitive structure, whereas [inetaddr] is modeled by net.IP
+type Inet struct {
+	Addr net.IP
+	Port int32
+}
+
+func (i Inet) String() string {
+	return fmt.Sprintf("%v:%v", i.Addr, i.Port)
+}
+
+// Models the [uuid] protocol primitive structure
+type UUID [16]byte
+
+func (u UUID) String() string {
+	return hex.EncodeToString(u[:])
+}
 
 const (
 	LengthOfByte  = 1
@@ -263,8 +280,8 @@ func LengthOfShortBytes(b []byte) int {
 
 // [uuid]
 
-func ReadUuid(source io.Reader) (*cassandraprotocol.UUID, error) {
-	decoded := new(cassandraprotocol.UUID)
+func ReadUuid(source io.Reader) (*UUID, error) {
+	decoded := new(UUID)
 	if read, err := source.Read(decoded[:]); err != nil {
 		return nil, fmt.Errorf("cannot read [uuid] content: %w", err)
 	} else if read != LengthOfUuid {
@@ -273,7 +290,7 @@ func ReadUuid(source io.Reader) (*cassandraprotocol.UUID, error) {
 	return decoded, nil
 }
 
-func WriteUuid(uuid *cassandraprotocol.UUID, dest io.Writer) error {
+func WriteUuid(uuid *UUID, dest io.Writer) error {
 	if uuid == nil {
 		return errors.New("cannot write nil [uuid]")
 	} else if n, err := dest.Write(uuid[:]); err != nil {
@@ -354,19 +371,19 @@ func LengthOfInetAddr(inetAddr net.IP) (length int, err error) {
 	return length, nil
 }
 
-// [inet] (net.IP + port) see cassandraprotocol.Inet
+// [inet] (net.IP + port) see Inet
 
-func ReadInet(source io.Reader) (*cassandraprotocol.Inet, error) {
+func ReadInet(source io.Reader) (*Inet, error) {
 	if addr, err := ReadInetAddr(source); err != nil {
 		return nil, fmt.Errorf("cannot read [inet] address: %w", err)
 	} else if port, err := ReadInt(source); err != nil {
 		return nil, fmt.Errorf("cannot read [inet] port number: %w", err)
 	} else {
-		return &cassandraprotocol.Inet{Addr: addr, Port: port}, nil
+		return &Inet{Addr: addr, Port: port}, nil
 	}
 }
 
-func WriteInet(inet *cassandraprotocol.Inet, dest io.Writer) error {
+func WriteInet(inet *Inet, dest io.Writer) error {
 	if inet == nil {
 		return errors.New("cannot write nil [inet]")
 	}
@@ -378,7 +395,7 @@ func WriteInet(inet *cassandraprotocol.Inet, dest io.Writer) error {
 	return nil
 }
 
-func LengthOfInet(inet *cassandraprotocol.Inet) (length int, err error) {
+func LengthOfInet(inet *Inet) (length int, err error) {
 	if inet == nil {
 		return -1, errors.New("cannot compute nil [inet] length")
 	}

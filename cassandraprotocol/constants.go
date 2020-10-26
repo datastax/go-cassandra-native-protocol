@@ -1,58 +1,5 @@
 package cassandraprotocol
 
-import (
-	"encoding/hex"
-	"fmt"
-	"net"
-)
-
-// Models the [inet] protocol primitive structure, whereas [inetaddr] is modeled by net.IP
-type Inet struct {
-	Addr net.IP
-	Port int32
-}
-
-func (i Inet) String() string {
-	return fmt.Sprintf("%v:%v", i.Addr, i.Port)
-}
-
-// Models the [uuid] protocol primitive structure
-type UUID [16]byte
-
-func (u UUID) String() string {
-	return hex.EncodeToString(u[:])
-}
-
-// Models the [value] protocol primitive structure
-type Value struct {
-	Type     ValueType
-	Contents []byte
-}
-
-func NewValue(contents []byte) *Value {
-	if contents == nil {
-		return &Value{Type: ValueTypeNull}
-	} else {
-		return &Value{Type: ValueTypeRegular, Contents: contents}
-	}
-}
-
-func NewNullValue() *Value {
-	return NewValue(nil)
-}
-
-func NewUnsetValue() *Value {
-	return &Value{Type: ValueTypeUnset}
-}
-
-type ValueType = int32
-
-const (
-	ValueTypeRegular = ValueType(0)
-	ValueTypeNull    = ValueType(-1)
-	ValueTypeUnset   = ValueType(-2)
-)
-
 type ProtocolVersion = uint8
 
 const (
@@ -120,6 +67,7 @@ const (
 	ErrorCodeUnprepared          = ErrorCode(0x2500)
 )
 
+// Corresponds to protocol section 3 [consistency]
 type ConsistencyLevel = uint16
 
 const (
@@ -259,4 +207,16 @@ const (
 	RowsFlagHasMorePages     = RowsFlag(0x00000002)
 	RowsFlagNoMetadata       = RowsFlag(0x00000004)
 	RowsFlagMetadataChanged  = RowsFlag(0x00000008)
+)
+
+type VariablesFlag = int32
+
+const (
+	VariablesFlagGlobalTablesSpec = VariablesFlag(0x00000001)
+)
+
+type PrepareFlag = int32
+
+const (
+	PrepareFlagWithKeyspace = PrepareFlag(0x00000001)
 )

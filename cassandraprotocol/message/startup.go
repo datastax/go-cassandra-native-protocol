@@ -70,7 +70,7 @@ func (c *StartupCodec) Decode(source io.Reader, _ cassandraprotocol.ProtocolVers
 	if options, err := primitives.ReadStringMap(source); err != nil {
 		return nil, err
 	} else {
-		return NewStartup(WithOptions(options)), nil
+		return &Startup{Options: options}, nil
 	}
 }
 

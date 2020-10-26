@@ -32,18 +32,21 @@ func (c *PrepareCodec) Encode(msg Message, dest io.Writer, version cassandraprot
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.Prepare, got %T", msg))
 	}
+	if version < cassandraprotocol.ProtocolVersion5 && prepare.Keyspace != "" {
+		return fmt.Errorf("PREPARE cannot set keyspace with protocol version: %v", version)
+	}
 	if err = primitives.WriteLongString(prepare.Query, dest); err != nil {
 		return fmt.Errorf("cannot write PREPARE query: %w", err)
 	}
 	if version >= cassandraprotocol.ProtocolVersion5 {
-		if prepare.Keyspace == "" {
-			if err = primitives.WriteInt(0x00, dest); err != nil {
-				return fmt.Errorf("cannot write PREPARE flags: %w", err)
-			}
-		} else {
-			if err = primitives.WriteInt(0x01, dest); err != nil {
-				return fmt.Errorf("cannot write PREPARE flags: %w", err)
-			}
+		var flags cassandraprotocol.PrepareFlag
+		if prepare.Keyspace != "" {
+			flags |= cassandraprotocol.PrepareFlagWithKeyspace
+		}
+		if err = primitives.WriteInt(flags, dest); err != nil {
+			return fmt.Errorf("cannot write PREPARE flags: %w", err)
+		}
+		if flags&cassandraprotocol.PrepareFlagWithKeyspace > 0 {
 			if err = primitives.WriteString(prepare.Keyspace, dest); err != nil {
 				return fmt.Errorf("cannot write PREPARE keyspace: %w", err)
 			}
@@ -60,7 +63,9 @@ func (c *PrepareCodec) EncodedLength(msg Message, version cassandraprotocol.Prot
 	size += primitives.LengthOfLongString(prepare.Query)
 	if version >= cassandraprotocol.ProtocolVersion5 {
 		size += primitives.LengthOfInt // flags
-		size += primitives.LengthOfString(prepare.Keyspace)
+		if prepare.Keyspace != "" {
+			size += primitives.LengthOfString(prepare.Keyspace)
+		}
 	}
 	return size, nil
 }
@@ -71,11 +76,11 @@ func (c *PrepareCodec) Decode(source io.Reader, version cassandraprotocol.Protoc
 		return nil, fmt.Errorf("cannot read PREPARE query: %w", err)
 	}
 	if version >= cassandraprotocol.ProtocolVersion5 {
-		var flags int32
+		var flags cassandraprotocol.PrepareFlag
 		if flags, err = primitives.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read PREPARE flags: %w", err)
 		}
-		if flags&0x01 > 0 {
+		if flags&cassandraprotocol.PrepareFlagWithKeyspace > 0 {
 			if prepare.Keyspace, err = primitives.ReadString(source); err != nil {
 				return nil, fmt.Errorf("cannot read PREPARE keyspace: %w", err)
 			}

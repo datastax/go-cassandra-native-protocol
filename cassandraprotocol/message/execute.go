@@ -29,23 +29,27 @@ func (m *Execute) String() string {
 
 type ExecuteCodec struct{}
 
-func (c *ExecuteCodec) Encode(msg Message, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
+func (c *ExecuteCodec) Encode(msg Message, dest io.Writer, version cassandraprotocol.ProtocolVersion) error {
 	execute, ok := msg.(*Execute)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.Execute, got %T", msg))
 	}
-	if err = primitives.WriteShortBytes(execute.QueryId, dest); err != nil {
+	if len(execute.QueryId) == 0 {
+		return errors.New("EXECUTE missing query id")
+	} else if err := primitives.WriteShortBytes(execute.QueryId, dest); err != nil {
 		return fmt.Errorf("cannot write EXECUTE query id: %w", err)
 	}
 	if version >= cassandraprotocol.ProtocolVersion5 {
-		if err = primitives.WriteShortBytes(execute.ResultMetadataId, dest); err != nil {
+		if len(execute.ResultMetadataId) == 0 {
+			return errors.New("EXECUTE missing result metadata id")
+		} else if err := primitives.WriteShortBytes(execute.ResultMetadataId, dest); err != nil {
 			return fmt.Errorf("cannot write EXECUTE result metadata id: %w", err)
 		}
 	}
-	if err = EncodeQueryOptions(execute.Options, dest, version); err != nil {
-		return fmt.Errorf("cannot write EXECUTE query id: %w", err)
+	if err := EncodeQueryOptions(execute.Options, dest, version); err != nil {
+		return fmt.Errorf("cannot write EXECUTE options: %w", err)
 	}
-	return
+	return nil
 }
 
 func (c *ExecuteCodec) EncodedLength(msg Message, version cassandraprotocol.ProtocolVersion) (size int, err error) {
@@ -65,25 +69,25 @@ func (c *ExecuteCodec) EncodedLength(msg Message, version cassandraprotocol.Prot
 }
 
 func (c *ExecuteCodec) Decode(source io.Reader, version cassandraprotocol.ProtocolVersion) (msg Message, err error) {
-	var queryId []byte
-	if queryId, err = primitives.ReadShortBytes(source); err != nil {
-		return nil, fmt.Errorf("cannot read EXECUTE query id: %w", err)
+	var execute = &Execute{
+		Options: nil,
 	}
-	var resultMetadataId []byte
+	if execute.QueryId, err = primitives.ReadShortBytes(source); err != nil {
+		return nil, fmt.Errorf("cannot read EXECUTE query id: %w", err)
+	} else if len(execute.QueryId) == 0 {
+		return nil, errors.New("EXECUTE missing query id")
+	}
 	if version >= cassandraprotocol.ProtocolVersion5 {
-		if resultMetadataId, err = primitives.ReadShortBytes(source); err != nil {
+		if execute.ResultMetadataId, err = primitives.ReadShortBytes(source); err != nil {
 			return nil, fmt.Errorf("cannot read EXECUTE result metadata id: %w", err)
+		} else if len(execute.ResultMetadataId) == 0 {
+			return nil, errors.New("EXECUTE missing result metadata id")
 		}
 	}
-	var options *QueryOptions
-	if options, err = DecodeQueryOptions(source, version); err != nil {
+	if execute.Options, err = DecodeQueryOptions(source, version); err != nil {
 		return nil, fmt.Errorf("cannot read EXECUTE query options: %w", err)
 	}
-	return &Execute{
-		QueryId:          queryId,
-		ResultMetadataId: resultMetadataId,
-		Options:          options,
-	}, nil
+	return execute, nil
 }
 
 func (c *ExecuteCodec) GetOpCode() cassandraprotocol.OpCode {
