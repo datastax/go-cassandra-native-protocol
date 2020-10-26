@@ -68,7 +68,6 @@ func TestRemoteServerAuth(t *testing.T) {
 	if !ccmAvailable {
 		t.Skip("No CCM cluster available")
 	}
-
 	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionMax; version++ {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 

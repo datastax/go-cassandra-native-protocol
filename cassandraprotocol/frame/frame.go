@@ -133,14 +133,14 @@ func NewResponseFrame(
 	}, nil
 }
 
-func (f Frame) String() string {
+func (f *Frame) String() string {
 	return fmt.Sprintf("{header: %v, body: %v}", f.Header, f.Body)
 }
 
-func (h Header) String() string {
+func (h *Header) String() string {
 	return fmt.Sprintf("{version: %v, stream id: %v, tracing: %v}", h.Version, h.StreamId, h.TracingRequested)
 }
 
-func (b Body) String() string {
+func (b *Body) String() string {
 	return fmt.Sprintf("{tracing id: %v, payload: %v, warnings: %v, message: %v}", b.TracingId, b.CustomPayload, b.Warnings, b.Message)
 }
