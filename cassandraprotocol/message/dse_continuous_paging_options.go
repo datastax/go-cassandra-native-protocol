@@ -7,6 +7,8 @@ import (
 	"io"
 )
 
+// ContinuousPagingOptions holds options for DSE continuous paging feature. Valid for QUERY and EXECUTE messages.
+// See QueryOptions.
 type ContinuousPagingOptions struct {
 	// The maximum number of pages that the server will send to the client in total, or zero to indicate no limit.
 	// Valid for both DSE v1 and v2.

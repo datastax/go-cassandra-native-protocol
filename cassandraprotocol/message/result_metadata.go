@@ -50,7 +50,7 @@ type RowsMetadata struct {
 	// Valid for protocol version 5 and DSE protocol version 2 only.
 	NewResultMetadataId []byte
 	// Valid for DSE protocol versions only.
-	ContinuousPageNo int32
+	ContinuousPageNumber int32
 	// Valid for DSE protocol versions only.
 	LastContinuousPage bool
 	// If nil, the NO_METADATA flag is set. Should never be nil in a Prepared result.
@@ -96,6 +96,20 @@ func WithNewResultMetadataId(newResultMetadataId []byte) func(metadata *RowsMeta
 	}
 }
 
+// DSE v1+
+func WithContinuousPageNumber(pageNumber int32) func(metadata *RowsMetadata) {
+	return func(metadata *RowsMetadata) {
+		metadata.ContinuousPageNumber = pageNumber
+	}
+}
+
+// DSE v1+
+func LastContinuousPage() func(metadata *RowsMetadata) {
+	return func(metadata *RowsMetadata) {
+		metadata.LastContinuousPage = true
+	}
+}
+
 func (rm *RowsMetadata) Flags() (flag cassandraprotocol.RowsFlag) {
 	if len(rm.ColumnSpecs) == 0 {
 		flag |= cassandraprotocol.RowsFlagNoMetadata
@@ -108,7 +122,7 @@ func (rm *RowsMetadata) Flags() (flag cassandraprotocol.RowsFlag) {
 	if rm.NewResultMetadataId != nil {
 		flag |= cassandraprotocol.RowsFlagMetadataChanged
 	}
-	if rm.ContinuousPageNo > 0 {
+	if rm.ContinuousPageNumber > 0 {
 		flag |= cassandraprotocol.RowsFlagDseContinuousPaging
 		if rm.LastContinuousPage {
 			flag |= cassandraprotocol.RowsFlagDseLastContinuousPage
@@ -232,7 +246,7 @@ func encodeRowsMetadata(metadata *RowsMetadata, dest io.Writer, version cassandr
 		}
 	}
 	if flags&cassandraprotocol.RowsFlagDseContinuousPaging > 0 {
-		if err = primitives.WriteInt(metadata.ContinuousPageNo, dest); err != nil {
+		if err = primitives.WriteInt(metadata.ContinuousPageNumber, dest); err != nil {
 			return fmt.Errorf("cannot write RESULT Rows metadata continuous page number: %w", err)
 		}
 	}
@@ -290,7 +304,7 @@ func decodeRowsMetadata(source io.Reader, version cassandraprotocol.ProtocolVers
 		}
 	}
 	if flags&cassandraprotocol.RowsFlagDseContinuousPaging > 0 {
-		if metadata.ContinuousPageNo, err = primitives.ReadInt(source); err != nil {
+		if metadata.ContinuousPageNumber, err = primitives.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read RESULT Rows metadata continuous paging number: %w", err)
 		}
 		metadata.LastContinuousPage = flags&cassandraprotocol.RowsFlagDseLastContinuousPage > 0

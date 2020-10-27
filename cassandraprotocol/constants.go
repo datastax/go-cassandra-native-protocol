@@ -124,7 +124,7 @@ const (
 	DataTypeCodeTime      = DataTypeCode(0x0012)
 	DataTypeCodeSmallint  = DataTypeCode(0x0013)
 	DataTypeCodeTinyint   = DataTypeCode(0x0014)
-	DataTypeCodeDuration  = DataTypeCode(0x0015) //v5
+	DataTypeCodeDuration  = DataTypeCode(0x0015) //v5, DSE v1 and DSE v2
 	DataTypeCodeList      = DataTypeCode(0x0020)
 	DataTypeCodeMap       = DataTypeCode(0x0021)
 	DataTypeCodeSet       = DataTypeCode(0x0022)
