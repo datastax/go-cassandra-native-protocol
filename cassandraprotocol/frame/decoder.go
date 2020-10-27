@@ -10,7 +10,7 @@ import (
 	"io/ioutil"
 )
 
-// Decode decodes the entre frame, decompressing the body if needed.
+// Decode decodes the entire frame, decompressing the body if needed.
 func (c *Codec) Decode(source io.Reader) (*Frame, error) {
 	if rawHeader, err := c.DecodeHeader(source); err != nil {
 		return nil, fmt.Errorf("cannot decode frame header: %w", err)
@@ -26,37 +26,22 @@ func (c *Codec) Decode(source io.Reader) (*Frame, error) {
 	}
 }
 
-// Decode decodes the entre frame, decompressing the body if needed.
+// DecodeRaw decodes the header and reads the body as raw bytes, returning a RawFrame.
 func (c *Codec) DecodeRaw(source io.Reader) (*RawFrame, error) {
 	if rawHeader, err := c.DecodeHeader(source); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot decode frame header: %w", err)
 	} else if body, err := c.ReadBody(rawHeader.BodyLength, source); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot read frame body: %w", err)
 	} else {
 		return &RawFrame{Header: rawHeader, Body: body}, nil
 	}
-}
-
-// A low-level representation of a frame header, as it is parsed from an encoded frame.
-type RawHeader struct {
-	IsResponse bool
-	Version    cassandraprotocol.ProtocolVersion
-	Flags      cassandraprotocol.HeaderFlag
-	StreamId   int16
-	OpCode     cassandraprotocol.OpCode
-	BodyLength int32
-}
-
-func (r RawHeader) String() string {
-	return fmt.Sprintf("{response: %v, version: %v, flags: %08b, stream id: %v, opcode: %v, body length: %v}",
-		r.IsResponse, r.Version, r.Flags, r.StreamId, r.OpCode, r.BodyLength)
 }
 
 // DecodeHeader only decodes the frame header, leaving the body contents in the source. After calling this function,
 // one must either call DecodeBody or DiscardBody to fully read or discard the body contents.
 func (c *Codec) DecodeHeader(source io.Reader) (*RawHeader, error) {
 	if versionAndDirection, err := primitives.ReadByte(source); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("cannot decode header version and direction: %w", err)
 	} else {
 		isResponse := (versionAndDirection & 0b1000_0000) > 0
 		version := versionAndDirection & 0b0111_1111
@@ -68,15 +53,15 @@ func (c *Codec) DecodeHeader(source io.Reader) (*RawHeader, error) {
 		if version < cassandraprotocol.ProtocolVersionMin || version > cassandraprotocol.ProtocolVersionMax {
 			return nil, fmt.Errorf("unsupported protocol version: %v", version)
 		} else if header.Flags, err = primitives.ReadByte(source); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("cannot decode header flags: %w", err)
 		} else if version == cassandraprotocol.ProtocolVersionBeta && header.Flags&cassandraprotocol.HeaderFlagUseBeta == 0 {
 			return nil, fmt.Errorf("expected USE_BETA flag to be set for protocol version %v", version)
 		} else if streamId, err = primitives.ReadShort(source); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("cannot decode header stream id: %w", err)
 		} else if header.OpCode, err = primitives.ReadByte(source); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("cannot decode header opcode: %w", err)
 		} else if header.BodyLength, err = primitives.ReadInt(source); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("cannot decode header body length: %w", err)
 		}
 		header.StreamId = int16(streamId)
 		return header, err
@@ -141,8 +126,10 @@ func (c *Codec) ReadBody(bodyLength int32, source io.Reader) (body []byte, err e
 
 	count := int64(bodyLength)
 	buf := &bytes.Buffer{}
-	_, err = io.CopyN(buf, source, count)
-	return buf.Bytes(), err
+	if bytesRead, err := io.CopyN(buf, source, count); err != nil {
+		return nil, fmt.Errorf("cannot copy source reader: %w, body length: %d, bytes read: %d", err, count, bytesRead)
+	}
+	return buf.Bytes(), nil
 }
 
 // DecompressBody decompresses a compressed frame body and returns a new bytes.Buffer containing the decompressed body.
@@ -151,12 +138,7 @@ func (c *Codec) DecompressBody(compressedBodyLength int32, source io.Reader) (*b
 	compressedBody := bytes.Buffer{}
 	count := int64(compressedBodyLength)
 	if actualBodyLength, err := io.CopyN(&compressedBody, source, count); err != nil {
-		return nil, err
-	} else if count != actualBodyLength {
-		return nil, errors.New(fmt.Sprintf(
-			"declared body length in header (%d) does not match actual body length (%d)",
-			compressedBodyLength,
-			actualBodyLength))
+		return nil, fmt.Errorf("cannot copy source reader: %w, body length in header: %d, bytes read: %d", err, count, actualBodyLength)
 	}
 	if decompressedBody, err := c.compressor.Decompress(&compressedBody); err != nil {
 		return nil, fmt.Errorf("cannot decompress frame body: %w", err)
