@@ -103,6 +103,88 @@ func TestRemoteServerAuth(t *testing.T) {
 	}
 }
 
+// This test requires a remote DSE 5.1+ server listening on localhost:9042 with authentication.
+func TestRemoteDseServerAuthContinuousPaging(t *testing.T) {
+	if !ccmAvailable {
+		t.Skip("No CCM cluster available")
+	}
+	for _, version := range cassandraprotocol.AllDseProtocolVersions() {
+		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+
+			for compressor, frameCodec := range compressors {
+				t.Run(fmt.Sprintf("compression %v", compressor), func(t *testing.T) {
+
+					client := NewCqlClient("127.0.0.1:9042", frameCodec)
+					clientConn, err := client.Connect()
+					if err != nil {
+						return // skip test, no remote server available
+					}
+					defer func() { _ = clientConn.Close() }()
+
+					err = HandshakeAuth(clientConn, version, 1, "cassandra", "cassandra")
+					assert.Nil(t, err)
+
+					query, _ := frame.NewRequestFrame(version, 1, false, nil, &message.Query{
+						Query: "SELECT * FROM system_schema.columns",
+						Options: message.NewQueryOptions(
+							message.WithPageSize(1),
+							message.WithContinuousPagingOptions(&message.ContinuousPagingOptions{MaxPages: 3})),
+					})
+					err = clientConn.Send(query)
+					assert.Nil(t, err)
+					fmt.Printf("CLIENT sent:     %v\n", query)
+
+					response, err := clientConn.Receive()
+					assert.Nil(t, err)
+					assert.NotNil(t, response)
+					assert.Equal(t, response.Header.StreamId, int16(1))
+					assert.IsType(t, &message.RowsResult{}, response.Body.Message)
+					fmt.Printf("CLIENT received: %v\n", response)
+					rows := response.Body.Message.(*message.RowsResult)
+					assert.Equal(t, rows.Metadata.ContinuousPageNumber, int32(1))
+					assert.Equal(t, rows.Metadata.LastContinuousPage, false)
+
+					response, err = clientConn.Receive()
+					assert.Nil(t, err)
+					assert.NotNil(t, response)
+					assert.Equal(t, response.Header.StreamId, int16(1))
+					assert.IsType(t, &message.RowsResult{}, response.Body.Message)
+					fmt.Printf("CLIENT received: %v\n", response)
+					rows = response.Body.Message.(*message.RowsResult)
+					assert.Equal(t, rows.Metadata.ContinuousPageNumber, int32(2))
+					assert.Equal(t, rows.Metadata.LastContinuousPage, false)
+
+					response, err = clientConn.Receive()
+					assert.Nil(t, err)
+					assert.NotNil(t, response)
+					assert.Equal(t, response.Header.StreamId, int16(1))
+					assert.IsType(t, &message.RowsResult{}, response.Body.Message)
+					fmt.Printf("CLIENT received: %v\n", response)
+					rows = response.Body.Message.(*message.RowsResult)
+					assert.Equal(t, rows.Metadata.ContinuousPageNumber, int32(3))
+					assert.Equal(t, rows.Metadata.LastContinuousPage, true)
+
+					cancel, _ := frame.NewRequestFrame(version, 2, false, nil, &message.Revise{
+						RevisionType:   cassandraprotocol.DseRevisionTypeCancelContinuousPaging,
+						TargetStreamId: 1,
+					})
+					err = clientConn.Send(cancel)
+					assert.Nil(t, err)
+					fmt.Printf("CLIENT sent:     %v\n", cancel)
+
+					response, err = clientConn.Receive()
+					assert.Nil(t, err)
+					assert.NotNil(t, response)
+					assert.Equal(t, response.Header.StreamId, int16(2))
+					assert.IsType(t, &message.RowsResult{}, response.Body.Message)
+					fmt.Printf("CLIENT received: %v\n", response)
+
+				})
+			}
+		})
+	}
+}
+
 func TestLocalServer(t *testing.T) {
 
 	for _, version := range cassandraprotocol.AllProtocolVersions() {

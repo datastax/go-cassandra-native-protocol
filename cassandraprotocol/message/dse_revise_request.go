@@ -26,7 +26,7 @@ func (m *Revise) GetOpCode() cassandraprotocol.OpCode {
 }
 
 func (m *Revise) String() string {
-	return fmt.Sprintf("CANCEL operation type: %v, stream id: %v", m.RevisionType, m.TargetStreamId)
+	return fmt.Sprintf("REVISE_REQUEST operation type: %v, stream id: %v", m.RevisionType, m.TargetStreamId)
 }
 
 type ReviseCodec struct{}
