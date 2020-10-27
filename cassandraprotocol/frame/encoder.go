@@ -36,12 +36,10 @@ func (c *Codec) EncodeRaw(frame *RawFrame, dest io.Writer) error {
 		return fmt.Errorf("unsupported protocol version: %v", version)
 	}
 
-	// Encode header
 	if err := c.encodeRawHeader(frame.Header, dest); err != nil {
 		return fmt.Errorf("cannot encode raw header: %w", err)
 	}
 
-	// Append body
 	if bytesWritten, err := dest.Write(frame.Body); err != nil {
 		return fmt.Errorf(
 			"cannot write body: %w, body length: %d, bytes written: %d", err, len(frame.Body), bytesWritten)
@@ -115,11 +113,11 @@ func (c *Codec) encodeFrameCompressed(frame *Frame, dest io.Writer) error {
 		return fmt.Errorf("cannot encode and compress body: %w", err)
 	}
 	compressedBodyLength := compressedBody.Len()
-	// 3) Encode header
+
 	if err := c.encodeHeader(frame, compressedBodyLength, dest); err != nil {
 		return fmt.Errorf("cannot encode frame header: %w", err)
 	}
-	// 4) join header and compressed body
+
 	if _, err := compressedBody.WriteTo(dest); err != nil {
 		return fmt.Errorf("cannot concat frame body to frame header: %w", err)
 	}
@@ -128,7 +126,7 @@ func (c *Codec) encodeFrameCompressed(frame *Frame, dest io.Writer) error {
 
 func (c *Codec) encodeBodyCompressed(frame *Frame) (*bytes.Buffer, error) {
 	var err error
-	// 1) Encode uncompressed body
+
 	var uncompressedBodyLength int
 	if uncompressedBodyLength, err = c.uncompressedBodyLength(frame); err != nil {
 		return nil, fmt.Errorf("cannot compute length of uncompressed message body: %w", err)
@@ -137,7 +135,7 @@ func (c *Codec) encodeBodyCompressed(frame *Frame) (*bytes.Buffer, error) {
 	if err = c.encodeBodyUncompressed(frame, uncompressedBody); err != nil {
 		return nil, fmt.Errorf("cannot encode frame body: %w", err)
 	}
-	// 2) Compress body
+
 	var compressedBody *bytes.Buffer
 	if compressedBody, err = c.compressor.Compress(uncompressedBody); err != nil {
 		return nil, fmt.Errorf("cannot compress frame body: %w", err)
