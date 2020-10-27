@@ -41,7 +41,7 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 	}
 	codec := &ResultCodec{}
 	// versions < 5
-	for version := cassandraprotocol.ProtocolVersionMin; version < cassandraprotocol.ProtocolVersion5; version++ {
+	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion3, cassandraprotocol.ProtocolVersion4, cassandraprotocol.ProtocolVersionDse1} {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -131,7 +131,7 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 		})
 	}
 	// versions >= 5
-	for version := cassandraprotocol.ProtocolVersion5; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
+	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion5, cassandraprotocol.ProtocolVersionDse2} {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -283,7 +283,7 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 	}
 	codec := &ResultCodec{}
 	// versions < 5
-	for version := cassandraprotocol.ProtocolVersionMin; version < cassandraprotocol.ProtocolVersion5; version++ {
+	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion3, cassandraprotocol.ProtocolVersion4, cassandraprotocol.ProtocolVersionDse1} {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{
@@ -373,7 +373,7 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 		})
 	}
 	// versions >= 5
-	for version := cassandraprotocol.ProtocolVersion5; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
+	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion5, cassandraprotocol.ProtocolVersionDse2} {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{

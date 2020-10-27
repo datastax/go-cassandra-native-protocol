@@ -32,7 +32,7 @@ func (f *Frame) Flags(compress bool) cassandraprotocol.HeaderFlag {
 	if f.Body.Warnings != nil {
 		flags |= cassandraprotocol.HeaderFlagWarning
 	}
-	if f.Header.Version == cassandraprotocol.ProtocolVersionBeta {
+	if cassandraprotocol.IsProtocolVersionBeta(f.Header.Version) {
 		flags |= cassandraprotocol.HeaderFlagUseBeta
 	}
 	return flags

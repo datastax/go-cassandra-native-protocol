@@ -28,7 +28,7 @@ func TestRemoteServerNoAuth(t *testing.T) {
 	if !ccmAvailable {
 		t.Skip("No CCM cluster available")
 	}
-	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionMax; version++ {
+	for _, version := range cassandraprotocol.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 
 			for compressor, frameCodec := range compressors {
@@ -68,7 +68,7 @@ func TestRemoteServerAuth(t *testing.T) {
 	if !ccmAvailable {
 		t.Skip("No CCM cluster available")
 	}
-	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionMax; version++ {
+	for _, version := range cassandraprotocol.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 
 			for compressor, frameCodec := range compressors {
@@ -105,7 +105,7 @@ func TestRemoteServerAuth(t *testing.T) {
 
 func TestLocalServer(t *testing.T) {
 
-	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionMax; version++ {
+	for _, version := range cassandraprotocol.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 
 			for compressor, frameCodec := range compressors {
@@ -184,7 +184,7 @@ func TestLocalServer(t *testing.T) {
 
 func TestLocalServerDiscardBody(t *testing.T) {
 
-	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionMax; version++ {
+	for _, version := range cassandraprotocol.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 
 			for compressor, frameCodec := range compressors {

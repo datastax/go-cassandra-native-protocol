@@ -53,11 +53,11 @@ func (c *Codec) DecodeHeader(source io.Reader) (*RawHeader, error) {
 			IsResponse: isResponse,
 			Version:    version,
 		}
-		if version < cassandraprotocol.ProtocolVersionMin || version > cassandraprotocol.ProtocolVersionMax {
-			return nil, fmt.Errorf("unsupported protocol version: %v", version)
+		if err := cassandraprotocol.CheckProtocolVersion(version); err != nil {
+			return nil, err
 		} else if header.Flags, err = primitives.ReadByte(source); err != nil {
 			return nil, fmt.Errorf("cannot decode header flags: %w", err)
-		} else if version == cassandraprotocol.ProtocolVersionBeta && header.Flags&cassandraprotocol.HeaderFlagUseBeta == 0 {
+		} else if cassandraprotocol.IsProtocolVersionBeta(version) && header.Flags&cassandraprotocol.HeaderFlagUseBeta == 0 {
 			return nil, fmt.Errorf("expected USE_BETA flag to be set for protocol version %v", version)
 		} else if header.StreamId, err = primitives.ReadShort(source); err != nil {
 			return nil, fmt.Errorf("cannot decode header stream id: %w", err)
@@ -96,7 +96,7 @@ func (c *Codec) DecodeBody(header *RawHeader, source io.Reader) (body *Body, err
 			return nil, fmt.Errorf("cannot decode body warnings: %w", err)
 		}
 	}
-	if decoder, found := c.codecs[header.OpCode]; !found {
+	if decoder, found := c.messageCodecs[header.OpCode]; !found {
 		return nil, errors.New(fmt.Sprintf("unsupported opcode %d", header.OpCode))
 	} else if body.Message, err = decoder.Decode(source, header.Version); err != nil {
 		return nil, fmt.Errorf("cannot decode body message: %w", err)

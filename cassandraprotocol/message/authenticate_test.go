@@ -12,13 +12,13 @@ import (
 
 func TestAuthenticateCodec_Encode(t *testing.T) {
 	codec := &AuthenticateCodec{}
-	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
+	for _, version := range cassandraprotocol.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodeTestCase{
 				{
 					"simple authenticate",
 					&Authenticate{"dummy"},
-					[]byte{0, 5, byte('d'), byte('u'), byte('m'), byte('m'), byte('y')},
+					[]byte{0, 5, d, u, m, m, y},
 					nil,
 				},
 				{
@@ -48,7 +48,7 @@ func TestAuthenticateCodec_Encode(t *testing.T) {
 
 func TestAuthenticateCodec_EncodedLength(t *testing.T) {
 	codec := &AuthenticateCodec{}
-	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
+	for _, version := range cassandraprotocol.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -83,12 +83,12 @@ func TestAuthenticateCodec_EncodedLength(t *testing.T) {
 
 func TestAuthenticateCodec_Decode(t *testing.T) {
 	codec := &AuthenticateCodec{}
-	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
+	for _, version := range cassandraprotocol.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []decodeTestCase{
 				{
 					"simple authenticate",
-					[]byte{0, 5, byte('d'), byte('u'), byte('m'), byte('m'), byte('y')},
+					[]byte{0, 5, d, u, m, m, y},
 					&Authenticate{"dummy"},
 					nil,
 				},

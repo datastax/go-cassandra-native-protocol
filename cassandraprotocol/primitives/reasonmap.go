@@ -3,6 +3,7 @@ package primitives
 import (
 	"errors"
 	"fmt"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"io"
 	"net"
 )
@@ -12,7 +13,7 @@ import (
 // <endpoint> is an [inetaddr] and <failurecode> is a [short].
 // Note that [inetaddr] is used as a map key, and is rendered as string since net.IP is not a valid map key type.
 
-func ReadReasonMap(source io.Reader) (map[string]uint16, error) {
+func ReadReasonMap(source io.Reader) (map[string]cassandraprotocol.ReasonMapFailureCode, error) {
 	if length, err := ReadInt(source); err != nil {
 		return nil, fmt.Errorf("cannot read reason map length: %w", err)
 	} else {
@@ -30,7 +31,7 @@ func ReadReasonMap(source io.Reader) (map[string]uint16, error) {
 	}
 }
 
-func WriteReasonMap(reasonMap map[string]uint16, dest io.Writer) error {
+func WriteReasonMap(reasonMap map[string]cassandraprotocol.ReasonMapFailureCode, dest io.Writer) error {
 	if err := WriteInt(int32(len(reasonMap)), dest); err != nil {
 		return fmt.Errorf("cannot write reason map length: %w", err)
 	}
@@ -46,7 +47,7 @@ func WriteReasonMap(reasonMap map[string]uint16, dest io.Writer) error {
 	return nil
 }
 
-func LengthOfReasonMap(reasonMap map[string]uint16) (int, error) {
+func LengthOfReasonMap(reasonMap map[string]cassandraprotocol.ReasonMapFailureCode) (int, error) {
 	length := LengthOfInt
 	for addrStr := range reasonMap {
 		if addr := net.ParseIP(addrStr); addr == nil {

@@ -3,12 +3,16 @@ package cassandraprotocol
 type ProtocolVersion = uint8
 
 const (
-	ProtocolVersion3    = ProtocolVersion(0x3)
-	ProtocolVersion4    = ProtocolVersion(0x4)
-	ProtocolVersion5    = ProtocolVersion(0x5)
-	ProtocolVersionMin  = ProtocolVersion3
-	ProtocolVersionMax  = ProtocolVersion4
-	ProtocolVersionBeta = ProtocolVersion5
+
+	// Supported OSS versions
+	ProtocolVersion3 = ProtocolVersion(0x3)
+	ProtocolVersion4 = ProtocolVersion(0x4)
+	ProtocolVersion5 = ProtocolVersion(0x5) // currently beta, should not be used in production
+
+	// Supported DSE versions
+	// Note: all DSE versions have the 7th bit set to 1
+	ProtocolVersionDse1 = ProtocolVersion(0b_1_000001) // 1 + DSE bit = 65
+	ProtocolVersionDse2 = ProtocolVersion(0b_1_000010) // 2 + DSE bit = 66
 )
 
 type OpCode = uint8
@@ -23,6 +27,7 @@ const (
 	OpCodeRegister     = OpCode(0x0B)
 	OpCodeBatch        = OpCode(0x0D)
 	OpCodeAuthResponse = OpCode(0x0F)
+	OpCodeDseRevise    = OpCode(0xFF) // DSE v1
 	// responses
 	OpCodeError         = OpCode(0x00)
 	OpCodeReady         = OpCode(0x02)
@@ -185,8 +190,8 @@ const (
 	HeaderFlagUseBeta       = HeaderFlag(0x10)
 )
 
-// query flags were [byte] in v3 and v4, but changed to [int] in v5
-type QueryFlag = int32
+// Note: QueryFlag was encoded as [byte] in v3 and v4, but changed to [int] in v5
+type QueryFlag = uint32
 
 const (
 	QueryFlagValues            = QueryFlag(0x00000001)
@@ -196,27 +201,52 @@ const (
 	QueryFlagSerialConsistency = QueryFlag(0x00000010)
 	QueryFlagDefaultTimestamp  = QueryFlag(0x00000020)
 	QueryFlagValueNames        = QueryFlag(0x00000040)
-	QueryFlagWithKeyspace      = QueryFlag(0x00000080) // protocol v5+
+	QueryFlagWithKeyspace      = QueryFlag(0x00000080) // protocol v5+ and DSE v2
 	QueryFlagNowInSeconds      = QueryFlag(0x00000100) // protocol v5+
+	// DSE-specific flags
+	QueryFlagDsePageSizeBytes               = QueryFlag(0x40000000) // DSE v1+
+	QueryFlagDseWithContinuousPagingOptions = QueryFlag(0x80000000) // DSE v1+
 )
 
-type RowsFlag = int32
+type RowsFlag = uint32
 
 const (
 	RowsFlagGlobalTablesSpec = RowsFlag(0x00000001)
 	RowsFlagHasMorePages     = RowsFlag(0x00000002)
 	RowsFlagNoMetadata       = RowsFlag(0x00000004)
 	RowsFlagMetadataChanged  = RowsFlag(0x00000008)
+	// DSE-specific flags
+	RowsFlagDseContinuousPaging   = RowsFlag(0x40000000) // DSE v1+
+	RowsFlagDseLastContinuousPage = RowsFlag(0x80000000) // DSE v1+
 )
 
-type VariablesFlag = int32
+type VariablesFlag = uint32
 
 const (
 	VariablesFlagGlobalTablesSpec = VariablesFlag(0x00000001)
 )
 
-type PrepareFlag = int32
+type PrepareFlag = uint32
 
 const (
-	PrepareFlagWithKeyspace = PrepareFlag(0x00000001)
+	PrepareFlagWithKeyspace = PrepareFlag(0x00000001) // v5 and DSE v2
+)
+
+type DseRevisionType = int32
+
+const (
+	DseRevisionTypeCancelContinuousPaging = DseRevisionType(0x00000001)
+	DseRevisionTypeMoreContinuousPages    = DseRevisionType(0x00000002) // DSE v2+
+)
+
+type ReasonMapFailureCode = uint16
+
+const (
+	ReasonMapFailureCodeUnknown               = ReasonMapFailureCode(0x0000)
+	ReasonMapFailureCodeTooManyTombstonesRead = ReasonMapFailureCode(0x0001)
+	ReasonMapFailureCodeIndexNotAvailable     = ReasonMapFailureCode(0x0002)
+	ReasonMapFailureCodeCdcSpaceFull          = ReasonMapFailureCode(0x0003)
+	ReasonMapFailureCodeCounterWrite          = ReasonMapFailureCode(0x0004)
+	ReasonMapFailureCodeTableNotFound         = ReasonMapFailureCode(0x0005)
+	ReasonMapFailureCodeKeyspaceNotFound      = ReasonMapFailureCode(0x0006)
 )

@@ -12,7 +12,7 @@ import (
 
 func TestSupportedCodec_Encode(test *testing.T) {
 	codec := &SupportedCodec{}
-	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
+	for _, version := range cassandraprotocol.AllProtocolVersions() {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []struct {
 				name     string
@@ -119,7 +119,7 @@ func TestSupportedCodec_Encode(test *testing.T) {
 
 func TestSupportedCodec_EncodedLength(test *testing.T) {
 	codec := &SupportedCodec{}
-	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
+	for _, version := range cassandraprotocol.AllProtocolVersions() {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -178,7 +178,7 @@ func TestSupportedCodec_EncodedLength(test *testing.T) {
 
 func TestSupportedCodec_Decode(test *testing.T) {
 	codec := &SupportedCodec{}
-	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
+	for _, version := range cassandraprotocol.AllProtocolVersions() {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{

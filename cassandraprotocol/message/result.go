@@ -91,7 +91,7 @@ func (m *SchemaChangeResult) String() string {
 
 type PreparedResult struct {
 	PreparedQueryId []byte
-	// The result set metadata id; valid from protocol v5 onwards, if the prepared statement is a SELECT.
+	// The result set metadata id; valid for protocol version 5, if the prepared statement is a SELECT. Also valid in DSE v2. See Execute.
 	ResultMetadataId []byte
 	// Reflects the prepared statement's bound variables, if any, or empty (but not nil) if there are no bound variables.
 	VariablesMetadata *VariablesMetadata
@@ -285,7 +285,7 @@ func (c *ResultCodec) Encode(msg Message, dest io.Writer, version cassandraproto
 		} else if err = primitives.WriteShortBytes(p.PreparedQueryId, dest); err != nil {
 			return fmt.Errorf("cannot write RESULT Prepared prepared query id: %w", err)
 		}
-		if version >= cassandraprotocol.ProtocolVersion5 {
+		if hasResultMetadataId(version) {
 			if len(p.ResultMetadataId) == 0 {
 				return errors.New("cannot write empty RESULT Prepared result metadata id")
 			} else if err = primitives.WriteShortBytes(p.ResultMetadataId, dest); err != nil {
@@ -371,7 +371,7 @@ func (c *ResultCodec) EncodedLength(msg Message, version cassandraprotocol.Proto
 			return -1, fmt.Errorf("expected *message.PreparedResult, got %T", msg)
 		}
 		length += primitives.LengthOfShortBytes(p.PreparedQueryId)
-		if version >= cassandraprotocol.ProtocolVersion5 {
+		if hasResultMetadataId(version) {
 			length += primitives.LengthOfShortBytes(p.ResultMetadataId)
 		}
 		if p.VariablesMetadata == nil {
@@ -472,7 +472,7 @@ func (c *ResultCodec) Decode(source io.Reader, version cassandraprotocol.Protoco
 		if p.PreparedQueryId, err = primitives.ReadShortBytes(source); err != nil {
 			return nil, fmt.Errorf("cannot read RESULT Prepared prepared query id: %w", err)
 		}
-		if version >= cassandraprotocol.ProtocolVersion5 {
+		if hasResultMetadataId(version) {
 			if p.ResultMetadataId, err = primitives.ReadShortBytes(source); err != nil {
 				return nil, fmt.Errorf("cannot read RESULT Prepared result metadata id: %w", err)
 			}
@@ -510,4 +510,9 @@ func (c *ResultCodec) Decode(source io.Reader, version cassandraprotocol.Protoco
 
 func (c *ResultCodec) GetOpCode() cassandraprotocol.OpCode {
 	return cassandraprotocol.OpCodeResult
+}
+
+func hasResultMetadataId(version cassandraprotocol.ProtocolVersion) bool {
+	return version >= cassandraprotocol.ProtocolVersion5 &&
+		version != cassandraprotocol.ProtocolVersionDse1
 }

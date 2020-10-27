@@ -7,11 +7,11 @@ import (
 )
 
 type Codec struct {
-	compressor compression.MessageCompressor
-	codecs     map[cassandraprotocol.OpCode]message.Codec
+	compressor    compression.MessageCompressor
+	messageCodecs map[cassandraprotocol.OpCode]message.Codec
 }
 
-var defaultCodecs = []message.Codec{
+var defaultMessageCodecs = []message.Codec{
 	&message.StartupCodec{},
 	&message.OptionsCodec{},
 	&message.QueryCodec{},
@@ -28,27 +28,34 @@ var defaultCodecs = []message.Codec{
 	&message.EventCodec{},
 	&message.AuthChallengeCodec{},
 	&message.AuthSuccessCodec{},
+	// DSE-specific
+	&message.ReviseCodec{},
 }
 
 type CodecCustomizer func(*Codec)
 
 func NewCodec(customizers ...CodecCustomizer) *Codec {
-	codec := &Codec{codecs: makeCodecsMap(defaultCodecs)}
-	for _, customizer := range customizers {
-		customizer(codec)
+	frameCodec := &Codec{messageCodecs: make(map[cassandraprotocol.OpCode]message.Codec, len(defaultMessageCodecs))}
+	for _, messageCodec := range defaultMessageCodecs {
+		frameCodec.messageCodecs[messageCodec.GetOpCode()] = messageCodec
 	}
-	return codec
+	for _, customizer := range customizers {
+		customizer(frameCodec)
+	}
+	return frameCodec
 }
 
 func WithCompressor(compressor compression.MessageCompressor) CodecCustomizer {
-	return func(codec *Codec) {
-		codec.compressor = compressor
+	return func(frameCodec *Codec) {
+		frameCodec.compressor = compressor
 	}
 }
 
-func WithMessageCodecs(codecs ...message.Codec) CodecCustomizer {
-	return func(codec *Codec) {
-		codec.codecs = makeCodecsMap(codecs)
+func WithMessageCodecs(messageCodecs ...message.Codec) CodecCustomizer {
+	return func(frameCodec *Codec) {
+		for _, codec := range messageCodecs {
+			frameCodec.messageCodecs[codec.GetOpCode()] = codec
+		}
 	}
 }
 
@@ -58,12 +65,4 @@ func (c *Codec) CompressionAlgorithm() string {
 	} else {
 		return c.compressor.Algorithm()
 	}
-}
-
-func makeCodecsMap(codecs []message.Codec) map[cassandraprotocol.OpCode]message.Codec {
-	var codecsMap = make(map[cassandraprotocol.OpCode]message.Codec, len(codecs))
-	for _, codec := range codecs {
-		codecsMap[codec.GetOpCode()] = codec
-	}
-	return codecsMap
 }

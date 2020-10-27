@@ -12,8 +12,8 @@ import (
 
 func (c *Codec) Encode(frame *Frame, dest io.Writer) error {
 	version := frame.Header.Version
-	if version < cassandraprotocol.ProtocolVersionMin || version > cassandraprotocol.ProtocolVersionMax {
-		return fmt.Errorf("unsupported protocol version: %v", version)
+	if err := cassandraprotocol.CheckProtocolVersion(version); err != nil {
+		return err
 	}
 	if version < cassandraprotocol.ProtocolVersion4 && frame.Body.CustomPayload != nil {
 		return fmt.Errorf("custom payloads are not supported in protocol version %v", version)
@@ -30,7 +30,7 @@ func (c *Codec) Encode(frame *Frame, dest io.Writer) error {
 
 func (c *Codec) findEncoder(frame *Frame) (encoder message.Encoder, err error) {
 	opCode := frame.Body.Message.GetOpCode()
-	encoder, found := c.codecs[opCode]
+	encoder, found := c.messageCodecs[opCode]
 	if !found {
 		err = errors.New(fmt.Sprintf("unsupported opcode %d", opCode))
 	}

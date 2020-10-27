@@ -13,7 +13,7 @@ import (
 func TestErrorCodec_Encode(test *testing.T) {
 	codec := &ErrorCodec{}
 	// errors encoded the same in all versions
-	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
+	for _, version := range cassandraprotocol.AllProtocolVersions() {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -190,8 +190,8 @@ func TestErrorCodec_Encode(test *testing.T) {
 			}
 		})
 	}
-	// errors encoded differently in v5
-	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersion4; version++ {
+	// num failures v3, v4, DSE v1
+	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion3, cassandraprotocol.ProtocolVersion4} {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -249,8 +249,8 @@ func TestErrorCodec_Encode(test *testing.T) {
 			}
 		})
 	}
-	// errors encoded differently in v5
-	for version := cassandraprotocol.ProtocolVersion5; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
+	// reason map in v5, DSE v2
+	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion5, cassandraprotocol.ProtocolVersionDse1, cassandraprotocol.ProtocolVersionDse2} {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -317,7 +317,7 @@ func TestErrorCodec_Encode(test *testing.T) {
 func TestErrorCodec_EncodedLength(test *testing.T) {
 	codec := &ErrorCodec{}
 	// errors encoded the same in all versions
-	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
+	for _, version := range cassandraprotocol.AllProtocolVersions() {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -449,8 +449,8 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 			}
 		})
 	}
-	// errors encoded differently in v5
-	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersion4; version++ {
+	// num failures in v3, v4, DSE v1
+	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion3, cassandraprotocol.ProtocolVersion4} {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -503,8 +503,8 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 			}
 		})
 	}
-	// errors encoded differently in v5
-	for version := cassandraprotocol.ProtocolVersion5; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
+	// reason map in v5, DSE v2
+	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion5, cassandraprotocol.ProtocolVersionDse1, cassandraprotocol.ProtocolVersionDse2} {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -566,7 +566,7 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 func TestErrorCodec_Decode(test *testing.T) {
 	codec := &ErrorCodec{}
 	// errors encoded the same in all versions
-	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
+	for _, version := range cassandraprotocol.AllProtocolVersions() {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{
@@ -743,8 +743,8 @@ func TestErrorCodec_Decode(test *testing.T) {
 			}
 		})
 	}
-	// errors encoded differently in v5
-	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersion4; version++ {
+	// num failures in v3, v4, DSE v1
+	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion3, cassandraprotocol.ProtocolVersion4} {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{
@@ -802,8 +802,8 @@ func TestErrorCodec_Decode(test *testing.T) {
 			}
 		})
 	}
-	// errors encoded differently in v5
-	for version := cassandraprotocol.ProtocolVersion5; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
+	// reason map in v5, DSE v2
+	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion5, cassandraprotocol.ProtocolVersionDse1, cassandraprotocol.ProtocolVersionDse2} {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{

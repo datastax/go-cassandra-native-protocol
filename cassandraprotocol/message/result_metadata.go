@@ -45,9 +45,14 @@ func (rm *VariablesMetadata) Flags() (flag cassandraprotocol.VariablesFlag) {
 
 type RowsMetadata struct {
 	// always present, even when ColumnSpecs is nil
-	ColumnCount         int32
-	PagingState         []byte
-	NewResultMetadataId []byte // v5+
+	ColumnCount int32
+	PagingState []byte
+	// Valid for protocol version 5 and DSE protocol version 2 only.
+	NewResultMetadataId []byte
+	// Valid for DSE protocol versions only.
+	ContinuousPageNo int32
+	// Valid for DSE protocol versions only.
+	LastContinuousPage bool
 	// If nil, the NO_METADATA flag is set. Should never be nil in a Prepared result.
 	ColumnSpecs []*ColumnMetadata
 }
@@ -103,6 +108,12 @@ func (rm *RowsMetadata) Flags() (flag cassandraprotocol.RowsFlag) {
 	if rm.NewResultMetadataId != nil {
 		flag |= cassandraprotocol.RowsFlagMetadataChanged
 	}
+	if rm.ContinuousPageNo > 0 {
+		flag |= cassandraprotocol.RowsFlagDseContinuousPaging
+		if rm.LastContinuousPage {
+			flag |= cassandraprotocol.RowsFlagDseLastContinuousPage
+		}
+	}
 	return flag
 }
 
@@ -116,7 +127,7 @@ type ColumnMetadata struct {
 
 func encodeVariablesMetadata(metadata *VariablesMetadata, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
 	flags := metadata.Flags()
-	if err = primitives.WriteInt(flags, dest); err != nil {
+	if err = primitives.WriteInt(int32(flags), dest); err != nil {
 		return fmt.Errorf("cannot write RESULT Prepared variables metadata flags: %w", err)
 	}
 	if err = primitives.WriteInt(int32(len(metadata.ColumnSpecs)), dest); err != nil {
@@ -161,10 +172,11 @@ func lengthOfVariablesMetadata(metadata *VariablesMetadata, version cassandrapro
 
 func decodeVariablesMetadata(source io.Reader, version cassandraprotocol.ProtocolVersion) (metadata *VariablesMetadata, err error) {
 	metadata = &VariablesMetadata{}
-	var flags cassandraprotocol.VariablesFlag
-	if flags, err = primitives.ReadInt(source); err != nil {
+	var f int32
+	if f, err = primitives.ReadInt(source); err != nil {
 		return nil, fmt.Errorf("cannot read RESULT Prepared variables metadata flags: %w", err)
 	}
+	var flags = cassandraprotocol.VariablesFlag(f)
 	var columnCount int32
 	if columnCount, err = primitives.ReadInt(source); err != nil {
 		return nil, fmt.Errorf("cannot read RESULT Prepared variables metadata column count: %w", err)
@@ -195,7 +207,7 @@ func decodeVariablesMetadata(source io.Reader, version cassandraprotocol.Protoco
 
 func encodeRowsMetadata(metadata *RowsMetadata, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
 	flags := metadata.Flags()
-	if err = primitives.WriteInt(flags, dest); err != nil {
+	if err = primitives.WriteInt(int32(flags), dest); err != nil {
 		return fmt.Errorf("cannot write RESULT Rows metadata flags: %w", err)
 	}
 	columnSpecsLength := len(metadata.ColumnSpecs)
@@ -214,9 +226,14 @@ func encodeRowsMetadata(metadata *RowsMetadata, dest io.Writer, version cassandr
 			return fmt.Errorf("cannot write RESULT Rows metadata paging state: %w", err)
 		}
 	}
-	if version >= cassandraprotocol.ProtocolVersion5 && flags&cassandraprotocol.RowsFlagMetadataChanged > 0 {
+	if flags&cassandraprotocol.RowsFlagMetadataChanged > 0 {
 		if err = primitives.WriteShortBytes(metadata.NewResultMetadataId, dest); err != nil {
 			return fmt.Errorf("cannot write RESULT Rows metadata new result metadata id: %w", err)
+		}
+	}
+	if flags&cassandraprotocol.RowsFlagDseContinuousPaging > 0 {
+		if err = primitives.WriteInt(metadata.ContinuousPageNo, dest); err != nil {
+			return fmt.Errorf("cannot write RESULT Rows metadata continuous page number: %w", err)
 		}
 	}
 	if flags&cassandraprotocol.RowsFlagNoMetadata == 0 && columnSpecsLength > 0 {
@@ -235,8 +252,11 @@ func lengthOfRowsMetadata(metadata *RowsMetadata, version cassandraprotocol.Prot
 	if flags&cassandraprotocol.RowsFlagHasMorePages > 0 {
 		length += primitives.LengthOfBytes(metadata.PagingState)
 	}
-	if version >= cassandraprotocol.ProtocolVersion5 && flags&cassandraprotocol.RowsFlagMetadataChanged > 0 {
+	if flags&cassandraprotocol.RowsFlagMetadataChanged > 0 {
 		length += primitives.LengthOfShortBytes(metadata.NewResultMetadataId)
+	}
+	if flags&cassandraprotocol.RowsFlagDseContinuousPaging > 0 {
+		length += primitives.LengthOfInt // continuous page number
 	}
 	if flags&cassandraprotocol.RowsFlagNoMetadata == 0 && len(metadata.ColumnSpecs) > 0 {
 		globalTableSpec := flags&cassandraprotocol.RowsFlagGlobalTablesSpec > 0
@@ -251,10 +271,11 @@ func lengthOfRowsMetadata(metadata *RowsMetadata, version cassandraprotocol.Prot
 
 func decodeRowsMetadata(source io.Reader, version cassandraprotocol.ProtocolVersion) (metadata *RowsMetadata, err error) {
 	metadata = &RowsMetadata{}
-	var flags cassandraprotocol.RowsFlag
-	if flags, err = primitives.ReadInt(source); err != nil {
+	var f int32
+	if f, err = primitives.ReadInt(source); err != nil {
 		return nil, fmt.Errorf("cannot read RESULT Rows metadata flags: %w", err)
 	}
+	var flags = cassandraprotocol.RowsFlag(f)
 	if metadata.ColumnCount, err = primitives.ReadInt(source); err != nil {
 		return nil, fmt.Errorf("cannot read RESULT Rows metadata column count: %w", err)
 	}
@@ -263,10 +284,16 @@ func decodeRowsMetadata(source io.Reader, version cassandraprotocol.ProtocolVers
 			return nil, fmt.Errorf("cannot read RESULT Rows metadata paging state: %w", err)
 		}
 	}
-	if version >= cassandraprotocol.ProtocolVersion5 && flags&cassandraprotocol.RowsFlagMetadataChanged > 0 {
+	if flags&cassandraprotocol.RowsFlagMetadataChanged > 0 {
 		if metadata.NewResultMetadataId, err = primitives.ReadShortBytes(source); err != nil {
 			return nil, fmt.Errorf("cannot read RESULT Rows metadata new result metadata id: %w", err)
 		}
+	}
+	if flags&cassandraprotocol.RowsFlagDseContinuousPaging > 0 {
+		if metadata.ContinuousPageNo, err = primitives.ReadInt(source); err != nil {
+			return nil, fmt.Errorf("cannot read RESULT Rows metadata continuous paging number: %w", err)
+		}
+		metadata.LastContinuousPage = flags&cassandraprotocol.RowsFlagDseLastContinuousPage > 0
 	}
 	if flags&cassandraprotocol.RowsFlagNoMetadata == 0 {
 		metadata.ColumnSpecs = make([]*ColumnMetadata, metadata.ColumnCount)
