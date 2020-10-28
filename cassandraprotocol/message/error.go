@@ -416,7 +416,7 @@ type ReadFailure struct {
 	// A map of endpoint to failure reason codes. This maps the endpoints of the replica nodes that
 	// failed when executing the request to a code representing the reason for the failure.
 	// Only filled when the protocol versions is >= 5.
-	ReasonMap map[string]uint16
+	ReasonMap map[string]cassandraprotocol.ReasonMapFailureCode
 	// Whether the replica that was asked for data responded.
 	DataPresent bool
 }

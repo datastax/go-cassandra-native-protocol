@@ -13,7 +13,7 @@ import (
 func TestEventCodec_Encode(test *testing.T) {
 	codec := &EventCodec{}
 	// versions < 4
-	for version := cassandraprotocol.ProtocolVersionMin; version < cassandraprotocol.ProtocolVersion4; version++ {
+	for _, version := range cassandraprotocol.AllProtocolVersionsLesserThan(cassandraprotocol.ProtocolVersion4) {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -145,7 +145,7 @@ func TestEventCodec_Encode(test *testing.T) {
 		})
 	}
 	// versions >= 4
-	for version := cassandraprotocol.ProtocolVersion4; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
+	for _, version := range cassandraprotocol.AllProtocolVersionsGreaterThanOrEqualTo(cassandraprotocol.ProtocolVersion4) {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -288,7 +288,7 @@ func TestEventCodec_Encode(test *testing.T) {
 
 func TestEventCodec_EncodedLength(test *testing.T) {
 	codec := &EventCodec{}
-	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
+	for _, version := range cassandraprotocol.AllProtocolVersions() {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -413,7 +413,7 @@ func TestEventCodec_EncodedLength(test *testing.T) {
 func TestEventCodec_Decode(test *testing.T) {
 	codec := &EventCodec{}
 	// versions < 4
-	for version := cassandraprotocol.ProtocolVersionMin; version < cassandraprotocol.ProtocolVersion4; version++ {
+	for _, version := range cassandraprotocol.AllProtocolVersionsLesserThan(cassandraprotocol.ProtocolVersion4) {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{
@@ -533,7 +533,7 @@ func TestEventCodec_Decode(test *testing.T) {
 		})
 	}
 	// versions >= 4
-	for version := cassandraprotocol.ProtocolVersion4; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
+	for _, version := range cassandraprotocol.AllProtocolVersionsGreaterThanOrEqualTo(cassandraprotocol.ProtocolVersion4) {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{

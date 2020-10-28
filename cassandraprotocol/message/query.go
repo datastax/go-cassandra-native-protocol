@@ -34,7 +34,7 @@ func (c *QueryCodec) Encode(msg Message, dest io.Writer, version cassandraprotoc
 		return errors.New(fmt.Sprintf("expected *message.Query, got %T", msg))
 	}
 	if query.Query == "" {
-		return errors.New("QUERY missing query string")
+		return errors.New("cannot write QUERY empty query string")
 	} else if err := primitives.WriteLongString(query.Query, dest); err != nil {
 		return fmt.Errorf("cannot write QUERY query string: %w", err)
 	}
@@ -65,7 +65,7 @@ func (c *QueryCodec) Decode(source io.Reader, version cassandraprotocol.Protocol
 	if query, err := primitives.ReadLongString(source); err != nil {
 		return nil, err
 	} else if query == "" {
-		return nil, fmt.Errorf("QUERY missing query string")
+		return nil, fmt.Errorf("cannot read QUERY empty query string")
 	} else if options, err := DecodeQueryOptions(source, version); err != nil {
 		return nil, err
 	} else {

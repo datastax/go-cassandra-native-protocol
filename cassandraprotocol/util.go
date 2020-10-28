@@ -4,6 +4,126 @@ import (
 	"fmt"
 )
 
+func AllProtocolVersions() []ProtocolVersion {
+	return []ProtocolVersion{
+		ProtocolVersion3,
+		ProtocolVersion4,
+		ProtocolVersion5,
+		ProtocolVersionDse1,
+		ProtocolVersionDse2,
+	}
+}
+
+func AllOssProtocolVersions() []ProtocolVersion {
+	return []ProtocolVersion{
+		ProtocolVersion3,
+		ProtocolVersion4,
+		ProtocolVersion5,
+	}
+}
+
+func AllDseProtocolVersions() []ProtocolVersion {
+	return []ProtocolVersion{
+		ProtocolVersionDse1,
+		ProtocolVersionDse2,
+	}
+}
+
+func AllBetaProtocolVersions() []ProtocolVersion {
+	return []ProtocolVersion{
+		ProtocolVersion5,
+	}
+}
+
+func matchingProtocolVersions(filters ...func(version ProtocolVersion) bool) []ProtocolVersion {
+	var result []ProtocolVersion
+	for _, v := range AllProtocolVersions() {
+		include := true
+		for _, filter := range filters {
+			if !filter(v) {
+				include = false
+				break
+			}
+		}
+		if include {
+			result = append(result, v)
+		}
+	}
+	return result
+}
+
+func AllNonBetaProtocolVersions() []ProtocolVersion {
+	return matchingProtocolVersions(func(v ProtocolVersion) bool { return !IsProtocolVersionBeta(v) })
+}
+
+func AllProtocolVersionsGreaterThanOrEqualTo(version ProtocolVersion) []ProtocolVersion {
+	return matchingProtocolVersions(func(v ProtocolVersion) bool { return v >= version })
+}
+
+func AllProtocolVersionsGreaterThan(version ProtocolVersion) []ProtocolVersion {
+	return matchingProtocolVersions(func(v ProtocolVersion) bool { return v > version })
+}
+
+func AllProtocolVersionsLesserThanOrEqualTo(version ProtocolVersion) []ProtocolVersion {
+	return matchingProtocolVersions(func(v ProtocolVersion) bool { return v <= version })
+}
+
+func AllProtocolVersionsLesserThan(version ProtocolVersion) []ProtocolVersion {
+	return matchingProtocolVersions(func(v ProtocolVersion) bool { return v < version })
+}
+
+func CheckProtocolVersion(version ProtocolVersion) error {
+	for _, v := range AllProtocolVersions() {
+		if v == version {
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid protocol version: %v", version)
+}
+
+func IsProtocolVersion(version ProtocolVersion) bool {
+	return CheckProtocolVersion(version) == nil
+}
+
+func CheckOssProtocolVersion(version ProtocolVersion) error {
+	for _, v := range AllOssProtocolVersions() {
+		if v == version {
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid OSS protocol version: %v", version)
+}
+
+func IsOssProtocolVersion(version ProtocolVersion) bool {
+	return CheckOssProtocolVersion(version) == nil
+}
+
+func CheckDseProtocolVersion(version ProtocolVersion) error {
+	for _, v := range AllDseProtocolVersions() {
+		if v == version {
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid DSE protocol version: %v", version)
+}
+
+func IsDseProtocolVersion(version ProtocolVersion) bool {
+	return CheckDseProtocolVersion(version) == nil
+}
+
+func CheckProtocolVersionBeta(version ProtocolVersion) error {
+	for _, v := range AllBetaProtocolVersions() {
+		if v == version {
+			return nil
+		}
+	}
+	return fmt.Errorf("protocol version is not beta: %v", version)
+}
+
+func IsProtocolVersionBeta(version ProtocolVersion) bool {
+	return CheckProtocolVersionBeta(version) == nil
+}
+
 func CheckOpCode(code OpCode) error {
 	switch code {
 	case OpCodeStartup:
@@ -14,6 +134,7 @@ func CheckOpCode(code OpCode) error {
 	case OpCodeRegister:
 	case OpCodeBatch:
 	case OpCodeAuthResponse:
+	case OpCodeDseRevise:
 	case OpCodeError:
 	case OpCodeReady:
 	case OpCodeAuthenticate:
@@ -42,6 +163,7 @@ func CheckRequestOpCode(code OpCode) error {
 	case OpCodeRegister:
 	case OpCodeBatch:
 	case OpCodeAuthResponse:
+	case OpCodeDseRevise:
 	default:
 		return fmt.Errorf("invalid request opcode: %v", code)
 	}
@@ -70,6 +192,19 @@ func CheckResponseOpCode(code OpCode) error {
 
 func IsResponseOpCode(code OpCode) bool {
 	return CheckResponseOpCode(code) == nil
+}
+
+func CheckDseOpCode(code OpCode) error {
+	switch code {
+	case OpCodeDseRevise:
+	default:
+		return fmt.Errorf("invalid DSE opcode: %v", code)
+	}
+	return nil
+}
+
+func IsDseOpCode(code OpCode) bool {
+	return CheckDseOpCode(code) == nil
 }
 
 func CheckConsistencyLevel(consistency ConsistencyLevel) error {
@@ -286,4 +421,18 @@ func CheckResultType(t ResultType) error {
 
 func IsResultType(t ResultType) bool {
 	return CheckResultType(t) == nil
+}
+
+func CheckDseRevisionType(t DseRevisionType) error {
+	switch t {
+	case DseRevisionTypeCancelContinuousPaging:
+	case DseRevisionTypeMoreContinuousPages:
+	default:
+		return fmt.Errorf("invalid DSE revision type: %v", t)
+	}
+	return nil
+}
+
+func IsDseRevisionType(t DseRevisionType) bool {
+	return CheckDseRevisionType(t) == nil
 }

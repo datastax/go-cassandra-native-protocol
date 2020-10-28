@@ -61,6 +61,12 @@ func WithPageSize(pageSize int32) QueryOptionsCustomizer {
 	}
 }
 
+func WithPageSizeInBytes() QueryOptionsCustomizer {
+	return func(options *QueryOptions) {
+		options.PageSizeInBytes = true
+	}
+}
+
 func WithPagingState(pagingState []byte) QueryOptionsCustomizer {
 	return func(options *QueryOptions) {
 		options.PagingState = pagingState
@@ -85,6 +91,12 @@ func WithNowInSeconds(nowInSeconds int32) QueryOptionsCustomizer {
 	}
 }
 
+func WithContinuousPagingOptions(continuousPagingOptions *ContinuousPagingOptions) QueryOptionsCustomizer {
+	return func(options *QueryOptions) {
+		options.ContinuousPagingOptions = continuousPagingOptions
+	}
+}
+
 const (
 	pageSizeNone         int32 = -1
 	DefaultTimestampNone int64 = math.MinInt64
@@ -92,16 +104,21 @@ const (
 )
 
 type QueryOptions struct {
-	Consistency       cassandraprotocol.ConsistencyLevel
-	PositionalValues  []*primitives.Value
-	NamedValues       map[string]*primitives.Value
-	SkipMetadata      bool
-	PageSize          int32
+	Consistency      cassandraprotocol.ConsistencyLevel
+	PositionalValues []*primitives.Value
+	NamedValues      map[string]*primitives.Value
+	SkipMetadata     bool
+	PageSize         int32
+	// Whether the page size is expressed in number of rows or number of bytes. Valid for DSE protocol versions only.
+	PageSizeInBytes   bool
 	PagingState       []byte
 	SerialConsistency cassandraprotocol.ConsistencyLevel
 	DefaultTimestamp  int64
-	Keyspace          string
-	NowInSeconds      int32
+	// Valid for protocol version 5 and DSE protocol version 2 only.
+	Keyspace     string
+	NowInSeconds int32
+	// Valid only for DSE protocol versions
+	ContinuousPagingOptions *ContinuousPagingOptions
 }
 
 func (o *QueryOptions) String() string {
@@ -130,6 +147,9 @@ func (o *QueryOptions) Flags() cassandraprotocol.QueryFlag {
 	}
 	if o.PageSize > 0 {
 		flags |= cassandraprotocol.QueryFlagPageSize
+		if o.PageSizeInBytes {
+			flags |= cassandraprotocol.QueryFlagDsePageSizeBytes
+		}
 	}
 	if o.PagingState != nil {
 		flags |= cassandraprotocol.QueryFlagPagingState
@@ -146,6 +166,9 @@ func (o *QueryOptions) Flags() cassandraprotocol.QueryFlag {
 	if o.NowInSeconds != NowInSecondsNone {
 		flags |= cassandraprotocol.QueryFlagNowInSeconds
 	}
+	if o.ContinuousPagingOptions != nil {
+		flags |= cassandraprotocol.QueryFlagDseWithContinuousPagingOptions
+	}
 	return flags
 }
 
@@ -157,7 +180,7 @@ func EncodeQueryOptions(options *QueryOptions, dest io.Writer, version cassandra
 	}
 	flags := options.Flags()
 	if version >= cassandraprotocol.ProtocolVersion5 {
-		if err = primitives.WriteInt(flags, dest); err != nil {
+		if err = primitives.WriteInt(int32(flags), dest); err != nil {
 			return fmt.Errorf("cannot write flags: %w", err)
 		}
 	} else {
@@ -199,30 +222,31 @@ func EncodeQueryOptions(options *QueryOptions, dest io.Writer, version cassandra
 		}
 	}
 	if flags&cassandraprotocol.QueryFlagWithKeyspace != 0 {
-		if version < cassandraprotocol.ProtocolVersion5 {
-			return fmt.Errorf("cannot set keyspace with protocol version: %v", version)
-		} else if options.Keyspace == "" {
+		if options.Keyspace == "" {
 			return errors.New("cannot write empty keyspace")
 		} else if err = primitives.WriteString(options.Keyspace, dest); err != nil {
 			return fmt.Errorf("cannot write keyspace: %w", err)
 		}
 	}
 	if flags&cassandraprotocol.QueryFlagNowInSeconds != 0 {
-		if version < cassandraprotocol.ProtocolVersion5 {
-			return fmt.Errorf("cannot set now-in-seconds with protocol version: %v", version)
-		} else if err = primitives.WriteInt(options.NowInSeconds, dest); err != nil {
+		if err = primitives.WriteInt(options.NowInSeconds, dest); err != nil {
 			return fmt.Errorf("cannot write now-in-seconds: %w", err)
+		}
+	}
+	if flags&cassandraprotocol.QueryFlagDseWithContinuousPagingOptions != 0 {
+		if err = EncodeContinuousPagingOptions(options.ContinuousPagingOptions, dest, version); err != nil {
+			return fmt.Errorf("cannot encode continuous paging options: %w", err)
 		}
 	}
 	return nil
 }
 
-func LengthOfQueryOptions(options *QueryOptions, version cassandraprotocol.ProtocolVersion) (size int, err error) {
-	size += primitives.LengthOfShort // consistency level
+func LengthOfQueryOptions(options *QueryOptions, version cassandraprotocol.ProtocolVersion) (length int, err error) {
+	length += primitives.LengthOfShort // consistency level
 	if version >= cassandraprotocol.ProtocolVersion5 {
-		size += primitives.LengthOfInt
+		length += primitives.LengthOfInt
 	} else {
-		size += primitives.LengthOfByte
+		length += primitives.LengthOfByte
 	}
 	var s int
 	flags := options.Flags()
@@ -234,26 +258,33 @@ func LengthOfQueryOptions(options *QueryOptions, version cassandraprotocol.Proto
 		}
 	}
 	if err != nil {
-		return -1, fmt.Errorf("cannot compute size of options: %w", err)
+		return -1, fmt.Errorf("cannot compute length of query options values: %w", err)
 	}
-	size += s
+	length += s
 	if flags&cassandraprotocol.QueryFlagPageSize != 0 {
-		size += primitives.LengthOfInt
+		length += primitives.LengthOfInt
 	}
 	if flags&cassandraprotocol.QueryFlagPagingState != 0 {
-		size += primitives.LengthOfBytes(options.PagingState)
+		length += primitives.LengthOfBytes(options.PagingState)
 	}
 	if flags&cassandraprotocol.QueryFlagSerialConsistency != 0 {
-		size += primitives.LengthOfShort
+		length += primitives.LengthOfShort
 	}
 	if flags&cassandraprotocol.QueryFlagDefaultTimestamp != 0 {
-		size += primitives.LengthOfLong
+		length += primitives.LengthOfLong
 	}
 	if flags&cassandraprotocol.QueryFlagWithKeyspace != 0 {
-		size += primitives.LengthOfString(options.Keyspace)
+		length += primitives.LengthOfString(options.Keyspace)
 	}
 	if flags&cassandraprotocol.QueryFlagNowInSeconds != 0 {
-		size += primitives.LengthOfInt
+		length += primitives.LengthOfInt
+	}
+	if flags&cassandraprotocol.QueryFlagDseWithContinuousPagingOptions != 0 {
+		if lengthOfContinuousPagingOptions, err := LengthOfContinuousPagingOptions(options.ContinuousPagingOptions, version); err != nil {
+			return -1, fmt.Errorf("cannot compute length of continuous paging options: %w", err)
+		} else {
+			length += lengthOfContinuousPagingOptions
+		}
 	}
 	return
 }
@@ -267,7 +298,9 @@ func DecodeQueryOptions(source io.Reader, version cassandraprotocol.ProtocolVers
 	}
 	var flags cassandraprotocol.QueryFlag
 	if version >= cassandraprotocol.ProtocolVersion5 {
-		flags, err = primitives.ReadInt(source)
+		var f int32
+		f, err = primitives.ReadInt(source)
+		flags = cassandraprotocol.QueryFlag(f)
 	} else {
 		var f uint8
 		f, err = primitives.ReadByte(source)
@@ -290,6 +323,9 @@ func DecodeQueryOptions(source io.Reader, version cassandraprotocol.ProtocolVers
 	if flags&cassandraprotocol.QueryFlagPageSize != 0 {
 		if options.PageSize, err = primitives.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read page size: %w", err)
+		}
+		if flags&cassandraprotocol.QueryFlagDsePageSizeBytes != 0 {
+			options.PageSizeInBytes = true
 		}
 	}
 	if flags&cassandraprotocol.QueryFlagPagingState != 0 {
@@ -317,6 +353,11 @@ func DecodeQueryOptions(source io.Reader, version cassandraprotocol.ProtocolVers
 	if flags&cassandraprotocol.QueryFlagNowInSeconds != 0 {
 		if options.NowInSeconds, err = primitives.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read now-in-seconds: %w", err)
+		}
+	}
+	if flags&cassandraprotocol.QueryFlagDseWithContinuousPagingOptions != 0 {
+		if options.ContinuousPagingOptions, err = DecodeContinuousPagingOptions(source, version); err != nil {
+			return nil, fmt.Errorf("cannot read continuous paging options: %w", err)
 		}
 	}
 	return options, nil

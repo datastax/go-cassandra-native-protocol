@@ -9,7 +9,8 @@ import (
 )
 
 type Prepare struct {
-	Query    string
+	Query string
+	// Introduced in Protocol Version 5, also present in DSE protocol v2.
 	Keyspace string
 }
 
@@ -25,6 +26,14 @@ func (m *Prepare) String() string {
 	return fmt.Sprintf("PREPARE (%v, %v)", m.Query, m.Keyspace)
 }
 
+func (m *Prepare) Flags() cassandraprotocol.PrepareFlag {
+	var flags cassandraprotocol.PrepareFlag
+	if m.Keyspace != "" {
+		flags |= cassandraprotocol.PrepareFlagWithKeyspace
+	}
+	return flags
+}
+
 type PrepareCodec struct{}
 
 func (c *PrepareCodec) Encode(msg Message, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
@@ -32,22 +41,20 @@ func (c *PrepareCodec) Encode(msg Message, dest io.Writer, version cassandraprot
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.Prepare, got %T", msg))
 	}
-	if version < cassandraprotocol.ProtocolVersion5 && prepare.Keyspace != "" {
-		return fmt.Errorf("PREPARE cannot set keyspace with protocol version: %v", version)
+	if prepare.Query == "" {
+		return errors.New("cannot write PREPARE empty query string")
+	} else if err = primitives.WriteLongString(prepare.Query, dest); err != nil {
+		return fmt.Errorf("cannot write PREPARE query string: %w", err)
 	}
-	if err = primitives.WriteLongString(prepare.Query, dest); err != nil {
-		return fmt.Errorf("cannot write PREPARE query: %w", err)
-	}
-	if version >= cassandraprotocol.ProtocolVersion5 {
-		var flags cassandraprotocol.PrepareFlag
-		if prepare.Keyspace != "" {
-			flags |= cassandraprotocol.PrepareFlagWithKeyspace
-		}
-		if err = primitives.WriteInt(flags, dest); err != nil {
+	if hasPrepareFlags(version) {
+		flags := prepare.Flags()
+		if err = primitives.WriteInt(int32(flags), dest); err != nil {
 			return fmt.Errorf("cannot write PREPARE flags: %w", err)
 		}
 		if flags&cassandraprotocol.PrepareFlagWithKeyspace > 0 {
-			if err = primitives.WriteString(prepare.Keyspace, dest); err != nil {
+			if prepare.Keyspace == "" {
+				return errors.New("cannot write empty keyspace")
+			} else if err = primitives.WriteString(prepare.Keyspace, dest); err != nil {
 				return fmt.Errorf("cannot write PREPARE keyspace: %w", err)
 			}
 		}
@@ -61,7 +68,7 @@ func (c *PrepareCodec) EncodedLength(msg Message, version cassandraprotocol.Prot
 		return -1, errors.New(fmt.Sprintf("expected *message.Prepare, got %T", msg))
 	}
 	size += primitives.LengthOfLongString(prepare.Query)
-	if version >= cassandraprotocol.ProtocolVersion5 {
+	if hasPrepareFlags(version) {
 		size += primitives.LengthOfInt // flags
 		if prepare.Keyspace != "" {
 			size += primitives.LengthOfString(prepare.Keyspace)
@@ -75,11 +82,13 @@ func (c *PrepareCodec) Decode(source io.Reader, version cassandraprotocol.Protoc
 	if prepare.Query, err = primitives.ReadLongString(source); err != nil {
 		return nil, fmt.Errorf("cannot read PREPARE query: %w", err)
 	}
-	if version >= cassandraprotocol.ProtocolVersion5 {
+	if hasPrepareFlags(version) {
 		var flags cassandraprotocol.PrepareFlag
-		if flags, err = primitives.ReadInt(source); err != nil {
+		var f int32
+		if f, err = primitives.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read PREPARE flags: %w", err)
 		}
+		flags = cassandraprotocol.PrepareFlag(f)
 		if flags&cassandraprotocol.PrepareFlagWithKeyspace > 0 {
 			if prepare.Keyspace, err = primitives.ReadString(source); err != nil {
 				return nil, fmt.Errorf("cannot read PREPARE keyspace: %w", err)
@@ -91,4 +100,9 @@ func (c *PrepareCodec) Decode(source io.Reader, version cassandraprotocol.Protoc
 
 func (c *PrepareCodec) GetOpCode() cassandraprotocol.OpCode {
 	return cassandraprotocol.OpCodePrepare
+}
+
+func hasPrepareFlags(version cassandraprotocol.ProtocolVersion) bool {
+	return version >= cassandraprotocol.ProtocolVersion5 &&
+		version != cassandraprotocol.ProtocolVersionDse1
 }

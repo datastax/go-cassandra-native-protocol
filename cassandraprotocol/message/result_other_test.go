@@ -11,7 +11,7 @@ import (
 
 func TestResultCodec_Encode_Other(test *testing.T) {
 	codec := &ResultCodec{}
-	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
+	for _, version := range cassandraprotocol.AllProtocolVersions() {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -46,7 +46,7 @@ func TestResultCodec_Encode_Other(test *testing.T) {
 
 func TestResultCodec_EncodedLength_Other(test *testing.T) {
 	codec := &ResultCodec{}
-	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
+	for _, version := range cassandraprotocol.AllProtocolVersions() {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -75,7 +75,7 @@ func TestResultCodec_EncodedLength_Other(test *testing.T) {
 
 func TestResultCodec_Decode_Other(test *testing.T) {
 	codec := &ResultCodec{}
-	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
+	for _, version := range cassandraprotocol.AllProtocolVersions() {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{

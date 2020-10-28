@@ -13,7 +13,7 @@ import (
 func TestPrepareCodec_Encode(t *testing.T) {
 	codec := &PrepareCodec{}
 	// versions <= 4
-	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersion4; version++ {
+	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion3, cassandraprotocol.ProtocolVersion4, cassandraprotocol.ProtocolVersionDse1} {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -30,12 +30,6 @@ func TestPrepareCodec_Encode(t *testing.T) {
 					nil,
 					errors.New("expected *message.Prepare, got *message.Ready"),
 				},
-				{
-					"invalid prepare",
-					&Prepare{"SELECT", "ks1"},
-					nil,
-					fmt.Errorf("PREPARE cannot set keyspace with protocol version: %v", version),
-				},
 			}
 			for _, tt := range tests {
 				t.Run(tt.name, func(t *testing.T) {
@@ -47,8 +41,8 @@ func TestPrepareCodec_Encode(t *testing.T) {
 			}
 		})
 	}
-	// versions >= 5
-	for version := cassandraprotocol.ProtocolVersion5; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
+	// versions 5, DSE v2
+	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion5, cassandraprotocol.ProtocolVersionDse2} {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -92,7 +86,7 @@ func TestPrepareCodec_Encode(t *testing.T) {
 func TestPrepareCodec_EncodedLength(t *testing.T) {
 	codec := &PrepareCodec{}
 	// versions <= 4
-	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersion4; version++ {
+	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion3, cassandraprotocol.ProtocolVersion4, cassandraprotocol.ProtocolVersionDse1} {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -107,12 +101,6 @@ func TestPrepareCodec_EncodedLength(t *testing.T) {
 					-1,
 					errors.New("expected *message.Prepare, got *message.Ready"),
 				},
-				{
-					"invalid prepare",
-					&Prepare{"SELECT", "ks1"},
-					primitives.LengthOfLongString("SELECT"),
-					nil,
-				},
 			}
 			for _, tt := range tests {
 				t.Run(tt.name, func(t *testing.T) {
@@ -123,8 +111,8 @@ func TestPrepareCodec_EncodedLength(t *testing.T) {
 			}
 		})
 	}
-	// versions >= 5
-	for version := cassandraprotocol.ProtocolVersion5; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
+	// versions 5, DSE v2
+	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion5, cassandraprotocol.ProtocolVersionDse2} {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -163,7 +151,7 @@ func TestPrepareCodec_EncodedLength(t *testing.T) {
 func TestPrepareCodec_Decode(t *testing.T) {
 	codec := &PrepareCodec{}
 	// versions <= 4
-	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersion4; version++ {
+	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion3, cassandraprotocol.ProtocolVersion4, cassandraprotocol.ProtocolVersionDse1} {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []decodeTestCase{
 				{
@@ -185,8 +173,8 @@ func TestPrepareCodec_Decode(t *testing.T) {
 			}
 		})
 	}
-	// versions >= 5
-	for version := cassandraprotocol.ProtocolVersion5; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
+	// versions 5, DSE v2
+	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion5, cassandraprotocol.ProtocolVersionDse2} {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []decodeTestCase{
 				{

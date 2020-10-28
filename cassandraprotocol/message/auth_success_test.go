@@ -13,7 +13,7 @@ import (
 func TestAuthSuccessCodec_Encode(t *testing.T) {
 	token := []byte{0xca, 0xfe, 0xba, 0xbe}
 	codec := &AuthSuccessCodec{}
-	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
+	for _, version := range cassandraprotocol.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -50,7 +50,7 @@ func TestAuthSuccessCodec_Encode(t *testing.T) {
 func TestAuthSuccessCodec_EncodedLength(t *testing.T) {
 	token := []byte{0xca, 0xfe, 0xba, 0xbe}
 	codec := &AuthSuccessCodec{}
-	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
+	for _, version := range cassandraprotocol.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -86,7 +86,7 @@ func TestAuthSuccessCodec_EncodedLength(t *testing.T) {
 func TestAuthSuccessCodec_Decode(t *testing.T) {
 	token := []byte{0xca, 0xfe, 0xba, 0xbe}
 	codec := &AuthSuccessCodec{}
-	for version := cassandraprotocol.ProtocolVersionMin; version <= cassandraprotocol.ProtocolVersionBeta; version++ {
+	for _, version := range cassandraprotocol.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []decodeTestCase{
 				{

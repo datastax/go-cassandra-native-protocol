@@ -13,8 +13,8 @@ import (
 // EncodeFrame encodes the entire frame, compressing the body if needed.
 func (c *Codec) EncodeFrame(frame *Frame, dest io.Writer) error {
 	version := frame.Header.Version
-	if version < cassandraprotocol.ProtocolVersionMin || version > cassandraprotocol.ProtocolVersionMax {
-		return fmt.Errorf("unsupported protocol version: %v", version)
+	if err := cassandraprotocol.CheckProtocolVersion(version); err != nil {
+		return err
 	}
 	if version < cassandraprotocol.ProtocolVersion4 && frame.Body.CustomPayload != nil {
 		return fmt.Errorf("custom payloads are not supported in protocol version %v", version)
@@ -32,19 +32,16 @@ func (c *Codec) EncodeFrame(frame *Frame, dest io.Writer) error {
 // EncodeRawFrame encodes the header and writes the body as raw bytes.
 func (c *Codec) EncodeRawFrame(frame *RawFrame, dest io.Writer) error {
 	version := frame.RawHeader.Version
-	if version < cassandraprotocol.ProtocolVersionMin || version > cassandraprotocol.ProtocolVersionMax {
-		return fmt.Errorf("unsupported protocol version: %v", version)
+	if err := cassandraprotocol.CheckProtocolVersion(version); err != nil {
+		return err
 	}
-
 	if err := c.encodeRawHeader(frame.RawHeader, dest); err != nil {
 		return fmt.Errorf("cannot encode raw header: %w", err)
 	}
-
 	if bytesWritten, err := dest.Write(frame.RawBody); err != nil {
 		return fmt.Errorf(
 			"cannot write body: %w, body length: %d, bytes written: %d", err, len(frame.RawBody), bytesWritten)
 	}
-
 	return nil
 }
 
@@ -84,7 +81,7 @@ func (c *Codec) convertToRawHeader(frame *Frame, bodyLength int32) *RawHeader {
 
 func (c *Codec) findEncoder(frame *Frame) (encoder message.Encoder, err error) {
 	opCode := frame.Body.Message.GetOpCode()
-	encoder, found := c.codecs[opCode]
+	encoder, found := c.messageCodecs[opCode]
 	if !found {
 		err = errors.New(fmt.Sprintf("unsupported opcode %d", opCode))
 	}

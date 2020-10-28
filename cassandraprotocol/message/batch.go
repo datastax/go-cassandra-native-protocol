@@ -14,9 +14,9 @@ type Batch struct {
 	Consistency       cassandraprotocol.ConsistencyLevel
 	SerialConsistency cassandraprotocol.ConsistencyLevel
 	DefaultTimestamp  int64
-	// Introduced in Protocol Version 5
+	// Introduced in Protocol Version 5, also present in DSE protocol v2.
 	Keyspace string
-	// Introduced in Protocol Version 5
+	// Introduced in Protocol Version 5, not present in DSE protocol versions.
 	NowInSeconds int32
 }
 
@@ -172,7 +172,7 @@ func (c *BatchCodec) Encode(msg Message, dest io.Writer, version cassandraprotoc
 	}
 	flags := batch.Flags()
 	if version >= cassandraprotocol.ProtocolVersion5 {
-		err = primitives.WriteInt(flags, dest)
+		err = primitives.WriteInt(int32(flags), dest)
 	} else {
 		err = primitives.WriteByte(uint8(flags), dest)
 	}
@@ -190,9 +190,7 @@ func (c *BatchCodec) Encode(msg Message, dest io.Writer, version cassandraprotoc
 		}
 	}
 	if flags&cassandraprotocol.QueryFlagWithKeyspace > 0 {
-		if version < cassandraprotocol.ProtocolVersion5 {
-			return fmt.Errorf("cannot set BATCH keyspace with protocol version %d", version)
-		} else if batch.Keyspace == "" {
+		if batch.Keyspace == "" {
 			return errors.New("cannot write BATCH empty keyspace")
 		} else if err = primitives.WriteString(batch.Keyspace, dest); err != nil {
 			return fmt.Errorf("cannot write BATCH keyspace: %w", err)
@@ -298,7 +296,9 @@ func (c *BatchCodec) Decode(source io.Reader, version cassandraprotocol.Protocol
 	}
 	var flags cassandraprotocol.QueryFlag
 	if version >= cassandraprotocol.ProtocolVersion5 {
-		flags, err = primitives.ReadInt(source)
+		var f int32
+		f, err = primitives.ReadInt(source)
+		flags = cassandraprotocol.QueryFlag(f)
 	} else {
 		var f uint8
 		f, err = primitives.ReadByte(source)
