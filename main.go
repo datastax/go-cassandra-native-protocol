@@ -65,11 +65,11 @@ func testMessage(originalFrame *frame.Frame, useJson bool) {
 	}
 	codec := frame.NewCodec()
 	encodedFrame := bytes.Buffer{}
-	if err := codec.Encode(originalFrame, &encodedFrame); err != nil {
+	if err := codec.EncodeFrame(originalFrame, &encodedFrame); err != nil {
 		panic(err)
 	} else {
 		fmt.Print("encoded frame:\n", hex.Dump(encodedFrame.Bytes()))
-		if decodedFrame, err := codec.Decode(&encodedFrame); err != nil {
+		if decodedFrame, err := codec.DecodeFrame(&encodedFrame); err != nil {
 			panic(err)
 		} else {
 			if useJson {

@@ -17,11 +17,11 @@ func (q *Query) String() string {
 	return fmt.Sprintf("QUERY %s", q.Query)
 }
 
-func (q Query) IsResponse() bool {
+func (q *Query) IsResponse() bool {
 	return false
 }
 
-func (q Query) GetOpCode() cassandraprotocol.OpCode {
+func (q *Query) GetOpCode() cassandraprotocol.OpCode {
 	return cassandraprotocol.OpCodeQuery
 }
 

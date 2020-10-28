@@ -42,18 +42,13 @@ func (f *Frame) Flags(compress bool) cassandraprotocol.HeaderFlag {
 // should never be compressed. Empty messages like OPTIONS and READY also should not be compressed,
 // even if compression is in use.
 func (f *Frame) IsCompressible() bool {
-	opCode := f.Body.Message.GetOpCode()
-	// STARTUP should never be compressed as per protocol specs
-	return opCode != cassandraprotocol.OpCodeStartup &&
-		// OPTIONS and READY are empty and as such do not benefit from compression
-		opCode != cassandraprotocol.OpCodeOptions &&
-		opCode != cassandraprotocol.OpCodeReady
+	return isCompressible(f.Body.Message.GetOpCode())
 }
 
 // Dump encodes and dumps the contents of this frame, for debugging purposes.
 func (f *Frame) Dump() (string, error) {
 	buffer := bytes.Buffer{}
-	if err := NewCodec().Encode(f, &buffer); err != nil {
+	if err := NewCodec().EncodeFrame(f, &buffer); err != nil {
 		return "", err
 	} else {
 		return hex.Dump(buffer.Bytes()), nil
@@ -143,4 +138,12 @@ func (h *Header) String() string {
 
 func (b *Body) String() string {
 	return fmt.Sprintf("{tracing id: %v, payload: %v, warnings: %v, message: %v}", b.TracingId, b.CustomPayload, b.Warnings, b.Message)
+}
+
+func isCompressible(opCode cassandraprotocol.OpCode) bool {
+	// STARTUP should never be compressed as per protocol specs
+	return opCode != cassandraprotocol.OpCodeStartup &&
+		// OPTIONS and READY are empty and as such do not benefit from compression
+		opCode != cassandraprotocol.OpCodeOptions &&
+		opCode != cassandraprotocol.OpCodeReady
 }

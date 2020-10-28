@@ -10,7 +10,8 @@ import (
 	"io"
 )
 
-func (c *Codec) Encode(frame *Frame, dest io.Writer) error {
+// EncodeFrame encodes the entire frame, compressing the body if needed.
+func (c *Codec) EncodeFrame(frame *Frame, dest io.Writer) error {
 	version := frame.Header.Version
 	if err := cassandraprotocol.CheckProtocolVersion(version); err != nil {
 		return err
@@ -25,6 +26,56 @@ func (c *Codec) Encode(frame *Frame, dest io.Writer) error {
 		return c.encodeFrameCompressed(frame, dest)
 	} else {
 		return c.encodeFrameUncompressed(frame, dest)
+	}
+}
+
+// EncodeRawFrame encodes the header and writes the body as raw bytes.
+func (c *Codec) EncodeRawFrame(frame *RawFrame, dest io.Writer) error {
+	version := frame.RawHeader.Version
+	if err := cassandraprotocol.CheckProtocolVersion(version); err != nil {
+		return err
+	}
+	if err := c.encodeRawHeader(frame.RawHeader, dest); err != nil {
+		return fmt.Errorf("cannot encode raw header: %w", err)
+	}
+	if bytesWritten, err := dest.Write(frame.RawBody); err != nil {
+		return fmt.Errorf(
+			"cannot write body: %w, body length: %d, bytes written: %d", err, len(frame.RawBody), bytesWritten)
+	}
+	return nil
+}
+
+// ConvertToRawFrame converts a Frame to a RawFrame, encoding the body and compressing it if necessary.
+func (c *Codec) ConvertToRawFrame(frame *Frame) (*RawFrame, error) {
+	var body *bytes.Buffer
+	var err error
+
+	if c.compressor != nil && frame.IsCompressible() {
+		body, err = c.encodeBodyCompressed(frame)
+	} else {
+		body = &bytes.Buffer{}
+		err = c.encodeBodyUncompressed(frame, body)
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("cannot encode body: %w", err)
+	}
+
+	bodyBytes := body.Bytes()
+	return &RawFrame{
+		RawHeader: c.convertToRawHeader(frame, int32(len(bodyBytes))),
+		RawBody:   bodyBytes,
+	}, nil
+}
+
+func (c *Codec) convertToRawHeader(frame *Frame, bodyLength int32) *RawHeader {
+	return &RawHeader{
+		IsResponse: frame.Body.Message.IsResponse(),
+		Version:    frame.Header.Version,
+		Flags:      frame.Flags(c.compressor != nil),
+		StreamId:   frame.Header.StreamId,
+		OpCode:     frame.Body.Message.GetOpCode(),
+		BodyLength: bodyLength,
 	}
 }
 
@@ -53,31 +104,41 @@ func (c *Codec) encodeFrameUncompressed(frame *Frame, dest io.Writer) error {
 }
 
 func (c *Codec) encodeFrameCompressed(frame *Frame, dest io.Writer) error {
-	var err error
-	// 1) Encode uncompressed body
-	var uncompressedBodyLength int
-	if uncompressedBodyLength, err = c.uncompressedBodyLength(frame); err != nil {
-		return fmt.Errorf("cannot compute length of uncompressed message body: %w", err)
-	}
-	uncompressedBody := bytes.NewBuffer(make([]byte, 0, uncompressedBodyLength))
-	if err = c.encodeBodyUncompressed(frame, uncompressedBody); err != nil {
-		return fmt.Errorf("cannot encode frame body: %w", err)
-	}
-	// 2) Compress body
 	var compressedBody *bytes.Buffer
-	if compressedBody, err = c.compressor.Compress(uncompressedBody); err != nil {
-		return fmt.Errorf("cannot compress frame body: %w", err)
+	var err error
+	if compressedBody, err = c.encodeBodyCompressed(frame); err != nil {
+		return fmt.Errorf("cannot encode and compress body: %w", err)
 	}
 	compressedBodyLength := compressedBody.Len()
-	// 3) Encode header
-	if err = c.encodeHeader(frame, compressedBodyLength, dest); err != nil {
+
+	if err := c.encodeHeader(frame, compressedBodyLength, dest); err != nil {
 		return fmt.Errorf("cannot encode frame header: %w", err)
 	}
-	// 4) join header and compressed body
+
 	if _, err := compressedBody.WriteTo(dest); err != nil {
 		return fmt.Errorf("cannot concat frame body to frame header: %w", err)
 	}
 	return nil
+}
+
+func (c *Codec) encodeBodyCompressed(frame *Frame) (*bytes.Buffer, error) {
+	var err error
+
+	var uncompressedBodyLength int
+	if uncompressedBodyLength, err = c.uncompressedBodyLength(frame); err != nil {
+		return nil, fmt.Errorf("cannot compute length of uncompressed message body: %w", err)
+	}
+	uncompressedBody := bytes.NewBuffer(make([]byte, 0, uncompressedBodyLength))
+	if err = c.encodeBodyUncompressed(frame, uncompressedBody); err != nil {
+		return nil, fmt.Errorf("cannot encode frame body: %w", err)
+	}
+
+	var compressedBody *bytes.Buffer
+	if compressedBody, err = c.compressor.Compress(uncompressedBody); err != nil {
+		return nil, fmt.Errorf("cannot compress frame body: %w", err)
+	}
+
+	return compressedBody, nil
 }
 
 func (c *Codec) encodeHeader(frame *Frame, bodyLength int, dest io.Writer) error {
@@ -96,6 +157,27 @@ func (c *Codec) encodeHeader(frame *Frame, bodyLength int, dest io.Writer) error
 	} else if err = primitives.WriteByte(frame.Body.Message.GetOpCode(), dest); err != nil {
 		return fmt.Errorf("cannot encode header opcode: %w", err)
 	} else if err = primitives.WriteInt(int32(bodyLength), dest); err != nil {
+		return fmt.Errorf("cannot encode header body length: %w", err)
+	}
+	return nil
+}
+
+func (c *Codec) encodeRawHeader(rawHeader *RawHeader, dest io.Writer) error {
+	versionAndDirection := rawHeader.Version
+	if rawHeader.IsResponse {
+		versionAndDirection |= 0b1000_0000
+	}
+	if err := primitives.WriteByte(versionAndDirection, dest); err != nil {
+		return fmt.Errorf("cannot encode header version and direction: %w", err)
+	}
+	flags := rawHeader.Flags
+	if err := primitives.WriteByte(flags, dest); err != nil {
+		return fmt.Errorf("cannot encode header flags: %w", err)
+	} else if err = primitives.WriteShort(uint16(rawHeader.StreamId), dest); err != nil {
+		return fmt.Errorf("cannot encode header stream id: %w", err)
+	} else if err = primitives.WriteByte(rawHeader.OpCode, dest); err != nil {
+		return fmt.Errorf("cannot encode header opcode: %w", err)
+	} else if err = primitives.WriteInt(rawHeader.BodyLength, dest); err != nil {
 		return fmt.Errorf("cannot encode header body length: %w", err)
 	}
 	return nil
