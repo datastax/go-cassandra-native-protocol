@@ -226,7 +226,7 @@ func TestResultCodec_Encode_Prepared(test *testing.T) {
 			}
 		})
 	}
-	// versions >= 5
+	// versions 5, DSE v2
 	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion5, cassandraprotocol.ProtocolVersionDse2} {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodeTestCase{
@@ -538,7 +538,7 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 			}
 		})
 	}
-	// versions >= 5
+	// versions 5, DSE v2
 	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion5, cassandraprotocol.ProtocolVersionDse2} {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
@@ -866,7 +866,7 @@ func TestResultCodec_Decode_Prepared(test *testing.T) {
 			}
 		})
 	}
-	// versions >= 5
+	// versions 5, DSE v2
 	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion5, cassandraprotocol.ProtocolVersionDse2} {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{

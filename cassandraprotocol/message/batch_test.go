@@ -168,7 +168,7 @@ func TestBatchCodec_Encode(t *testing.T) {
 			}
 		})
 	}
-	// versions >= 5 - DSE v1
+	// versions 5, DSE v2
 	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion5, cassandraprotocol.ProtocolVersionDse2} {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodeTestCase{
@@ -257,7 +257,7 @@ func TestBatchCodec_Encode(t *testing.T) {
 
 func TestBatchCodec_EncodedLength(t *testing.T) {
 	codec := &BatchCodec{}
-	// versions <= 4 + DSE v1
+	// versions <= 4
 	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion3, cassandraprotocol.ProtocolVersion4} {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodedLengthTestCase{
@@ -397,7 +397,7 @@ func TestBatchCodec_EncodedLength(t *testing.T) {
 			}
 		})
 	}
-	// versions >= 5 - DSE v1
+	// versions 5, DSE v2
 	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion5, cassandraprotocol.ProtocolVersionDse2} {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodedLengthTestCase{
@@ -475,7 +475,7 @@ func TestBatchCodec_EncodedLength(t *testing.T) {
 
 func TestBatchCodec_Decode(t *testing.T) {
 	codec := &BatchCodec{}
-	// versions <= 4 + DSE v1
+	// versions <= 4
 	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion3, cassandraprotocol.ProtocolVersion4} {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []decodeTestCase{
@@ -651,7 +651,7 @@ func TestBatchCodec_Decode(t *testing.T) {
 			}
 		})
 	}
-	// versions >= 5 - DSE v1
+	// versions 5, DSE v2
 	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion5, cassandraprotocol.ProtocolVersionDse2} {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []decodeTestCase{
