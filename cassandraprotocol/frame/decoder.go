@@ -33,7 +33,7 @@ func (c *Codec) DecodeRawFrame(source io.Reader) (*RawFrame, error) {
 	} else if body, err := c.DecodeRawBody(rawHeader.BodyLength, source); err != nil {
 		return nil, fmt.Errorf("cannot read frame body: %w", err)
 	} else {
-		return &RawFrame{Header: rawHeader, Body: body}, nil
+		return &RawFrame{RawHeader: rawHeader, RawBody: body}, nil
 	}
 }
 

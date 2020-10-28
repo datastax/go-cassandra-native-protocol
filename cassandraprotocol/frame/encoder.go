@@ -31,18 +31,18 @@ func (c *Codec) EncodeFrame(frame *Frame, dest io.Writer) error {
 
 // EncodeRawFrame encodes the header and writes the body as raw bytes.
 func (c *Codec) EncodeRawFrame(frame *RawFrame, dest io.Writer) error {
-	version := frame.Header.Version
+	version := frame.RawHeader.Version
 	if version < cassandraprotocol.ProtocolVersionMin || version > cassandraprotocol.ProtocolVersionMax {
 		return fmt.Errorf("unsupported protocol version: %v", version)
 	}
 
-	if err := c.encodeRawHeader(frame.Header, dest); err != nil {
+	if err := c.encodeRawHeader(frame.RawHeader, dest); err != nil {
 		return fmt.Errorf("cannot encode raw header: %w", err)
 	}
 
-	if bytesWritten, err := dest.Write(frame.Body); err != nil {
+	if bytesWritten, err := dest.Write(frame.RawBody); err != nil {
 		return fmt.Errorf(
-			"cannot write body: %w, body length: %d, bytes written: %d", err, len(frame.Body), bytesWritten)
+			"cannot write body: %w, body length: %d, bytes written: %d", err, len(frame.RawBody), bytesWritten)
 	}
 
 	return nil
@@ -66,8 +66,8 @@ func (c *Codec) ConvertToRawFrame(frame *Frame) (*RawFrame, error) {
 
 	bodyBytes := body.Bytes()
 	return &RawFrame{
-		Header: c.convertToRawHeader(frame, int32(len(bodyBytes))),
-		Body:   bodyBytes,
+		RawHeader: c.convertToRawHeader(frame, int32(len(bodyBytes))),
+		RawBody:   bodyBytes,
 	}, nil
 }
 

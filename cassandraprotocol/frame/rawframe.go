@@ -7,8 +7,8 @@ import (
 
 // A low-level representation of a frame, where the body is not decoded.
 type RawFrame struct {
-	Header *RawHeader
-	Body   []byte
+	RawHeader *RawHeader
+	RawBody   []byte
 }
 
 // A low-level representation of a frame header, as it is parsed from an encoded frame.
@@ -25,7 +25,7 @@ type RawHeader struct {
 // should never be compressed. Empty messages like OPTIONS and READY also should not be compressed,
 // even if compression is in use.
 func (f *RawFrame) IsCompressible() bool {
-	return isCompressible(f.Header.OpCode)
+	return isCompressible(f.RawHeader.OpCode)
 }
 
 func (r *RawHeader) String() string {
@@ -34,5 +34,5 @@ func (r *RawHeader) String() string {
 }
 
 func (f *RawFrame) String() string {
-	return fmt.Sprintf("{header: %v, body: %v}", f.Header, f.Body)
+	return fmt.Sprintf("{header: %v, body: %v}", f.RawHeader, f.RawBody)
 }

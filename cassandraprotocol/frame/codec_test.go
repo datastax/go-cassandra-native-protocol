@@ -165,22 +165,22 @@ func TestConvertToRawFrame(t *testing.T) {
 			var err error
 			rawFrame, err = codec.ConvertToRawFrame(test.frame)
 			assert.Equal(t, test.err, err)
-			assert.Equal(t, test.frame.Header.StreamId, rawFrame.Header.StreamId)
-			assert.Equal(t, test.frame.Header.Version, rawFrame.Header.Version)
+			assert.Equal(t, test.frame.Header.StreamId, rawFrame.RawHeader.StreamId)
+			assert.Equal(t, test.frame.Header.Version, rawFrame.RawHeader.Version)
 			if test.frame.Header.TracingRequested {
-				assert.Equal(t, cassandraprotocol.HeaderFlagTracing, rawFrame.Header.Flags & cassandraprotocol.HeaderFlagTracing)
+				assert.Equal(t, cassandraprotocol.HeaderFlagTracing, rawFrame.RawHeader.Flags & cassandraprotocol.HeaderFlagTracing)
 			} else {
-				assert.Equal(t, 0, rawFrame.Header.Flags & cassandraprotocol.HeaderFlagTracing)
+				assert.Equal(t, 0, rawFrame.RawHeader.Flags & cassandraprotocol.HeaderFlagTracing)
 			}
-			assert.Equal(t, test.frame.Body.Message.GetOpCode(), rawFrame.Header.OpCode)
-			assert.Equal(t, test.frame.Body.Message.IsResponse(), rawFrame.Header.IsResponse)
+			assert.Equal(t, test.frame.Body.Message.GetOpCode(), rawFrame.RawHeader.OpCode)
+			assert.Equal(t, test.frame.Body.Message.IsResponse(), rawFrame.RawHeader.IsResponse)
 
 			encodedFrame := &bytes.Buffer{}
 			err = codec.EncodeFrame(test.frame, encodedFrame)
 			assert.Equal(t, test.err, err)
 			encodedBody := encodedFrame.Bytes()[9:]
-			assert.Equal(t, encodedBody, rawFrame.Body)
-			assert.Equal(t, int32(len(encodedBody)), rawFrame.Header.BodyLength)
+			assert.Equal(t, encodedBody, rawFrame.RawBody)
+			assert.Equal(t, int32(len(encodedBody)), rawFrame.RawHeader.BodyLength)
 		})
 	}
 }
