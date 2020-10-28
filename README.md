@@ -1,5 +1,7 @@
 # Cassandra Native Protocol Bindings for Go
 
+[![Go Build Status](https://github.com/datastax/go-cassandra-native-protocol/workflows/Go/badge.svg)](https://github.com/datastax/go-cassandra-native-protocol/actions)
+
 This project contains all the logic required to encode and decode Apache Cassandra(R)'s CQL native protocol frames in
 Go.
 
