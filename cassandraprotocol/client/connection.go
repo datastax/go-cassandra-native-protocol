@@ -11,15 +11,15 @@ type CqlConnection struct {
 }
 
 func (c *CqlConnection) Send(f *frame.Frame) error {
-	return c.codec.Encode(f, c.conn)
+	return c.codec.EncodeFrame(f, c.conn)
 }
 
 func (c *CqlConnection) Receive() (*frame.Frame, error) {
-	return c.codec.Decode(c.conn)
+	return c.codec.DecodeFrame(c.conn)
 }
 
 func (c *CqlConnection) ReceiveHeader() (header *frame.RawHeader, err error) {
-	if header, err = c.codec.DecodeHeader(c.conn); err != nil {
+	if header, err = c.codec.DecodeRawHeader(c.conn); err != nil {
 		return nil, err
 	} else if err = c.codec.DiscardBody(header.BodyLength, c.conn); err != nil {
 		return nil, err
