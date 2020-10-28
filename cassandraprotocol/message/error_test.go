@@ -190,7 +190,7 @@ func TestErrorCodec_Encode(test *testing.T) {
 			}
 		})
 	}
-	// num failures v3, v4, DSE v1
+	// num failures v3, v4
 	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion3, cassandraprotocol.ProtocolVersion4} {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
 			tests := []encodeTestCase{
@@ -249,7 +249,7 @@ func TestErrorCodec_Encode(test *testing.T) {
 			}
 		})
 	}
-	// reason map in v5, DSE v2
+	// reason map in v5, DSE v1, DSE v2
 	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion5, cassandraprotocol.ProtocolVersionDse1, cassandraprotocol.ProtocolVersionDse2} {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
 			tests := []encodeTestCase{
@@ -261,7 +261,7 @@ func TestErrorCodec_Encode(test *testing.T) {
 						0,
 						2,
 						0,
-						map[string]uint16{"192.168.1.1": 42},
+						map[string]cassandraprotocol.ReasonMapFailureCode{"192.168.1.1": cassandraprotocol.ReasonMapFailureCodeTooManyTombstonesRead},
 						false,
 					},
 					[]byte{
@@ -272,7 +272,7 @@ func TestErrorCodec_Encode(test *testing.T) {
 						0, 0, 0, 2,
 						0, 0, 0, 1, // map length
 						4, 192, 168, 1, 1, // map key
-						0, 42, // map value
+						0, 1, // map value (reason code)
 						0, // data present
 					},
 					nil,
@@ -285,7 +285,7 @@ func TestErrorCodec_Encode(test *testing.T) {
 						0,
 						2,
 						0,
-						map[string]uint16{"192.168.1.1": 42},
+						map[string]cassandraprotocol.ReasonMapFailureCode{"192.168.1.1": cassandraprotocol.ReasonMapFailureCodeTooManyTombstonesRead},
 						cassandraprotocol.WriteTypeBatchLog,
 					},
 					[]byte{
@@ -296,7 +296,7 @@ func TestErrorCodec_Encode(test *testing.T) {
 						0, 0, 0, 2,
 						0, 0, 0, 1, // map length
 						4, 192, 168, 1, 1, // map key
-						0, 42, // map value
+						0, 1, // map value (reason code)
 						0, 9, B, A, T, C, H, __, L, O, G,
 					},
 					nil,
@@ -449,7 +449,7 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 			}
 		})
 	}
-	// num failures in v3, v4, DSE v1
+	// num failures in v3, v4
 	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion3, cassandraprotocol.ProtocolVersion4} {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
@@ -503,7 +503,7 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 			}
 		})
 	}
-	// reason map in v5, DSE v2
+	// reason map in v5, DSE v1, DSE v2
 	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion5, cassandraprotocol.ProtocolVersionDse1, cassandraprotocol.ProtocolVersionDse2} {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
@@ -515,7 +515,7 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 						0,
 						2,
 						0,
-						map[string]uint16{"192.168.1.1": 42},
+						map[string]cassandraprotocol.ReasonMapFailureCode{"192.168.1.1": cassandraprotocol.ReasonMapFailureCodeTooManyTombstonesRead},
 						false,
 					},
 					primitives.LengthOfInt +
@@ -525,7 +525,7 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 						primitives.LengthOfInt + // block for
 						primitives.LengthOfInt + // map length
 						primitives.LengthOfByte + net.IPv4len + // map key length
-						primitives.LengthOfShort + // map value length
+						primitives.LengthOfShort + // map value length (reason code)
 						primitives.LengthOfByte, // data present
 					nil,
 				},
@@ -537,7 +537,7 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 						0,
 						2,
 						0,
-						map[string]uint16{"192.168.1.1": 42},
+						map[string]cassandraprotocol.ReasonMapFailureCode{"192.168.1.1": cassandraprotocol.ReasonMapFailureCodeTooManyTombstonesRead},
 						cassandraprotocol.WriteTypeBatchLog,
 					},
 					primitives.LengthOfInt +
@@ -547,7 +547,7 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 						primitives.LengthOfInt + // block for
 						primitives.LengthOfInt + // map length
 						primitives.LengthOfByte + net.IPv4len + // map key length
-						primitives.LengthOfShort + // map value length
+						primitives.LengthOfShort + // map value length (reason code)
 						primitives.LengthOfString(cassandraprotocol.WriteTypeBatchLog), // write type
 					nil,
 				},
@@ -743,7 +743,7 @@ func TestErrorCodec_Decode(test *testing.T) {
 			}
 		})
 	}
-	// num failures in v3, v4, DSE v1
+	// num failures in v3, v4
 	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion3, cassandraprotocol.ProtocolVersion4} {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{
@@ -802,7 +802,7 @@ func TestErrorCodec_Decode(test *testing.T) {
 			}
 		})
 	}
-	// reason map in v5, DSE v2
+	// reason map in v5, DSE v1, DSE v2
 	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion5, cassandraprotocol.ProtocolVersionDse1, cassandraprotocol.ProtocolVersionDse2} {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{
@@ -816,7 +816,7 @@ func TestErrorCodec_Decode(test *testing.T) {
 						0, 0, 0, 2,
 						0, 0, 0, 1, // map length
 						4, 192, 168, 1, 1, // map key
-						0, 42, // map value
+						0, 1, // map value (reason code)
 						0, // data present
 					},
 					&ReadFailure{
@@ -825,7 +825,7 @@ func TestErrorCodec_Decode(test *testing.T) {
 						0,
 						2,
 						0,
-						map[string]uint16{"192.168.1.1": 42},
+						map[string]cassandraprotocol.ReasonMapFailureCode{"192.168.1.1": cassandraprotocol.ReasonMapFailureCodeTooManyTombstonesRead},
 						false,
 					},
 					nil,
@@ -840,7 +840,7 @@ func TestErrorCodec_Decode(test *testing.T) {
 						0, 0, 0, 2,
 						0, 0, 0, 1, // map length
 						4, 192, 168, 1, 1, // map key
-						0, 42, // map value
+						0, 1, // map value (reason code)
 						0, 9, B, A, T, C, H, __, L, O, G,
 					},
 					&WriteFailure{
@@ -849,7 +849,7 @@ func TestErrorCodec_Decode(test *testing.T) {
 						0,
 						2,
 						0,
-						map[string]uint16{"192.168.1.1": 42},
+						map[string]cassandraprotocol.ReasonMapFailureCode{"192.168.1.1": cassandraprotocol.ReasonMapFailureCodeTooManyTombstonesRead},
 						cassandraprotocol.WriteTypeBatchLog,
 					},
 					nil,

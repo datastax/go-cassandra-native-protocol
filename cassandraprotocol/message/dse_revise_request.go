@@ -12,7 +12,7 @@ type Revise struct {
 	RevisionType   cassandraprotocol.DseRevisionType
 	TargetStreamId int32
 	// The number of pages that the client is ready to receive, or zero to indicate no limit.
-	//Valid for DSE v2 only when RevisionType is 2 (DseRevisionTypeMoreContinuousPages).
+	// Valid for DSE v2 only when RevisionType is 2 (DseRevisionTypeMoreContinuousPages).
 	// See ContinuousPagingOptions.
 	NextPages int32
 }
