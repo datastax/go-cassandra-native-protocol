@@ -48,7 +48,7 @@ func (f *Frame) IsCompressible() bool {
 // Dump encodes and dumps the contents of this frame, for debugging purposes.
 func (f *Frame) Dump() (string, error) {
 	buffer := bytes.Buffer{}
-	if err := NewCodec().Encode(f, &buffer); err != nil {
+	if err := NewCodec().EncodeFrame(f, &buffer); err != nil {
 		return "", err
 	} else {
 		return hex.Dump(buffer.Bytes()), nil

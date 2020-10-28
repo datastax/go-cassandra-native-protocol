@@ -48,9 +48,9 @@ func TestFrameEncodeDecode(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			encodedFrame := bytes.Buffer{}
-			if err := codec.Encode(test.frame, &encodedFrame); err != nil {
+			if err := codec.EncodeFrame(test.frame, &encodedFrame); err != nil {
 				assert.Equal(t, test.err, err)
-			} else if decodedFrame, err := codec.Decode(&encodedFrame); err != nil {
+			} else if decodedFrame, err := codec.DecodeFrame(&encodedFrame); err != nil {
 				assert.Equal(t, test.err, err)
 			} else {
 				assert.Equal(t, test.frame, decodedFrame)
@@ -76,9 +76,9 @@ func TestRawFrameEncodeDecode(t *testing.T) {
 			rawFrame, err = codec.ConvertToRawFrame(test.frame)
 			assert.Equal(t, test.err, err)
 			encodedFrame := &bytes.Buffer{}
-			err = codec.EncodeRaw(rawFrame, encodedFrame)
+			err = codec.EncodeRawFrame(rawFrame, encodedFrame)
 			assert.Equal(t, test.err, err)
-			decodedFrame, err := codec.DecodeRaw(encodedFrame)
+			decodedFrame, err := codec.DecodeRawFrame(encodedFrame)
 			assert.Equal(t, test.err, err)
 			assert.Equal(t, rawFrame, decodedFrame)
 		})
@@ -103,9 +103,9 @@ func TestFrameEncodeDecodeWithCompression(t *testing.T) {
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					encodedFrame := bytes.Buffer{}
-					if err := codec.Encode(test.frame, &encodedFrame); err != nil {
+					if err := codec.EncodeFrame(test.frame, &encodedFrame); err != nil {
 						assert.Equal(t, test.err, err)
-					} else if decodedFrame, err := codec.Decode(&encodedFrame); err != nil {
+					} else if decodedFrame, err := codec.DecodeFrame(&encodedFrame); err != nil {
 						assert.Equal(t, test.err, err)
 					} else {
 						assert.Equal(t, test.frame, decodedFrame)
@@ -138,9 +138,9 @@ func TestRawFrameEncodeDecodeWithCompression(t *testing.T) {
 					rawFrame, err = codec.ConvertToRawFrame(test.frame)
 					assert.Equal(t, test.err, err)
 					encodedFrame := &bytes.Buffer{}
-					err = codec.EncodeRaw(rawFrame, encodedFrame)
+					err = codec.EncodeRawFrame(rawFrame, encodedFrame)
 					assert.Equal(t, test.err, err)
-					decodedFrame, err := codec.DecodeRaw(encodedFrame)
+					decodedFrame, err := codec.DecodeRawFrame(encodedFrame)
 					assert.Equal(t, test.err, err)
 					assert.Equal(t, rawFrame, decodedFrame)
 				})
@@ -176,7 +176,7 @@ func TestConvertToRawFrame(t *testing.T) {
 			assert.Equal(t, test.frame.Body.Message.IsResponse(), rawFrame.Header.IsResponse)
 
 			encodedFrame := &bytes.Buffer{}
-			err = codec.Encode(test.frame, encodedFrame)
+			err = codec.EncodeFrame(test.frame, encodedFrame)
 			assert.Equal(t, test.err, err)
 			encodedBody := encodedFrame.Bytes()[9:]
 			assert.Equal(t, encodedBody, rawFrame.Body)

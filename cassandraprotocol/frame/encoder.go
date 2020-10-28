@@ -10,8 +10,8 @@ import (
 	"io"
 )
 
-// Encode encodes the entire frame, compressing the body if needed.
-func (c *Codec) Encode(frame *Frame, dest io.Writer) error {
+// EncodeFrame encodes the entire frame, compressing the body if needed.
+func (c *Codec) EncodeFrame(frame *Frame, dest io.Writer) error {
 	version := frame.Header.Version
 	if version < cassandraprotocol.ProtocolVersionMin || version > cassandraprotocol.ProtocolVersionMax {
 		return fmt.Errorf("unsupported protocol version: %v", version)
@@ -29,8 +29,8 @@ func (c *Codec) Encode(frame *Frame, dest io.Writer) error {
 	}
 }
 
-// EncodeRaw encodes the header and writes the body as raw bytes.
-func (c *Codec) EncodeRaw(frame *RawFrame, dest io.Writer) error {
+// EncodeRawFrame encodes the header and writes the body as raw bytes.
+func (c *Codec) EncodeRawFrame(frame *RawFrame, dest io.Writer) error {
 	version := frame.Header.Version
 	if version < cassandraprotocol.ProtocolVersionMin || version > cassandraprotocol.ProtocolVersionMax {
 		return fmt.Errorf("unsupported protocol version: %v", version)
