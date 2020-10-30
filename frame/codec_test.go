@@ -2,7 +2,8 @@ package frame
 
 import (
 	"bytes"
-	"github.com/datastax/go-cassandra-native-protocol/compression"
+	"github.com/datastax/go-cassandra-native-protocol/compression/lz4"
+	"github.com/datastax/go-cassandra-native-protocol/compression/snappy"
 	"github.com/datastax/go-cassandra-native-protocol/message"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"github.com/stretchr/testify/assert"
@@ -86,8 +87,8 @@ func TestRawFrameEncodeDecode(t *testing.T) {
 
 func TestFrameEncodeDecodeWithCompression(t *testing.T) {
 	codecs := map[string]*Codec{
-		"lz4":    NewCodec(WithCompressor(compression.Lz4Compressor{})),
-		"snappy": NewCodec(WithCompressor(compression.SnappyCompressor{})),
+		"lz4":    NewCodec(WithCompressor(lz4.Compressor{})),
+		"snappy": NewCodec(WithCompressor(snappy.Compressor{})),
 	}
 	tests := []struct {
 		name  string
@@ -117,8 +118,8 @@ func TestFrameEncodeDecodeWithCompression(t *testing.T) {
 
 func TestRawFrameEncodeDecodeWithCompression(t *testing.T) {
 	codecs := map[string]*Codec{
-		"lz4":    NewCodec(WithCompressor(compression.Lz4Compressor{})),
-		"snappy": NewCodec(WithCompressor(compression.SnappyCompressor{})),
+		"lz4":    NewCodec(WithCompressor(lz4.Compressor{})),
+		"snappy": NewCodec(WithCompressor(snappy.Compressor{})),
 	}
 	tests := []struct {
 		name  string

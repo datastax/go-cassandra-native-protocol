@@ -1,8 +1,6 @@
 package compression
 
-import (
-	"bytes"
-)
+import "bytes"
 
 type MessageCompressor interface {
 	Algorithm() string

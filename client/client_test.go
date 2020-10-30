@@ -3,7 +3,8 @@ package client
 import (
 	"flag"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/compression"
+	"github.com/datastax/go-cassandra-native-protocol/compression/lz4"
+	"github.com/datastax/go-cassandra-native-protocol/compression/snappy"
 	"github.com/datastax/go-cassandra-native-protocol/frame"
 	"github.com/datastax/go-cassandra-native-protocol/message"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
@@ -12,8 +13,8 @@ import (
 )
 
 var compressors = map[string]*frame.Codec{
-	"LZ4":    frame.NewCodec(frame.WithCompressor(&compression.Lz4Compressor{})),
-	"SNAPPY": frame.NewCodec(frame.WithCompressor(&compression.SnappyCompressor{})),
+	"LZ4":    frame.NewCodec(frame.WithCompressor(&lz4.Compressor{})),
+	"SNAPPY": frame.NewCodec(frame.WithCompressor(&snappy.Compressor{})),
 	"NONE":   frame.NewCodec(),
 }
 

@@ -1,4 +1,4 @@
-package compression
+package lz4
 
 import (
 	"bytes"
@@ -11,13 +11,13 @@ import (
 // Note: Cassandra expects lz4-compressed bodies to start with a 4-byte integer holding the decompressed message length.
 // The Go implementation of lz4 used here does not include that, so we need to do it manually when encoding and
 // decoding.
-type Lz4Compressor struct{}
+type Compressor struct{}
 
-func (l Lz4Compressor) Algorithm() string {
+func (l Compressor) Algorithm() string {
 	return "LZ4"
 }
 
-func (l Lz4Compressor) Compress(uncompressedMessage *bytes.Buffer) (*bytes.Buffer, error) {
+func (l Compressor) Compress(uncompressedMessage *bytes.Buffer) (*bytes.Buffer, error) {
 	maxCompressedSize := lz4.CompressBlockBound(uncompressedMessage.Len())
 	// allocate enough space for the max compressed size + 4 bytes for the decompressed length
 	compressedMessage := make([]byte, maxCompressedSize+4)
@@ -34,7 +34,7 @@ func (l Lz4Compressor) Compress(uncompressedMessage *bytes.Buffer) (*bytes.Buffe
 	}
 }
 
-func (l Lz4Compressor) Decompress(compressedMessage *bytes.Buffer) (*bytes.Buffer, error) {
+func (l Compressor) Decompress(compressedMessage *bytes.Buffer) (*bytes.Buffer, error) {
 	// read the decompressed length first
 	var decompressedLength uint32
 	if err := binary.Read(compressedMessage, binary.BigEndian, &decompressedLength); err != nil {
