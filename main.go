@@ -5,9 +5,9 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/frame"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/message"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
+	"github.com/datastax/go-cassandra-native-protocol/frame"
+	"github.com/datastax/go-cassandra-native-protocol/message"
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 func main() {
