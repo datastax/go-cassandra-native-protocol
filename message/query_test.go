@@ -18,11 +18,11 @@ func TestQueryCodec_Encode(t *testing.T) {
 				"query with default options",
 				&Query{
 					Query:   "SELECT",
-					Options: NewQueryOptions(),
+					Options: &QueryOptions{},
 				},
 				[]byte{
 					0, 0, 0, 6, S, E, L, E, C, T,
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0, // flags
 				},
 				nil,
@@ -31,14 +31,14 @@ func TestQueryCodec_Encode(t *testing.T) {
 				"query with custom options and no values",
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithConsistencyLevel(primitive.ConsistencyLevelLocalQuorum),
-						SkipMetadata(),
-						WithPageSize(100),
-						WithPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-						WithSerialConsistencyLevel(primitive.ConsistencyLevelLocalSerial),
-						WithDefaultTimestamp(123),
-					),
+					Options: &QueryOptions{
+						Consistency:       primitive.ConsistencyLevelLocalQuorum,
+						SkipMetadata:      true,
+						PageSize:          100,
+						PagingState:       []byte{0xca, 0xfe, 0xba, 0xbe},
+						SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
+						DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+					},
 				},
 				[]byte{
 					0, 0, 0, 6, S, E, L, E, C, T,
@@ -55,21 +55,21 @@ func TestQueryCodec_Encode(t *testing.T) {
 				"query with positional values",
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithPositionalValues(
-							&primitive.Value{
+					Options: &QueryOptions{
+						PositionalValues: []*primitive.Value{
+							{
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeNull,
 							},
-						),
-					),
+						},
+					},
 				},
 				[]byte{
 					0, 0, 0, 6, S, E, L, E, C, T,
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b0000_0001, // flags
 					0, 2,        // values length
 					0, 0, 0, 5, h, e, l, l, o, // value 1
@@ -81,18 +81,18 @@ func TestQueryCodec_Encode(t *testing.T) {
 				"query with named values",
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithNamedValues(map[string]*primitive.Value{
+					Options: &QueryOptions{
+						NamedValues: map[string]*primitive.Value{
 							"col1": {
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-						}),
-					),
+						},
+					},
 				},
 				[]byte{
 					0, 0, 0, 6, S, E, L, E, C, T,
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b0100_0001, // flags
 					0, 1,        // values length
 					0, 4, c, o, l, _1, // name 1
@@ -134,11 +134,11 @@ func TestQueryCodec_Encode(t *testing.T) {
 				"query with default options",
 				&Query{
 					Query:   "SELECT",
-					Options: NewQueryOptions(),
+					Options: &QueryOptions{},
 				},
 				[]byte{
 					0, 0, 0, 6, S, E, L, E, C, T,
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0, // flags
 				},
 				nil,
@@ -147,14 +147,14 @@ func TestQueryCodec_Encode(t *testing.T) {
 				"query with custom options and no values",
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithConsistencyLevel(primitive.ConsistencyLevelLocalQuorum),
-						SkipMetadata(),
-						WithPageSize(100),
-						WithPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-						WithSerialConsistencyLevel(primitive.ConsistencyLevelLocalSerial),
-						WithDefaultTimestamp(123),
-					),
+					Options: &QueryOptions{
+						Consistency:       primitive.ConsistencyLevelLocalQuorum,
+						SkipMetadata:      true,
+						PageSize:          100,
+						PagingState:       []byte{0xca, 0xfe, 0xba, 0xbe},
+						SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
+						DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+					},
 				},
 				[]byte{
 					0, 0, 0, 6, S, E, L, E, C, T,
@@ -171,24 +171,24 @@ func TestQueryCodec_Encode(t *testing.T) {
 				"query with positional values",
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithPositionalValues(
-							&primitive.Value{
+					Options: &QueryOptions{
+						PositionalValues: []*primitive.Value{
+							{
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeNull,
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeUnset,
 							},
-						),
-					),
+						},
+					},
 				},
 				[]byte{
 					0, 0, 0, 6, S, E, L, E, C, T,
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b0000_0001, // flags
 					0, 3,        // values length
 					0, 0, 0, 5, h, e, l, l, o, // value 1
@@ -201,18 +201,18 @@ func TestQueryCodec_Encode(t *testing.T) {
 				"query with named values",
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithNamedValues(map[string]*primitive.Value{
+					Options: &QueryOptions{
+						NamedValues: map[string]*primitive.Value{
 							"col1": {
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-						}),
-					),
+						},
+					},
 				},
 				[]byte{
 					0, 0, 0, 6, S, E, L, E, C, T,
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b0100_0001, // flags
 					0, 1,        // values length
 					0, 4, c, o, l, _1, // name 1
@@ -248,12 +248,15 @@ func TestQueryCodec_Encode(t *testing.T) {
 			{
 				"query with keyspace and now-in-seconds",
 				&Query{
-					Query:   "SELECT",
-					Options: NewQueryOptions(WithKeyspace("ks1"), WithNowInSeconds(123)),
+					Query: "SELECT",
+					Options: &QueryOptions{
+						Keyspace:     "ks1",
+						NowInSeconds: &primitive.NillableInt32{Value: 123},
+					},
 				},
 				[]byte{
 					0, 0, 0, 6, S, E, L, E, C, T,
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b0000_0000,    // flags
 					0b0000_0000,    // flags
 					0b0000_0001,    // flags (keyspace)
@@ -267,24 +270,26 @@ func TestQueryCodec_Encode(t *testing.T) {
 				"query with positional values, keyspace and now-in-seconds",
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(WithKeyspace("ks1"), WithNowInSeconds(123),
-						WithPositionalValues(
-							&primitive.Value{
+					Options: &QueryOptions{
+						Keyspace:     "ks1",
+						NowInSeconds: &primitive.NillableInt32{Value: 123},
+						PositionalValues: []*primitive.Value{
+							{
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeNull,
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeUnset,
 							},
-						),
-					),
+						},
+					},
 				},
 				[]byte{
 					0, 0, 0, 6, S, E, L, E, C, T,
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b0000_0000, // flags
 					0b0000_0000, // flags
 					0b0000_0001, // flags
@@ -320,11 +325,11 @@ func TestQueryCodec_Encode(t *testing.T) {
 				"query with default options",
 				&Query{
 					Query:   "SELECT",
-					Options: NewQueryOptions(),
+					Options: &QueryOptions{},
 				},
 				[]byte{
 					0, 0, 0, 6, S, E, L, E, C, T,
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0, 0, 0, 0, // flags
 				},
 				nil,
@@ -333,19 +338,16 @@ func TestQueryCodec_Encode(t *testing.T) {
 				"query with custom options and no values",
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithConsistencyLevel(primitive.ConsistencyLevelLocalQuorum),
-						SkipMetadata(),
-						WithPageSize(100),
-						WithPageSizeInBytes(),
-						WithPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-						WithSerialConsistencyLevel(primitive.ConsistencyLevelLocalSerial),
-						WithDefaultTimestamp(123),
-						WithContinuousPagingOptions(&ContinuousPagingOptions{
-							MaxPages:       50,
-							PagesPerSecond: 10,
-						}),
-					),
+					Options: &QueryOptions{
+						Consistency:             primitive.ConsistencyLevelLocalQuorum,
+						SkipMetadata:            true,
+						PageSize:                100,
+						PageSizeInBytes:         true,
+						PagingState:             []byte{0xca, 0xfe, 0xba, 0xbe},
+						SerialConsistency:       &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
+						DefaultTimestamp:        &primitive.NillableInt64{Value: 123},
+						ContinuousPagingOptions: &ContinuousPagingOptions{MaxPages: 50, PagesPerSecond: 10},
+					},
 				},
 				[]byte{
 					0, 0, 0, 6, S, E, L, E, C, T,
@@ -364,24 +366,24 @@ func TestQueryCodec_Encode(t *testing.T) {
 				"query with positional values",
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithPositionalValues(
-							&primitive.Value{
+					Options: &QueryOptions{
+						PositionalValues: []*primitive.Value{
+							{
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeNull,
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeUnset,
 							},
-						),
-					),
+						},
+					},
 				},
 				[]byte{
 					0, 0, 0, 6, S, E, L, E, C, T,
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0, 0, 0, 0b0000_0001, // flags
 					0, 3, // values length
 					0, 0, 0, 5, h, e, l, l, o, // value 1
@@ -394,18 +396,18 @@ func TestQueryCodec_Encode(t *testing.T) {
 				"query with named values",
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithNamedValues(map[string]*primitive.Value{
+					Options: &QueryOptions{
+						NamedValues: map[string]*primitive.Value{
 							"col1": {
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-						}),
-					),
+						},
+					},
 				},
 				[]byte{
 					0, 0, 0, 6, S, E, L, E, C, T,
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0, 0, 0, 0b0100_0001, // flags
 					0, 1, // values length
 					0, 4, c, o, l, _1, // name 1
@@ -442,18 +444,14 @@ func TestQueryCodec_Encode(t *testing.T) {
 				"query with keyspace and continuous options",
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithKeyspace("ks1"),
-						WithContinuousPagingOptions(&ContinuousPagingOptions{
-							MaxPages:       50,
-							PagesPerSecond: 10,
-							NextPages:      20,
-						}),
-					),
+					Options: &QueryOptions{
+						Keyspace:                "ks1",
+						ContinuousPagingOptions: &ContinuousPagingOptions{MaxPages: 50, PagesPerSecond: 10, NextPages: 20},
+					},
 				},
 				[]byte{
 					0, 0, 0, 6, S, E, L, E, C, T,
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b1000_0000,    // flags (cont. paging)
 					0b0000_0000,    // flags
 					0b0000_0000,    // flags
@@ -469,20 +467,16 @@ func TestQueryCodec_Encode(t *testing.T) {
 				"query with custom options and no values",
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithConsistencyLevel(primitive.ConsistencyLevelLocalQuorum),
-						SkipMetadata(),
-						WithPageSize(100),
-						WithPageSizeInBytes(),
-						WithPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-						WithSerialConsistencyLevel(primitive.ConsistencyLevelLocalSerial),
-						WithDefaultTimestamp(123),
-						WithContinuousPagingOptions(&ContinuousPagingOptions{
-							MaxPages:       50,
-							PagesPerSecond: 10,
-							NextPages:      20,
-						}),
-					),
+					Options: &QueryOptions{
+						Consistency:             primitive.ConsistencyLevelLocalQuorum,
+						SkipMetadata:            true,
+						PageSize:                100,
+						PageSizeInBytes:         true,
+						PagingState:             []byte{0xca, 0xfe, 0xba, 0xbe},
+						SerialConsistency:       &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
+						DefaultTimestamp:        &primitive.NillableInt64{Value: 123},
+						ContinuousPagingOptions: &ContinuousPagingOptions{MaxPages: 50, PagesPerSecond: 10, NextPages: 20},
+					},
 				},
 				[]byte{
 					0, 0, 0, 6, S, E, L, E, C, T,
@@ -502,24 +496,25 @@ func TestQueryCodec_Encode(t *testing.T) {
 				"query with positional values and keyspace",
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(WithKeyspace("ks1"),
-						WithPositionalValues(
-							&primitive.Value{
+					Options: &QueryOptions{
+						Keyspace: "ks1",
+						PositionalValues: []*primitive.Value{
+							{
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeNull,
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeUnset,
 							},
-						),
-					),
+						},
+					},
 				},
 				[]byte{
 					0, 0, 0, 6, S, E, L, E, C, T,
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b0000_0000, // flags
 					0b0000_0000, // flags
 					0b0000_0000, // flags
@@ -553,7 +548,7 @@ func TestQueryCodec_EncodedLength(t *testing.T) {
 				"query with default options",
 				&Query{
 					Query:   "SELECT",
-					Options: NewQueryOptions(),
+					Options: &QueryOptions{},
 				},
 				primitive.LengthOfLongString("SELECT") +
 					primitive.LengthOfShort + // consistency
@@ -564,14 +559,14 @@ func TestQueryCodec_EncodedLength(t *testing.T) {
 				"query with custom options and no values",
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithConsistencyLevel(primitive.ConsistencyLevelLocalQuorum),
-						SkipMetadata(),
-						WithPageSize(100),
-						WithPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-						WithSerialConsistencyLevel(primitive.ConsistencyLevelLocalSerial),
-						WithDefaultTimestamp(123),
-					),
+					Options: &QueryOptions{
+						Consistency:       primitive.ConsistencyLevelLocalQuorum,
+						SkipMetadata:      true,
+						PageSize:          100,
+						PagingState:       []byte{0xca, 0xfe, 0xba, 0xbe},
+						SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
+						DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+					},
 				},
 				primitive.LengthOfLongString("SELECT") +
 					primitive.LengthOfShort + // consistency
@@ -586,17 +581,17 @@ func TestQueryCodec_EncodedLength(t *testing.T) {
 				"query with positional values",
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithPositionalValues(
-							&primitive.Value{
+					Options: &QueryOptions{
+						PositionalValues: []*primitive.Value{
+							{
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeNull,
 							},
-						),
-					),
+						},
+					},
 				},
 				primitive.LengthOfLongString("SELECT") +
 					primitive.LengthOfShort + // consistency
@@ -610,14 +605,14 @@ func TestQueryCodec_EncodedLength(t *testing.T) {
 				"query with named values",
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithNamedValues(map[string]*primitive.Value{
+					Options: &QueryOptions{
+						NamedValues: map[string]*primitive.Value{
 							"col1": {
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-						}),
-					),
+						},
+					},
 				},
 				primitive.LengthOfLongString("SELECT") +
 					primitive.LengthOfShort + // consistency
@@ -654,7 +649,7 @@ func TestQueryCodec_EncodedLength(t *testing.T) {
 				"query with default options",
 				&Query{
 					Query:   "SELECT",
-					Options: NewQueryOptions(),
+					Options: &QueryOptions{},
 				},
 				primitive.LengthOfLongString("SELECT") +
 					primitive.LengthOfShort + // consistency
@@ -665,14 +660,14 @@ func TestQueryCodec_EncodedLength(t *testing.T) {
 				"query with custom options and no values",
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithConsistencyLevel(primitive.ConsistencyLevelLocalQuorum),
-						SkipMetadata(),
-						WithPageSize(100),
-						WithPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-						WithSerialConsistencyLevel(primitive.ConsistencyLevelLocalSerial),
-						WithDefaultTimestamp(123),
-					),
+					Options: &QueryOptions{
+						Consistency:       primitive.ConsistencyLevelLocalQuorum,
+						SkipMetadata:      true,
+						PageSize:          100,
+						PagingState:       []byte{0xca, 0xfe, 0xba, 0xbe},
+						SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
+						DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+					},
 				},
 				primitive.LengthOfLongString("SELECT") +
 					primitive.LengthOfShort + // consistency
@@ -687,20 +682,20 @@ func TestQueryCodec_EncodedLength(t *testing.T) {
 				"query with positional values",
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithPositionalValues(
-							&primitive.Value{
+					Options: &QueryOptions{
+						PositionalValues: []*primitive.Value{
+							{
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeNull,
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeUnset,
 							},
-						),
-					),
+						},
+					},
 				},
 				primitive.LengthOfLongString("SELECT") +
 					primitive.LengthOfShort + // consistency
@@ -715,14 +710,14 @@ func TestQueryCodec_EncodedLength(t *testing.T) {
 				"query with named values",
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithNamedValues(map[string]*primitive.Value{
+					Options: &QueryOptions{
+						NamedValues: map[string]*primitive.Value{
 							"col1": {
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-						}),
-					),
+						},
+					},
 				},
 				primitive.LengthOfLongString("SELECT") +
 					primitive.LengthOfShort + // consistency
@@ -753,8 +748,11 @@ func TestQueryCodec_EncodedLength(t *testing.T) {
 			{
 				"query with keyspace and now-in-seconds",
 				&Query{
-					Query:   "SELECT",
-					Options: NewQueryOptions(WithKeyspace("ks1"), WithNowInSeconds(123)),
+					Query: "SELECT",
+					Options: &QueryOptions{
+						Keyspace:     "ks1",
+						NowInSeconds: &primitive.NillableInt32{Value: 123},
+					},
 				},
 				primitive.LengthOfLongString("SELECT") +
 					primitive.LengthOfShort + // consistency
@@ -767,20 +765,22 @@ func TestQueryCodec_EncodedLength(t *testing.T) {
 				"query with positional values, keyspace and now-in-seconds",
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(WithKeyspace("ks1"), WithNowInSeconds(123),
-						WithPositionalValues(
-							&primitive.Value{
+					Options: &QueryOptions{
+						Keyspace:     "ks1",
+						NowInSeconds: &primitive.NillableInt32{Value: 123},
+						PositionalValues: []*primitive.Value{
+							{
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeNull,
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeUnset,
 							},
-						),
-					),
+						},
+					},
 				},
 				primitive.LengthOfLongString("SELECT") +
 					primitive.LengthOfShort + // consistency
@@ -814,7 +814,7 @@ func TestQueryCodec_EncodedLength(t *testing.T) {
 				"query with default options",
 				&Query{
 					Query:   "SELECT",
-					Options: NewQueryOptions(),
+					Options: &QueryOptions{},
 				},
 				primitive.LengthOfLongString("SELECT") +
 					primitive.LengthOfShort + // consistency
@@ -825,19 +825,15 @@ func TestQueryCodec_EncodedLength(t *testing.T) {
 				"query with custom options and no values",
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithConsistencyLevel(primitive.ConsistencyLevelLocalQuorum),
-						SkipMetadata(),
-						WithPageSize(100),
-						WithPageSizeInBytes(), // does not count for length
-						WithPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-						WithSerialConsistencyLevel(primitive.ConsistencyLevelLocalSerial),
-						WithDefaultTimestamp(123),
-						WithContinuousPagingOptions(&ContinuousPagingOptions{
-							MaxPages:       50,
-							PagesPerSecond: 10,
-						}),
-					),
+					Options: &QueryOptions{
+						Consistency:             primitive.ConsistencyLevelLocalQuorum,
+						SkipMetadata:            true,
+						PageSize:                100,
+						PagingState:             []byte{0xca, 0xfe, 0xba, 0xbe},
+						SerialConsistency:       &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
+						DefaultTimestamp:        &primitive.NillableInt64{Value: 123},
+						ContinuousPagingOptions: &ContinuousPagingOptions{MaxPages: 50, PagesPerSecond: 10},
+					},
 				},
 				primitive.LengthOfLongString("SELECT") +
 					primitive.LengthOfShort + // consistency
@@ -853,20 +849,20 @@ func TestQueryCodec_EncodedLength(t *testing.T) {
 				"query with positional values",
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithPositionalValues(
-							&primitive.Value{
+					Options: &QueryOptions{
+						PositionalValues: []*primitive.Value{
+							{
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeNull,
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeUnset,
 							},
-						),
-					),
+						},
+					},
 				},
 				primitive.LengthOfLongString("SELECT") +
 					primitive.LengthOfShort + // consistency
@@ -881,14 +877,14 @@ func TestQueryCodec_EncodedLength(t *testing.T) {
 				"query with named values",
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithNamedValues(map[string]*primitive.Value{
+					Options: &QueryOptions{
+						NamedValues: map[string]*primitive.Value{
 							"col1": {
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-						}),
-					),
+						},
+					},
 				},
 				primitive.LengthOfLongString("SELECT") +
 					primitive.LengthOfShort + // consistency
@@ -920,14 +916,10 @@ func TestQueryCodec_EncodedLength(t *testing.T) {
 				"query with keyspace",
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithKeyspace("ks1"),
-						WithContinuousPagingOptions(&ContinuousPagingOptions{
-							MaxPages:       50,
-							PagesPerSecond: 10,
-							NextPages:      20,
-						}),
-					),
+					Options: &QueryOptions{
+						Keyspace:                "ks1",
+						ContinuousPagingOptions: &ContinuousPagingOptions{MaxPages: 50, PagesPerSecond: 10, NextPages: 20},
+					},
 				},
 				primitive.LengthOfLongString("SELECT") +
 					primitive.LengthOfShort + // consistency
@@ -940,20 +932,21 @@ func TestQueryCodec_EncodedLength(t *testing.T) {
 				"query with positional values and keyspace",
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(WithKeyspace("ks1"),
-						WithPositionalValues(
-							&primitive.Value{
+					Options: &QueryOptions{
+						Keyspace: "ks1",
+						PositionalValues: []*primitive.Value{
+							{
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeNull,
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeUnset,
 							},
-						),
-					),
+						},
+					},
 				},
 				primitive.LengthOfLongString("SELECT") +
 					primitive.LengthOfShort + // consistency
@@ -985,12 +978,12 @@ func TestQueryCodec_Decode(t *testing.T) {
 				"query with default options",
 				[]byte{
 					0, 0, 0, 6, S, E, L, E, C, T,
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0, // flags
 				},
 				&Query{
 					Query:   "SELECT",
-					Options: NewQueryOptions(),
+					Options: &QueryOptions{},
 				},
 				nil,
 			},
@@ -1007,14 +1000,14 @@ func TestQueryCodec_Decode(t *testing.T) {
 				},
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithConsistencyLevel(primitive.ConsistencyLevelLocalQuorum),
-						SkipMetadata(),
-						WithPageSize(100),
-						WithPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-						WithSerialConsistencyLevel(primitive.ConsistencyLevelLocalSerial),
-						WithDefaultTimestamp(123),
-					),
+					Options: &QueryOptions{
+						Consistency:       primitive.ConsistencyLevelLocalQuorum,
+						SkipMetadata:      true,
+						PageSize:          100,
+						PagingState:       []byte{0xca, 0xfe, 0xba, 0xbe},
+						SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
+						DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+					},
 				},
 				nil,
 			},
@@ -1022,7 +1015,7 @@ func TestQueryCodec_Decode(t *testing.T) {
 				"query with positional values",
 				[]byte{
 					0, 0, 0, 6, S, E, L, E, C, T,
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b0000_0001, // flags
 					0, 2,        // values length
 					0, 0, 0, 5, h, e, l, l, o, // value 1
@@ -1030,17 +1023,17 @@ func TestQueryCodec_Decode(t *testing.T) {
 				},
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithPositionalValues(
-							&primitive.Value{
+					Options: &QueryOptions{
+						PositionalValues: []*primitive.Value{
+							{
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeNull,
 							},
-						),
-					),
+						},
+					},
 				},
 				nil,
 			},
@@ -1048,7 +1041,7 @@ func TestQueryCodec_Decode(t *testing.T) {
 				"query with named values",
 				[]byte{
 					0, 0, 0, 6, S, E, L, E, C, T,
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b0100_0001, // flags
 					0, 1,        // values length
 					0, 4, c, o, l, _1, // name 1
@@ -1056,14 +1049,14 @@ func TestQueryCodec_Decode(t *testing.T) {
 				},
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithNamedValues(map[string]*primitive.Value{
+					Options: &QueryOptions{
+						NamedValues: map[string]*primitive.Value{
 							"col1": {
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-						}),
-					),
+						},
+					},
 				},
 				nil,
 			},
@@ -1071,7 +1064,7 @@ func TestQueryCodec_Decode(t *testing.T) {
 				"missing query",
 				[]byte{
 					0, 0, 0, 0, // empty query
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0, // flags
 				},
 				nil,
@@ -1099,12 +1092,12 @@ func TestQueryCodec_Decode(t *testing.T) {
 				"query with default options",
 				[]byte{
 					0, 0, 0, 6, S, E, L, E, C, T,
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0, // flags
 				},
 				&Query{
 					Query:   "SELECT",
-					Options: NewQueryOptions(),
+					Options: &QueryOptions{},
 				},
 				nil,
 			},
@@ -1121,14 +1114,14 @@ func TestQueryCodec_Decode(t *testing.T) {
 				},
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithConsistencyLevel(primitive.ConsistencyLevelLocalQuorum),
-						SkipMetadata(),
-						WithPageSize(100),
-						WithPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-						WithSerialConsistencyLevel(primitive.ConsistencyLevelLocalSerial),
-						WithDefaultTimestamp(123),
-					),
+					Options: &QueryOptions{
+						Consistency:       primitive.ConsistencyLevelLocalQuorum,
+						SkipMetadata:      true,
+						PageSize:          100,
+						PagingState:       []byte{0xca, 0xfe, 0xba, 0xbe},
+						SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
+						DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+					},
 				},
 				nil,
 			},
@@ -1136,7 +1129,7 @@ func TestQueryCodec_Decode(t *testing.T) {
 				"query with positional values",
 				[]byte{
 					0, 0, 0, 6, S, E, L, E, C, T,
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b0000_0001, // flags
 					0, 3,        // values length
 					0, 0, 0, 5, h, e, l, l, o, // value 1
@@ -1145,20 +1138,20 @@ func TestQueryCodec_Decode(t *testing.T) {
 				},
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithPositionalValues(
-							&primitive.Value{
+					Options: &QueryOptions{
+						PositionalValues: []*primitive.Value{
+							{
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeNull,
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeUnset,
 							},
-						),
-					),
+						},
+					},
 				},
 				nil,
 			},
@@ -1166,7 +1159,7 @@ func TestQueryCodec_Decode(t *testing.T) {
 				"query with named values",
 				[]byte{
 					0, 0, 0, 6, S, E, L, E, C, T,
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b0100_0001, // flags
 					0, 1,        // values length
 					0, 4, c, o, l, _1, // name 1
@@ -1174,14 +1167,14 @@ func TestQueryCodec_Decode(t *testing.T) {
 				},
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithNamedValues(map[string]*primitive.Value{
+					Options: &QueryOptions{
+						NamedValues: map[string]*primitive.Value{
 							"col1": {
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-						}),
-					),
+						},
+					},
 				},
 				nil,
 			},
@@ -1189,7 +1182,7 @@ func TestQueryCodec_Decode(t *testing.T) {
 				"missing query",
 				[]byte{
 					0, 0, 0, 0, // empty query
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0, // flags
 				},
 				nil,
@@ -1212,7 +1205,7 @@ func TestQueryCodec_Decode(t *testing.T) {
 				"query with keyspace and now-in-seconds",
 				[]byte{
 					0, 0, 0, 6, S, E, L, E, C, T,
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b0000_0000,    // flags
 					0b0000_0000,    // flags
 					0b0000_0001,    // flags (keyspace)
@@ -1221,8 +1214,11 @@ func TestQueryCodec_Decode(t *testing.T) {
 					0, 0, 0, 123, // now in seconds
 				},
 				&Query{
-					Query:   "SELECT",
-					Options: NewQueryOptions(WithKeyspace("ks1"), WithNowInSeconds(123)),
+					Query: "SELECT",
+					Options: &QueryOptions{
+						Keyspace:     "ks1",
+						NowInSeconds: &primitive.NillableInt32{Value: 123},
+					},
 				},
 				nil,
 			},
@@ -1230,7 +1226,7 @@ func TestQueryCodec_Decode(t *testing.T) {
 				"query with positional values, keyspace and now-in-seconds",
 				[]byte{
 					0, 0, 0, 6, S, E, L, E, C, T,
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b0000_0000, // flags
 					0b0000_0000, // flags
 					0b0000_0001, // flags
@@ -1244,20 +1240,22 @@ func TestQueryCodec_Decode(t *testing.T) {
 				},
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(WithKeyspace("ks1"), WithNowInSeconds(123),
-						WithPositionalValues(
-							&primitive.Value{
+					Options: &QueryOptions{
+						Keyspace:     "ks1",
+						NowInSeconds: &primitive.NillableInt32{Value: 123},
+						PositionalValues: []*primitive.Value{
+							{
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeNull,
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeUnset,
 							},
-						),
-					),
+						},
+					},
 				},
 				nil,
 			},
@@ -1283,12 +1281,12 @@ func TestQueryCodec_Decode(t *testing.T) {
 				"query with default options",
 				[]byte{
 					0, 0, 0, 6, S, E, L, E, C, T,
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0, 0, 0, 0, // flags
 				},
 				&Query{
 					Query:   "SELECT",
-					Options: NewQueryOptions(),
+					Options: &QueryOptions{},
 				},
 				nil,
 			},
@@ -1307,19 +1305,16 @@ func TestQueryCodec_Decode(t *testing.T) {
 				},
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithConsistencyLevel(primitive.ConsistencyLevelLocalQuorum),
-						SkipMetadata(),
-						WithPageSize(100),
-						WithPageSizeInBytes(),
-						WithPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-						WithSerialConsistencyLevel(primitive.ConsistencyLevelLocalSerial),
-						WithDefaultTimestamp(123),
-						WithContinuousPagingOptions(&ContinuousPagingOptions{
-							MaxPages:       50,
-							PagesPerSecond: 10,
-						}),
-					),
+					Options: &QueryOptions{
+						Consistency:             primitive.ConsistencyLevelLocalQuorum,
+						SkipMetadata:            true,
+						PageSize:                100,
+						PageSizeInBytes:         true,
+						PagingState:             []byte{0xca, 0xfe, 0xba, 0xbe},
+						SerialConsistency:       &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
+						DefaultTimestamp:        &primitive.NillableInt64{Value: 123},
+						ContinuousPagingOptions: &ContinuousPagingOptions{MaxPages: 50, PagesPerSecond: 10},
+					},
 				},
 				nil,
 			},
@@ -1327,7 +1322,7 @@ func TestQueryCodec_Decode(t *testing.T) {
 				"query with positional values",
 				[]byte{
 					0, 0, 0, 6, S, E, L, E, C, T,
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0, 0, 0, 0b0000_0001, // flags
 					0, 3, // values length
 					0, 0, 0, 5, h, e, l, l, o, // value 1
@@ -1336,20 +1331,20 @@ func TestQueryCodec_Decode(t *testing.T) {
 				},
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithPositionalValues(
-							&primitive.Value{
+					Options: &QueryOptions{
+						PositionalValues: []*primitive.Value{
+							{
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeNull,
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeUnset,
 							},
-						),
-					),
+						},
+					},
 				},
 				nil,
 			},
@@ -1357,7 +1352,7 @@ func TestQueryCodec_Decode(t *testing.T) {
 				"query with named values",
 				[]byte{
 					0, 0, 0, 6, S, E, L, E, C, T,
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0, 0, 0, 0b0100_0001, // flags
 					0, 1, // values length
 					0, 4, c, o, l, _1, // name 1
@@ -1365,14 +1360,14 @@ func TestQueryCodec_Decode(t *testing.T) {
 				},
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithNamedValues(map[string]*primitive.Value{
+					Options: &QueryOptions{
+						NamedValues: map[string]*primitive.Value{
 							"col1": {
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-						}),
-					),
+						},
+					},
 				},
 				nil,
 			},
@@ -1380,7 +1375,7 @@ func TestQueryCodec_Decode(t *testing.T) {
 				"missing query",
 				[]byte{
 					0, 0, 0, 0, // empty query
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0, 0, 0, 0, // flags
 				},
 				nil,
@@ -1403,7 +1398,7 @@ func TestQueryCodec_Decode(t *testing.T) {
 				"query with keyspace and continuous paging",
 				[]byte{
 					0, 0, 0, 6, S, E, L, E, C, T,
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b1000_0000,    // flags (cont. paging)
 					0b0000_0000,    // flags
 					0b0000_0000,    // flags
@@ -1415,14 +1410,10 @@ func TestQueryCodec_Decode(t *testing.T) {
 				},
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithKeyspace("ks1"),
-						WithContinuousPagingOptions(&ContinuousPagingOptions{
-							MaxPages:       50,
-							PagesPerSecond: 10,
-							NextPages:      20,
-						}),
-					),
+					Options: &QueryOptions{
+						Keyspace:                "ks1",
+						ContinuousPagingOptions: &ContinuousPagingOptions{MaxPages: 50, PagesPerSecond: 10, NextPages: 20},
+					},
 				},
 				nil,
 			},
@@ -1442,20 +1433,16 @@ func TestQueryCodec_Decode(t *testing.T) {
 				},
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(
-						WithConsistencyLevel(primitive.ConsistencyLevelLocalQuorum),
-						SkipMetadata(),
-						WithPageSize(100),
-						WithPageSizeInBytes(),
-						WithPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-						WithSerialConsistencyLevel(primitive.ConsistencyLevelLocalSerial),
-						WithDefaultTimestamp(123),
-						WithContinuousPagingOptions(&ContinuousPagingOptions{
-							MaxPages:       50,
-							PagesPerSecond: 10,
-							NextPages:      20,
-						}),
-					),
+					Options: &QueryOptions{
+						Consistency:             primitive.ConsistencyLevelLocalQuorum,
+						SkipMetadata:            true,
+						PageSize:                100,
+						PageSizeInBytes:         true,
+						PagingState:             []byte{0xca, 0xfe, 0xba, 0xbe},
+						SerialConsistency:       &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
+						DefaultTimestamp:        &primitive.NillableInt64{Value: 123},
+						ContinuousPagingOptions: &ContinuousPagingOptions{MaxPages: 50, PagesPerSecond: 10, NextPages: 20},
+					},
 				},
 				nil,
 			},
@@ -1463,7 +1450,7 @@ func TestQueryCodec_Decode(t *testing.T) {
 				"query with positional values and keyspace",
 				[]byte{
 					0, 0, 0, 6, S, E, L, E, C, T,
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b0000_0000, // flags
 					0b0000_0000, // flags
 					0b0000_0000, // flags
@@ -1476,20 +1463,21 @@ func TestQueryCodec_Decode(t *testing.T) {
 				},
 				&Query{
 					Query: "SELECT",
-					Options: NewQueryOptions(WithKeyspace("ks1"),
-						WithPositionalValues(
-							&primitive.Value{
+					Options: &QueryOptions{
+						Keyspace: "ks1",
+						PositionalValues: []*primitive.Value{
+							{
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeNull,
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeUnset,
 							},
-						),
-					),
+						},
+					},
 				},
 				nil,
 			},

@@ -13,28 +13,6 @@ type VariablesMetadata struct {
 	ColumnSpecs []*ColumnMetadata
 }
 
-type VariablesMetadataCustomizer func(metadata *VariablesMetadata)
-
-func NewVariablesMetadata(customizers ...VariablesMetadataCustomizer) *VariablesMetadata {
-	metadata := &VariablesMetadata{}
-	for _, customizer := range customizers {
-		customizer(metadata)
-	}
-	return metadata
-}
-
-func WithPartitionKeyIndices(indices ...uint16) func(metadata *VariablesMetadata) {
-	return func(metadata *VariablesMetadata) {
-		metadata.PkIndices = indices
-	}
-}
-
-func WithResultColumns(specs ...*ColumnMetadata) func(metadata *VariablesMetadata) {
-	return func(metadata *VariablesMetadata) {
-		metadata.ColumnSpecs = specs
-	}
-}
-
 func (rm *VariablesMetadata) Flags() (flag primitive.VariablesFlag) {
 	if len(rm.ColumnSpecs) > 0 && haveSameTable(rm.ColumnSpecs) {
 		flag |= primitive.VariablesFlagGlobalTablesSpec
@@ -54,59 +32,6 @@ type RowsMetadata struct {
 	LastContinuousPage bool
 	// If nil, the NO_METADATA flag is set. Should never be nil in a Prepared result.
 	ColumnSpecs []*ColumnMetadata
-}
-
-type RowsMetadataCustomizer func(metadata *RowsMetadata)
-
-func NewRowsMetadata(customizers ...RowsMetadataCustomizer) *RowsMetadata {
-	metadata := &RowsMetadata{}
-	for _, customizer := range customizers {
-		customizer(metadata)
-	}
-	return metadata
-}
-
-func WithColumns(specs ...*ColumnMetadata) func(metadata *RowsMetadata) {
-	return func(metadata *RowsMetadata) {
-		metadata.ColumnSpecs = specs
-		metadata.ColumnCount = int32(len(specs))
-
-	}
-}
-
-// Sets the column count but does not create column metadata. This activates the NO_METADATA flag.
-// Only valid for Rows result, not for Prepared ones.
-func NoColumnMetadata(columnCount int32) func(metadata *RowsMetadata) {
-	return func(metadata *RowsMetadata) {
-		metadata.ColumnCount = columnCount
-	}
-}
-
-func WithResultPagingState(pagingState []byte) func(metadata *RowsMetadata) {
-	return func(metadata *RowsMetadata) {
-		metadata.PagingState = pagingState
-	}
-}
-
-// v5+
-func WithNewResultMetadataId(newResultMetadataId []byte) func(metadata *RowsMetadata) {
-	return func(metadata *RowsMetadata) {
-		metadata.NewResultMetadataId = newResultMetadataId
-	}
-}
-
-// DSE v1+
-func WithContinuousPageNumber(pageNumber int32) func(metadata *RowsMetadata) {
-	return func(metadata *RowsMetadata) {
-		metadata.ContinuousPageNumber = pageNumber
-	}
-}
-
-// DSE v1+
-func LastContinuousPage() func(metadata *RowsMetadata) {
-	return func(metadata *RowsMetadata) {
-		metadata.LastContinuousPage = true
-	}
 }
 
 func (rm *RowsMetadata) Flags() (flag primitive.RowsFlag) {
@@ -139,6 +64,9 @@ type ColumnMetadata struct {
 }
 
 func encodeVariablesMetadata(metadata *VariablesMetadata, dest io.Writer, version primitive.ProtocolVersion) (err error) {
+	if metadata == nil {
+		metadata = &VariablesMetadata{}
+	}
 	flags := metadata.Flags()
 	if err = primitive.WriteInt(int32(flags), dest); err != nil {
 		return fmt.Errorf("cannot write RESULT Prepared variables metadata flags: %w", err)
@@ -166,6 +94,9 @@ func encodeVariablesMetadata(metadata *VariablesMetadata, dest io.Writer, versio
 }
 
 func lengthOfVariablesMetadata(metadata *VariablesMetadata, version primitive.ProtocolVersion) (length int, err error) {
+	if metadata == nil {
+		metadata = &VariablesMetadata{}
+	}
 	length += primitive.LengthOfInt // flags
 	length += primitive.LengthOfInt // column count
 	if version >= primitive.ProtocolVersion4 {
@@ -219,6 +150,9 @@ func decodeVariablesMetadata(source io.Reader, version primitive.ProtocolVersion
 }
 
 func encodeRowsMetadata(metadata *RowsMetadata, dest io.Writer, version primitive.ProtocolVersion) (err error) {
+	if metadata == nil {
+		metadata = &RowsMetadata{}
+	}
 	flags := metadata.Flags()
 	if err = primitive.WriteInt(int32(flags), dest); err != nil {
 		return fmt.Errorf("cannot write RESULT Rows metadata flags: %w", err)
@@ -259,6 +193,9 @@ func encodeRowsMetadata(metadata *RowsMetadata, dest io.Writer, version primitiv
 }
 
 func lengthOfRowsMetadata(metadata *RowsMetadata, version primitive.ProtocolVersion) (length int, err error) {
+	if metadata == nil {
+		metadata = &RowsMetadata{}
+	}
 	length += primitive.LengthOfInt // flags
 	length += primitive.LengthOfInt // column count
 	flags := metadata.Flags()

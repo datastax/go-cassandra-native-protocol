@@ -98,45 +98,6 @@ type PreparedResult struct {
 	ResultMetadata *RowsMetadata
 }
 
-type PreparedResultCustomizer func(result *PreparedResult)
-
-func NewPreparedResult(customizers ...PreparedResultCustomizer) *PreparedResult {
-	result := &PreparedResult{
-		PreparedQueryId:   nil,
-		ResultMetadataId:  nil,
-		VariablesMetadata: &VariablesMetadata{},
-		ResultMetadata:    &RowsMetadata{},
-	}
-	for _, customizer := range customizers {
-		customizer(result)
-	}
-	return result
-}
-
-func WithPreparedQueryId(preparedQueryId []byte) func(result *PreparedResult) {
-	return func(result *PreparedResult) {
-		result.PreparedQueryId = preparedQueryId
-	}
-}
-
-func WithResultMetadataId(resultMetadataId []byte) func(result *PreparedResult) {
-	return func(result *PreparedResult) {
-		result.ResultMetadataId = resultMetadataId
-	}
-}
-
-func WithVariablesMetadata(variablesMetadata *VariablesMetadata) func(result *PreparedResult) {
-	return func(result *PreparedResult) {
-		result.VariablesMetadata = variablesMetadata
-	}
-}
-
-func WithPreparedResultMetadata(rowsMetadata *RowsMetadata) func(result *PreparedResult) {
-	return func(result *PreparedResult) {
-		result.ResultMetadata = rowsMetadata
-	}
-}
-
 func (m *PreparedResult) IsResponse() bool {
 	return true
 }
@@ -155,33 +116,13 @@ func (m *PreparedResult) String() string {
 
 // ROWS
 
+type Column = []byte
+
+type Row = []Column
+
 type RowsResult struct {
 	Metadata *RowsMetadata
-	Data     [][][]byte
-}
-
-type RowsResultCustomizer func(result *RowsResult)
-
-func NewRowsResult(customizers ...RowsResultCustomizer) *RowsResult {
-	result := &RowsResult{
-		Metadata: &RowsMetadata{},
-	}
-	for _, customizer := range customizers {
-		customizer(result)
-	}
-	return result
-}
-
-func WithRowsMetadata(rowsMetadata *RowsMetadata) func(result *RowsResult) {
-	return func(result *RowsResult) {
-		result.Metadata = rowsMetadata
-	}
-}
-
-func WithRowsData(rows ...[][]byte) func(result *RowsResult) {
-	return func(result *RowsResult) {
-		result.Data = rows
-	}
+	Data     []Row
 }
 
 func (m *RowsResult) IsResponse() bool {
@@ -291,14 +232,10 @@ func (c *resultCodec) Encode(msg Message, dest io.Writer, version primitive.Prot
 				return fmt.Errorf("cannot write RESULT Prepared result metadata id: %w", err)
 			}
 		}
-		if p.VariablesMetadata == nil {
-			return errors.New("cannot write nil RESULT Prepared variables metadata")
-		} else if err = encodeVariablesMetadata(p.VariablesMetadata, dest, version); err != nil {
+		if err = encodeVariablesMetadata(p.VariablesMetadata, dest, version); err != nil {
 			return fmt.Errorf("cannot write RESULT Prepared variables metadata: %w", err)
 		}
-		if p.ResultMetadata == nil {
-			return errors.New("cannot write nil RESULT Prepared result metadata")
-		} else if err = encodeRowsMetadata(p.ResultMetadata, dest, version); err != nil {
+		if err = encodeRowsMetadata(p.ResultMetadata, dest, version); err != nil {
 			return fmt.Errorf("cannot write RESULT Prepared result metadata: %w", err)
 		}
 	case primitive.ResultTypeRows:
@@ -306,9 +243,7 @@ func (c *resultCodec) Encode(msg Message, dest io.Writer, version primitive.Prot
 		if !ok {
 			return fmt.Errorf("expected *message.RowsResult, got %T", msg)
 		}
-		if rows.Metadata == nil {
-			return errors.New("cannot write nil RESULT Prepared result metadata")
-		} else if err = encodeRowsMetadata(rows.Metadata, dest, version); err != nil {
+		if err = encodeRowsMetadata(rows.Metadata, dest, version); err != nil {
 			return fmt.Errorf("cannot write RESULT Rows metadata: %w", err)
 		}
 		if err = primitive.WriteInt(int32(len(rows.Data)), dest); err != nil {
@@ -373,22 +308,14 @@ func (c *resultCodec) EncodedLength(msg Message, version primitive.ProtocolVersi
 		if hasResultMetadataId(version) {
 			length += primitive.LengthOfShortBytes(p.ResultMetadataId)
 		}
-		if p.VariablesMetadata == nil {
-			return -1, errors.New("cannot compute length of nil RESULT Prepared variables metadata")
+		if lengthOfMetadata, err := lengthOfVariablesMetadata(p.VariablesMetadata, version); err != nil {
+			return -1, fmt.Errorf("cannot compute length of RESULT Prepared variables metadata: %w", err)
 		} else {
-			var lengthOfMetadata int
-			if lengthOfMetadata, err = lengthOfVariablesMetadata(p.VariablesMetadata, version); err != nil {
-				return -1, fmt.Errorf("cannot compute length of RESULT Prepared variables metadata: %w", err)
-			}
 			length += lengthOfMetadata
 		}
-		if p.ResultMetadata == nil {
-			return -1, errors.New("cannot compute length of nil RESULT Prepared result metadata")
+		if lengthOfMetadata, err := lengthOfRowsMetadata(p.ResultMetadata, version); err != nil {
+			return -1, fmt.Errorf("cannot compute length of RESULT Prepared result metadata: %w", err)
 		} else {
-			var lengthOfMetadata int
-			if lengthOfMetadata, err = lengthOfRowsMetadata(p.ResultMetadata, version); err != nil {
-				return -1, fmt.Errorf("cannot compute length of RESULT Prepared result metadata: %w", err)
-			}
 			length += lengthOfMetadata
 		}
 	case primitive.ResultTypeRows:

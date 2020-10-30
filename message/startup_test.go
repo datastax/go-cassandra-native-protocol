@@ -39,7 +39,7 @@ func TestStartupCodec_Encode(t *testing.T) {
 				},
 				{
 					"startup with compression",
-					NewStartup(WithCompression("LZ4")),
+					NewStartup(StartupOptionCompression, "LZ4"),
 					[][]byte{
 						{
 							0, 2,
@@ -68,7 +68,7 @@ func TestStartupCodec_Encode(t *testing.T) {
 				},
 				{
 					"startup with custom options",
-					NewStartup(WithOptions(map[string]string{"CQL_VERSION": "3.4.5", "COMPRESSION": "SNAPPY"})),
+					NewStartup(StartupOptionCqlVersion, "3.4.5", StartupOptionCompression, "SNAPPY"),
 					// we have two possible encodings because maps do not have deterministic iteration order
 					[][]byte{
 						{
@@ -143,7 +143,7 @@ func TestStartupCodec_EncodedLength(t *testing.T) {
 		},
 		{
 			"startup with compression",
-			NewStartup(WithCompression("LZ4")),
+			NewStartup(StartupOptionCompression, "LZ4"),
 			primitive.LengthOfShort + // map length
 				primitive.LengthOfString("CQL_VERSION") + // map key
 				primitive.LengthOfString("3.0.0") + // map value
@@ -153,7 +153,7 @@ func TestStartupCodec_EncodedLength(t *testing.T) {
 		},
 		{
 			"startup with custom options",
-			NewStartup(WithOptions(map[string]string{"CQL_VERSION": "3.4.5", "COMPRESSION": "SNAPPY"})),
+			NewStartup(StartupOptionCqlVersion, "3.4.5", StartupOptionCompression, "SNAPPY"),
 			primitive.LengthOfShort + // map length
 				primitive.LengthOfString("CQL_VERSION") + // map key
 				primitive.LengthOfString("3.4.5") + // map value
@@ -217,7 +217,7 @@ func TestStartupCodec_Decode(t *testing.T) {
 						// value "LZ4"
 						0, 3, L, Z, _4,
 					},
-					NewStartup(WithCompression("LZ4")),
+					NewStartup(StartupOptionCompression, "LZ4"),
 					nil,
 				},
 			}

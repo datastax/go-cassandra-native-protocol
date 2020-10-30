@@ -19,11 +19,11 @@ func TestExecuteCodec_Encode(t *testing.T) {
 					"execute with default options",
 					&Execute{
 						QueryId: []byte{1, 2, 3, 4},
-						Options: NewQueryOptions(),
+						Options: &QueryOptions{},
 					},
 					[]byte{
 						0, 4, 1, 2, 3, 4, // query id
-						0, 1, // consistency level
+						0, 0, // consistency level
 						0, // flags
 					},
 					nil,
@@ -32,14 +32,14 @@ func TestExecuteCodec_Encode(t *testing.T) {
 					"execute with custom options and no values",
 					&Execute{
 						QueryId: []byte{1, 2, 3, 4},
-						Options: NewQueryOptions(
-							WithConsistencyLevel(primitive.ConsistencyLevelLocalQuorum),
-							SkipMetadata(),
-							WithPageSize(100),
-							WithPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							WithSerialConsistencyLevel(primitive.ConsistencyLevelLocalSerial),
-							WithDefaultTimestamp(123),
-						),
+						Options: &QueryOptions{
+							Consistency:       primitive.ConsistencyLevelLocalQuorum,
+							SkipMetadata:      true,
+							PageSize:          100,
+							PagingState:       []byte{0xca, 0xfe, 0xba, 0xbe},
+							SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
+							DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+						},
 					},
 					[]byte{
 						0, 4, 1, 2, 3, 4, // query id
@@ -56,21 +56,21 @@ func TestExecuteCodec_Encode(t *testing.T) {
 					"execute with positional values",
 					&Execute{
 						QueryId: []byte{1, 2, 3, 4},
-						Options: NewQueryOptions(
-							WithPositionalValues(
-								&primitive.Value{
+						Options: &QueryOptions{
+							PositionalValues: []*primitive.Value{
+								{
 									Type:     primitive.ValueTypeRegular,
 									Contents: []byte{h, e, l, l, o},
 								},
-								&primitive.Value{
+								{
 									Type: primitive.ValueTypeNull,
 								},
-							),
-						),
+							},
+						},
 					},
 					[]byte{
 						0, 4, 1, 2, 3, 4, // query id
-						0, 1, // consistency level
+						0, 0, // consistency level
 						0b0000_0001, // flags
 						0, 2,        // values length
 						0, 0, 0, 5, h, e, l, l, o, // value 1
@@ -82,18 +82,18 @@ func TestExecuteCodec_Encode(t *testing.T) {
 					"execute with named values",
 					&Execute{
 						QueryId: []byte{1, 2, 3, 4},
-						Options: NewQueryOptions(
-							WithNamedValues(map[string]*primitive.Value{
+						Options: &QueryOptions{
+							NamedValues: map[string]*primitive.Value{
 								"col1": {
 									Type:     primitive.ValueTypeRegular,
 									Contents: []byte{h, e, l, l, o},
 								},
-							}),
-						),
+							},
+						},
 					},
 					[]byte{
 						0, 4, 1, 2, 3, 4, // query id
-						0, 1, // consistency level
+						0, 0, // consistency level
 						0b0100_0001, // flags
 						0, 1,        // values length
 						0, 4, c, o, l, _1, // name 1
@@ -136,11 +136,11 @@ func TestExecuteCodec_Encode(t *testing.T) {
 				"execute with default options",
 				&Execute{
 					QueryId: []byte{1, 2, 3, 4},
-					Options: NewQueryOptions(),
+					Options: &QueryOptions{},
 				},
 				[]byte{
 					0, 4, 1, 2, 3, 4, // query id
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0, // flags
 				},
 				nil,
@@ -149,14 +149,14 @@ func TestExecuteCodec_Encode(t *testing.T) {
 				"execute with custom options and no values",
 				&Execute{
 					QueryId: []byte{1, 2, 3, 4},
-					Options: NewQueryOptions(
-						WithConsistencyLevel(primitive.ConsistencyLevelLocalQuorum),
-						SkipMetadata(),
-						WithPageSize(100),
-						WithPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-						WithSerialConsistencyLevel(primitive.ConsistencyLevelLocalSerial),
-						WithDefaultTimestamp(123),
-					),
+					Options: &QueryOptions{
+						Consistency:       primitive.ConsistencyLevelLocalQuorum,
+						SkipMetadata:      true,
+						PageSize:          100,
+						PagingState:       []byte{0xca, 0xfe, 0xba, 0xbe},
+						SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
+						DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+					},
 				},
 				[]byte{
 					0, 4, 1, 2, 3, 4, // query id
@@ -173,24 +173,24 @@ func TestExecuteCodec_Encode(t *testing.T) {
 				"execute with positional values",
 				&Execute{
 					QueryId: []byte{1, 2, 3, 4},
-					Options: NewQueryOptions(
-						WithPositionalValues(
-							&primitive.Value{
+					Options: &QueryOptions{
+						PositionalValues: []*primitive.Value{
+							{
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeNull,
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeUnset,
 							},
-						),
-					),
+						},
+					},
 				},
 				[]byte{
 					0, 4, 1, 2, 3, 4, // query id
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b0000_0001, // flags
 					0, 3,        // values length
 					0, 0, 0, 5, h, e, l, l, o, // value 1
@@ -203,18 +203,18 @@ func TestExecuteCodec_Encode(t *testing.T) {
 				"execute with named values",
 				&Execute{
 					QueryId: []byte{1, 2, 3, 4},
-					Options: NewQueryOptions(
-						WithNamedValues(map[string]*primitive.Value{
+					Options: &QueryOptions{
+						NamedValues: map[string]*primitive.Value{
 							"col1": {
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-						}),
-					),
+						},
+					},
 				},
 				[]byte{
 					0, 4, 1, 2, 3, 4, // query id
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b0100_0001, // flags
 					0, 1,        // values length
 					0, 4, c, o, l, _1, // name 1
@@ -252,12 +252,15 @@ func TestExecuteCodec_Encode(t *testing.T) {
 				&Execute{
 					QueryId:          []byte{1, 2, 3, 4},
 					ResultMetadataId: []byte{5, 6, 7, 8},
-					Options:          NewQueryOptions(WithKeyspace("ks1"), WithNowInSeconds(123)),
+					Options: &QueryOptions{
+						Keyspace:     "ks1",
+						NowInSeconds: &primitive.NillableInt32{Value: 123},
+					},
 				},
 				[]byte{
 					0, 4, 1, 2, 3, 4, // query id
 					0, 4, 5, 6, 7, 8, // result metadata id
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b0000_0000,    // flags
 					0b0000_0000,    // flags
 					0b0000_0001,    // flags (keyspace)
@@ -272,25 +275,27 @@ func TestExecuteCodec_Encode(t *testing.T) {
 				&Execute{
 					QueryId:          []byte{1, 2, 3, 4},
 					ResultMetadataId: []byte{5, 6, 7, 8},
-					Options: NewQueryOptions(WithKeyspace("ks1"), WithNowInSeconds(123),
-						WithPositionalValues(
-							&primitive.Value{
+					Options: &QueryOptions{
+						Keyspace:     "ks1",
+						NowInSeconds: &primitive.NillableInt32{Value: 123},
+						PositionalValues: []*primitive.Value{
+							{
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeNull,
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeUnset,
 							},
-						),
-					),
+						},
+					},
 				},
 				[]byte{
 					0, 4, 1, 2, 3, 4, // query id
 					0, 4, 5, 6, 7, 8, // result metadata id
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b0000_0000, // flags
 					0b0000_0000, // flags
 					0b0000_0001, // flags
@@ -332,11 +337,11 @@ func TestExecuteCodec_Encode(t *testing.T) {
 				"execute with default options",
 				&Execute{
 					QueryId: []byte{1, 2, 3, 4},
-					Options: NewQueryOptions(),
+					Options: &QueryOptions{},
 				},
 				[]byte{
 					0, 4, 1, 2, 3, 4, // query id
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0, 0, 0, 0, // flags
 				},
 				nil,
@@ -345,14 +350,14 @@ func TestExecuteCodec_Encode(t *testing.T) {
 				"execute with custom options and no values",
 				&Execute{
 					QueryId: []byte{1, 2, 3, 4},
-					Options: NewQueryOptions(
-						WithConsistencyLevel(primitive.ConsistencyLevelLocalQuorum),
-						SkipMetadata(),
-						WithPageSize(100),
-						WithPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-						WithSerialConsistencyLevel(primitive.ConsistencyLevelLocalSerial),
-						WithDefaultTimestamp(123),
-					),
+					Options: &QueryOptions{
+						Consistency:       primitive.ConsistencyLevelLocalQuorum,
+						SkipMetadata:      true,
+						PageSize:          100,
+						PagingState:       []byte{0xca, 0xfe, 0xba, 0xbe},
+						SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
+						DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+					},
 				},
 				[]byte{
 					0, 4, 1, 2, 3, 4, // query id
@@ -369,24 +374,24 @@ func TestExecuteCodec_Encode(t *testing.T) {
 				"execute with positional values",
 				&Execute{
 					QueryId: []byte{1, 2, 3, 4},
-					Options: NewQueryOptions(
-						WithPositionalValues(
-							&primitive.Value{
+					Options: &QueryOptions{
+						PositionalValues: []*primitive.Value{
+							{
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeNull,
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeUnset,
 							},
-						),
-					),
+						},
+					},
 				},
 				[]byte{
 					0, 4, 1, 2, 3, 4, // query id
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0, 0, 0, 0b0000_0001, // flags
 					0, 3, // values length
 					0, 0, 0, 5, h, e, l, l, o, // value 1
@@ -399,18 +404,18 @@ func TestExecuteCodec_Encode(t *testing.T) {
 				"execute with named values",
 				&Execute{
 					QueryId: []byte{1, 2, 3, 4},
-					Options: NewQueryOptions(
-						WithNamedValues(map[string]*primitive.Value{
+					Options: &QueryOptions{
+						NamedValues: map[string]*primitive.Value{
 							"col1": {
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-						}),
-					),
+						},
+					},
 				},
 				[]byte{
 					0, 4, 1, 2, 3, 4, // query id
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0, 0, 0, 0b0100_0001, // flags
 					0, 1, // values length
 					0, 4, c, o, l, _1, // name 1
@@ -448,12 +453,12 @@ func TestExecuteCodec_Encode(t *testing.T) {
 				&Execute{
 					QueryId:          []byte{1, 2, 3, 4},
 					ResultMetadataId: []byte{5, 6, 7, 8},
-					Options:          NewQueryOptions(WithKeyspace("ks1")),
+					Options:          &QueryOptions{Keyspace: "ks1"},
 				},
 				[]byte{
 					0, 4, 1, 2, 3, 4, // query id
 					0, 4, 5, 6, 7, 8, // result metadata id
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b0000_0000,    // flags
 					0b0000_0000,    // flags
 					0b0000_0000,    // flags
@@ -467,25 +472,26 @@ func TestExecuteCodec_Encode(t *testing.T) {
 				&Execute{
 					QueryId:          []byte{1, 2, 3, 4},
 					ResultMetadataId: []byte{5, 6, 7, 8},
-					Options: NewQueryOptions(WithKeyspace("ks1"),
-						WithPositionalValues(
-							&primitive.Value{
+					Options: &QueryOptions{
+						Keyspace: "ks1",
+						PositionalValues: []*primitive.Value{
+							{
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeNull,
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeUnset,
 							},
-						),
-					),
+						},
+					},
 				},
 				[]byte{
 					0, 4, 1, 2, 3, 4, // query id
 					0, 4, 5, 6, 7, 8, // result metadata id
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b0000_0000, // flags
 					0b0000_0000, // flags
 					0b0000_0000, // flags
@@ -526,7 +532,7 @@ func TestExecuteCodec_EncodedLength(t *testing.T) {
 					"execute with default options",
 					&Execute{
 						QueryId: []byte{1, 2, 3, 4},
-						Options: NewQueryOptions(),
+						Options: &QueryOptions{},
 					},
 					primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) + // query id
 						primitive.LengthOfShort + // consistency
@@ -537,14 +543,14 @@ func TestExecuteCodec_EncodedLength(t *testing.T) {
 					"execute with custom options and no values",
 					&Execute{
 						QueryId: []byte{1, 2, 3, 4},
-						Options: NewQueryOptions(
-							WithConsistencyLevel(primitive.ConsistencyLevelLocalQuorum),
-							SkipMetadata(),
-							WithPageSize(100),
-							WithPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							WithSerialConsistencyLevel(primitive.ConsistencyLevelLocalSerial),
-							WithDefaultTimestamp(123),
-						),
+						Options: &QueryOptions{
+							Consistency:       primitive.ConsistencyLevelLocalQuorum,
+							SkipMetadata:      true,
+							PageSize:          100,
+							PagingState:       []byte{0xca, 0xfe, 0xba, 0xbe},
+							SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
+							DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+						},
 					},
 					primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) + // query id
 						primitive.LengthOfShort + // consistency
@@ -559,17 +565,17 @@ func TestExecuteCodec_EncodedLength(t *testing.T) {
 					"execute with positional values",
 					&Execute{
 						QueryId: []byte{1, 2, 3, 4},
-						Options: NewQueryOptions(
-							WithPositionalValues(
-								&primitive.Value{
+						Options: &QueryOptions{
+							PositionalValues: []*primitive.Value{
+								{
 									Type:     primitive.ValueTypeRegular,
 									Contents: []byte{h, e, l, l, o},
 								},
-								&primitive.Value{
+								{
 									Type: primitive.ValueTypeNull,
 								},
-							),
-						),
+							},
+						},
 					},
 					primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) + // query id
 						primitive.LengthOfShort + // consistency
@@ -583,14 +589,14 @@ func TestExecuteCodec_EncodedLength(t *testing.T) {
 					"execute with named values",
 					&Execute{
 						QueryId: []byte{1, 2, 3, 4},
-						Options: NewQueryOptions(
-							WithNamedValues(map[string]*primitive.Value{
+						Options: &QueryOptions{
+							NamedValues: map[string]*primitive.Value{
 								"col1": {
 									Type:     primitive.ValueTypeRegular,
 									Contents: []byte{h, e, l, l, o},
 								},
-							}),
-						),
+							},
+						},
 					},
 					primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) + // query id
 						primitive.LengthOfShort + // consistency
@@ -628,7 +634,7 @@ func TestExecuteCodec_EncodedLength(t *testing.T) {
 				"execute with default options",
 				&Execute{
 					QueryId: []byte{1, 2, 3, 4},
-					Options: NewQueryOptions(),
+					Options: &QueryOptions{},
 				},
 				primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) + // query id
 					primitive.LengthOfShort + // consistency
@@ -639,14 +645,14 @@ func TestExecuteCodec_EncodedLength(t *testing.T) {
 				"execute with custom options and no values",
 				&Execute{
 					QueryId: []byte{1, 2, 3, 4},
-					Options: NewQueryOptions(
-						WithConsistencyLevel(primitive.ConsistencyLevelLocalQuorum),
-						SkipMetadata(),
-						WithPageSize(100),
-						WithPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-						WithSerialConsistencyLevel(primitive.ConsistencyLevelLocalSerial),
-						WithDefaultTimestamp(123),
-					),
+					Options: &QueryOptions{
+						Consistency:       primitive.ConsistencyLevelLocalQuorum,
+						SkipMetadata:      true,
+						PageSize:          100,
+						PagingState:       []byte{0xca, 0xfe, 0xba, 0xbe},
+						SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
+						DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+					},
 				},
 				primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) + // query id
 					primitive.LengthOfShort + // consistency
@@ -661,20 +667,20 @@ func TestExecuteCodec_EncodedLength(t *testing.T) {
 				"execute with positional values",
 				&Execute{
 					QueryId: []byte{1, 2, 3, 4},
-					Options: NewQueryOptions(
-						WithPositionalValues(
-							&primitive.Value{
+					Options: &QueryOptions{
+						PositionalValues: []*primitive.Value{
+							{
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeNull,
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeUnset,
 							},
-						),
-					),
+						},
+					},
 				},
 				primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) + // query id
 					primitive.LengthOfShort + // consistency
@@ -689,14 +695,14 @@ func TestExecuteCodec_EncodedLength(t *testing.T) {
 				"execute with named values",
 				&Execute{
 					QueryId: []byte{1, 2, 3, 4},
-					Options: NewQueryOptions(
-						WithNamedValues(map[string]*primitive.Value{
+					Options: &QueryOptions{
+						NamedValues: map[string]*primitive.Value{
 							"col1": {
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-						}),
-					),
+						},
+					},
 				},
 				primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) + // query id
 					primitive.LengthOfShort + // consistency
@@ -729,7 +735,10 @@ func TestExecuteCodec_EncodedLength(t *testing.T) {
 				&Execute{
 					QueryId:          []byte{1, 2, 3, 4},
 					ResultMetadataId: []byte{5, 6, 7, 8},
-					Options:          NewQueryOptions(WithKeyspace("ks1"), WithNowInSeconds(123)),
+					Options: &QueryOptions{
+						Keyspace:     "ks1",
+						NowInSeconds: &primitive.NillableInt32{Value: 123},
+					},
 				},
 				primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) + // query id
 					primitive.LengthOfShortBytes([]byte{5, 6, 7, 8}) + // result metadata id
@@ -744,20 +753,22 @@ func TestExecuteCodec_EncodedLength(t *testing.T) {
 				&Execute{
 					QueryId:          []byte{1, 2, 3, 4},
 					ResultMetadataId: []byte{5, 6, 7, 8},
-					Options: NewQueryOptions(WithKeyspace("ks1"), WithNowInSeconds(123),
-						WithPositionalValues(
-							&primitive.Value{
+					Options: &QueryOptions{
+						Keyspace:     "ks1",
+						NowInSeconds: &primitive.NillableInt32{Value: 123},
+						PositionalValues: []*primitive.Value{
+							{
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeNull,
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeUnset,
 							},
-						),
-					),
+						},
+					},
 				},
 				primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) + // query id
 					primitive.LengthOfShortBytes([]byte{5, 6, 7, 8}) + // result metadata id
@@ -792,7 +803,7 @@ func TestExecuteCodec_EncodedLength(t *testing.T) {
 				"execute with default options",
 				&Execute{
 					QueryId: []byte{1, 2, 3, 4},
-					Options: NewQueryOptions(),
+					Options: &QueryOptions{},
 				},
 				primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) + // query id
 					primitive.LengthOfShort + // consistency
@@ -803,14 +814,14 @@ func TestExecuteCodec_EncodedLength(t *testing.T) {
 				"execute with custom options and no values",
 				&Execute{
 					QueryId: []byte{1, 2, 3, 4},
-					Options: NewQueryOptions(
-						WithConsistencyLevel(primitive.ConsistencyLevelLocalQuorum),
-						SkipMetadata(),
-						WithPageSize(100),
-						WithPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-						WithSerialConsistencyLevel(primitive.ConsistencyLevelLocalSerial),
-						WithDefaultTimestamp(123),
-					),
+					Options: &QueryOptions{
+						Consistency:       primitive.ConsistencyLevelLocalQuorum,
+						SkipMetadata:      true,
+						PageSize:          100,
+						PagingState:       []byte{0xca, 0xfe, 0xba, 0xbe},
+						SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
+						DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+					},
 				},
 				primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) + // query id
 					primitive.LengthOfShort + // consistency
@@ -825,20 +836,20 @@ func TestExecuteCodec_EncodedLength(t *testing.T) {
 				"execute with positional values",
 				&Execute{
 					QueryId: []byte{1, 2, 3, 4},
-					Options: NewQueryOptions(
-						WithPositionalValues(
-							&primitive.Value{
+					Options: &QueryOptions{
+						PositionalValues: []*primitive.Value{
+							{
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeNull,
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeUnset,
 							},
-						),
-					),
+						},
+					},
 				},
 				primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) + // query id
 					primitive.LengthOfShort + // consistency
@@ -853,14 +864,14 @@ func TestExecuteCodec_EncodedLength(t *testing.T) {
 				"execute with named values",
 				&Execute{
 					QueryId: []byte{1, 2, 3, 4},
-					Options: NewQueryOptions(
-						WithNamedValues(map[string]*primitive.Value{
+					Options: &QueryOptions{
+						NamedValues: map[string]*primitive.Value{
 							"col1": {
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-						}),
-					),
+						},
+					},
 				},
 				primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) + // query id
 					primitive.LengthOfShort + // consistency
@@ -893,7 +904,7 @@ func TestExecuteCodec_EncodedLength(t *testing.T) {
 				&Execute{
 					QueryId:          []byte{1, 2, 3, 4},
 					ResultMetadataId: []byte{5, 6, 7, 8},
-					Options:          NewQueryOptions(WithKeyspace("ks1")),
+					Options:          &QueryOptions{Keyspace: "ks1"},
 				},
 				primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) + // query id
 					primitive.LengthOfShortBytes([]byte{5, 6, 7, 8}) + // result metadata id
@@ -907,20 +918,21 @@ func TestExecuteCodec_EncodedLength(t *testing.T) {
 				&Execute{
 					QueryId:          []byte{1, 2, 3, 4},
 					ResultMetadataId: []byte{5, 6, 7, 8},
-					Options: NewQueryOptions(WithKeyspace("ks1"),
-						WithPositionalValues(
-							&primitive.Value{
+					Options: &QueryOptions{
+						Keyspace: "ks1",
+						PositionalValues: []*primitive.Value{
+							{
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeNull,
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeUnset,
 							},
-						),
-					),
+						},
+					},
 				},
 				primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) + // query id
 					primitive.LengthOfShortBytes([]byte{5, 6, 7, 8}) + // result metadata id
@@ -954,12 +966,12 @@ func TestExecuteCodec_Decode(t *testing.T) {
 					"execute with default options",
 					[]byte{
 						0, 4, 1, 2, 3, 4, // query id
-						0, 1, // consistency level
+						0, 0, // consistency level
 						0, // flags
 					},
 					&Execute{
 						QueryId: []byte{1, 2, 3, 4},
-						Options: NewQueryOptions(),
+						Options: &QueryOptions{},
 					},
 					nil,
 				},
@@ -976,14 +988,14 @@ func TestExecuteCodec_Decode(t *testing.T) {
 					},
 					&Execute{
 						QueryId: []byte{1, 2, 3, 4},
-						Options: NewQueryOptions(
-							WithConsistencyLevel(primitive.ConsistencyLevelLocalQuorum),
-							SkipMetadata(),
-							WithPageSize(100),
-							WithPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							WithSerialConsistencyLevel(primitive.ConsistencyLevelLocalSerial),
-							WithDefaultTimestamp(123),
-						),
+						Options: &QueryOptions{
+							Consistency:       primitive.ConsistencyLevelLocalQuorum,
+							SkipMetadata:      true,
+							PageSize:          100,
+							PagingState:       []byte{0xca, 0xfe, 0xba, 0xbe},
+							SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
+							DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+						},
 					},
 					nil,
 				},
@@ -991,7 +1003,7 @@ func TestExecuteCodec_Decode(t *testing.T) {
 					"execute with positional values",
 					[]byte{
 						0, 4, 1, 2, 3, 4, // query id
-						0, 1, // consistency level
+						0, 0, // consistency level
 						0b0000_0001, // flags
 						0, 2,        // values length
 						0, 0, 0, 5, h, e, l, l, o, // value 1
@@ -999,17 +1011,17 @@ func TestExecuteCodec_Decode(t *testing.T) {
 					},
 					&Execute{
 						QueryId: []byte{1, 2, 3, 4},
-						Options: NewQueryOptions(
-							WithPositionalValues(
-								&primitive.Value{
+						Options: &QueryOptions{
+							PositionalValues: []*primitive.Value{
+								{
 									Type:     primitive.ValueTypeRegular,
 									Contents: []byte{h, e, l, l, o},
 								},
-								&primitive.Value{
+								{
 									Type: primitive.ValueTypeNull,
 								},
-							),
-						),
+							},
+						},
 					},
 					nil,
 				},
@@ -1017,7 +1029,7 @@ func TestExecuteCodec_Decode(t *testing.T) {
 					"execute with named values",
 					[]byte{
 						0, 4, 1, 2, 3, 4, // query id
-						0, 1, // consistency level
+						0, 0, // consistency level
 						0b0100_0001, // flags
 						0, 1,        // values length
 						0, 4, c, o, l, _1, // name 1
@@ -1025,14 +1037,14 @@ func TestExecuteCodec_Decode(t *testing.T) {
 					},
 					&Execute{
 						QueryId: []byte{1, 2, 3, 4},
-						Options: NewQueryOptions(
-							WithNamedValues(map[string]*primitive.Value{
+						Options: &QueryOptions{
+							NamedValues: map[string]*primitive.Value{
 								"col1": {
 									Type:     primitive.ValueTypeRegular,
 									Contents: []byte{h, e, l, l, o},
 								},
-							}),
-						),
+							},
+						},
 					},
 					nil,
 				},
@@ -1040,7 +1052,7 @@ func TestExecuteCodec_Decode(t *testing.T) {
 					"missing query id",
 					[]byte{
 						0, 0, // query id
-						0, 1, // consistency level
+						0, 0, // consistency level
 						0, // flags
 					},
 					nil,
@@ -1069,12 +1081,12 @@ func TestExecuteCodec_Decode(t *testing.T) {
 				"execute with default options",
 				[]byte{
 					0, 4, 1, 2, 3, 4, // query id
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0, // flags
 				},
 				&Execute{
 					QueryId: []byte{1, 2, 3, 4},
-					Options: NewQueryOptions(),
+					Options: &QueryOptions{},
 				},
 				nil,
 			},
@@ -1091,14 +1103,14 @@ func TestExecuteCodec_Decode(t *testing.T) {
 				},
 				&Execute{
 					QueryId: []byte{1, 2, 3, 4},
-					Options: NewQueryOptions(
-						WithConsistencyLevel(primitive.ConsistencyLevelLocalQuorum),
-						SkipMetadata(),
-						WithPageSize(100),
-						WithPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-						WithSerialConsistencyLevel(primitive.ConsistencyLevelLocalSerial),
-						WithDefaultTimestamp(123),
-					),
+					Options: &QueryOptions{
+						Consistency:       primitive.ConsistencyLevelLocalQuorum,
+						SkipMetadata:      true,
+						PageSize:          100,
+						PagingState:       []byte{0xca, 0xfe, 0xba, 0xbe},
+						SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
+						DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+					},
 				},
 				nil,
 			},
@@ -1106,7 +1118,7 @@ func TestExecuteCodec_Decode(t *testing.T) {
 				"execute with positional values",
 				[]byte{
 					0, 4, 1, 2, 3, 4, // query id
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b0000_0001, // flags
 					0, 3,        // values length
 					0, 0, 0, 5, h, e, l, l, o, // value 1
@@ -1115,20 +1127,20 @@ func TestExecuteCodec_Decode(t *testing.T) {
 				},
 				&Execute{
 					QueryId: []byte{1, 2, 3, 4},
-					Options: NewQueryOptions(
-						WithPositionalValues(
-							&primitive.Value{
+					Options: &QueryOptions{
+						PositionalValues: []*primitive.Value{
+							{
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeNull,
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeUnset,
 							},
-						),
-					),
+						},
+					},
 				},
 				nil,
 			},
@@ -1136,7 +1148,7 @@ func TestExecuteCodec_Decode(t *testing.T) {
 				"execute with named values",
 				[]byte{
 					0, 4, 1, 2, 3, 4, // query id
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b0100_0001, // flags
 					0, 1,        // values length
 					0, 4, c, o, l, _1, // name 1
@@ -1144,14 +1156,14 @@ func TestExecuteCodec_Decode(t *testing.T) {
 				},
 				&Execute{
 					QueryId: []byte{1, 2, 3, 4},
-					Options: NewQueryOptions(
-						WithNamedValues(map[string]*primitive.Value{
+					Options: &QueryOptions{
+						NamedValues: map[string]*primitive.Value{
 							"col1": {
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-						}),
-					),
+						},
+					},
 				},
 				nil,
 			},
@@ -1159,7 +1171,7 @@ func TestExecuteCodec_Decode(t *testing.T) {
 				"missing query id",
 				[]byte{
 					0, 0, // query id
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0, // flags
 				},
 				nil,
@@ -1183,7 +1195,7 @@ func TestExecuteCodec_Decode(t *testing.T) {
 				[]byte{
 					0, 4, 1, 2, 3, 4, // query id
 					0, 4, 5, 6, 7, 8, // result metadata id
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b0000_0000,    // flags
 					0b0000_0000,    // flags
 					0b0000_0001,    // flags (keyspace)
@@ -1194,7 +1206,10 @@ func TestExecuteCodec_Decode(t *testing.T) {
 				&Execute{
 					QueryId:          []byte{1, 2, 3, 4},
 					ResultMetadataId: []byte{5, 6, 7, 8},
-					Options:          NewQueryOptions(WithKeyspace("ks1"), WithNowInSeconds(123)),
+					Options: &QueryOptions{
+						Keyspace:     "ks1",
+						NowInSeconds: &primitive.NillableInt32{Value: 123},
+					},
 				},
 				nil,
 			},
@@ -1203,7 +1218,7 @@ func TestExecuteCodec_Decode(t *testing.T) {
 				[]byte{
 					0, 4, 1, 2, 3, 4, // query id
 					0, 4, 5, 6, 7, 8, // result metadata id
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b0000_0000, // flags
 					0b0000_0000, // flags
 					0b0000_0001, // flags
@@ -1218,20 +1233,22 @@ func TestExecuteCodec_Decode(t *testing.T) {
 				&Execute{
 					QueryId:          []byte{1, 2, 3, 4},
 					ResultMetadataId: []byte{5, 6, 7, 8},
-					Options: NewQueryOptions(WithKeyspace("ks1"), WithNowInSeconds(123),
-						WithPositionalValues(
-							&primitive.Value{
+					Options: &QueryOptions{
+						Keyspace:     "ks1",
+						NowInSeconds: &primitive.NillableInt32{Value: 123},
+						PositionalValues: []*primitive.Value{
+							{
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeNull,
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeUnset,
 							},
-						),
-					),
+						},
+					},
 				},
 				nil,
 			},
@@ -1240,7 +1257,7 @@ func TestExecuteCodec_Decode(t *testing.T) {
 				[]byte{
 					0, 4, 1, 2, 3, 4, // query id
 					0, 0, // result metadata id
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b0000_0000, // flags
 					0b0000_0000, // flags
 					0b0000_0000, // flags
@@ -1254,7 +1271,7 @@ func TestExecuteCodec_Decode(t *testing.T) {
 				[]byte{
 					0, 0, // query id
 					0, 4, 1, 2, 3, 4, // result metadata id
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b0000_0000, // flags
 					0b0000_0000, // flags
 					0b0000_0000, // flags
@@ -1285,12 +1302,12 @@ func TestExecuteCodec_Decode(t *testing.T) {
 				"execute with default options",
 				[]byte{
 					0, 4, 1, 2, 3, 4, // query id
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0, 0, 0, 0, // flags
 				},
 				&Execute{
 					QueryId: []byte{1, 2, 3, 4},
-					Options: NewQueryOptions(),
+					Options: &QueryOptions{},
 				},
 				nil,
 			},
@@ -1307,14 +1324,14 @@ func TestExecuteCodec_Decode(t *testing.T) {
 				},
 				&Execute{
 					QueryId: []byte{1, 2, 3, 4},
-					Options: NewQueryOptions(
-						WithConsistencyLevel(primitive.ConsistencyLevelLocalQuorum),
-						SkipMetadata(),
-						WithPageSize(100),
-						WithPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-						WithSerialConsistencyLevel(primitive.ConsistencyLevelLocalSerial),
-						WithDefaultTimestamp(123),
-					),
+					Options: &QueryOptions{
+						Consistency:       primitive.ConsistencyLevelLocalQuorum,
+						SkipMetadata:      true,
+						PageSize:          100,
+						PagingState:       []byte{0xca, 0xfe, 0xba, 0xbe},
+						SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
+						DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+					},
 				},
 				nil,
 			},
@@ -1322,7 +1339,7 @@ func TestExecuteCodec_Decode(t *testing.T) {
 				"execute with positional values",
 				[]byte{
 					0, 4, 1, 2, 3, 4, // query id
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0, 0, 0, 0b0000_0001, // flags
 					0, 3, // values length
 					0, 0, 0, 5, h, e, l, l, o, // value 1
@@ -1331,20 +1348,20 @@ func TestExecuteCodec_Decode(t *testing.T) {
 				},
 				&Execute{
 					QueryId: []byte{1, 2, 3, 4},
-					Options: NewQueryOptions(
-						WithPositionalValues(
-							&primitive.Value{
+					Options: &QueryOptions{
+						PositionalValues: []*primitive.Value{
+							{
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeNull,
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeUnset,
 							},
-						),
-					),
+						},
+					},
 				},
 				nil,
 			},
@@ -1352,7 +1369,7 @@ func TestExecuteCodec_Decode(t *testing.T) {
 				"execute with named values",
 				[]byte{
 					0, 4, 1, 2, 3, 4, // query id
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0, 0, 0, 0b0100_0001, // flags
 					0, 1, // values length
 					0, 4, c, o, l, _1, // name 1
@@ -1360,14 +1377,14 @@ func TestExecuteCodec_Decode(t *testing.T) {
 				},
 				&Execute{
 					QueryId: []byte{1, 2, 3, 4},
-					Options: NewQueryOptions(
-						WithNamedValues(map[string]*primitive.Value{
+					Options: &QueryOptions{
+						NamedValues: map[string]*primitive.Value{
 							"col1": {
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-						}),
-					),
+						},
+					},
 				},
 				nil,
 			},
@@ -1375,7 +1392,7 @@ func TestExecuteCodec_Decode(t *testing.T) {
 				"missing query id",
 				[]byte{
 					0, 0, // query id
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0, 0, 0, 0, // flags
 				},
 				nil,
@@ -1399,7 +1416,7 @@ func TestExecuteCodec_Decode(t *testing.T) {
 				[]byte{
 					0, 4, 1, 2, 3, 4, // query id
 					0, 4, 5, 6, 7, 8, // result metadata id
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b0000_0000,    // flags
 					0b0000_0000,    // flags
 					0b0000_0000,    // flags
@@ -1410,7 +1427,7 @@ func TestExecuteCodec_Decode(t *testing.T) {
 				&Execute{
 					QueryId:          []byte{1, 2, 3, 4},
 					ResultMetadataId: []byte{5, 6, 7, 8},
-					Options:          NewQueryOptions(WithKeyspace("ks1")),
+					Options:          &QueryOptions{Keyspace: "ks1"},
 				},
 				nil,
 			},
@@ -1419,7 +1436,7 @@ func TestExecuteCodec_Decode(t *testing.T) {
 				[]byte{
 					0, 4, 1, 2, 3, 4, // query id
 					0, 4, 5, 6, 7, 8, // result metadata id
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b0000_0000, // flags
 					0b0000_0000, // flags
 					0b0000_0000, // flags
@@ -1433,20 +1450,21 @@ func TestExecuteCodec_Decode(t *testing.T) {
 				&Execute{
 					QueryId:          []byte{1, 2, 3, 4},
 					ResultMetadataId: []byte{5, 6, 7, 8},
-					Options: NewQueryOptions(WithKeyspace("ks1"),
-						WithPositionalValues(
-							&primitive.Value{
+					Options: &QueryOptions{
+						Keyspace: "ks1",
+						PositionalValues: []*primitive.Value{
+							{
 								Type:     primitive.ValueTypeRegular,
 								Contents: []byte{h, e, l, l, o},
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeNull,
 							},
-							&primitive.Value{
+							{
 								Type: primitive.ValueTypeUnset,
 							},
-						),
-					),
+						},
+					},
 				},
 				nil,
 			},
@@ -1455,7 +1473,7 @@ func TestExecuteCodec_Decode(t *testing.T) {
 				[]byte{
 					0, 4, 1, 2, 3, 4, // query id
 					0, 0, // result metadata id
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b0000_0000, // flags
 					0b0000_0000, // flags
 					0b0000_0000, // flags
@@ -1469,7 +1487,7 @@ func TestExecuteCodec_Decode(t *testing.T) {
 				[]byte{
 					0, 0, // query id
 					0, 4, 1, 2, 3, 4, // result metadata id
-					0, 1, // consistency level
+					0, 0, // consistency level
 					0b0000_0000, // flags
 					0b0000_0000, // flags
 					0b0000_0000, // flags

@@ -38,9 +38,9 @@ func (c *queryCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 	}
 	options := query.Options
 	if options == nil {
-		options = NewQueryOptions() // use defaults if nil provided
+		options = &QueryOptions{} // use defaults if nil provided
 	}
-	if err := EncodeQueryOptions(query.Options, dest, version); err != nil {
+	if err := EncodeQueryOptions(options, dest, version); err != nil {
 		return fmt.Errorf("cannot write QUERY options: %w", err)
 	}
 	return nil

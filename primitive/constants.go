@@ -180,6 +180,13 @@ const (
 	BatchTypeCounter  = BatchType(0x02)
 )
 
+type BatchChildStatementType = uint8
+
+const (
+	BatchChildTypeQueryString = BatchChildStatementType(0x00)
+	BatchChildTypePreparedId  = BatchChildStatementType(0x01)
+)
+
 type HeaderFlag = uint8
 
 const (
