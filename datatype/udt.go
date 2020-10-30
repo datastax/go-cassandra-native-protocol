@@ -39,8 +39,13 @@ func (t *userDefinedType) GetFieldTypes() []DataType {
 	return t.fieldTypes
 }
 
-func NewUserDefinedType(keyspace string, table string, fieldNames []string, fieldTypes []DataType) UserDefinedType {
-	return &userDefinedType{keyspace: keyspace, name: table, fieldNames: fieldNames, fieldTypes: fieldTypes}
+func NewUserDefinedType(keyspace string, name string, fieldNames []string, fieldTypes []DataType) (UserDefinedType, error) {
+	fieldNamesLength := len(fieldNames)
+	fieldTypesLength := len(fieldTypes)
+	if fieldNamesLength != fieldTypesLength {
+		return nil, fmt.Errorf("field names and field types length mismatch: %d != %d", fieldNamesLength, fieldTypesLength)
+	}
+	return &userDefinedType{keyspace: keyspace, name: name, fieldNames: fieldNames, fieldTypes: fieldTypes}, nil
 }
 
 func (t *userDefinedType) GetDataTypeCode() primitive.DataTypeCode {

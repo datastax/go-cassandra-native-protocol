@@ -12,10 +12,17 @@ import (
 func TestUserDefinedType(t *testing.T) {
 	fieldNames := []string{"f1", "f2"}
 	fieldTypes := []DataType{Varchar, Int}
-	udtType := NewUserDefinedType("ks1", "udt1", fieldNames, fieldTypes)
+	udtType, err := NewUserDefinedType("ks1", "udt1", fieldNames, fieldTypes)
+	assert.Nil(t, err)
 	assert.Equal(t, primitive.DataTypeCodeUdt, udtType.GetDataTypeCode())
 	assert.Equal(t, fieldTypes, udtType.GetFieldTypes())
+	udtType2, err2 := NewUserDefinedType("ks1", "udt1", fieldNames, []DataType{Varchar, Int, Boolean})
+	assert.Nil(t, udtType2)
+	assert.Errorf(t, err2, "field names and field types length mismatch: 2 != 3")
 }
+
+var udt1, _ = NewUserDefinedType("ks1", "udt1", []string{"f1", "f2"}, []DataType{Varchar, Int})
+var udt2, _ = NewUserDefinedType("ks1", "udt2", []string{"f1"}, []DataType{udt1})
 
 func TestUserDefinedTypeCodecEncode(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
@@ -28,7 +35,7 @@ func TestUserDefinedTypeCodecEncode(t *testing.T) {
 			}{
 				{
 					"simple udt",
-					NewUserDefinedType("ks1", "udt1", []string{"f1", "f2"}, []DataType{Varchar, Int}),
+					udt1,
 					[]byte{
 						0, 3, byte('k'), byte('s'), byte('1'),
 						0, 4, byte('u'), byte('d'), byte('t'), byte('1'),
@@ -42,21 +49,19 @@ func TestUserDefinedTypeCodecEncode(t *testing.T) {
 				},
 				{
 					"complex udt",
-					NewUserDefinedType("ks1", "udt1", []string{"f1"}, []DataType{
-						NewUserDefinedType("ks1", "udt2", []string{"f2", "f3"}, []DataType{Varchar, Int}),
-					}),
+					udt2,
 					[]byte{
 						0, 3, byte('k'), byte('s'), byte('1'),
-						0, 4, byte('u'), byte('d'), byte('t'), byte('1'),
+						0, 4, byte('u'), byte('d'), byte('t'), byte('2'),
 						0, 1, // field count
 						0, 2, byte('f'), byte('1'),
 						0, byte(primitive.DataTypeCodeUdt & 0xFF),
 						0, 3, byte('k'), byte('s'), byte('1'),
-						0, 4, byte('u'), byte('d'), byte('t'), byte('2'),
+						0, 4, byte('u'), byte('d'), byte('t'), byte('1'),
 						0, 2, // field count
-						0, 2, byte('f'), byte('2'),
+						0, 2, byte('f'), byte('1'),
 						0, byte(primitive.DataTypeCodeVarchar & 0xFF),
-						0, 2, byte('f'), byte('3'),
+						0, 2, byte('f'), byte('2'),
 						0, byte(primitive.DataTypeCodeInt & 0xFF),
 					},
 					nil,
@@ -89,7 +94,7 @@ func TestUserDefinedTypeCodecEncodedLength(t *testing.T) {
 			}{
 				{
 					"simple udt",
-					NewUserDefinedType("ks1", "udt1", []string{"f1", "f2"}, []DataType{Varchar, Int}),
+					udt1,
 					primitive.LengthOfString("ks1") +
 						primitive.LengthOfString("udt1") +
 						primitive.LengthOfShort + // field count
@@ -101,20 +106,18 @@ func TestUserDefinedTypeCodecEncodedLength(t *testing.T) {
 				},
 				{
 					"complex udt",
-					NewUserDefinedType("ks1", "udt1", []string{"f1"}, []DataType{
-						NewUserDefinedType("ks1", "udt2", []string{"f2", "f3"}, []DataType{Varchar, Int}),
-					}),
+					udt2,
 					primitive.LengthOfString("ks1") +
-						primitive.LengthOfString("udt1") +
+						primitive.LengthOfString("udt2") +
 						primitive.LengthOfShort + // field count
 						primitive.LengthOfString("f1") +
 						primitive.LengthOfShort + // UDT
 						primitive.LengthOfString("ks1") +
-						primitive.LengthOfString("udt2") +
+						primitive.LengthOfString("udt1") +
 						primitive.LengthOfShort + // field count
-						primitive.LengthOfString("f2") +
+						primitive.LengthOfString("f1") +
 						primitive.LengthOfShort + // varchar
-						primitive.LengthOfString("f3") +
+						primitive.LengthOfString("f2") +
 						primitive.LengthOfShort, // int
 					nil,
 				},
@@ -154,28 +157,26 @@ func TestUserDefinedTypeCodecDecode(t *testing.T) {
 						0, 2, byte('f'), byte('2'),
 						0, byte(primitive.DataTypeCodeInt & 0xFF),
 					},
-					NewUserDefinedType("ks1", "udt1", []string{"f1", "f2"}, []DataType{Varchar, Int}),
+					udt1,
 					nil,
 				},
 				{
 					"complex udt",
 					[]byte{
 						0, 3, byte('k'), byte('s'), byte('1'),
-						0, 4, byte('u'), byte('d'), byte('t'), byte('1'),
+						0, 4, byte('u'), byte('d'), byte('t'), byte('2'),
 						0, 1, // field count
 						0, 2, byte('f'), byte('1'),
 						0, byte(primitive.DataTypeCodeUdt & 0xFF),
 						0, 3, byte('k'), byte('s'), byte('1'),
-						0, 4, byte('u'), byte('d'), byte('t'), byte('2'),
+						0, 4, byte('u'), byte('d'), byte('t'), byte('1'),
 						0, 2, // field count
-						0, 2, byte('f'), byte('2'),
+						0, 2, byte('f'), byte('1'),
 						0, byte(primitive.DataTypeCodeVarchar & 0xFF),
-						0, 2, byte('f'), byte('3'),
+						0, 2, byte('f'), byte('2'),
 						0, byte(primitive.DataTypeCodeInt & 0xFF),
 					},
-					NewUserDefinedType("ks1", "udt1", []string{"f1"}, []DataType{
-						NewUserDefinedType("ks1", "udt2", []string{"f2", "f3"}, []DataType{Varchar, Int}),
-					}),
+					udt2,
 					nil,
 				},
 				{
