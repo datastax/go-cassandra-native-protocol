@@ -23,9 +23,9 @@ func (m *Authenticate) String() string {
 	return "AUTHENTICATE " + m.Authenticator
 }
 
-type AuthenticateCodec struct{}
+type authenticateCodec struct{}
 
-func (c *AuthenticateCodec) Encode(msg Message, dest io.Writer, _ primitive.ProtocolVersion) error {
+func (c *authenticateCodec) Encode(msg Message, dest io.Writer, _ primitive.ProtocolVersion) error {
 	authenticate, ok := msg.(*Authenticate)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.Authenticate, got %T", msg))
@@ -36,7 +36,7 @@ func (c *AuthenticateCodec) Encode(msg Message, dest io.Writer, _ primitive.Prot
 	return primitive.WriteString(authenticate.Authenticator, dest)
 }
 
-func (c *AuthenticateCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) (int, error) {
+func (c *authenticateCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) (int, error) {
 	authenticate, ok := msg.(*Authenticate)
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected *message.Authenticate, got %T", msg))
@@ -44,7 +44,7 @@ func (c *AuthenticateCodec) EncodedLength(msg Message, _ primitive.ProtocolVersi
 	return primitive.LengthOfString(authenticate.Authenticator), nil
 }
 
-func (c *AuthenticateCodec) Decode(source io.Reader, _ primitive.ProtocolVersion) (Message, error) {
+func (c *authenticateCodec) Decode(source io.Reader, _ primitive.ProtocolVersion) (Message, error) {
 	if authenticator, err := primitive.ReadString(source); err != nil {
 		return nil, err
 	} else {
@@ -52,6 +52,6 @@ func (c *AuthenticateCodec) Decode(source io.Reader, _ primitive.ProtocolVersion
 	}
 }
 
-func (c *AuthenticateCodec) GetOpCode() primitive.OpCode {
+func (c *authenticateCodec) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeAuthenticate
 }

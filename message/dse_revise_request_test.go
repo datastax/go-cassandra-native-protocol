@@ -10,7 +10,7 @@ import (
 )
 
 func TestReviseCodec_Encode(t *testing.T) {
-	codec := &ReviseCodec{}
+	codec := &reviseCodec{}
 	version := primitive.ProtocolVersionDse1
 	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 		tests := []encodeTestCase{
@@ -90,7 +90,7 @@ func TestReviseCodec_Encode(t *testing.T) {
 }
 
 func TestReviseCodec_EncodedLength(t *testing.T) {
-	codec := &ReviseCodec{}
+	codec := &reviseCodec{}
 	version := primitive.ProtocolVersionDse1
 	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 		tests := []encodedLengthTestCase{
@@ -158,7 +158,7 @@ func TestReviseCodec_EncodedLength(t *testing.T) {
 }
 
 func TestReviseCodec_Decode(t *testing.T) {
-	codec := &ReviseCodec{}
+	codec := &reviseCodec{}
 	version := primitive.ProtocolVersionDse1
 	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 		tests := []decodeTestCase{

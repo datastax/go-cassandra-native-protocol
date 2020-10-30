@@ -58,9 +58,9 @@ func (m *Startup) String() string {
 	return fmt.Sprint("STARTUP ", m.Options)
 }
 
-type StartupCodec struct{}
+type startupCodec struct{}
 
-func (c *StartupCodec) Encode(msg Message, dest io.Writer, _ primitive.ProtocolVersion) error {
+func (c *startupCodec) Encode(msg Message, dest io.Writer, _ primitive.ProtocolVersion) error {
 	startup, ok := msg.(*Startup)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.Startup, got %T", msg))
@@ -68,7 +68,7 @@ func (c *StartupCodec) Encode(msg Message, dest io.Writer, _ primitive.ProtocolV
 	return primitive.WriteStringMap(startup.Options, dest)
 }
 
-func (c *StartupCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) (int, error) {
+func (c *startupCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) (int, error) {
 	startup, ok := msg.(*Startup)
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected *message.Startup, got %T", msg))
@@ -76,7 +76,7 @@ func (c *StartupCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) (
 	return primitive.LengthOfStringMap(startup.Options), nil
 }
 
-func (c *StartupCodec) Decode(source io.Reader, _ primitive.ProtocolVersion) (Message, error) {
+func (c *startupCodec) Decode(source io.Reader, _ primitive.ProtocolVersion) (Message, error) {
 	if options, err := primitive.ReadStringMap(source); err != nil {
 		return nil, err
 	} else {
@@ -84,6 +84,6 @@ func (c *StartupCodec) Decode(source io.Reader, _ primitive.ProtocolVersion) (Me
 	}
 }
 
-func (c *StartupCodec) GetOpCode() primitive.OpCode {
+func (c *startupCodec) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeStartup
 }

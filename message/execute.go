@@ -28,9 +28,9 @@ func (m *Execute) String() string {
 	return "EXECUTE " + hex.EncodeToString(m.QueryId)
 }
 
-type ExecuteCodec struct{}
+type executeCodec struct{}
 
-func (c *ExecuteCodec) Encode(msg Message, dest io.Writer, version primitive.ProtocolVersion) error {
+func (c *executeCodec) Encode(msg Message, dest io.Writer, version primitive.ProtocolVersion) error {
 	execute, ok := msg.(*Execute)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.Execute, got %T", msg))
@@ -53,7 +53,7 @@ func (c *ExecuteCodec) Encode(msg Message, dest io.Writer, version primitive.Pro
 	return nil
 }
 
-func (c *ExecuteCodec) EncodedLength(msg Message, version primitive.ProtocolVersion) (size int, err error) {
+func (c *executeCodec) EncodedLength(msg Message, version primitive.ProtocolVersion) (size int, err error) {
 	execute, ok := msg.(*Execute)
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected *message.Execute, got %T", msg))
@@ -69,7 +69,7 @@ func (c *ExecuteCodec) EncodedLength(msg Message, version primitive.ProtocolVers
 	}
 }
 
-func (c *ExecuteCodec) Decode(source io.Reader, version primitive.ProtocolVersion) (msg Message, err error) {
+func (c *executeCodec) Decode(source io.Reader, version primitive.ProtocolVersion) (msg Message, err error) {
 	var execute = &Execute{
 		Options: nil,
 	}
@@ -91,6 +91,6 @@ func (c *ExecuteCodec) Decode(source io.Reader, version primitive.ProtocolVersio
 	return execute, nil
 }
 
-func (c *ExecuteCodec) GetOpCode() primitive.OpCode {
+func (c *executeCodec) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeExecute
 }

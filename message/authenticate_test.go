@@ -10,7 +10,7 @@ import (
 )
 
 func TestAuthenticateCodec_Encode(t *testing.T) {
-	codec := &AuthenticateCodec{}
+	codec := &authenticateCodec{}
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodeTestCase{
@@ -46,7 +46,7 @@ func TestAuthenticateCodec_Encode(t *testing.T) {
 }
 
 func TestAuthenticateCodec_EncodedLength(t *testing.T) {
-	codec := &AuthenticateCodec{}
+	codec := &authenticateCodec{}
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodedLengthTestCase{
@@ -81,7 +81,7 @@ func TestAuthenticateCodec_EncodedLength(t *testing.T) {
 }
 
 func TestAuthenticateCodec_Decode(t *testing.T) {
-	codec := &AuthenticateCodec{}
+	codec := &authenticateCodec{}
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []decodeTestCase{

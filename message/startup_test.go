@@ -10,7 +10,7 @@ import (
 )
 
 func TestStartupCodec_Encode(t *testing.T) {
-	codec := &StartupCodec{}
+	codec := &startupCodec{}
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []struct {
@@ -120,7 +120,7 @@ func TestStartupCodec_Encode(t *testing.T) {
 }
 
 func TestStartupCodec_EncodedLength(t *testing.T) {
-	codec := &StartupCodec{}
+	codec := &startupCodec{}
 	tests := []struct {
 		name     string
 		input    Message
@@ -182,7 +182,7 @@ func TestStartupCodec_EncodedLength(t *testing.T) {
 }
 
 func TestStartupCodec_Decode(t *testing.T) {
-	codec := &StartupCodec{}
+	codec := &startupCodec{}
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []decodeTestCase{

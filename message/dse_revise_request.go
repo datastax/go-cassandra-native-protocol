@@ -28,9 +28,9 @@ func (m *Revise) String() string {
 	return fmt.Sprintf("REVISE_REQUEST operation type: %v, stream id: %v", m.RevisionType, m.TargetStreamId)
 }
 
-type ReviseCodec struct{}
+type reviseCodec struct{}
 
-func (c *ReviseCodec) Encode(msg Message, dest io.Writer, version primitive.ProtocolVersion) error {
+func (c *reviseCodec) Encode(msg Message, dest io.Writer, version primitive.ProtocolVersion) error {
 	revise, ok := msg.(*Revise)
 	if !ok {
 		return fmt.Errorf("expected *message.Revise, got %T", msg)
@@ -54,7 +54,7 @@ func (c *ReviseCodec) Encode(msg Message, dest io.Writer, version primitive.Prot
 	return nil
 }
 
-func (c *ReviseCodec) EncodedLength(msg Message, version primitive.ProtocolVersion) (length int, err error) {
+func (c *reviseCodec) EncodedLength(msg Message, version primitive.ProtocolVersion) (length int, err error) {
 	if err := primitive.CheckDseProtocolVersion(version); err != nil {
 		return -1, err
 	}
@@ -71,7 +71,7 @@ func (c *ReviseCodec) EncodedLength(msg Message, version primitive.ProtocolVersi
 	return length, nil
 }
 
-func (c *ReviseCodec) Decode(source io.Reader, version primitive.ProtocolVersion) (msg Message, err error) {
+func (c *reviseCodec) Decode(source io.Reader, version primitive.ProtocolVersion) (msg Message, err error) {
 	if err := primitive.CheckDseProtocolVersion(version); err != nil {
 		return nil, err
 	}
@@ -92,6 +92,6 @@ func (c *ReviseCodec) Decode(source io.Reader, version primitive.ProtocolVersion
 	return revise, nil
 }
 
-func (c *ReviseCodec) GetOpCode() primitive.OpCode {
+func (c *reviseCodec) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeDseRevise
 }

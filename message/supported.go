@@ -23,9 +23,9 @@ func (m *Supported) String() string {
 	return fmt.Sprintf("SUPPORTED %v", m.Options)
 }
 
-type SupportedCodec struct{}
+type supportedCodec struct{}
 
-func (c *SupportedCodec) Encode(msg Message, dest io.Writer, _ primitive.ProtocolVersion) error {
+func (c *supportedCodec) Encode(msg Message, dest io.Writer, _ primitive.ProtocolVersion) error {
 	supported, ok := msg.(*Supported)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.Supported, got %T", msg))
@@ -36,7 +36,7 @@ func (c *SupportedCodec) Encode(msg Message, dest io.Writer, _ primitive.Protoco
 	return nil
 }
 
-func (c *SupportedCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) (int, error) {
+func (c *supportedCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) (int, error) {
 	supported, ok := msg.(*Supported)
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected *message.Supported, got %T", msg))
@@ -44,7 +44,7 @@ func (c *SupportedCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion)
 	return primitive.LengthOfStringMultiMap(supported.Options), nil
 }
 
-func (c *SupportedCodec) Decode(source io.Reader, _ primitive.ProtocolVersion) (Message, error) {
+func (c *supportedCodec) Decode(source io.Reader, _ primitive.ProtocolVersion) (Message, error) {
 	if options, err := primitive.ReadStringMultiMap(source); err != nil {
 		return nil, err
 	} else {
@@ -52,6 +52,6 @@ func (c *SupportedCodec) Decode(source io.Reader, _ primitive.ProtocolVersion) (
 	}
 }
 
-func (c *SupportedCodec) GetOpCode() primitive.OpCode {
+func (c *supportedCodec) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeSupported
 }

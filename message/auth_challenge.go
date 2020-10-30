@@ -24,9 +24,9 @@ func (m *AuthChallenge) String() string {
 	return "AUTH_CHALLENGE token: " + base64.StdEncoding.EncodeToString(m.Token)
 }
 
-type AuthChallengeCodec struct{}
+type authChallengeCodec struct{}
 
-func (c *AuthChallengeCodec) Encode(msg Message, dest io.Writer, _ primitive.ProtocolVersion) error {
+func (c *authChallengeCodec) Encode(msg Message, dest io.Writer, _ primitive.ProtocolVersion) error {
 	authChallenge, ok := msg.(*AuthChallenge)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.AuthChallenge, got %T", msg))
@@ -37,7 +37,7 @@ func (c *AuthChallengeCodec) Encode(msg Message, dest io.Writer, _ primitive.Pro
 	return primitive.WriteBytes(authChallenge.Token, dest)
 }
 
-func (c *AuthChallengeCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) (int, error) {
+func (c *authChallengeCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) (int, error) {
 	authChallenge, ok := msg.(*AuthChallenge)
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected *message.AuthChallenge, got %T", msg))
@@ -45,7 +45,7 @@ func (c *AuthChallengeCodec) EncodedLength(msg Message, _ primitive.ProtocolVers
 	return primitive.LengthOfBytes(authChallenge.Token), nil
 }
 
-func (c *AuthChallengeCodec) Decode(source io.Reader, _ primitive.ProtocolVersion) (Message, error) {
+func (c *authChallengeCodec) Decode(source io.Reader, _ primitive.ProtocolVersion) (Message, error) {
 	if token, err := primitive.ReadBytes(source); err != nil {
 		return nil, err
 	} else {
@@ -53,6 +53,6 @@ func (c *AuthChallengeCodec) Decode(source io.Reader, _ primitive.ProtocolVersio
 	}
 }
 
-func (c *AuthChallengeCodec) GetOpCode() primitive.OpCode {
+func (c *authChallengeCodec) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeAuthChallenge
 }

@@ -11,7 +11,7 @@ import (
 
 func TestAuthResponseCodec_Encode(t *testing.T) {
 	token := []byte{0xca, 0xfe, 0xba, 0xbe}
-	codec := &AuthResponseCodec{}
+	codec := &authResponseCodec{}
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodeTestCase{
@@ -48,7 +48,7 @@ func TestAuthResponseCodec_Encode(t *testing.T) {
 
 func TestAuthResponseCodec_EncodedLength(t *testing.T) {
 	token := []byte{0xca, 0xfe, 0xba, 0xbe}
-	codec := &AuthResponseCodec{}
+	codec := &authResponseCodec{}
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodedLengthTestCase{
@@ -84,7 +84,7 @@ func TestAuthResponseCodec_EncodedLength(t *testing.T) {
 
 func TestAuthResponseCodec_Decode(t *testing.T) {
 	token := []byte{0xca, 0xfe, 0xba, 0xbe}
-	codec := &AuthResponseCodec{}
+	codec := &authResponseCodec{}
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []decodeTestCase{

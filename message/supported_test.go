@@ -10,7 +10,7 @@ import (
 )
 
 func TestSupportedCodec_Encode(test *testing.T) {
-	codec := &SupportedCodec{}
+	codec := &supportedCodec{}
 	for _, version := range primitive.AllProtocolVersions() {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []struct {
@@ -117,7 +117,7 @@ func TestSupportedCodec_Encode(test *testing.T) {
 }
 
 func TestSupportedCodec_EncodedLength(test *testing.T) {
-	codec := &SupportedCodec{}
+	codec := &supportedCodec{}
 	for _, version := range primitive.AllProtocolVersions() {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
@@ -176,7 +176,7 @@ func TestSupportedCodec_EncodedLength(test *testing.T) {
 }
 
 func TestSupportedCodec_Decode(test *testing.T) {
-	codec := &SupportedCodec{}
+	codec := &supportedCodec{}
 	for _, version := range primitive.AllProtocolVersions() {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{

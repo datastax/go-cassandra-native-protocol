@@ -24,9 +24,9 @@ func (m *AuthSuccess) String() string {
 	return "AUTH_SUCCESS token: " + base64.StdEncoding.EncodeToString(m.Token)
 }
 
-type AuthSuccessCodec struct{}
+type authSuccessCodec struct{}
 
-func (c *AuthSuccessCodec) Encode(msg Message, dest io.Writer, _ primitive.ProtocolVersion) error {
+func (c *authSuccessCodec) Encode(msg Message, dest io.Writer, _ primitive.ProtocolVersion) error {
 	authSuccess, ok := msg.(*AuthSuccess)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.AuthSuccess, got %T", msg))
@@ -37,7 +37,7 @@ func (c *AuthSuccessCodec) Encode(msg Message, dest io.Writer, _ primitive.Proto
 	return primitive.WriteBytes(authSuccess.Token, dest)
 }
 
-func (c *AuthSuccessCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) (int, error) {
+func (c *authSuccessCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) (int, error) {
 	authSuccess, ok := msg.(*AuthSuccess)
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected *message.AuthSuccess, got %T", msg))
@@ -45,7 +45,7 @@ func (c *AuthSuccessCodec) EncodedLength(msg Message, _ primitive.ProtocolVersio
 	return primitive.LengthOfBytes(authSuccess.Token), nil
 }
 
-func (c *AuthSuccessCodec) Decode(source io.Reader, _ primitive.ProtocolVersion) (Message, error) {
+func (c *authSuccessCodec) Decode(source io.Reader, _ primitive.ProtocolVersion) (Message, error) {
 	if token, err := primitive.ReadBytes(source); err != nil {
 		return nil, err
 	} else {
@@ -53,6 +53,6 @@ func (c *AuthSuccessCodec) Decode(source io.Reader, _ primitive.ProtocolVersion)
 	}
 }
 
-func (c *AuthSuccessCodec) GetOpCode() primitive.OpCode {
+func (c *authSuccessCodec) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeAuthSuccess
 }

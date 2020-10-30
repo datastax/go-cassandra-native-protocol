@@ -22,9 +22,9 @@ func (m *Ready) String() string {
 	return "READY"
 }
 
-type ReadyCodec struct{}
+type readyCodec struct{}
 
-func (c *ReadyCodec) Encode(msg Message, _ io.Writer, _ primitive.ProtocolVersion) error {
+func (c *readyCodec) Encode(msg Message, _ io.Writer, _ primitive.ProtocolVersion) error {
 	_, ok := msg.(*Ready)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.Ready, got %T", msg))
@@ -32,7 +32,7 @@ func (c *ReadyCodec) Encode(msg Message, _ io.Writer, _ primitive.ProtocolVersio
 	return nil
 }
 
-func (c *ReadyCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) (int, error) {
+func (c *readyCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) (int, error) {
 	_, ok := msg.(*Ready)
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected *message.Ready, got %T", msg))
@@ -40,10 +40,10 @@ func (c *ReadyCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) (in
 	return 0, nil
 }
 
-func (c *ReadyCodec) Decode(_ io.Reader, _ primitive.ProtocolVersion) (Message, error) {
+func (c *readyCodec) Decode(_ io.Reader, _ primitive.ProtocolVersion) (Message, error) {
 	return &Ready{}, nil
 }
 
-func (c *ReadyCodec) GetOpCode() primitive.OpCode {
+func (c *readyCodec) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeReady
 }

@@ -33,9 +33,9 @@ func (m *Prepare) Flags() primitive.PrepareFlag {
 	return flags
 }
 
-type PrepareCodec struct{}
+type prepareCodec struct{}
 
-func (c *PrepareCodec) Encode(msg Message, dest io.Writer, version primitive.ProtocolVersion) (err error) {
+func (c *prepareCodec) Encode(msg Message, dest io.Writer, version primitive.ProtocolVersion) (err error) {
 	prepare, ok := msg.(*Prepare)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.Prepare, got %T", msg))
@@ -61,7 +61,7 @@ func (c *PrepareCodec) Encode(msg Message, dest io.Writer, version primitive.Pro
 	return
 }
 
-func (c *PrepareCodec) EncodedLength(msg Message, version primitive.ProtocolVersion) (size int, err error) {
+func (c *prepareCodec) EncodedLength(msg Message, version primitive.ProtocolVersion) (size int, err error) {
 	prepare, ok := msg.(*Prepare)
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected *message.Prepare, got %T", msg))
@@ -76,7 +76,7 @@ func (c *PrepareCodec) EncodedLength(msg Message, version primitive.ProtocolVers
 	return size, nil
 }
 
-func (c *PrepareCodec) Decode(source io.Reader, version primitive.ProtocolVersion) (msg Message, err error) {
+func (c *prepareCodec) Decode(source io.Reader, version primitive.ProtocolVersion) (msg Message, err error) {
 	prepare := &Prepare{}
 	if prepare.Query, err = primitive.ReadLongString(source); err != nil {
 		return nil, fmt.Errorf("cannot read PREPARE query: %w", err)
@@ -97,7 +97,7 @@ func (c *PrepareCodec) Decode(source io.Reader, version primitive.ProtocolVersio
 	return prepare, nil
 }
 
-func (c *PrepareCodec) GetOpCode() primitive.OpCode {
+func (c *prepareCodec) GetOpCode() primitive.OpCode {
 	return primitive.OpCodePrepare
 }
 
