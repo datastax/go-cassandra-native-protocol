@@ -5,15 +5,15 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/frame"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/message"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
 )
 
 func main() {
 
 	if startupFrame, err := frame.NewRequestFrame(
-		cassandraprotocol.ProtocolVersion4,
+		primitives.ProtocolVersion4,
 		1,
 		true,
 		nil,
@@ -25,7 +25,7 @@ func main() {
 	}
 
 	if queryFrame, err := frame.NewRequestFrame(
-		cassandraprotocol.ProtocolVersion4,
+		primitives.ProtocolVersion4,
 		1,
 		true,
 		nil,
@@ -37,7 +37,7 @@ func main() {
 	}
 
 	if rowsFrame, err := frame.NewResponseFrame(
-		cassandraprotocol.ProtocolVersion4,
+		primitives.ProtocolVersion4,
 		1,
 		nil,
 		map[string][]byte{"hello": {0xca, 0xfe, 0xba, 0xbe}},

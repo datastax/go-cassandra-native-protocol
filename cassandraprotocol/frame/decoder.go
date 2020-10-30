@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
 	"io"
 	"io/ioutil"
@@ -20,7 +19,7 @@ func (c *Codec) DecodeFrame(source io.Reader) (*Frame, error) {
 		header := &Header{
 			Version:          rawHeader.Version,
 			StreamId:         rawHeader.StreamId,
-			TracingRequested: body.TracingId != nil || rawHeader.Flags&cassandraprotocol.HeaderFlagTracing != 0,
+			TracingRequested: body.TracingId != nil || rawHeader.Flags&primitives.HeaderFlagTracing != 0,
 		}
 		return &Frame{Header: header, Body: body}, nil
 	}
@@ -50,11 +49,11 @@ func (c *Codec) DecodeRawHeader(source io.Reader) (*RawHeader, error) {
 			Version:    version,
 		}
 		var streamId uint16
-		if err := cassandraprotocol.CheckProtocolVersion(version); err != nil {
+		if err := primitives.CheckProtocolVersion(version); err != nil {
 			return nil, err
 		} else if header.Flags, err = primitives.ReadByte(source); err != nil {
 			return nil, fmt.Errorf("cannot decode header flags: %w", err)
-		} else if cassandraprotocol.IsProtocolVersionBeta(version) && header.Flags&cassandraprotocol.HeaderFlagUseBeta == 0 {
+		} else if primitives.IsProtocolVersionBeta(version) && header.Flags&primitives.HeaderFlagUseBeta == 0 {
 			return nil, fmt.Errorf("expected USE_BETA flag to be set for protocol version %v", version)
 		} else if streamId, err = primitives.ReadShort(source); err != nil {
 			return nil, fmt.Errorf("cannot decode header stream id: %w", err)
@@ -71,7 +70,7 @@ func (c *Codec) DecodeRawHeader(source io.Reader) (*RawHeader, error) {
 // DecodeBody decodes a frame body, decompressing it if required. It is illegal to call this method before calling
 // DecodeRawHeader.
 func (c *Codec) DecodeBody(header *RawHeader, source io.Reader) (body *Body, err error) {
-	if compressed := header.Flags&cassandraprotocol.HeaderFlagCompressed > 0; compressed {
+	if compressed := header.Flags&primitives.HeaderFlagCompressed > 0; compressed {
 		if c.compressor == nil {
 			return nil, errors.New("cannot decompress body: no compressor available")
 		} else if source, err = c.DecompressBody(header.BodyLength, source); err != nil {
@@ -79,17 +78,17 @@ func (c *Codec) DecodeBody(header *RawHeader, source io.Reader) (body *Body, err
 		}
 	}
 	body = &Body{}
-	if header.IsResponse && header.Flags&cassandraprotocol.HeaderFlagTracing > 0 {
+	if header.IsResponse && header.Flags&primitives.HeaderFlagTracing > 0 {
 		if body.TracingId, err = primitives.ReadUuid(source); err != nil {
 			return nil, fmt.Errorf("cannot decode body tracing id: %w", err)
 		}
 	}
-	if header.Flags&cassandraprotocol.HeaderFlagCustomPayload > 0 {
+	if header.Flags&primitives.HeaderFlagCustomPayload > 0 {
 		if body.CustomPayload, err = primitives.ReadBytesMap(source); err != nil {
 			return nil, fmt.Errorf("cannot decode body custom payload: %w", err)
 		}
 	}
-	if header.IsResponse && header.Flags&cassandraprotocol.HeaderFlagWarning > 0 {
+	if header.IsResponse && header.Flags&primitives.HeaderFlagWarning > 0 {
 		if body.Warnings, err = primitives.ReadStringList(source); err != nil {
 			return nil, fmt.Errorf("cannot decode body warnings: %w", err)
 		}

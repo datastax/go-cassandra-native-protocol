@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -13,7 +12,7 @@ import (
 func TestBatchCodec_Encode(t *testing.T) {
 	codec := &BatchCodec{}
 	// versions <= 4
-	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion3, cassandraprotocol.ProtocolVersion4} {
+	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersion3, primitives.ProtocolVersion4} {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -24,14 +23,14 @@ func TestBatchCodec_Encode(t *testing.T) {
 				},
 				{
 					"invalid batch type",
-					&Batch{Type: cassandraprotocol.BatchType(42)},
+					&Batch{Type: primitives.BatchType(42)},
 					nil,
 					errors.New("invalid BATCH type: 42"),
 				},
 				{
 					"empty batch",
 					NewBatch(),
-					[]byte{cassandraprotocol.BatchTypeLogged},
+					[]byte{primitives.BatchTypeLogged},
 					errors.New("BATCH messages must contain at least one child query"),
 				},
 				{
@@ -41,7 +40,7 @@ func TestBatchCodec_Encode(t *testing.T) {
 						NewPreparedBatchChild([]byte{0xca, 0xfe, 0xba, 0xbe}, primitives.NewValue([]byte{5, 6, 7, 8})),
 					)),
 					[]byte{
-						cassandraprotocol.BatchTypeLogged,
+						primitives.BatchTypeLogged,
 						0, 2, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -59,14 +58,14 @@ func TestBatchCodec_Encode(t *testing.T) {
 				{
 					"batch with custom options",
 					NewBatch(
-						WithBatchType(cassandraprotocol.BatchTypeUnlogged),
+						WithBatchType(primitives.BatchTypeUnlogged),
 						WithBatchChildren(NewQueryBatchChild("INSERT", primitives.NewValue([]byte{1, 2, 3, 4}))),
-						WithBatchConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalQuorum),
-						WithBatchSerialConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalSerial),
+						WithBatchConsistencyLevel(primitives.ConsistencyLevelLocalQuorum),
+						WithBatchSerialConsistencyLevel(primitives.ConsistencyLevelLocalSerial),
 						WithBatchDefaultTimestamp(123),
 					),
 					[]byte{
-						cassandraprotocol.BatchTypeUnlogged,
+						primitives.BatchTypeUnlogged,
 						0, 1, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -91,7 +90,7 @@ func TestBatchCodec_Encode(t *testing.T) {
 		})
 	}
 	// versions = DSE v1
-	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersionDse1} {
+	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersionDse1} {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -102,14 +101,14 @@ func TestBatchCodec_Encode(t *testing.T) {
 				},
 				{
 					"invalid batch type",
-					&Batch{Type: cassandraprotocol.BatchType(42)},
+					&Batch{Type: primitives.BatchType(42)},
 					nil,
 					errors.New("invalid BATCH type: 42"),
 				},
 				{
 					"empty batch",
 					NewBatch(),
-					[]byte{cassandraprotocol.BatchTypeLogged},
+					[]byte{primitives.BatchTypeLogged},
 					errors.New("BATCH messages must contain at least one child query"),
 				},
 				{
@@ -119,7 +118,7 @@ func TestBatchCodec_Encode(t *testing.T) {
 						NewPreparedBatchChild([]byte{0xca, 0xfe, 0xba, 0xbe}, primitives.NewValue([]byte{5, 6, 7, 8})),
 					)),
 					[]byte{
-						cassandraprotocol.BatchTypeLogged,
+						primitives.BatchTypeLogged,
 						0, 2, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -137,14 +136,14 @@ func TestBatchCodec_Encode(t *testing.T) {
 				{
 					"batch with custom options",
 					NewBatch(
-						WithBatchType(cassandraprotocol.BatchTypeUnlogged),
+						WithBatchType(primitives.BatchTypeUnlogged),
 						WithBatchChildren(NewQueryBatchChild("INSERT", primitives.NewValue([]byte{1, 2, 3, 4}))),
-						WithBatchConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalQuorum),
-						WithBatchSerialConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalSerial),
+						WithBatchConsistencyLevel(primitives.ConsistencyLevelLocalQuorum),
+						WithBatchSerialConsistencyLevel(primitives.ConsistencyLevelLocalSerial),
 						WithBatchDefaultTimestamp(123),
 					),
 					[]byte{
-						cassandraprotocol.BatchTypeUnlogged,
+						primitives.BatchTypeUnlogged,
 						0, 1, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -169,7 +168,7 @@ func TestBatchCodec_Encode(t *testing.T) {
 		})
 	}
 	// versions 5, DSE v2
-	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion5, cassandraprotocol.ProtocolVersionDse2} {
+	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersion5, primitives.ProtocolVersionDse2} {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -180,14 +179,14 @@ func TestBatchCodec_Encode(t *testing.T) {
 				},
 				{
 					"invalid batch type",
-					&Batch{Type: cassandraprotocol.BatchType(42)},
+					&Batch{Type: primitives.BatchType(42)},
 					nil,
 					errors.New("invalid BATCH type: 42"),
 				},
 				{
 					"empty batch",
 					NewBatch(),
-					[]byte{cassandraprotocol.BatchTypeLogged},
+					[]byte{primitives.BatchTypeLogged},
 					errors.New("BATCH messages must contain at least one child query"),
 				},
 				{
@@ -197,7 +196,7 @@ func TestBatchCodec_Encode(t *testing.T) {
 						NewPreparedBatchChild([]byte{0xca, 0xfe, 0xba, 0xbe}, primitives.NewValue([]byte{5, 6, 7, 8})),
 					)),
 					[]byte{
-						cassandraprotocol.BatchTypeLogged,
+						primitives.BatchTypeLogged,
 						0, 2, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -215,16 +214,16 @@ func TestBatchCodec_Encode(t *testing.T) {
 				{
 					"batch with custom options",
 					NewBatch(
-						WithBatchType(cassandraprotocol.BatchTypeUnlogged),
+						WithBatchType(primitives.BatchTypeUnlogged),
 						WithBatchChildren(NewQueryBatchChild("INSERT", primitives.NewValue([]byte{1, 2, 3, 4}))),
-						WithBatchConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalQuorum),
-						WithBatchSerialConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalSerial),
+						WithBatchConsistencyLevel(primitives.ConsistencyLevelLocalQuorum),
+						WithBatchSerialConsistencyLevel(primitives.ConsistencyLevelLocalSerial),
 						WithBatchDefaultTimestamp(123),
 						WithBatchKeyspace("ks1"),
 						WithBatchNowInSeconds(234),
 					),
 					[]byte{
-						cassandraprotocol.BatchTypeUnlogged,
+						primitives.BatchTypeUnlogged,
 						0, 1, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -258,7 +257,7 @@ func TestBatchCodec_Encode(t *testing.T) {
 func TestBatchCodec_EncodedLength(t *testing.T) {
 	codec := &BatchCodec{}
 	// versions <= 4
-	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion3, cassandraprotocol.ProtocolVersion4} {
+	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersion3, primitives.ProtocolVersion4} {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -299,10 +298,10 @@ func TestBatchCodec_EncodedLength(t *testing.T) {
 				{
 					"batch with custom options",
 					NewBatch(
-						WithBatchType(cassandraprotocol.BatchTypeUnlogged),
+						WithBatchType(primitives.BatchTypeUnlogged),
 						WithBatchChildren(NewQueryBatchChild("INSERT", primitives.NewValue([]byte{1, 2, 3, 4}))),
-						WithBatchConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalQuorum),
-						WithBatchSerialConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalSerial),
+						WithBatchConsistencyLevel(primitives.ConsistencyLevelLocalQuorum),
+						WithBatchSerialConsistencyLevel(primitives.ConsistencyLevelLocalSerial),
 						WithBatchDefaultTimestamp(123),
 					),
 					primitives.LengthOfByte +
@@ -328,7 +327,7 @@ func TestBatchCodec_EncodedLength(t *testing.T) {
 		})
 	}
 	// versions = DSE v1
-	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersionDse1} {
+	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersionDse1} {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -369,10 +368,10 @@ func TestBatchCodec_EncodedLength(t *testing.T) {
 				{
 					"batch with custom options",
 					NewBatch(
-						WithBatchType(cassandraprotocol.BatchTypeUnlogged),
+						WithBatchType(primitives.BatchTypeUnlogged),
 						WithBatchChildren(NewQueryBatchChild("INSERT", primitives.NewValue([]byte{1, 2, 3, 4}))),
-						WithBatchConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalQuorum),
-						WithBatchSerialConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalSerial),
+						WithBatchConsistencyLevel(primitives.ConsistencyLevelLocalQuorum),
+						WithBatchSerialConsistencyLevel(primitives.ConsistencyLevelLocalSerial),
 						WithBatchDefaultTimestamp(123),
 					),
 					primitives.LengthOfByte +
@@ -398,7 +397,7 @@ func TestBatchCodec_EncodedLength(t *testing.T) {
 		})
 	}
 	// versions 5, DSE v2
-	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion5, cassandraprotocol.ProtocolVersionDse2} {
+	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersion5, primitives.ProtocolVersionDse2} {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -439,10 +438,10 @@ func TestBatchCodec_EncodedLength(t *testing.T) {
 				{
 					"batch with custom options",
 					NewBatch(
-						WithBatchType(cassandraprotocol.BatchTypeUnlogged),
+						WithBatchType(primitives.BatchTypeUnlogged),
 						WithBatchChildren(NewQueryBatchChild("INSERT", primitives.NewValue([]byte{1, 2, 3, 4}))),
-						WithBatchConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalQuorum),
-						WithBatchSerialConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalSerial),
+						WithBatchConsistencyLevel(primitives.ConsistencyLevelLocalQuorum),
+						WithBatchSerialConsistencyLevel(primitives.ConsistencyLevelLocalSerial),
 						WithBatchDefaultTimestamp(123),
 						WithBatchKeyspace("ks1"),
 						WithBatchNowInSeconds(234),
@@ -476,7 +475,7 @@ func TestBatchCodec_EncodedLength(t *testing.T) {
 func TestBatchCodec_Decode(t *testing.T) {
 	codec := &BatchCodec{}
 	// versions <= 4
-	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion3, cassandraprotocol.ProtocolVersion4} {
+	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersion3, primitives.ProtocolVersion4} {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []decodeTestCase{
 				{
@@ -493,15 +492,15 @@ func TestBatchCodec_Decode(t *testing.T) {
 				{
 					"empty batch",
 					[]byte{
-						cassandraprotocol.BatchTypeLogged,
+						primitives.BatchTypeLogged,
 						0, 0, // children count
 						0, 1, // consistency
 						0, // flags
 					},
 					&Batch{
 						Children:          []*BatchChild{},
-						Consistency:       cassandraprotocol.ConsistencyLevelOne,
-						SerialConsistency: cassandraprotocol.ConsistencyLevelSerial,
+						Consistency:       primitives.ConsistencyLevelOne,
+						SerialConsistency: primitives.ConsistencyLevelSerial,
 						DefaultTimestamp:  DefaultTimestampNone,
 						NowInSeconds:      NowInSecondsNone,
 					},
@@ -510,7 +509,7 @@ func TestBatchCodec_Decode(t *testing.T) {
 				{
 					"batch with 2 children",
 					[]byte{
-						cassandraprotocol.BatchTypeLogged,
+						primitives.BatchTypeLogged,
 						0, 2, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -532,7 +531,7 @@ func TestBatchCodec_Decode(t *testing.T) {
 				{
 					"batch with custom options",
 					[]byte{
-						cassandraprotocol.BatchTypeUnlogged,
+						primitives.BatchTypeUnlogged,
 						0, 1, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -544,10 +543,10 @@ func TestBatchCodec_Decode(t *testing.T) {
 						0, 0, 0, 0, 0, 0, 0, 123, // default timestamp
 					},
 					NewBatch(
-						WithBatchType(cassandraprotocol.BatchTypeUnlogged),
+						WithBatchType(primitives.BatchTypeUnlogged),
 						WithBatchChildren(NewQueryBatchChild("INSERT", primitives.NewValue([]byte{1, 2, 3, 4}))),
-						WithBatchConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalQuorum),
-						WithBatchSerialConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalSerial),
+						WithBatchConsistencyLevel(primitives.ConsistencyLevelLocalQuorum),
+						WithBatchSerialConsistencyLevel(primitives.ConsistencyLevelLocalSerial),
 						WithBatchDefaultTimestamp(123),
 					),
 					nil,
@@ -564,7 +563,7 @@ func TestBatchCodec_Decode(t *testing.T) {
 		})
 	}
 	// versions = DSE v1
-	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersionDse1} {
+	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersionDse1} {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []decodeTestCase{
 				{
@@ -581,15 +580,15 @@ func TestBatchCodec_Decode(t *testing.T) {
 				{
 					"empty batch",
 					[]byte{
-						cassandraprotocol.BatchTypeLogged,
+						primitives.BatchTypeLogged,
 						0, 0, // children count
 						0, 1, // consistency
 						0, 0, 0, 0, // flags
 					},
 					&Batch{
 						Children:          []*BatchChild{},
-						Consistency:       cassandraprotocol.ConsistencyLevelOne,
-						SerialConsistency: cassandraprotocol.ConsistencyLevelSerial,
+						Consistency:       primitives.ConsistencyLevelOne,
+						SerialConsistency: primitives.ConsistencyLevelSerial,
 						DefaultTimestamp:  DefaultTimestampNone,
 						NowInSeconds:      NowInSecondsNone,
 					},
@@ -598,7 +597,7 @@ func TestBatchCodec_Decode(t *testing.T) {
 				{
 					"batch with 2 children",
 					[]byte{
-						cassandraprotocol.BatchTypeLogged,
+						primitives.BatchTypeLogged,
 						0, 2, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -620,7 +619,7 @@ func TestBatchCodec_Decode(t *testing.T) {
 				{
 					"batch with custom options",
 					[]byte{
-						cassandraprotocol.BatchTypeUnlogged,
+						primitives.BatchTypeUnlogged,
 						0, 1, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -632,10 +631,10 @@ func TestBatchCodec_Decode(t *testing.T) {
 						0, 0, 0, 0, 0, 0, 0, 123, // default timestamp
 					},
 					NewBatch(
-						WithBatchType(cassandraprotocol.BatchTypeUnlogged),
+						WithBatchType(primitives.BatchTypeUnlogged),
 						WithBatchChildren(NewQueryBatchChild("INSERT", primitives.NewValue([]byte{1, 2, 3, 4}))),
-						WithBatchConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalQuorum),
-						WithBatchSerialConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalSerial),
+						WithBatchConsistencyLevel(primitives.ConsistencyLevelLocalQuorum),
+						WithBatchSerialConsistencyLevel(primitives.ConsistencyLevelLocalSerial),
 						WithBatchDefaultTimestamp(123),
 					),
 					nil,
@@ -652,7 +651,7 @@ func TestBatchCodec_Decode(t *testing.T) {
 		})
 	}
 	// versions 5, DSE v2
-	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion5, cassandraprotocol.ProtocolVersionDse2} {
+	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersion5, primitives.ProtocolVersionDse2} {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []decodeTestCase{
 				{
@@ -669,15 +668,15 @@ func TestBatchCodec_Decode(t *testing.T) {
 				{
 					"empty batch",
 					[]byte{
-						cassandraprotocol.BatchTypeLogged,
+						primitives.BatchTypeLogged,
 						0, 0, // children count
 						0, 1, // consistency
 						0, 0, 0, 0, // flags
 					},
 					&Batch{
 						Children:          []*BatchChild{},
-						Consistency:       cassandraprotocol.ConsistencyLevelOne,
-						SerialConsistency: cassandraprotocol.ConsistencyLevelSerial,
+						Consistency:       primitives.ConsistencyLevelOne,
+						SerialConsistency: primitives.ConsistencyLevelSerial,
 						DefaultTimestamp:  DefaultTimestampNone,
 						NowInSeconds:      NowInSecondsNone,
 					},
@@ -686,7 +685,7 @@ func TestBatchCodec_Decode(t *testing.T) {
 				{
 					"batch with 2 children",
 					[]byte{
-						cassandraprotocol.BatchTypeLogged,
+						primitives.BatchTypeLogged,
 						0, 2, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -708,7 +707,7 @@ func TestBatchCodec_Decode(t *testing.T) {
 				{
 					"batch with custom options",
 					[]byte{
-						cassandraprotocol.BatchTypeUnlogged,
+						primitives.BatchTypeUnlogged,
 						0, 1, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -725,10 +724,10 @@ func TestBatchCodec_Decode(t *testing.T) {
 						0, 0, 0, 234, // now in seconds
 					},
 					NewBatch(
-						WithBatchType(cassandraprotocol.BatchTypeUnlogged),
+						WithBatchType(primitives.BatchTypeUnlogged),
 						WithBatchChildren(NewQueryBatchChild("INSERT", primitives.NewValue([]byte{1, 2, 3, 4}))),
-						WithBatchConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalQuorum),
-						WithBatchSerialConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalSerial),
+						WithBatchConsistencyLevel(primitives.ConsistencyLevelLocalQuorum),
+						WithBatchSerialConsistencyLevel(primitives.ConsistencyLevelLocalSerial),
 						WithBatchDefaultTimestamp(123),
 						WithBatchKeyspace("ks1"),
 						WithBatchNowInSeconds(234),

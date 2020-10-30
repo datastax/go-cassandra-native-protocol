@@ -2,22 +2,21 @@ package datatype
 
 import (
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
 	"io"
 )
 
 type DataType interface {
-	GetDataTypeCode() cassandraprotocol.DataTypeCode
+	GetDataTypeCode() primitives.DataTypeCode
 }
 
 type encoder interface {
-	encode(t DataType, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error)
-	encodedLength(t DataType, version cassandraprotocol.ProtocolVersion) (length int, err error)
+	encode(t DataType, dest io.Writer, version primitives.ProtocolVersion) (err error)
+	encodedLength(t DataType, version primitives.ProtocolVersion) (length int, err error)
 }
 
 type decoder interface {
-	decode(source io.Reader, version cassandraprotocol.ProtocolVersion) (t DataType, err error)
+	decode(source io.Reader, version primitives.ProtocolVersion) (t DataType, err error)
 }
 
 type codec interface {
@@ -25,7 +24,7 @@ type codec interface {
 	decoder
 }
 
-func WriteDataType(t DataType, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
+func WriteDataType(t DataType, dest io.Writer, version primitives.ProtocolVersion) (err error) {
 	if err = primitives.WriteShort(t.GetDataTypeCode(), dest); err != nil {
 		return fmt.Errorf("cannot write data type code %v: %w", t.GetDataTypeCode(), err)
 	} else if codec, err := findCodec(t.GetDataTypeCode()); err != nil {
@@ -37,7 +36,7 @@ func WriteDataType(t DataType, dest io.Writer, version cassandraprotocol.Protoco
 	}
 }
 
-func LengthOfDataType(t DataType, version cassandraprotocol.ProtocolVersion) (length int, err error) {
+func LengthOfDataType(t DataType, version primitives.ProtocolVersion) (length int, err error) {
 	length += primitives.LengthOfShort // type code
 	if codec, err := findCodec(t.GetDataTypeCode()); err != nil {
 		return -1, err
@@ -48,8 +47,8 @@ func LengthOfDataType(t DataType, version cassandraprotocol.ProtocolVersion) (le
 	}
 }
 
-func ReadDataType(source io.Reader, version cassandraprotocol.ProtocolVersion) (decoded DataType, err error) {
-	var typeCode cassandraprotocol.DataTypeCode
+func ReadDataType(source io.Reader, version primitives.ProtocolVersion) (decoded DataType, err error) {
+	var typeCode primitives.DataTypeCode
 	if typeCode, err = primitives.ReadShort(source); err != nil {
 		return nil, fmt.Errorf("cannot read data type code: %w", err)
 	} else if codec, err := findCodec(typeCode); err != nil {
@@ -61,36 +60,36 @@ func ReadDataType(source io.Reader, version cassandraprotocol.ProtocolVersion) (
 	}
 }
 
-var codecs = map[cassandraprotocol.DataTypeCode]codec{
-	cassandraprotocol.DataTypeCodeAscii:     &primitiveTypeCodec{Ascii},
-	cassandraprotocol.DataTypeCodeBigint:    &primitiveTypeCodec{Bigint},
-	cassandraprotocol.DataTypeCodeBlob:      &primitiveTypeCodec{Blob},
-	cassandraprotocol.DataTypeCodeBoolean:   &primitiveTypeCodec{Boolean},
-	cassandraprotocol.DataTypeCodeCounter:   &primitiveTypeCodec{Counter},
-	cassandraprotocol.DataTypeCodeDecimal:   &primitiveTypeCodec{Decimal},
-	cassandraprotocol.DataTypeCodeDouble:    &primitiveTypeCodec{Double},
-	cassandraprotocol.DataTypeCodeFloat:     &primitiveTypeCodec{Float},
-	cassandraprotocol.DataTypeCodeInt:       &primitiveTypeCodec{Int},
-	cassandraprotocol.DataTypeCodeTimestamp: &primitiveTypeCodec{Timestamp},
-	cassandraprotocol.DataTypeCodeUuid:      &primitiveTypeCodec{Uuid},
-	cassandraprotocol.DataTypeCodeVarchar:   &primitiveTypeCodec{Varchar},
-	cassandraprotocol.DataTypeCodeVarint:    &primitiveTypeCodec{Varint},
-	cassandraprotocol.DataTypeCodeTimeuuid:  &primitiveTypeCodec{Timeuuid},
-	cassandraprotocol.DataTypeCodeInet:      &primitiveTypeCodec{Inet},
-	cassandraprotocol.DataTypeCodeDate:      &primitiveTypeCodec{Date},
-	cassandraprotocol.DataTypeCodeTime:      &primitiveTypeCodec{Time},
-	cassandraprotocol.DataTypeCodeSmallint:  &primitiveTypeCodec{Smallint},
-	cassandraprotocol.DataTypeCodeTinyint:   &primitiveTypeCodec{Tinyint},
-	cassandraprotocol.DataTypeCodeDuration:  &primitiveTypeCodec{Duration},
-	cassandraprotocol.DataTypeCodeList:      &listTypeCodec{},
-	cassandraprotocol.DataTypeCodeSet:       &setTypeCodec{},
-	cassandraprotocol.DataTypeCodeMap:       &mapTypeCodec{},
-	cassandraprotocol.DataTypeCodeTuple:     &tupleTypeCodec{},
-	cassandraprotocol.DataTypeCodeUdt:       &userDefinedTypeCodec{},
-	cassandraprotocol.DataTypeCodeCustom:    &customTypeCodec{},
+var codecs = map[primitives.DataTypeCode]codec{
+	primitives.DataTypeCodeAscii:     &primitiveTypeCodec{Ascii},
+	primitives.DataTypeCodeBigint:    &primitiveTypeCodec{Bigint},
+	primitives.DataTypeCodeBlob:      &primitiveTypeCodec{Blob},
+	primitives.DataTypeCodeBoolean:   &primitiveTypeCodec{Boolean},
+	primitives.DataTypeCodeCounter:   &primitiveTypeCodec{Counter},
+	primitives.DataTypeCodeDecimal:   &primitiveTypeCodec{Decimal},
+	primitives.DataTypeCodeDouble:    &primitiveTypeCodec{Double},
+	primitives.DataTypeCodeFloat:     &primitiveTypeCodec{Float},
+	primitives.DataTypeCodeInt:       &primitiveTypeCodec{Int},
+	primitives.DataTypeCodeTimestamp: &primitiveTypeCodec{Timestamp},
+	primitives.DataTypeCodeUuid:      &primitiveTypeCodec{Uuid},
+	primitives.DataTypeCodeVarchar:   &primitiveTypeCodec{Varchar},
+	primitives.DataTypeCodeVarint:    &primitiveTypeCodec{Varint},
+	primitives.DataTypeCodeTimeuuid:  &primitiveTypeCodec{Timeuuid},
+	primitives.DataTypeCodeInet:      &primitiveTypeCodec{Inet},
+	primitives.DataTypeCodeDate:      &primitiveTypeCodec{Date},
+	primitives.DataTypeCodeTime:      &primitiveTypeCodec{Time},
+	primitives.DataTypeCodeSmallint:  &primitiveTypeCodec{Smallint},
+	primitives.DataTypeCodeTinyint:   &primitiveTypeCodec{Tinyint},
+	primitives.DataTypeCodeDuration:  &primitiveTypeCodec{Duration},
+	primitives.DataTypeCodeList:      &listTypeCodec{},
+	primitives.DataTypeCodeSet:       &setTypeCodec{},
+	primitives.DataTypeCodeMap:       &mapTypeCodec{},
+	primitives.DataTypeCodeTuple:     &tupleTypeCodec{},
+	primitives.DataTypeCodeUdt:       &userDefinedTypeCodec{},
+	primitives.DataTypeCodeCustom:    &customTypeCodec{},
 }
 
-func findCodec(code cassandraprotocol.DataTypeCode) (codec, error) {
+func findCodec(code primitives.DataTypeCode) (codec, error) {
 	codec, ok := codecs[code]
 	if !ok {
 		return nil, fmt.Errorf("cannot find codec for data type code %v", code)

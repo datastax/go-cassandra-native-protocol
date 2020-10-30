@@ -3,7 +3,6 @@ package primitives
 import (
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"io"
 )
 
@@ -39,13 +38,13 @@ func NewUnsetValue() *Value {
 
 // [value]
 
-func ReadValue(source io.Reader, version cassandraprotocol.ProtocolVersion) (*Value, error) {
+func ReadValue(source io.Reader, version ProtocolVersion) (*Value, error) {
 	if length, err := ReadInt(source); err != nil {
 		return nil, fmt.Errorf("cannot read [value] length: %w", err)
 	} else if length == ValueTypeNull {
 		return NewNullValue(), nil
 	} else if length == ValueTypeUnset {
-		if version < cassandraprotocol.ProtocolVersion4 {
+		if version < ProtocolVersion4 {
 			return nil, fmt.Errorf("cannot use unset value in protocol version: %v", version)
 		}
 		return NewUnsetValue(), nil
@@ -62,7 +61,7 @@ func ReadValue(source io.Reader, version cassandraprotocol.ProtocolVersion) (*Va
 	}
 }
 
-func WriteValue(value *Value, dest io.Writer, version cassandraprotocol.ProtocolVersion) error {
+func WriteValue(value *Value, dest io.Writer, version ProtocolVersion) error {
 	if value == nil {
 		return errors.New("cannot write a nil [value]")
 	}
@@ -70,7 +69,7 @@ func WriteValue(value *Value, dest io.Writer, version cassandraprotocol.Protocol
 	case ValueTypeNull:
 		return WriteInt(ValueTypeNull, dest)
 	case ValueTypeUnset:
-		if version < cassandraprotocol.ProtocolVersion4 {
+		if version < ProtocolVersion4 {
 			return fmt.Errorf("cannot use unset value in protocol version: %v", version)
 		}
 		return WriteInt(ValueTypeUnset, dest)
@@ -111,7 +110,7 @@ func LengthOfValue(value *Value) (int, error) {
 
 // positional [value]s
 
-func ReadPositionalValues(source io.Reader, version cassandraprotocol.ProtocolVersion) ([]*Value, error) {
+func ReadPositionalValues(source io.Reader, version ProtocolVersion) ([]*Value, error) {
 	if length, err := ReadShort(source); err != nil {
 		return nil, fmt.Errorf("cannot read positional [value]s length: %w", err)
 	} else {
@@ -127,7 +126,7 @@ func ReadPositionalValues(source io.Reader, version cassandraprotocol.ProtocolVe
 	}
 }
 
-func WritePositionalValues(values []*Value, dest io.Writer, version cassandraprotocol.ProtocolVersion) error {
+func WritePositionalValues(values []*Value, dest io.Writer, version ProtocolVersion) error {
 	length := len(values)
 	if err := WriteShort(uint16(length), dest); err != nil {
 		return fmt.Errorf("cannot write positional [value]s length: %w", err)
@@ -155,7 +154,7 @@ func LengthOfPositionalValues(values []*Value) (length int, err error) {
 
 // named [value]s
 
-func ReadNamedValues(source io.Reader, version cassandraprotocol.ProtocolVersion) (map[string]*Value, error) {
+func ReadNamedValues(source io.Reader, version ProtocolVersion) (map[string]*Value, error) {
 	if length, err := ReadShort(source); err != nil {
 		return nil, fmt.Errorf("cannot read named [value]s length: %w", err)
 	} else {
@@ -173,7 +172,7 @@ func ReadNamedValues(source io.Reader, version cassandraprotocol.ProtocolVersion
 	}
 }
 
-func WriteNamedValues(values map[string]*Value, dest io.Writer, version cassandraprotocol.ProtocolVersion) error {
+func WriteNamedValues(values map[string]*Value, dest io.Writer, version ProtocolVersion) error {
 	length := len(values)
 	if err := WriteShort(uint16(length), dest); err != nil {
 		return fmt.Errorf("cannot write named [value]s length: %w", err)

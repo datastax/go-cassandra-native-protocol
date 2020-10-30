@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -12,7 +11,7 @@ import (
 
 func TestStartupCodec_Encode(t *testing.T) {
 	codec := &StartupCodec{}
-	for _, version := range cassandraprotocol.AllProtocolVersions() {
+	for _, version := range primitives.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -171,7 +170,7 @@ func TestStartupCodec_EncodedLength(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			for _, version := range cassandraprotocol.AllProtocolVersions() {
+			for _, version := range primitives.AllProtocolVersions() {
 				t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 					actual, err := codec.EncodedLength(tt.input, version)
 					assert.Equal(t, tt.expected, actual)
@@ -184,7 +183,7 @@ func TestStartupCodec_EncodedLength(t *testing.T) {
 
 func TestStartupCodec_Decode(t *testing.T) {
 	codec := &StartupCodec{}
-	for _, version := range cassandraprotocol.AllProtocolVersions() {
+	for _, version := range primitives.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []decodeTestCase{
 				{

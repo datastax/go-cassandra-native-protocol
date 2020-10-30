@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -12,12 +11,12 @@ import (
 
 func TestSetType(t *testing.T) {
 	setType := NewSetType(Varchar)
-	assert.Equal(t, cassandraprotocol.DataTypeCodeSet, setType.GetDataTypeCode())
+	assert.Equal(t, primitives.DataTypeCodeSet, setType.GetDataTypeCode())
 	assert.Equal(t, Varchar, setType.GetElementType())
 }
 
 func TestSetTypeCodecEncode(t *testing.T) {
-	for _, version := range cassandraprotocol.AllProtocolVersions() {
+	for _, version := range primitives.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -28,20 +27,20 @@ func TestSetTypeCodecEncode(t *testing.T) {
 				{
 					"simple set",
 					NewSetType(Varchar),
-					[]byte{0, byte(cassandraprotocol.DataTypeCodeVarchar & 0xFF)},
+					[]byte{0, byte(primitives.DataTypeCodeVarchar & 0xFF)},
 					nil,
 				},
 				{
 					"complex set",
 					NewSetType(NewSetType(Varchar)),
 					[]byte{
-						0, byte(cassandraprotocol.DataTypeCodeSet & 0xFF),
-						0, byte(cassandraprotocol.DataTypeCodeVarchar & 0xFF)},
+						0, byte(primitives.DataTypeCodeSet & 0xFF),
+						0, byte(primitives.DataTypeCodeVarchar & 0xFF)},
 					nil,
 				},
 				{"nil set", nil, nil, errors.New("expected SetType, got <nil>")},
 			}
-			codec, _ := findCodec(cassandraprotocol.DataTypeCodeSet)
+			codec, _ := findCodec(primitives.DataTypeCodeSet)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var dest = &bytes.Buffer{}
@@ -57,7 +56,7 @@ func TestSetTypeCodecEncode(t *testing.T) {
 }
 
 func TestSetTypeCodecEncodedLength(t *testing.T) {
-	for _, version := range cassandraprotocol.AllProtocolVersions() {
+	for _, version := range primitives.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -69,7 +68,7 @@ func TestSetTypeCodecEncodedLength(t *testing.T) {
 				{"complex set", NewSetType(NewSetType(Varchar)), primitives.LengthOfShort + primitives.LengthOfShort, nil},
 				{"nil set", nil, -1, errors.New("expected SetType, got <nil>")},
 			}
-			codec, _ := findCodec(cassandraprotocol.DataTypeCodeSet)
+			codec, _ := findCodec(primitives.DataTypeCodeSet)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var actual int
@@ -84,7 +83,7 @@ func TestSetTypeCodecEncodedLength(t *testing.T) {
 }
 
 func TestSetTypeCodecDecode(t *testing.T) {
-	for _, version := range cassandraprotocol.AllProtocolVersions() {
+	for _, version := range primitives.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -94,15 +93,15 @@ func TestSetTypeCodecDecode(t *testing.T) {
 			}{
 				{
 					"simple set",
-					[]byte{0, byte(cassandraprotocol.DataTypeCodeVarchar & 0xff)},
+					[]byte{0, byte(primitives.DataTypeCodeVarchar & 0xff)},
 					NewSetType(Varchar),
 					nil,
 				},
 				{
 					"complex set",
 					[]byte{
-						0, byte(cassandraprotocol.DataTypeCodeSet & 0xff),
-						0, byte(cassandraprotocol.DataTypeCodeVarchar & 0xff)},
+						0, byte(primitives.DataTypeCodeSet & 0xff),
+						0, byte(primitives.DataTypeCodeVarchar & 0xff)},
 					NewSetType(NewSetType(Varchar)),
 					nil,
 				},
@@ -116,7 +115,7 @@ func TestSetTypeCodecDecode(t *testing.T) {
 								errors.New("EOF")))),
 				},
 			}
-			codec, _ := findCodec(cassandraprotocol.DataTypeCodeSet)
+			codec, _ := findCodec(primitives.DataTypeCodeSet)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var source = bytes.NewBuffer(test.input)

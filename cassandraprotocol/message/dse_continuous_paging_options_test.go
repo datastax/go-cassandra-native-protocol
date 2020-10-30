@@ -3,14 +3,13 @@ package message
 import (
 	"bytes"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestContinuousPagingOptions_Encode(t *testing.T) {
-	version := cassandraprotocol.ProtocolVersionDse1
+	version := primitives.ProtocolVersionDse1
 	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 		tests := []struct {
 			name     string
@@ -49,7 +48,7 @@ func TestContinuousPagingOptions_Encode(t *testing.T) {
 			})
 		}
 	})
-	version = cassandraprotocol.ProtocolVersionDse2
+	version = primitives.ProtocolVersionDse2
 	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 		tests := []struct {
 			name     string
@@ -94,7 +93,7 @@ func TestContinuousPagingOptions_Encode(t *testing.T) {
 }
 
 func TestContinuousPagingOptions_EncodedLength(t *testing.T) {
-	version := cassandraprotocol.ProtocolVersionDse1
+	version := primitives.ProtocolVersionDse1
 	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 		tests := []struct {
 			name     string
@@ -126,7 +125,7 @@ func TestContinuousPagingOptions_EncodedLength(t *testing.T) {
 			})
 		}
 	})
-	version = cassandraprotocol.ProtocolVersionDse2
+	version = primitives.ProtocolVersionDse2
 	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 		tests := []struct {
 			name     string
@@ -162,7 +161,7 @@ func TestContinuousPagingOptions_EncodedLength(t *testing.T) {
 }
 
 func TestContinuousPagingOptions_Decode(t *testing.T) {
-	version := cassandraprotocol.ProtocolVersionDse1
+	version := primitives.ProtocolVersionDse1
 	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 		tests := []struct {
 			name     string
@@ -201,7 +200,7 @@ func TestContinuousPagingOptions_Decode(t *testing.T) {
 			})
 		}
 	})
-	version = cassandraprotocol.ProtocolVersionDse2
+	version = primitives.ProtocolVersionDse2
 	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 		tests := []struct {
 			name     string

@@ -3,14 +3,13 @@ package message
 import (
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
 	"io"
 )
 
 type Result interface {
 	Message
-	GetResultType() cassandraprotocol.ResultType
+	GetResultType() primitives.ResultType
 }
 
 // VOID
@@ -21,12 +20,12 @@ func (m *VoidResult) IsResponse() bool {
 	return true
 }
 
-func (m *VoidResult) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeResult
+func (m *VoidResult) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeResult
 }
 
-func (m *VoidResult) GetResultType() cassandraprotocol.ResultType {
-	return cassandraprotocol.ResultTypeVoid
+func (m *VoidResult) GetResultType() primitives.ResultType {
+	return primitives.ResultTypeVoid
 }
 
 func (m *VoidResult) String() string {
@@ -43,12 +42,12 @@ func (m *SetKeyspaceResult) IsResponse() bool {
 	return true
 }
 
-func (m *SetKeyspaceResult) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeResult
+func (m *SetKeyspaceResult) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeResult
 }
 
-func (m *SetKeyspaceResult) GetResultType() cassandraprotocol.ResultType {
-	return cassandraprotocol.ResultTypeSetKeyspace
+func (m *SetKeyspaceResult) GetResultType() primitives.ResultType {
+	return primitives.ResultTypeSetKeyspace
 }
 
 func (m *SetKeyspaceResult) String() string {
@@ -59,8 +58,8 @@ func (m *SetKeyspaceResult) String() string {
 
 // Note: this struct is identical to SchemaChangeEvent
 type SchemaChangeResult struct {
-	ChangeType cassandraprotocol.SchemaChangeType
-	Target     cassandraprotocol.SchemaChangeTarget
+	ChangeType primitives.SchemaChangeType
+	Target     primitives.SchemaChangeTarget
 	Keyspace   string
 	Object     string
 	Arguments  []string
@@ -70,12 +69,12 @@ func (m *SchemaChangeResult) IsResponse() bool {
 	return true
 }
 
-func (m *SchemaChangeResult) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeResult
+func (m *SchemaChangeResult) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeResult
 }
 
-func (m *SchemaChangeResult) GetResultType() cassandraprotocol.ResultType {
-	return cassandraprotocol.ResultTypeSchemaChange
+func (m *SchemaChangeResult) GetResultType() primitives.ResultType {
+	return primitives.ResultTypeSchemaChange
 }
 
 func (m *SchemaChangeResult) String() string {
@@ -142,12 +141,12 @@ func (m *PreparedResult) IsResponse() bool {
 	return true
 }
 
-func (m *PreparedResult) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeResult
+func (m *PreparedResult) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeResult
 }
 
-func (m *PreparedResult) GetResultType() cassandraprotocol.ResultType {
-	return cassandraprotocol.ResultTypePrepared
+func (m *PreparedResult) GetResultType() primitives.ResultType {
+	return primitives.ResultTypePrepared
 }
 
 func (m *PreparedResult) String() string {
@@ -189,12 +188,12 @@ func (m *RowsResult) IsResponse() bool {
 	return true
 }
 
-func (m *RowsResult) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeResult
+func (m *RowsResult) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeResult
 }
 
-func (m *RowsResult) GetResultType() cassandraprotocol.ResultType {
-	return cassandraprotocol.ResultTypeRows
+func (m *RowsResult) GetResultType() primitives.ResultType {
+	return primitives.ResultTypeRows
 }
 
 func (m *RowsResult) String() string {
@@ -205,20 +204,20 @@ func (m *RowsResult) String() string {
 
 type ResultCodec struct{}
 
-func (c *ResultCodec) Encode(msg Message, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
+func (c *ResultCodec) Encode(msg Message, dest io.Writer, version primitives.ProtocolVersion) (err error) {
 	result, ok := msg.(Result)
 	if !ok {
 		return fmt.Errorf("expected message.Result, got %T", msg)
 	}
-	if err = cassandraprotocol.CheckResultType(result.GetResultType()); err != nil {
+	if err = primitives.CheckResultType(result.GetResultType()); err != nil {
 		return err
 	} else if err = primitives.WriteInt(result.GetResultType(), dest); err != nil {
 		return fmt.Errorf("cannot write RESULT type: %w", err)
 	}
 	switch result.GetResultType() {
-	case cassandraprotocol.ResultTypeVoid:
+	case primitives.ResultTypeVoid:
 		return nil
-	case cassandraprotocol.ResultTypeSetKeyspace:
+	case primitives.ResultTypeSetKeyspace:
 		sk, ok := result.(*SetKeyspaceResult)
 		if !ok {
 			return fmt.Errorf("expected *message.SetKeyspaceResult, got %T", result)
@@ -228,17 +227,17 @@ func (c *ResultCodec) Encode(msg Message, dest io.Writer, version cassandraproto
 		} else if err = primitives.WriteString(sk.Keyspace, dest); err != nil {
 			return fmt.Errorf("cannot write RESULT SET KEYSPACE keyspace: %w", err)
 		}
-	case cassandraprotocol.ResultTypeSchemaChange:
+	case primitives.ResultTypeSchemaChange:
 		sce, ok := msg.(*SchemaChangeResult)
 		if !ok {
 			return fmt.Errorf("expected *message.SchemaChangeResult, got %T", msg)
 		}
-		if err = cassandraprotocol.CheckSchemaChangeType(sce.ChangeType); err != nil {
+		if err = primitives.CheckSchemaChangeType(sce.ChangeType); err != nil {
 			return err
 		} else if err = primitives.WriteString(sce.ChangeType, dest); err != nil {
 			return fmt.Errorf("cannot write SchemaChangeResult.ChangeType: %w", err)
 		}
-		if err = cassandraprotocol.CheckSchemaChangeTarget(sce.Target); err != nil {
+		if err = primitives.CheckSchemaChangeTarget(sce.Target); err != nil {
 			return err
 		} else if err = primitives.WriteString(sce.Target, dest); err != nil {
 			return fmt.Errorf("cannot write SchemaChangeResult.Target: %w", err)
@@ -249,19 +248,19 @@ func (c *ResultCodec) Encode(msg Message, dest io.Writer, version cassandraproto
 			return fmt.Errorf("cannot write SchemaChangeResult.Keyspace: %w", err)
 		}
 		switch sce.Target {
-		case cassandraprotocol.SchemaChangeTargetKeyspace:
-		case cassandraprotocol.SchemaChangeTargetTable:
+		case primitives.SchemaChangeTargetKeyspace:
+		case primitives.SchemaChangeTargetTable:
 			fallthrough
-		case cassandraprotocol.SchemaChangeTargetType:
+		case primitives.SchemaChangeTargetType:
 			if sce.Object == "" {
 				return errors.New("RESULT SchemaChange: cannot write empty object")
 			} else if err = primitives.WriteString(sce.Object, dest); err != nil {
 				return fmt.Errorf("cannot write SchemaChangeResult.Object: %w", err)
 			}
-		case cassandraprotocol.SchemaChangeTargetAggregate:
+		case primitives.SchemaChangeTargetAggregate:
 			fallthrough
-		case cassandraprotocol.SchemaChangeTargetFunction:
-			if version < cassandraprotocol.ProtocolVersion4 {
+		case primitives.SchemaChangeTargetFunction:
+			if version < primitives.ProtocolVersion4 {
 				return fmt.Errorf("%s schema change targets are not supported in protocol version %d", sce.Target, version)
 			}
 			if sce.Object == "" {
@@ -275,7 +274,7 @@ func (c *ResultCodec) Encode(msg Message, dest io.Writer, version cassandraproto
 		default:
 			return fmt.Errorf("unknown schema change target: %v", sce.Target)
 		}
-	case cassandraprotocol.ResultTypePrepared:
+	case primitives.ResultTypePrepared:
 		p, ok := msg.(*PreparedResult)
 		if !ok {
 			return fmt.Errorf("expected *message.PreparedResult, got %T", msg)
@@ -302,7 +301,7 @@ func (c *ResultCodec) Encode(msg Message, dest io.Writer, version cassandraproto
 		} else if err = encodeRowsMetadata(p.ResultMetadata, dest, version); err != nil {
 			return fmt.Errorf("cannot write RESULT Prepared result metadata: %w", err)
 		}
-	case cassandraprotocol.ResultTypeRows:
+	case primitives.ResultTypeRows:
 		rows, ok := msg.(*RowsResult)
 		if !ok {
 			return fmt.Errorf("expected *message.RowsResult, got %T", msg)
@@ -328,22 +327,22 @@ func (c *ResultCodec) Encode(msg Message, dest io.Writer, version cassandraproto
 	return nil
 }
 
-func (c *ResultCodec) EncodedLength(msg Message, version cassandraprotocol.ProtocolVersion) (length int, err error) {
+func (c *ResultCodec) EncodedLength(msg Message, version primitives.ProtocolVersion) (length int, err error) {
 	result, ok := msg.(Result)
 	if !ok {
 		return -1, fmt.Errorf("expected interface Result, got %T", msg)
 	}
 	length += primitives.LengthOfInt
 	switch result.GetResultType() {
-	case cassandraprotocol.ResultTypeVoid:
+	case primitives.ResultTypeVoid:
 		return length, nil
-	case cassandraprotocol.ResultTypeSetKeyspace:
+	case primitives.ResultTypeSetKeyspace:
 		sk, ok := result.(*SetKeyspaceResult)
 		if !ok {
 			return -1, fmt.Errorf("expected *message.SetKeyspaceResult, got %T", result)
 		}
 		length += primitives.LengthOfString(sk.Keyspace)
-	case cassandraprotocol.ResultTypeSchemaChange:
+	case primitives.ResultTypeSchemaChange:
 		sc, ok := msg.(*SchemaChangeResult)
 		if !ok {
 			return -1, fmt.Errorf("expected *message.SchemaChangeResult, got %T", msg)
@@ -352,20 +351,20 @@ func (c *ResultCodec) EncodedLength(msg Message, version cassandraprotocol.Proto
 		length += primitives.LengthOfString(sc.Target)
 		length += primitives.LengthOfString(sc.Keyspace)
 		switch sc.Target {
-		case cassandraprotocol.SchemaChangeTargetKeyspace:
-		case cassandraprotocol.SchemaChangeTargetTable:
+		case primitives.SchemaChangeTargetKeyspace:
+		case primitives.SchemaChangeTargetTable:
 			fallthrough
-		case cassandraprotocol.SchemaChangeTargetType:
+		case primitives.SchemaChangeTargetType:
 			length += primitives.LengthOfString(sc.Object)
-		case cassandraprotocol.SchemaChangeTargetAggregate:
+		case primitives.SchemaChangeTargetAggregate:
 			fallthrough
-		case cassandraprotocol.SchemaChangeTargetFunction:
+		case primitives.SchemaChangeTargetFunction:
 			length += primitives.LengthOfString(sc.Object)
 			length += primitives.LengthOfStringList(sc.Arguments)
 		default:
 			return -1, fmt.Errorf("unknown schema change target: %v", sc.Target)
 		}
-	case cassandraprotocol.ResultTypePrepared:
+	case primitives.ResultTypePrepared:
 		p, ok := msg.(*PreparedResult)
 		if !ok {
 			return -1, fmt.Errorf("expected *message.PreparedResult, got %T", msg)
@@ -392,7 +391,7 @@ func (c *ResultCodec) EncodedLength(msg Message, version cassandraprotocol.Proto
 			}
 			length += lengthOfMetadata
 		}
-	case cassandraprotocol.ResultTypeRows:
+	case primitives.ResultTypeRows:
 		rows, ok := msg.(*RowsResult)
 		if !ok {
 			return -1, fmt.Errorf("expected *message.RowsResult, got %T", msg)
@@ -418,21 +417,21 @@ func (c *ResultCodec) EncodedLength(msg Message, version cassandraprotocol.Proto
 	return length, nil
 }
 
-func (c *ResultCodec) Decode(source io.Reader, version cassandraprotocol.ProtocolVersion) (msg Message, err error) {
-	var resultType cassandraprotocol.ResultType
+func (c *ResultCodec) Decode(source io.Reader, version primitives.ProtocolVersion) (msg Message, err error) {
+	var resultType primitives.ResultType
 	if resultType, err = primitives.ReadInt(source); err != nil {
 		return nil, fmt.Errorf("cannot read RESULT type: %w", err)
 	}
 	switch resultType {
-	case cassandraprotocol.ResultTypeVoid:
+	case primitives.ResultTypeVoid:
 		return &VoidResult{}, nil
-	case cassandraprotocol.ResultTypeSetKeyspace:
+	case primitives.ResultTypeSetKeyspace:
 		setKeyspace := &SetKeyspaceResult{}
 		if setKeyspace.Keyspace, err = primitives.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read RESULT SetKeyspaceResult.Keyspace: %w", err)
 		}
 		return setKeyspace, nil
-	case cassandraprotocol.ResultTypeSchemaChange:
+	case primitives.ResultTypeSchemaChange:
 		sc := &SchemaChangeResult{}
 		if sc.ChangeType, err = primitives.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read SchemaChangeResult.ChangeType: %w", err)
@@ -444,17 +443,17 @@ func (c *ResultCodec) Decode(source io.Reader, version cassandraprotocol.Protoco
 			return nil, fmt.Errorf("cannot read SchemaChangeResult.Keyspace: %w", err)
 		}
 		switch sc.Target {
-		case cassandraprotocol.SchemaChangeTargetKeyspace:
-		case cassandraprotocol.SchemaChangeTargetTable:
+		case primitives.SchemaChangeTargetKeyspace:
+		case primitives.SchemaChangeTargetTable:
 			fallthrough
-		case cassandraprotocol.SchemaChangeTargetType:
+		case primitives.SchemaChangeTargetType:
 			if sc.Object, err = primitives.ReadString(source); err != nil {
 				return nil, fmt.Errorf("cannot read SchemaChangeResult.Object: %w", err)
 			}
-		case cassandraprotocol.SchemaChangeTargetAggregate:
+		case primitives.SchemaChangeTargetAggregate:
 			fallthrough
-		case cassandraprotocol.SchemaChangeTargetFunction:
-			if version < cassandraprotocol.ProtocolVersion4 {
+		case primitives.SchemaChangeTargetFunction:
+			if version < primitives.ProtocolVersion4 {
 				return nil, fmt.Errorf("%s schema change targets are not supported in protocol version %d", sc.Target, version)
 			}
 			if sc.Object, err = primitives.ReadString(source); err != nil {
@@ -467,7 +466,7 @@ func (c *ResultCodec) Decode(source io.Reader, version cassandraprotocol.Protoco
 			return nil, fmt.Errorf("unknown schema change target: %v", sc.Target)
 		}
 		return sc, nil
-	case cassandraprotocol.ResultTypePrepared:
+	case primitives.ResultTypePrepared:
 		p := &PreparedResult{}
 		if p.PreparedQueryId, err = primitives.ReadShortBytes(source); err != nil {
 			return nil, fmt.Errorf("cannot read RESULT Prepared prepared query id: %w", err)
@@ -484,7 +483,7 @@ func (c *ResultCodec) Decode(source io.Reader, version cassandraprotocol.Protoco
 			return nil, fmt.Errorf("cannot read RESULT Prepared result metadata: %w", err)
 		}
 		return p, nil
-	case cassandraprotocol.ResultTypeRows:
+	case primitives.ResultTypeRows:
 		rows := &RowsResult{}
 		if rows.Metadata, err = decodeRowsMetadata(source, version); err != nil {
 			return nil, fmt.Errorf("cannot read RESULT Rows metadata: %w", err)
@@ -508,11 +507,11 @@ func (c *ResultCodec) Decode(source io.Reader, version cassandraprotocol.Protoco
 	}
 }
 
-func (c *ResultCodec) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeResult
+func (c *ResultCodec) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeResult
 }
 
-func hasResultMetadataId(version cassandraprotocol.ProtocolVersion) bool {
-	return version >= cassandraprotocol.ProtocolVersion5 &&
-		version != cassandraprotocol.ProtocolVersionDse1
+func hasResultMetadataId(version primitives.ProtocolVersion) bool {
+	return version >= primitives.ProtocolVersion5 &&
+		version != primitives.ProtocolVersionDse1
 }

@@ -3,7 +3,6 @@ package message
 import (
 	"bytes"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -12,14 +11,14 @@ import (
 func TestResultCodec_Encode_SchemaChange(test *testing.T) {
 	codec := &ResultCodec{}
 	// versions < 4
-	for _, version := range cassandraprotocol.AllProtocolVersionsLesserThan(cassandraprotocol.ProtocolVersion4) {
+	for _, version := range primitives.AllProtocolVersionsLesserThan(primitives.ProtocolVersion4) {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
 					"schema change result keyspace",
 					&SchemaChangeResult{
-						ChangeType: cassandraprotocol.SchemaChangeTypeCreated,
-						Target:     cassandraprotocol.SchemaChangeTargetKeyspace,
+						ChangeType: primitives.SchemaChangeTypeCreated,
+						Target:     primitives.SchemaChangeTargetKeyspace,
 						Keyspace:   "ks1",
 					},
 					[]byte{
@@ -33,8 +32,8 @@ func TestResultCodec_Encode_SchemaChange(test *testing.T) {
 				{
 					"schema change result table",
 					&SchemaChangeResult{
-						ChangeType: cassandraprotocol.SchemaChangeTypeCreated,
-						Target:     cassandraprotocol.SchemaChangeTargetTable,
+						ChangeType: primitives.SchemaChangeTypeCreated,
+						Target:     primitives.SchemaChangeTargetTable,
 						Keyspace:   "ks1",
 						Object:     "table1",
 					},
@@ -50,8 +49,8 @@ func TestResultCodec_Encode_SchemaChange(test *testing.T) {
 				{
 					"schema change result type",
 					&SchemaChangeResult{
-						ChangeType: cassandraprotocol.SchemaChangeTypeCreated,
-						Target:     cassandraprotocol.SchemaChangeTargetType,
+						ChangeType: primitives.SchemaChangeTypeCreated,
+						Target:     primitives.SchemaChangeTargetType,
 						Keyspace:   "ks1",
 						Object:     "udt1",
 					},
@@ -67,8 +66,8 @@ func TestResultCodec_Encode_SchemaChange(test *testing.T) {
 				{
 					"schema change result function",
 					&SchemaChangeResult{
-						ChangeType: cassandraprotocol.SchemaChangeTypeCreated,
-						Target:     cassandraprotocol.SchemaChangeTargetFunction,
+						ChangeType: primitives.SchemaChangeTypeCreated,
+						Target:     primitives.SchemaChangeTargetFunction,
 						Keyspace:   "ks1",
 						Object:     "func1",
 						Arguments:  []string{"int", "varchar"},
@@ -84,8 +83,8 @@ func TestResultCodec_Encode_SchemaChange(test *testing.T) {
 				{
 					"schema change result aggregate",
 					&SchemaChangeResult{
-						ChangeType: cassandraprotocol.SchemaChangeTypeCreated,
-						Target:     cassandraprotocol.SchemaChangeTargetAggregate,
+						ChangeType: primitives.SchemaChangeTypeCreated,
+						Target:     primitives.SchemaChangeTargetAggregate,
 						Keyspace:   "ks1",
 						Object:     "agg1",
 						Arguments:  []string{"int", "varchar"},
@@ -110,14 +109,14 @@ func TestResultCodec_Encode_SchemaChange(test *testing.T) {
 		})
 	}
 	// versions >= 4
-	for _, version := range cassandraprotocol.AllProtocolVersionsGreaterThanOrEqualTo(cassandraprotocol.ProtocolVersion4) {
+	for _, version := range primitives.AllProtocolVersionsGreaterThanOrEqualTo(primitives.ProtocolVersion4) {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
 					"schema change result keyspace",
 					&SchemaChangeResult{
-						ChangeType: cassandraprotocol.SchemaChangeTypeCreated,
-						Target:     cassandraprotocol.SchemaChangeTargetKeyspace,
+						ChangeType: primitives.SchemaChangeTypeCreated,
+						Target:     primitives.SchemaChangeTargetKeyspace,
 						Keyspace:   "ks1",
 					},
 					[]byte{
@@ -131,8 +130,8 @@ func TestResultCodec_Encode_SchemaChange(test *testing.T) {
 				{
 					"schema change result table",
 					&SchemaChangeResult{
-						ChangeType: cassandraprotocol.SchemaChangeTypeCreated,
-						Target:     cassandraprotocol.SchemaChangeTargetTable,
+						ChangeType: primitives.SchemaChangeTypeCreated,
+						Target:     primitives.SchemaChangeTargetTable,
 						Keyspace:   "ks1",
 						Object:     "table1",
 					},
@@ -148,8 +147,8 @@ func TestResultCodec_Encode_SchemaChange(test *testing.T) {
 				{
 					"schema change result type",
 					&SchemaChangeResult{
-						ChangeType: cassandraprotocol.SchemaChangeTypeCreated,
-						Target:     cassandraprotocol.SchemaChangeTargetType,
+						ChangeType: primitives.SchemaChangeTypeCreated,
+						Target:     primitives.SchemaChangeTargetType,
 						Keyspace:   "ks1",
 						Object:     "udt1",
 					},
@@ -165,8 +164,8 @@ func TestResultCodec_Encode_SchemaChange(test *testing.T) {
 				{
 					"schema change result function",
 					&SchemaChangeResult{
-						ChangeType: cassandraprotocol.SchemaChangeTypeCreated,
-						Target:     cassandraprotocol.SchemaChangeTargetFunction,
+						ChangeType: primitives.SchemaChangeTypeCreated,
+						Target:     primitives.SchemaChangeTargetFunction,
 						Keyspace:   "ks1",
 						Object:     "func1",
 						Arguments:  []string{"int", "varchar"},
@@ -186,8 +185,8 @@ func TestResultCodec_Encode_SchemaChange(test *testing.T) {
 				{
 					"schema change result aggregate",
 					&SchemaChangeResult{
-						ChangeType: cassandraprotocol.SchemaChangeTypeCreated,
-						Target:     cassandraprotocol.SchemaChangeTargetAggregate,
+						ChangeType: primitives.SchemaChangeTypeCreated,
+						Target:     primitives.SchemaChangeTargetAggregate,
 						Keyspace:   "ks1",
 						Object:     "agg1",
 						Arguments:  []string{"int", "varchar"},
@@ -219,33 +218,33 @@ func TestResultCodec_Encode_SchemaChange(test *testing.T) {
 
 func TestResultCodec_EncodedLength_SchemaChange(test *testing.T) {
 	codec := &ResultCodec{}
-	for _, version := range cassandraprotocol.AllProtocolVersions() {
+	for _, version := range primitives.AllProtocolVersions() {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"schema change result keyspace",
 					&SchemaChangeResult{
-						ChangeType: cassandraprotocol.SchemaChangeTypeCreated,
-						Target:     cassandraprotocol.SchemaChangeTargetKeyspace,
+						ChangeType: primitives.SchemaChangeTypeCreated,
+						Target:     primitives.SchemaChangeTargetKeyspace,
 						Keyspace:   "ks1",
 					},
 					primitives.LengthOfInt +
-						primitives.LengthOfString(cassandraprotocol.SchemaChangeTypeCreated) +
-						primitives.LengthOfString(cassandraprotocol.SchemaChangeTargetKeyspace) +
+						primitives.LengthOfString(primitives.SchemaChangeTypeCreated) +
+						primitives.LengthOfString(primitives.SchemaChangeTargetKeyspace) +
 						primitives.LengthOfString("ks1"),
 					nil,
 				},
 				{
 					"schema change result table",
 					&SchemaChangeResult{
-						ChangeType: cassandraprotocol.SchemaChangeTypeCreated,
-						Target:     cassandraprotocol.SchemaChangeTargetTable,
+						ChangeType: primitives.SchemaChangeTypeCreated,
+						Target:     primitives.SchemaChangeTargetTable,
 						Keyspace:   "ks1",
 						Object:     "table1",
 					},
 					primitives.LengthOfInt +
-						primitives.LengthOfString(cassandraprotocol.SchemaChangeTypeCreated) +
-						primitives.LengthOfString(cassandraprotocol.SchemaChangeTargetTable) +
+						primitives.LengthOfString(primitives.SchemaChangeTypeCreated) +
+						primitives.LengthOfString(primitives.SchemaChangeTargetTable) +
 						primitives.LengthOfString("ks1") +
 						primitives.LengthOfString("table1"),
 					nil,
@@ -253,14 +252,14 @@ func TestResultCodec_EncodedLength_SchemaChange(test *testing.T) {
 				{
 					"schema change result type",
 					&SchemaChangeResult{
-						ChangeType: cassandraprotocol.SchemaChangeTypeCreated,
-						Target:     cassandraprotocol.SchemaChangeTargetType,
+						ChangeType: primitives.SchemaChangeTypeCreated,
+						Target:     primitives.SchemaChangeTargetType,
 						Keyspace:   "ks1",
 						Object:     "udt1",
 					},
 					primitives.LengthOfInt +
-						primitives.LengthOfString(cassandraprotocol.SchemaChangeTypeCreated) +
-						primitives.LengthOfString(cassandraprotocol.SchemaChangeTargetType) +
+						primitives.LengthOfString(primitives.SchemaChangeTypeCreated) +
+						primitives.LengthOfString(primitives.SchemaChangeTargetType) +
 						primitives.LengthOfString("ks1") +
 						primitives.LengthOfString("udt1"),
 					nil,
@@ -268,15 +267,15 @@ func TestResultCodec_EncodedLength_SchemaChange(test *testing.T) {
 				{
 					"schema change result function",
 					&SchemaChangeResult{
-						ChangeType: cassandraprotocol.SchemaChangeTypeCreated,
-						Target:     cassandraprotocol.SchemaChangeTargetFunction,
+						ChangeType: primitives.SchemaChangeTypeCreated,
+						Target:     primitives.SchemaChangeTargetFunction,
 						Keyspace:   "ks1",
 						Object:     "func1",
 						Arguments:  []string{"int", "varchar"},
 					},
 					primitives.LengthOfInt +
-						primitives.LengthOfString(cassandraprotocol.SchemaChangeTypeCreated) +
-						primitives.LengthOfString(cassandraprotocol.SchemaChangeTargetFunction) +
+						primitives.LengthOfString(primitives.SchemaChangeTypeCreated) +
+						primitives.LengthOfString(primitives.SchemaChangeTargetFunction) +
 						primitives.LengthOfString("ks1") +
 						primitives.LengthOfString("func1") +
 						primitives.LengthOfStringList([]string{"int", "varchar"}),
@@ -285,15 +284,15 @@ func TestResultCodec_EncodedLength_SchemaChange(test *testing.T) {
 				{
 					"schema change result aggregate",
 					&SchemaChangeResult{
-						ChangeType: cassandraprotocol.SchemaChangeTypeCreated,
-						Target:     cassandraprotocol.SchemaChangeTargetAggregate,
+						ChangeType: primitives.SchemaChangeTypeCreated,
+						Target:     primitives.SchemaChangeTargetAggregate,
 						Keyspace:   "ks1",
 						Object:     "agg1",
 						Arguments:  []string{"int", "varchar"},
 					},
 					primitives.LengthOfInt +
-						primitives.LengthOfString(cassandraprotocol.SchemaChangeTypeCreated) +
-						primitives.LengthOfString(cassandraprotocol.SchemaChangeTargetAggregate) +
+						primitives.LengthOfString(primitives.SchemaChangeTypeCreated) +
+						primitives.LengthOfString(primitives.SchemaChangeTargetAggregate) +
 						primitives.LengthOfString("ks1") +
 						primitives.LengthOfString("agg1") +
 						primitives.LengthOfStringList([]string{"int", "varchar"}),
@@ -314,7 +313,7 @@ func TestResultCodec_EncodedLength_SchemaChange(test *testing.T) {
 func TestResultCodec_Decode_SchemaChange(test *testing.T) {
 	codec := &ResultCodec{}
 	// versions < 4
-	for _, version := range cassandraprotocol.AllProtocolVersionsLesserThan(cassandraprotocol.ProtocolVersion4) {
+	for _, version := range primitives.AllProtocolVersionsLesserThan(primitives.ProtocolVersion4) {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{
@@ -326,8 +325,8 @@ func TestResultCodec_Decode_SchemaChange(test *testing.T) {
 						0, 3, k, s, _1,
 					},
 					&SchemaChangeResult{
-						ChangeType: cassandraprotocol.SchemaChangeTypeCreated,
-						Target:     cassandraprotocol.SchemaChangeTargetKeyspace,
+						ChangeType: primitives.SchemaChangeTypeCreated,
+						Target:     primitives.SchemaChangeTargetKeyspace,
 						Keyspace:   "ks1",
 					},
 					nil,
@@ -342,8 +341,8 @@ func TestResultCodec_Decode_SchemaChange(test *testing.T) {
 						0, 6, t, a, b, l, e, _1,
 					},
 					&SchemaChangeResult{
-						ChangeType: cassandraprotocol.SchemaChangeTypeCreated,
-						Target:     cassandraprotocol.SchemaChangeTargetTable,
+						ChangeType: primitives.SchemaChangeTypeCreated,
+						Target:     primitives.SchemaChangeTargetTable,
 						Keyspace:   "ks1",
 						Object:     "table1",
 					},
@@ -359,8 +358,8 @@ func TestResultCodec_Decode_SchemaChange(test *testing.T) {
 						0, 4, u, d, t, _1,
 					},
 					&SchemaChangeResult{
-						ChangeType: cassandraprotocol.SchemaChangeTypeCreated,
-						Target:     cassandraprotocol.SchemaChangeTargetType,
+						ChangeType: primitives.SchemaChangeTypeCreated,
+						Target:     primitives.SchemaChangeTargetType,
 						Keyspace:   "ks1",
 						Object:     "udt1",
 					},
@@ -400,7 +399,7 @@ func TestResultCodec_Decode_SchemaChange(test *testing.T) {
 		})
 	}
 	// versions >= 4
-	for _, version := range cassandraprotocol.AllProtocolVersionsGreaterThanOrEqualTo(cassandraprotocol.ProtocolVersion4) {
+	for _, version := range primitives.AllProtocolVersionsGreaterThanOrEqualTo(primitives.ProtocolVersion4) {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{
@@ -412,8 +411,8 @@ func TestResultCodec_Decode_SchemaChange(test *testing.T) {
 						0, 3, k, s, _1,
 					},
 					&SchemaChangeResult{
-						ChangeType: cassandraprotocol.SchemaChangeTypeCreated,
-						Target:     cassandraprotocol.SchemaChangeTargetKeyspace,
+						ChangeType: primitives.SchemaChangeTypeCreated,
+						Target:     primitives.SchemaChangeTargetKeyspace,
 						Keyspace:   "ks1",
 					},
 					nil,
@@ -428,8 +427,8 @@ func TestResultCodec_Decode_SchemaChange(test *testing.T) {
 						0, 6, t, a, b, l, e, _1,
 					},
 					&SchemaChangeResult{
-						ChangeType: cassandraprotocol.SchemaChangeTypeCreated,
-						Target:     cassandraprotocol.SchemaChangeTargetTable,
+						ChangeType: primitives.SchemaChangeTypeCreated,
+						Target:     primitives.SchemaChangeTargetTable,
 						Keyspace:   "ks1",
 						Object:     "table1",
 					},
@@ -445,8 +444,8 @@ func TestResultCodec_Decode_SchemaChange(test *testing.T) {
 						0, 4, u, d, t, _1,
 					},
 					&SchemaChangeResult{
-						ChangeType: cassandraprotocol.SchemaChangeTypeCreated,
-						Target:     cassandraprotocol.SchemaChangeTargetType,
+						ChangeType: primitives.SchemaChangeTypeCreated,
+						Target:     primitives.SchemaChangeTargetType,
 						Keyspace:   "ks1",
 						Object:     "udt1",
 					},
@@ -465,8 +464,8 @@ func TestResultCodec_Decode_SchemaChange(test *testing.T) {
 						0, 7, v, a, r, c, h, a, r,
 					},
 					&SchemaChangeResult{
-						ChangeType: cassandraprotocol.SchemaChangeTypeCreated,
-						Target:     cassandraprotocol.SchemaChangeTargetFunction,
+						ChangeType: primitives.SchemaChangeTypeCreated,
+						Target:     primitives.SchemaChangeTargetFunction,
 						Keyspace:   "ks1",
 						Object:     "func1",
 						Arguments:  []string{"int", "varchar"},
@@ -486,8 +485,8 @@ func TestResultCodec_Decode_SchemaChange(test *testing.T) {
 						0, 7, v, a, r, c, h, a, r,
 					},
 					&SchemaChangeResult{
-						ChangeType: cassandraprotocol.SchemaChangeTypeCreated,
-						Target:     cassandraprotocol.SchemaChangeTargetAggregate,
+						ChangeType: primitives.SchemaChangeTypeCreated,
+						Target:     primitives.SchemaChangeTargetAggregate,
 						Keyspace:   "ks1",
 						Object:     "agg1",
 						Arguments:  []string{"int", "varchar"},

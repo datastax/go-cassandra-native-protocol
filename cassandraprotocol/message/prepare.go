@@ -3,7 +3,6 @@ package message
 import (
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
 	"io"
 )
@@ -18,25 +17,25 @@ func (m *Prepare) IsResponse() bool {
 	return false
 }
 
-func (m *Prepare) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodePrepare
+func (m *Prepare) GetOpCode() primitives.OpCode {
+	return primitives.OpCodePrepare
 }
 
 func (m *Prepare) String() string {
 	return fmt.Sprintf("PREPARE (%v, %v)", m.Query, m.Keyspace)
 }
 
-func (m *Prepare) Flags() cassandraprotocol.PrepareFlag {
-	var flags cassandraprotocol.PrepareFlag
+func (m *Prepare) Flags() primitives.PrepareFlag {
+	var flags primitives.PrepareFlag
 	if m.Keyspace != "" {
-		flags |= cassandraprotocol.PrepareFlagWithKeyspace
+		flags |= primitives.PrepareFlagWithKeyspace
 	}
 	return flags
 }
 
 type PrepareCodec struct{}
 
-func (c *PrepareCodec) Encode(msg Message, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
+func (c *PrepareCodec) Encode(msg Message, dest io.Writer, version primitives.ProtocolVersion) (err error) {
 	prepare, ok := msg.(*Prepare)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.Prepare, got %T", msg))
@@ -51,7 +50,7 @@ func (c *PrepareCodec) Encode(msg Message, dest io.Writer, version cassandraprot
 		if err = primitives.WriteInt(int32(flags), dest); err != nil {
 			return fmt.Errorf("cannot write PREPARE flags: %w", err)
 		}
-		if flags&cassandraprotocol.PrepareFlagWithKeyspace > 0 {
+		if flags&primitives.PrepareFlagWithKeyspace > 0 {
 			if prepare.Keyspace == "" {
 				return errors.New("cannot write empty keyspace")
 			} else if err = primitives.WriteString(prepare.Keyspace, dest); err != nil {
@@ -62,7 +61,7 @@ func (c *PrepareCodec) Encode(msg Message, dest io.Writer, version cassandraprot
 	return
 }
 
-func (c *PrepareCodec) EncodedLength(msg Message, version cassandraprotocol.ProtocolVersion) (size int, err error) {
+func (c *PrepareCodec) EncodedLength(msg Message, version primitives.ProtocolVersion) (size int, err error) {
 	prepare, ok := msg.(*Prepare)
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected *message.Prepare, got %T", msg))
@@ -77,19 +76,19 @@ func (c *PrepareCodec) EncodedLength(msg Message, version cassandraprotocol.Prot
 	return size, nil
 }
 
-func (c *PrepareCodec) Decode(source io.Reader, version cassandraprotocol.ProtocolVersion) (msg Message, err error) {
+func (c *PrepareCodec) Decode(source io.Reader, version primitives.ProtocolVersion) (msg Message, err error) {
 	prepare := &Prepare{}
 	if prepare.Query, err = primitives.ReadLongString(source); err != nil {
 		return nil, fmt.Errorf("cannot read PREPARE query: %w", err)
 	}
 	if hasPrepareFlags(version) {
-		var flags cassandraprotocol.PrepareFlag
+		var flags primitives.PrepareFlag
 		var f int32
 		if f, err = primitives.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read PREPARE flags: %w", err)
 		}
-		flags = cassandraprotocol.PrepareFlag(f)
-		if flags&cassandraprotocol.PrepareFlagWithKeyspace > 0 {
+		flags = primitives.PrepareFlag(f)
+		if flags&primitives.PrepareFlagWithKeyspace > 0 {
 			if prepare.Keyspace, err = primitives.ReadString(source); err != nil {
 				return nil, fmt.Errorf("cannot read PREPARE keyspace: %w", err)
 			}
@@ -98,11 +97,11 @@ func (c *PrepareCodec) Decode(source io.Reader, version cassandraprotocol.Protoc
 	return prepare, nil
 }
 
-func (c *PrepareCodec) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodePrepare
+func (c *PrepareCodec) GetOpCode() primitives.OpCode {
+	return primitives.OpCodePrepare
 }
 
-func hasPrepareFlags(version cassandraprotocol.ProtocolVersion) bool {
-	return version >= cassandraprotocol.ProtocolVersion5 &&
-		version != cassandraprotocol.ProtocolVersionDse1
+func hasPrepareFlags(version primitives.ProtocolVersion) bool {
+	return version >= primitives.ProtocolVersion5 &&
+		version != primitives.ProtocolVersionDse1
 }
