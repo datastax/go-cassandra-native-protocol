@@ -47,7 +47,7 @@ func TestRemoteServerNoAuth(t *testing.T) {
 
 					request, _ := frame.NewRequestFrame(version, 1, false, nil, &message.Query{
 						Query:   "SELECT * FROM system.local",
-						Options: message.NewQueryOptions(),
+						Options: &message.QueryOptions{},
 					})
 					err = clientConn.Send(request)
 					assert.Nil(t, err)
@@ -87,7 +87,7 @@ func TestRemoteServerAuth(t *testing.T) {
 
 					query, _ := frame.NewRequestFrame(version, 1, false, nil, &message.Query{
 						Query:   "SELECT * FROM system.local",
-						Options: message.NewQueryOptions(),
+						Options: &message.QueryOptions{},
 					})
 					err = clientConn.Send(query)
 					assert.Nil(t, err)
@@ -127,9 +127,10 @@ func TestRemoteDseServerAuthContinuousPaging(t *testing.T) {
 
 					query, _ := frame.NewRequestFrame(version, 1, false, nil, &message.Query{
 						Query: "SELECT * FROM system_schema.columns",
-						Options: message.NewQueryOptions(
-							message.WithPageSize(1),
-							message.WithContinuousPagingOptions(&message.ContinuousPagingOptions{MaxPages: 3})),
+						Options: &message.QueryOptions{
+							PageSize:                1,
+							ContinuousPagingOptions: &message.ContinuousPagingOptions{MaxPages: 3},
+						},
 					})
 					err = clientConn.Send(query)
 					assert.Nil(t, err)
@@ -224,7 +225,7 @@ func TestLocalServer(t *testing.T) {
 
 					msg, _ = frame.NewRequestFrame(version, 1, false, nil, &message.Query{
 						Query:   "SELECT * FROM system.local",
-						Options: message.NewQueryOptions(),
+						Options: &message.QueryOptions{},
 					})
 					err = clientConn.Send(msg)
 					fmt.Printf("CLIENT sent:     %v\n", msg)
@@ -240,17 +241,17 @@ func TestLocalServer(t *testing.T) {
 						nil,
 						nil,
 						nil,
-						message.NewRowsResult(message.WithRowsMetadata(
-							message.NewRowsMetadata(message.NoColumnMetadata(1))),
-							message.WithRowsData(
-								[][]byte{
+						&message.RowsResult{
+							Metadata: &message.RowsMetadata{ColumnCount: 1},
+							Data: []message.Row{
+								{
 									{0, 0, 0, 4, 1, 2, 3, 4},
 								},
-								[][]byte{
+								{
 									{0, 0, 0, 4, 5, 6, 7, 8},
 								},
-							),
-						),
+							},
+						},
 					)
 					_ = serverConn.Send(msg)
 					fmt.Printf("SERVER sent:     %v\n", msg)
@@ -301,7 +302,7 @@ func TestLocalServerDiscardBody(t *testing.T) {
 
 					msg, _ = frame.NewRequestFrame(version, 1, false, nil, &message.Query{
 						Query:   "SELECT * FROM system.local",
-						Options: message.NewQueryOptions(),
+						Options: &message.QueryOptions{},
 					})
 					err = clientConn.Send(msg)
 					fmt.Printf("CLIENT sent:     %v\n", msg)
@@ -316,17 +317,17 @@ func TestLocalServerDiscardBody(t *testing.T) {
 						nil,
 						nil,
 						nil,
-						message.NewRowsResult(message.WithRowsMetadata(
-							message.NewRowsMetadata(message.NoColumnMetadata(1))),
-							message.WithRowsData(
-								[][]byte{
+						&message.RowsResult{
+							Metadata: &message.RowsMetadata{ColumnCount: 1},
+							Data: []message.Row{
+								{
 									{0, 0, 0, 4, 1, 2, 3, 4},
 								},
-								[][]byte{
+								{
 									{0, 0, 0, 4, 5, 6, 7, 8},
 								},
-							),
-						),
+							},
+						},
 					)
 					_ = serverConn.Send(msg)
 					fmt.Printf("SERVER sent:     %v\n", msg)

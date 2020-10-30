@@ -5,101 +5,6 @@ import (
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
-	"math"
-)
-
-type QueryOptionsCustomizer func(*QueryOptions)
-
-func NewQueryOptions(customizers ...QueryOptionsCustomizer) *QueryOptions {
-	options := &QueryOptions{
-		Consistency:       primitive.ConsistencyLevelOne,
-		PageSize:          pageSizeNone,
-		SerialConsistency: primitive.ConsistencyLevelSerial,
-		DefaultTimestamp:  DefaultTimestampNone,
-		NowInSeconds:      NowInSecondsNone,
-	}
-	for _, customizer := range customizers {
-		customizer(options)
-	}
-	return options
-}
-
-func WithPositionalValues(values ...*primitive.Value) QueryOptionsCustomizer {
-	return func(options *QueryOptions) {
-		options.PositionalValues = values
-	}
-}
-
-func WithNamedValues(values map[string]*primitive.Value) QueryOptionsCustomizer {
-	return func(options *QueryOptions) {
-		options.NamedValues = values
-	}
-}
-
-func WithConsistencyLevel(consistency primitive.ConsistencyLevel) QueryOptionsCustomizer {
-	return func(options *QueryOptions) {
-		options.Consistency = consistency
-	}
-}
-
-func WithSerialConsistencyLevel(consistency primitive.ConsistencyLevel) QueryOptionsCustomizer {
-	return func(options *QueryOptions) {
-		options.SerialConsistency = consistency
-	}
-}
-
-func SkipMetadata() QueryOptionsCustomizer {
-	return func(options *QueryOptions) {
-		options.SkipMetadata = true
-	}
-}
-
-func WithPageSize(pageSize int32) QueryOptionsCustomizer {
-	return func(options *QueryOptions) {
-		options.PageSize = pageSize
-	}
-}
-
-func WithPageSizeInBytes() QueryOptionsCustomizer {
-	return func(options *QueryOptions) {
-		options.PageSizeInBytes = true
-	}
-}
-
-func WithPagingState(pagingState []byte) QueryOptionsCustomizer {
-	return func(options *QueryOptions) {
-		options.PagingState = pagingState
-	}
-}
-
-func WithDefaultTimestamp(defaultTimestamp int64) QueryOptionsCustomizer {
-	return func(options *QueryOptions) {
-		options.DefaultTimestamp = defaultTimestamp
-	}
-}
-
-func WithKeyspace(keyspace string) QueryOptionsCustomizer {
-	return func(options *QueryOptions) {
-		options.Keyspace = keyspace
-	}
-}
-
-func WithNowInSeconds(nowInSeconds int32) QueryOptionsCustomizer {
-	return func(options *QueryOptions) {
-		options.NowInSeconds = nowInSeconds
-	}
-}
-
-func WithContinuousPagingOptions(continuousPagingOptions *ContinuousPagingOptions) QueryOptionsCustomizer {
-	return func(options *QueryOptions) {
-		options.ContinuousPagingOptions = continuousPagingOptions
-	}
-}
-
-const (
-	pageSizeNone         int32 = -1
-	DefaultTimestampNone int64 = math.MinInt64
-	NowInSecondsNone     int32 = math.MinInt32
 )
 
 type QueryOptions struct {
@@ -107,15 +12,17 @@ type QueryOptions struct {
 	PositionalValues []*primitive.Value
 	NamedValues      map[string]*primitive.Value
 	SkipMetadata     bool
-	PageSize         int32
+	// The desired page size. A value of zero or negative is usually interpreted as "no pagination" and can result
+	// in the entire result set being returned in one single page.
+	PageSize int32
 	// Whether the page size is expressed in number of rows or number of bytes. Valid for DSE protocol versions only.
 	PageSizeInBytes   bool
 	PagingState       []byte
-	SerialConsistency primitive.ConsistencyLevel
-	DefaultTimestamp  int64
+	SerialConsistency *primitive.NillableConsistencyLevel
+	DefaultTimestamp  *primitive.NillableInt64
 	// Valid for protocol version 5 and DSE protocol version 2 only.
 	Keyspace     string
-	NowInSeconds int32
+	NowInSeconds *primitive.NillableInt32
 	// Valid only for DSE protocol versions
 	ContinuousPagingOptions *ContinuousPagingOptions
 }
@@ -153,16 +60,16 @@ func (o *QueryOptions) Flags() primitive.QueryFlag {
 	if o.PagingState != nil {
 		flags |= primitive.QueryFlagPagingState
 	}
-	if o.SerialConsistency != primitive.ConsistencyLevelSerial {
+	if o.SerialConsistency != nil {
 		flags |= primitive.QueryFlagSerialConsistency
 	}
-	if o.DefaultTimestamp != DefaultTimestampNone {
+	if o.DefaultTimestamp != nil {
 		flags |= primitive.QueryFlagDefaultTimestamp
 	}
 	if o.Keyspace != "" {
 		flags |= primitive.QueryFlagWithKeyspace
 	}
-	if o.NowInSeconds != NowInSecondsNone {
+	if o.NowInSeconds != nil {
 		flags |= primitive.QueryFlagNowInSeconds
 	}
 	if o.ContinuousPagingOptions != nil {
@@ -209,14 +116,14 @@ func EncodeQueryOptions(options *QueryOptions, dest io.Writer, version primitive
 		}
 	}
 	if flags&primitive.QueryFlagSerialConsistency != 0 {
-		if err := primitive.CheckSerialConsistencyLevel(options.SerialConsistency); err != nil {
+		if err := primitive.CheckSerialConsistencyLevel(options.SerialConsistency.Value); err != nil {
 			return err
-		} else if err = primitive.WriteShort(options.SerialConsistency, dest); err != nil {
+		} else if err = primitive.WriteShort(options.SerialConsistency.Value, dest); err != nil {
 			return fmt.Errorf("cannot write serial consistency: %w", err)
 		}
 	}
 	if flags&primitive.QueryFlagDefaultTimestamp != 0 {
-		if err = primitive.WriteLong(options.DefaultTimestamp, dest); err != nil {
+		if err = primitive.WriteLong(options.DefaultTimestamp.Value, dest); err != nil {
 			return fmt.Errorf("cannot write default timestamp: %w", err)
 		}
 	}
@@ -228,7 +135,7 @@ func EncodeQueryOptions(options *QueryOptions, dest io.Writer, version primitive
 		}
 	}
 	if flags&primitive.QueryFlagNowInSeconds != 0 {
-		if err = primitive.WriteInt(options.NowInSeconds, dest); err != nil {
+		if err = primitive.WriteInt(options.NowInSeconds.Value, dest); err != nil {
 			return fmt.Errorf("cannot write now-in-seconds: %w", err)
 		}
 	}
@@ -289,7 +196,7 @@ func LengthOfQueryOptions(options *QueryOptions, version primitive.ProtocolVersi
 }
 
 func DecodeQueryOptions(source io.Reader, version primitive.ProtocolVersion) (options *QueryOptions, err error) {
-	options = NewQueryOptions()
+	options = &QueryOptions{}
 	if options.Consistency, err = primitive.ReadShort(source); err != nil {
 		return nil, fmt.Errorf("cannot read consistency: %w", err)
 	} else if err = primitive.CheckConsistencyLevel(options.Consistency); err != nil {
@@ -333,14 +240,16 @@ func DecodeQueryOptions(source io.Reader, version primitive.ProtocolVersion) (op
 		}
 	}
 	if flags&primitive.QueryFlagSerialConsistency != 0 {
-		if options.SerialConsistency, err = primitive.ReadShort(source); err != nil {
+		options.SerialConsistency = &primitive.NillableConsistencyLevel{}
+		if options.SerialConsistency.Value, err = primitive.ReadShort(source); err != nil {
 			return nil, fmt.Errorf("cannot read serial consistency: %w", err)
-		} else if err = primitive.CheckConsistencyLevel(options.SerialConsistency); err != nil {
+		} else if err = primitive.CheckConsistencyLevel(options.SerialConsistency.Value); err != nil {
 			return nil, err
 		}
 	}
 	if flags&primitive.QueryFlagDefaultTimestamp != 0 {
-		if options.DefaultTimestamp, err = primitive.ReadLong(source); err != nil {
+		options.DefaultTimestamp = &primitive.NillableInt64{}
+		if options.DefaultTimestamp.Value, err = primitive.ReadLong(source); err != nil {
 			return nil, fmt.Errorf("cannot read default timestamp: %w", err)
 		}
 	}
@@ -350,7 +259,8 @@ func DecodeQueryOptions(source io.Reader, version primitive.ProtocolVersion) (op
 		}
 	}
 	if flags&primitive.QueryFlagNowInSeconds != 0 {
-		if options.NowInSeconds, err = primitive.ReadInt(source); err != nil {
+		options.NowInSeconds = &primitive.NillableInt32{}
+		if options.NowInSeconds.Value, err = primitive.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read now-in-seconds: %w", err)
 		}
 	}

@@ -17,7 +17,7 @@ func TestResultCodec_Encode_Prepared(test *testing.T) {
 			tests := []encodeTestCase{
 				{
 					"prepared result without bound variables",
-					NewPreparedResult(WithPreparedQueryId([]byte{1, 2, 3, 4})),
+					&PreparedResult{PreparedQueryId: []byte{1, 2, 3, 4}},
 					[]byte{
 						0, 0, 0, 4, // result type
 						0, 4, 1, 2, 3, 4, // prepared id
@@ -32,18 +32,20 @@ func TestResultCodec_Encode_Prepared(test *testing.T) {
 				},
 				{
 					"prepared result with bound variables and no result metadata",
-					NewPreparedResult(
-						WithPreparedQueryId([]byte{1, 2, 3, 4}),
-						WithVariablesMetadata(
-							NewVariablesMetadata(
-								WithResultColumns(&ColumnMetadata{
+					&PreparedResult{
+						PreparedQueryId: []byte{1, 2, 3, 4},
+						VariablesMetadata: &VariablesMetadata{
+							ColumnSpecs: []*ColumnMetadata{
+								{
 									Keyspace: "ks1",
 									Table:    "table1",
 									Name:     "col1",
 									Index:    0,
 									Type:     datatype.Int,
-								}))),
-					),
+								},
+							},
+						},
+					},
 					[]byte{
 						0, 0, 0, 4, // result type
 						0, 4, 1, 2, 3, 4, // prepared id
@@ -62,26 +64,32 @@ func TestResultCodec_Encode_Prepared(test *testing.T) {
 				},
 				{
 					"prepared result with bound variables and result metadata",
-					NewPreparedResult(
-						WithPreparedQueryId([]byte{1, 2, 3, 4}),
-						WithVariablesMetadata(
-							NewVariablesMetadata(
-								WithResultColumns(&ColumnMetadata{
+					&PreparedResult{
+						PreparedQueryId: []byte{1, 2, 3, 4},
+						VariablesMetadata: &VariablesMetadata{
+							ColumnSpecs: []*ColumnMetadata{
+								{
 									Keyspace: "ks1",
 									Table:    "table1",
 									Name:     "col1",
 									Index:    0,
 									Type:     datatype.Int,
-								}))),
-						WithPreparedResultMetadata(
-							NewRowsMetadata(
-								WithColumns(&ColumnMetadata{
+								},
+							},
+						},
+						ResultMetadata: &RowsMetadata{
+							ColumnCount: 1,
+							ColumnSpecs: []*ColumnMetadata{
+								{
 									Keyspace: "ks1",
 									Table:    "table1",
 									Name:     "col2",
 									Index:    0,
 									Type:     datatype.Varchar,
-								})))),
+								},
+							},
+						},
+					},
 					[]byte{
 						0, 0, 0, 4, // result type
 						0, 4, 1, 2, 3, 4, // prepared id
@@ -119,7 +127,7 @@ func TestResultCodec_Encode_Prepared(test *testing.T) {
 			tests := []encodeTestCase{
 				{
 					"prepared result without bound variables",
-					NewPreparedResult(WithPreparedQueryId([]byte{1, 2, 3, 4})),
+					&PreparedResult{PreparedQueryId: []byte{1, 2, 3, 4}},
 					[]byte{
 						0, 0, 0, 4, // result type
 						0, 4, 1, 2, 3, 4, // prepared id
@@ -135,20 +143,21 @@ func TestResultCodec_Encode_Prepared(test *testing.T) {
 				},
 				{
 					"prepared result with bound variables + partition key indices and no result metadata",
-					NewPreparedResult(
-						WithPreparedQueryId([]byte{1, 2, 3, 4}),
-						WithVariablesMetadata(
-							NewVariablesMetadata(
-								WithPartitionKeyIndices(0),
-								WithResultColumns(&ColumnMetadata{
+					&PreparedResult{
+						PreparedQueryId: []byte{1, 2, 3, 4},
+						VariablesMetadata: &VariablesMetadata{
+							PkIndices: []uint16{0},
+							ColumnSpecs: []*ColumnMetadata{
+								{
 									Keyspace: "ks1",
 									Table:    "table1",
 									Name:     "col1",
 									Index:    0,
 									Type:     datatype.Int,
-								}),
-							)),
-					),
+								},
+							},
+						},
+					},
 					[]byte{
 						0, 0, 0, 4, // result type
 						0, 4, 1, 2, 3, 4, // prepared id
@@ -169,29 +178,33 @@ func TestResultCodec_Encode_Prepared(test *testing.T) {
 				},
 				{
 					"prepared result with bound variables + partition key indices and result metadata",
-					NewPreparedResult(
-						WithPreparedQueryId([]byte{1, 2, 3, 4}),
-						WithVariablesMetadata(
-							NewVariablesMetadata(
-								WithPartitionKeyIndices(0),
-								WithResultColumns(&ColumnMetadata{
+					&PreparedResult{
+						PreparedQueryId: []byte{1, 2, 3, 4},
+						VariablesMetadata: &VariablesMetadata{
+							PkIndices: []uint16{0},
+							ColumnSpecs: []*ColumnMetadata{
+								{
 									Keyspace: "ks1",
 									Table:    "table1",
 									Name:     "col1",
 									Index:    0,
 									Type:     datatype.Int,
-								}),
-							)),
-						WithPreparedResultMetadata(
-							NewRowsMetadata(
-								WithColumns(&ColumnMetadata{
+								},
+							},
+						},
+						ResultMetadata: &RowsMetadata{
+							ColumnCount: 1,
+							ColumnSpecs: []*ColumnMetadata{
+								{
 									Keyspace: "ks1",
 									Table:    "table1",
 									Name:     "col2",
 									Index:    0,
 									Type:     datatype.Varchar,
-								})),
-						)),
+								},
+							},
+						},
+					},
 					[]byte{
 						0, 0, 0, 4, // result type
 						0, 4, 1, 2, 3, 4, // prepared id
@@ -231,10 +244,10 @@ func TestResultCodec_Encode_Prepared(test *testing.T) {
 			tests := []encodeTestCase{
 				{
 					"prepared result without bound variables",
-					NewPreparedResult(
-						WithPreparedQueryId([]byte{1, 2, 3, 4}),
-						WithResultMetadataId([]byte{5, 6, 7, 8}),
-					),
+					&PreparedResult{
+						PreparedQueryId:  []byte{1, 2, 3, 4},
+						ResultMetadataId: []byte{5, 6, 7, 8},
+					},
 					[]byte{
 						0, 0, 0, 4, // result type
 						0, 4, 1, 2, 3, 4, // prepared id
@@ -251,21 +264,22 @@ func TestResultCodec_Encode_Prepared(test *testing.T) {
 				},
 				{
 					"prepared result with bound variables + partition key indices and no result metadata",
-					NewPreparedResult(
-						WithPreparedQueryId([]byte{1, 2, 3, 4}),
-						WithResultMetadataId([]byte{5, 6, 7, 8}),
-						WithVariablesMetadata(
-							NewVariablesMetadata(
-								WithPartitionKeyIndices(0),
-								WithResultColumns(&ColumnMetadata{
+					&PreparedResult{
+						PreparedQueryId:  []byte{1, 2, 3, 4},
+						ResultMetadataId: []byte{5, 6, 7, 8},
+						VariablesMetadata: &VariablesMetadata{
+							PkIndices: []uint16{0},
+							ColumnSpecs: []*ColumnMetadata{
+								{
 									Keyspace: "ks1",
 									Table:    "table1",
 									Name:     "col1",
 									Index:    0,
 									Type:     datatype.Int,
-								}),
-							)),
-					),
+								},
+							},
+						},
+					},
 					[]byte{
 						0, 0, 0, 4, // result type
 						0, 4, 1, 2, 3, 4, // prepared id
@@ -287,30 +301,34 @@ func TestResultCodec_Encode_Prepared(test *testing.T) {
 				},
 				{
 					"prepared result with bound variables + partition key indices and result metadata",
-					NewPreparedResult(
-						WithPreparedQueryId([]byte{1, 2, 3, 4}),
-						WithResultMetadataId([]byte{5, 6, 7, 8}),
-						WithVariablesMetadata(
-							NewVariablesMetadata(
-								WithPartitionKeyIndices(0),
-								WithResultColumns(&ColumnMetadata{
+					&PreparedResult{
+						PreparedQueryId:  []byte{1, 2, 3, 4},
+						ResultMetadataId: []byte{5, 6, 7, 8},
+						VariablesMetadata: &VariablesMetadata{
+							PkIndices: []uint16{0},
+							ColumnSpecs: []*ColumnMetadata{
+								{
 									Keyspace: "ks1",
 									Table:    "table1",
 									Name:     "col1",
 									Index:    0,
 									Type:     datatype.Int,
-								}),
-							)),
-						WithPreparedResultMetadata(
-							NewRowsMetadata(
-								WithColumns(&ColumnMetadata{
+								},
+							},
+						},
+						ResultMetadata: &RowsMetadata{
+							ColumnCount: 1,
+							ColumnSpecs: []*ColumnMetadata{
+								{
 									Keyspace: "ks1",
 									Table:    "table1",
 									Name:     "col2",
 									Index:    0,
 									Type:     datatype.Varchar,
-								})),
-						)),
+								},
+							},
+						},
+					},
 					[]byte{
 						0, 0, 0, 4, // result type
 						0, 4, 1, 2, 3, 4, // prepared id
@@ -355,7 +373,7 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"prepared result without bound variables",
-					NewPreparedResult(WithPreparedQueryId([]byte{1, 2, 3, 4})),
+					&PreparedResult{PreparedQueryId: []byte{1, 2, 3, 4}},
 					primitive.LengthOfInt + //result type
 						primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
 						primitive.LengthOfInt + // flags
@@ -366,18 +384,20 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 				},
 				{
 					"prepared result with bound variables and no result metadata",
-					NewPreparedResult(
-						WithPreparedQueryId([]byte{1, 2, 3, 4}),
-						WithVariablesMetadata(
-							NewVariablesMetadata(
-								WithResultColumns(&ColumnMetadata{
+					&PreparedResult{
+						PreparedQueryId: []byte{1, 2, 3, 4},
+						VariablesMetadata: &VariablesMetadata{
+							ColumnSpecs: []*ColumnMetadata{
+								{
 									Keyspace: "ks1",
 									Table:    "table1",
 									Name:     "col1",
 									Index:    0,
 									Type:     datatype.Int,
-								}))),
-					),
+								},
+							},
+						},
+					},
 					primitive.LengthOfInt + //result type
 						primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
 						primitive.LengthOfInt + // flags
@@ -392,26 +412,32 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 				},
 				{
 					"prepared result with bound variables and result metadata",
-					NewPreparedResult(
-						WithPreparedQueryId([]byte{1, 2, 3, 4}),
-						WithVariablesMetadata(
-							NewVariablesMetadata(
-								WithResultColumns(&ColumnMetadata{
+					&PreparedResult{
+						PreparedQueryId: []byte{1, 2, 3, 4},
+						VariablesMetadata: &VariablesMetadata{
+							ColumnSpecs: []*ColumnMetadata{
+								{
 									Keyspace: "ks1",
 									Table:    "table1",
 									Name:     "col1",
 									Index:    0,
 									Type:     datatype.Int,
-								}))),
-						WithPreparedResultMetadata(
-							NewRowsMetadata(
-								WithColumns(&ColumnMetadata{
+								},
+							},
+						},
+						ResultMetadata: &RowsMetadata{
+							ColumnCount: 1,
+							ColumnSpecs: []*ColumnMetadata{
+								{
 									Keyspace: "ks1",
 									Table:    "table1",
 									Name:     "col2",
 									Index:    0,
 									Type:     datatype.Varchar,
-								})))),
+								},
+							},
+						},
+					},
 					primitive.LengthOfInt + //result type
 						primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
 						primitive.LengthOfInt + // flags
@@ -444,7 +470,7 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"prepared result without bound variables",
-					NewPreparedResult(WithPreparedQueryId([]byte{1, 2, 3, 4})),
+					&PreparedResult{PreparedQueryId: []byte{1, 2, 3, 4}},
 					primitive.LengthOfInt + //result type
 						primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
 						primitive.LengthOfInt + // flags
@@ -456,20 +482,21 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 				},
 				{
 					"prepared result with bound variables + partition key indices and no result metadata",
-					NewPreparedResult(
-						WithPreparedQueryId([]byte{1, 2, 3, 4}),
-						WithVariablesMetadata(
-							NewVariablesMetadata(
-								WithPartitionKeyIndices(0),
-								WithResultColumns(&ColumnMetadata{
+					&PreparedResult{
+						PreparedQueryId: []byte{1, 2, 3, 4},
+						VariablesMetadata: &VariablesMetadata{
+							PkIndices: []uint16{0},
+							ColumnSpecs: []*ColumnMetadata{
+								{
 									Keyspace: "ks1",
 									Table:    "table1",
 									Name:     "col1",
 									Index:    0,
 									Type:     datatype.Int,
-								}),
-							)),
-					),
+								},
+							},
+						},
+					},
 					primitive.LengthOfInt + //result type
 						primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
 						primitive.LengthOfInt + // flags
@@ -486,29 +513,33 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 				},
 				{
 					"prepared result with bound variables + partition key indices and result metadata",
-					NewPreparedResult(
-						WithPreparedQueryId([]byte{1, 2, 3, 4}),
-						WithVariablesMetadata(
-							NewVariablesMetadata(
-								WithPartitionKeyIndices(0),
-								WithResultColumns(&ColumnMetadata{
+					&PreparedResult{
+						PreparedQueryId: []byte{1, 2, 3, 4},
+						VariablesMetadata: &VariablesMetadata{
+							PkIndices: []uint16{0},
+							ColumnSpecs: []*ColumnMetadata{
+								{
 									Keyspace: "ks1",
 									Table:    "table1",
 									Name:     "col1",
 									Index:    0,
 									Type:     datatype.Int,
-								}),
-							)),
-						WithPreparedResultMetadata(
-							NewRowsMetadata(
-								WithColumns(&ColumnMetadata{
+								},
+							},
+						},
+						ResultMetadata: &RowsMetadata{
+							ColumnCount: 1,
+							ColumnSpecs: []*ColumnMetadata{
+								{
 									Keyspace: "ks1",
 									Table:    "table1",
 									Name:     "col2",
 									Index:    0,
 									Type:     datatype.Varchar,
-								})),
-						)),
+								},
+							},
+						},
+					},
 					primitive.LengthOfInt + //result type
 						primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
 						primitive.LengthOfInt + // flags
@@ -543,10 +574,10 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"prepared result without bound variables",
-					NewPreparedResult(
-						WithPreparedQueryId([]byte{1, 2, 3, 4}),
-						WithResultMetadataId([]byte{5, 6, 7, 8}),
-					),
+					&PreparedResult{
+						PreparedQueryId:  []byte{1, 2, 3, 4},
+						ResultMetadataId: []byte{5, 6, 7, 8},
+					},
 					primitive.LengthOfInt + //result type
 						primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
 						primitive.LengthOfShortBytes([]byte{5, 6, 7, 8}) +
@@ -559,21 +590,22 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 				},
 				{
 					"prepared result with bound variables + partition key indices and no result metadata",
-					NewPreparedResult(
-						WithPreparedQueryId([]byte{1, 2, 3, 4}),
-						WithResultMetadataId([]byte{5, 6, 7, 8}),
-						WithVariablesMetadata(
-							NewVariablesMetadata(
-								WithPartitionKeyIndices(0),
-								WithResultColumns(&ColumnMetadata{
+					&PreparedResult{
+						PreparedQueryId:  []byte{1, 2, 3, 4},
+						ResultMetadataId: []byte{5, 6, 7, 8},
+						VariablesMetadata: &VariablesMetadata{
+							PkIndices: []uint16{0},
+							ColumnSpecs: []*ColumnMetadata{
+								{
 									Keyspace: "ks1",
 									Table:    "table1",
 									Name:     "col1",
 									Index:    0,
 									Type:     datatype.Int,
-								}),
-							)),
-					),
+								},
+							},
+						},
+					},
 					primitive.LengthOfInt + //result type
 						primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
 						primitive.LengthOfShortBytes([]byte{5, 6, 7, 8}) +
@@ -591,30 +623,34 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 				},
 				{
 					"prepared result with bound variables + partition key indices and result metadata",
-					NewPreparedResult(
-						WithPreparedQueryId([]byte{1, 2, 3, 4}),
-						WithResultMetadataId([]byte{5, 6, 7, 8}),
-						WithVariablesMetadata(
-							NewVariablesMetadata(
-								WithPartitionKeyIndices(0),
-								WithResultColumns(&ColumnMetadata{
+					&PreparedResult{
+						PreparedQueryId:  []byte{1, 2, 3, 4},
+						ResultMetadataId: []byte{5, 6, 7, 8},
+						VariablesMetadata: &VariablesMetadata{
+							PkIndices: []uint16{0},
+							ColumnSpecs: []*ColumnMetadata{
+								{
 									Keyspace: "ks1",
 									Table:    "table1",
 									Name:     "col1",
 									Index:    0,
 									Type:     datatype.Int,
-								}),
-							)),
-						WithPreparedResultMetadata(
-							NewRowsMetadata(
-								WithColumns(&ColumnMetadata{
+								},
+							},
+						},
+						ResultMetadata: &RowsMetadata{
+							ColumnCount: 1,
+							ColumnSpecs: []*ColumnMetadata{
+								{
 									Keyspace: "ks1",
 									Table:    "table1",
 									Name:     "col2",
 									Index:    0,
 									Type:     datatype.Varchar,
-								})),
-						)),
+								},
+							},
+						},
+					},
 					primitive.LengthOfInt + //result type
 						primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
 						primitive.LengthOfShortBytes([]byte{5, 6, 7, 8}) +
@@ -663,9 +699,11 @@ func TestResultCodec_Decode_Prepared(test *testing.T) {
 						0, 0, 0, 4, // flags (NO_METADATA)
 						0, 0, 0, 0, // column count
 					},
-					NewPreparedResult(
-						WithPreparedQueryId([]byte{1, 2, 3, 4}),
-					),
+					&PreparedResult{
+						PreparedQueryId:   []byte{1, 2, 3, 4},
+						VariablesMetadata: &VariablesMetadata{},
+						ResultMetadata:    &RowsMetadata{},
+					},
 					nil,
 				},
 				{
@@ -684,18 +722,21 @@ func TestResultCodec_Decode_Prepared(test *testing.T) {
 						0, 0, 0, 4, // flags (NO_METADATA)
 						0, 0, 0, 0, // column count
 					},
-					NewPreparedResult(
-						WithPreparedQueryId([]byte{1, 2, 3, 4}),
-						WithVariablesMetadata(
-							NewVariablesMetadata(
-								WithResultColumns(&ColumnMetadata{
+					&PreparedResult{
+						PreparedQueryId: []byte{1, 2, 3, 4},
+						VariablesMetadata: &VariablesMetadata{
+							ColumnSpecs: []*ColumnMetadata{
+								{
 									Keyspace: "ks1",
 									Table:    "table1",
 									Name:     "col1",
 									Index:    0,
 									Type:     datatype.Int,
-								}))),
-					),
+								},
+							},
+						},
+						ResultMetadata: &RowsMetadata{},
+					},
 					nil,
 				},
 				{
@@ -718,26 +759,32 @@ func TestResultCodec_Decode_Prepared(test *testing.T) {
 						0, 4, c, o, l, _2, // col1 name
 						0, 13, // col1 type
 					},
-					NewPreparedResult(
-						WithPreparedQueryId([]byte{1, 2, 3, 4}),
-						WithVariablesMetadata(
-							NewVariablesMetadata(
-								WithResultColumns(&ColumnMetadata{
+					&PreparedResult{
+						PreparedQueryId: []byte{1, 2, 3, 4},
+						VariablesMetadata: &VariablesMetadata{
+							ColumnSpecs: []*ColumnMetadata{
+								{
 									Keyspace: "ks1",
 									Table:    "table1",
 									Name:     "col1",
 									Index:    0,
 									Type:     datatype.Int,
-								}))),
-						WithPreparedResultMetadata(
-							NewRowsMetadata(
-								WithColumns(&ColumnMetadata{
+								},
+							},
+						},
+						ResultMetadata: &RowsMetadata{
+							ColumnCount: 1,
+							ColumnSpecs: []*ColumnMetadata{
+								{
 									Keyspace: "ks1",
 									Table:    "table1",
 									Name:     "col2",
 									Index:    0,
 									Type:     datatype.Varchar,
-								})))),
+								},
+							},
+						},
+					},
 					nil,
 				},
 			}
@@ -768,9 +815,11 @@ func TestResultCodec_Decode_Prepared(test *testing.T) {
 						0, 0, 0, 4, // flags (NO_METADATA)
 						0, 0, 0, 0, // column count
 					},
-					NewPreparedResult(
-						WithPreparedQueryId([]byte{1, 2, 3, 4}),
-					),
+					&PreparedResult{
+						PreparedQueryId:   []byte{1, 2, 3, 4},
+						VariablesMetadata: &VariablesMetadata{},
+						ResultMetadata:    &RowsMetadata{},
+					},
 					nil,
 				},
 				{
@@ -791,20 +840,22 @@ func TestResultCodec_Decode_Prepared(test *testing.T) {
 						0, 0, 0, 4, // flags (NO_METADATA)
 						0, 0, 0, 0, // column count
 					},
-					NewPreparedResult(
-						WithPreparedQueryId([]byte{1, 2, 3, 4}),
-						WithVariablesMetadata(
-							NewVariablesMetadata(
-								WithPartitionKeyIndices(0),
-								WithResultColumns(&ColumnMetadata{
+					&PreparedResult{
+						PreparedQueryId: []byte{1, 2, 3, 4},
+						VariablesMetadata: &VariablesMetadata{
+							PkIndices: []uint16{0},
+							ColumnSpecs: []*ColumnMetadata{
+								{
 									Keyspace: "ks1",
 									Table:    "table1",
 									Name:     "col1",
 									Index:    0,
 									Type:     datatype.Int,
-								}),
-							)),
-					),
+								},
+							},
+						},
+						ResultMetadata: &RowsMetadata{},
+					},
 					nil,
 				},
 				{
@@ -829,29 +880,33 @@ func TestResultCodec_Decode_Prepared(test *testing.T) {
 						0, 4, c, o, l, _2, // col1 name
 						0, 13, // col1 type
 					},
-					NewPreparedResult(
-						WithPreparedQueryId([]byte{1, 2, 3, 4}),
-						WithVariablesMetadata(
-							NewVariablesMetadata(
-								WithPartitionKeyIndices(0),
-								WithResultColumns(&ColumnMetadata{
+					&PreparedResult{
+						PreparedQueryId: []byte{1, 2, 3, 4},
+						VariablesMetadata: &VariablesMetadata{
+							PkIndices: []uint16{0},
+							ColumnSpecs: []*ColumnMetadata{
+								{
 									Keyspace: "ks1",
 									Table:    "table1",
 									Name:     "col1",
 									Index:    0,
 									Type:     datatype.Int,
-								}),
-							)),
-						WithPreparedResultMetadata(
-							NewRowsMetadata(
-								WithColumns(&ColumnMetadata{
+								},
+							},
+						},
+						ResultMetadata: &RowsMetadata{
+							ColumnCount: 1,
+							ColumnSpecs: []*ColumnMetadata{
+								{
 									Keyspace: "ks1",
 									Table:    "table1",
 									Name:     "col2",
 									Index:    0,
 									Type:     datatype.Varchar,
-								})),
-						)),
+								},
+							},
+						},
+					},
 					nil,
 				},
 			}
@@ -883,10 +938,12 @@ func TestResultCodec_Decode_Prepared(test *testing.T) {
 						0, 0, 0, 4, // flags (NO_METADATA)
 						0, 0, 0, 0, // column count
 					},
-					NewPreparedResult(
-						WithPreparedQueryId([]byte{1, 2, 3, 4}),
-						WithResultMetadataId([]byte{5, 6, 7, 8}),
-					),
+					&PreparedResult{
+						PreparedQueryId:   []byte{1, 2, 3, 4},
+						ResultMetadataId:  []byte{5, 6, 7, 8},
+						VariablesMetadata: &VariablesMetadata{},
+						ResultMetadata:    &RowsMetadata{},
+					},
 					nil,
 				},
 				{
@@ -908,21 +965,23 @@ func TestResultCodec_Decode_Prepared(test *testing.T) {
 						0, 0, 0, 4, // flags (NO_METADATA)
 						0, 0, 0, 0, // column count
 					},
-					NewPreparedResult(
-						WithPreparedQueryId([]byte{1, 2, 3, 4}),
-						WithResultMetadataId([]byte{5, 6, 7, 8}),
-						WithVariablesMetadata(
-							NewVariablesMetadata(
-								WithPartitionKeyIndices(0),
-								WithResultColumns(&ColumnMetadata{
+					&PreparedResult{
+						PreparedQueryId:  []byte{1, 2, 3, 4},
+						ResultMetadataId: []byte{5, 6, 7, 8},
+						VariablesMetadata: &VariablesMetadata{
+							PkIndices: []uint16{0},
+							ColumnSpecs: []*ColumnMetadata{
+								{
 									Keyspace: "ks1",
 									Table:    "table1",
 									Name:     "col1",
 									Index:    0,
 									Type:     datatype.Int,
-								}),
-							)),
-					),
+								},
+							},
+						},
+						ResultMetadata: &RowsMetadata{},
+					},
 					nil,
 				},
 				{
@@ -948,30 +1007,34 @@ func TestResultCodec_Decode_Prepared(test *testing.T) {
 						0, 4, c, o, l, _2, // col1 name
 						0, 13, // col1 type
 					},
-					NewPreparedResult(
-						WithPreparedQueryId([]byte{1, 2, 3, 4}),
-						WithResultMetadataId([]byte{5, 6, 7, 8}),
-						WithVariablesMetadata(
-							NewVariablesMetadata(
-								WithPartitionKeyIndices(0),
-								WithResultColumns(&ColumnMetadata{
+					&PreparedResult{
+						PreparedQueryId:  []byte{1, 2, 3, 4},
+						ResultMetadataId: []byte{5, 6, 7, 8},
+						VariablesMetadata: &VariablesMetadata{
+							PkIndices: []uint16{0},
+							ColumnSpecs: []*ColumnMetadata{
+								{
 									Keyspace: "ks1",
 									Table:    "table1",
 									Name:     "col1",
 									Index:    0,
 									Type:     datatype.Int,
-								}),
-							)),
-						WithPreparedResultMetadata(
-							NewRowsMetadata(
-								WithColumns(&ColumnMetadata{
+								},
+							},
+						},
+						ResultMetadata: &RowsMetadata{
+							ColumnCount: 1,
+							ColumnSpecs: []*ColumnMetadata{
+								{
 									Keyspace: "ks1",
 									Table:    "table1",
 									Name:     "col2",
 									Index:    0,
 									Type:     datatype.Varchar,
-								})),
-						)),
+								},
+							},
+						},
+					},
 					nil,
 				},
 			}

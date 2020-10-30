@@ -27,7 +27,7 @@ var response, _ = NewResponseFrame(
 	map[string][]byte{"hello": {0xca, 0xfe, 0xba, 0xbe}},
 	[]string{"I'm warning you!!"},
 	&message.RowsResult{
-		Metadata: message.NewRowsMetadata(message.NoColumnMetadata(1)),
+		Metadata: &message.RowsMetadata{ColumnCount: 1},
 		Data:     [][][]byte{},
 	})
 

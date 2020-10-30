@@ -10,11 +10,11 @@ import (
 )
 
 func TestResultCodec_Encode_Rows(test *testing.T) {
-	row1 := [][]byte{
+	row1 := []Column{
 		{0, 0, 0, 1},    // int = 1
 		{h, e, l, l, o}, // varchar = "hello"
 	}
-	row2 := [][]byte{
+	row2 := []Column{
 		{0, 0, 0, 2},    // int = 2
 		{w, o, r, l, d}, // varchar = "world"
 	}
@@ -46,12 +46,13 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 			tests := []encodeTestCase{
 				{
 					"rows result without column metadata",
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithResultPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							NoColumnMetadata(2))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
+						},
+						Data: []Row{row1, row2},
+					},
 					[]byte{
 						0, 0, 0, 2, // result type
 						0, 0, 0, 6, // flags (HAS_MORE_PAGES | NO_METADATA)
@@ -67,12 +68,14 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 				},
 				{
 					"rows result with column metadata",
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithResultPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							WithColumns(spec1, spec2))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							ColumnSpecs: []*ColumnMetadata{spec1, spec2},
+							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
+						},
+						Data: []Row{row1, row2},
+					},
 					[]byte{
 						0, 0, 0, 2, // result type
 						0, 0, 0, 3, // flags (GLOBAL_TABLE_SPEC | HAS_MORE_PAGES)
@@ -94,11 +97,13 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 				},
 				{
 					"rows result with column metadata no global table spec last page",
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithColumns(spec1, spec3))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							ColumnSpecs: []*ColumnMetadata{spec1, spec3},
+						},
+						Data: []Row{row1, row2},
+					},
 					[]byte{
 						0, 0, 0, 2, // result type
 						0, 0, 0, 0, // flags
@@ -136,12 +141,13 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 			tests := []encodeTestCase{
 				{
 					"rows result without column metadata",
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithResultPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							NoColumnMetadata(2))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
+						},
+						Data: []Row{row1, row2},
+					},
 					[]byte{
 						0, 0, 0, 2, // result type
 						0, 0, 0, 6, // flags (HAS_MORE_PAGES | NO_METADATA)
@@ -157,12 +163,14 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 				},
 				{
 					"rows result with column metadata",
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithResultPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							WithColumns(spec1, spec2))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							ColumnSpecs: []*ColumnMetadata{spec1, spec2},
+							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
+						},
+						Data: []Row{row1, row2},
+					},
 					[]byte{
 						0, 0, 0, 2, // result type
 						0, 0, 0, 3, // flags (GLOBAL_TABLE_SPEC | HAS_MORE_PAGES)
@@ -184,11 +192,13 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 				},
 				{
 					"rows result with column metadata no global table spec last page",
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithColumns(spec1, spec3))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							ColumnSpecs: []*ColumnMetadata{spec1, spec3},
+						},
+						Data: []Row{row1, row2},
+					},
 					[]byte{
 						0, 0, 0, 2, // result type
 						0, 0, 0, 0, // flags
@@ -211,13 +221,15 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 				},
 				{
 					"rows result with column metadata and new result metadata id",
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithNewResultMetadataId([]byte{1, 2, 3, 4}),
-							WithResultPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							WithColumns(spec1, spec2))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount:         2,
+							ColumnSpecs:         []*ColumnMetadata{spec1, spec2},
+							NewResultMetadataId: []byte{1, 2, 3, 4},
+							PagingState:         []byte{0xca, 0xfe, 0xba, 0xbe},
+						},
+						Data: []Row{row1, row2},
+					},
 					[]byte{
 						0, 0, 0, 2, // result type
 						0, 0, 0, 11, // flags (GLOBAL_TABLE_SPEC | HAS_MORE_PAGES | METADATA_CHANGED)
@@ -255,12 +267,13 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 			tests := []encodeTestCase{
 				{
 					"rows result without column metadata",
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithResultPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							NoColumnMetadata(2))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
+						},
+						Data: []Row{row1, row2},
+					},
 					[]byte{
 						0, 0, 0, 2, // result type
 						0, 0, 0, 6, // flags (HAS_MORE_PAGES | NO_METADATA)
@@ -276,12 +289,14 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 				},
 				{
 					"rows result with column metadata",
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithResultPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							WithColumns(spec1, spec2))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							ColumnSpecs: []*ColumnMetadata{spec1, spec2},
+							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
+						},
+						Data: []Row{row1, row2},
+					},
 					[]byte{
 						0, 0, 0, 2, // result type
 						0, 0, 0, 3, // flags (GLOBAL_TABLE_SPEC | HAS_MORE_PAGES)
@@ -303,11 +318,13 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 				},
 				{
 					"rows result with column metadata no global table spec last page",
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithColumns(spec1, spec3))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							ColumnSpecs: []*ColumnMetadata{spec1, spec3},
+						},
+						Data: []Row{row1, row2},
+					},
 					[]byte{
 						0, 0, 0, 2, // result type
 						0, 0, 0, 0, // flags
@@ -330,15 +347,15 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 				},
 				{
 					"rows result with continuous paging",
-					NewRowsResult(
-						WithRowsMetadata(
-							NewRowsMetadata(
-								WithContinuousPageNumber(42),
-								LastContinuousPage(),
-								WithColumns(spec1, spec2),
-							)),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount:          2,
+							ColumnSpecs:          []*ColumnMetadata{spec1, spec2},
+							LastContinuousPage:   true,
+							ContinuousPageNumber: 42,
+						},
+						Data: []Row{row1, row2},
+					},
 					[]byte{
 						0, 0, 0, 2, // result type
 						0b1100_0000, 0, 0, 1, // flags (last page | page no | global table spec)
@@ -375,12 +392,13 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 			tests := []encodeTestCase{
 				{
 					"rows result without column metadata",
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithResultPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							NoColumnMetadata(2))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
+						},
+						Data: []Row{row1, row2},
+					},
 					[]byte{
 						0, 0, 0, 2, // result type
 						0, 0, 0, 6, // flags (HAS_MORE_PAGES | NO_METADATA)
@@ -396,12 +414,14 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 				},
 				{
 					"rows result with column metadata",
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithResultPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							WithColumns(spec1, spec2))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							ColumnSpecs: []*ColumnMetadata{spec1, spec2},
+							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
+						},
+						Data: []Row{row1, row2},
+					},
 					[]byte{
 						0, 0, 0, 2, // result type
 						0, 0, 0, 3, // flags (GLOBAL_TABLE_SPEC | HAS_MORE_PAGES)
@@ -423,11 +443,13 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 				},
 				{
 					"rows result with column metadata no global table spec last page",
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithColumns(spec1, spec3))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							ColumnSpecs: []*ColumnMetadata{spec1, spec3},
+						},
+						Data: []Row{row1, row2},
+					},
 					[]byte{
 						0, 0, 0, 2, // result type
 						0, 0, 0, 0, // flags
@@ -450,13 +472,15 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 				},
 				{
 					"rows result with column metadata and new result metadata id",
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithNewResultMetadataId([]byte{1, 2, 3, 4}),
-							WithResultPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							WithColumns(spec1, spec2))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							NewResultMetadataId: []byte{1, 2, 3, 4},
+							ColumnCount:         2,
+							ColumnSpecs:         []*ColumnMetadata{spec1, spec2},
+							PagingState:         []byte{0xca, 0xfe, 0xba, 0xbe},
+						},
+						Data: []Row{row1, row2},
+					},
 					[]byte{
 						0, 0, 0, 2, // result type
 						0, 0, 0, 11, // flags (GLOBAL_TABLE_SPEC | HAS_MORE_PAGES | METADATA_CHANGED)
@@ -479,15 +503,15 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 				},
 				{
 					"rows result with continuous paging",
-					NewRowsResult(
-						WithRowsMetadata(
-							NewRowsMetadata(
-								WithContinuousPageNumber(42),
-								LastContinuousPage(),
-								WithColumns(spec1, spec2),
-							)),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount:          2,
+							ColumnSpecs:          []*ColumnMetadata{spec1, spec2},
+							LastContinuousPage:   true,
+							ContinuousPageNumber: 42,
+						},
+						Data: []Row{row1, row2},
+					},
 					[]byte{
 						0, 0, 0, 2, // result type
 						0b1100_0000, 0, 0, 1, // flags (last page | page no | global table spec)
@@ -557,12 +581,13 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"rows result without column metadata",
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithResultPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							NoColumnMetadata(2))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
+						},
+						Data: []Row{row1, row2},
+					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -573,12 +598,14 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 				},
 				{
 					"rows result with column metadata",
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithResultPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							WithColumns(spec1, spec2))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							ColumnSpecs: []*ColumnMetadata{spec1, spec2},
+							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
+						},
+						Data: []Row{row1, row2},
+					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -595,11 +622,13 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 				},
 				{
 					"rows result with column metadata no global table spec last page",
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithColumns(spec1, spec3))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							ColumnSpecs: []*ColumnMetadata{spec1, spec3},
+						},
+						Data: []Row{row1, row2},
+					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -631,12 +660,13 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"rows result without column metadata",
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithResultPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							NoColumnMetadata(2))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
+						},
+						Data: []Row{row1, row2},
+					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -647,12 +677,14 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 				},
 				{
 					"rows result with column metadata",
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithResultPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							WithColumns(spec1, spec2))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							ColumnSpecs: []*ColumnMetadata{spec1, spec2},
+							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
+						},
+						Data: []Row{row1, row2},
+					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -669,11 +701,13 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 				},
 				{
 					"rows result with column metadata no global table spec last page",
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithColumns(spec1, spec3))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							ColumnSpecs: []*ColumnMetadata{spec1, spec3},
+						},
+						Data: []Row{row1, row2},
+					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -691,13 +725,15 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 				},
 				{
 					"rows result with column metadata and new result metadata id",
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithNewResultMetadataId([]byte{1, 2, 3, 4}),
-							WithResultPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							WithColumns(spec1, spec2))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							NewResultMetadataId: []byte{1, 2, 3, 4},
+							ColumnCount:         2,
+							ColumnSpecs:         []*ColumnMetadata{spec1, spec2},
+							PagingState:         []byte{0xca, 0xfe, 0xba, 0xbe},
+						},
+						Data: []Row{row1, row2},
+					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -729,12 +765,13 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"rows result without column metadata",
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithResultPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							NoColumnMetadata(2))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
+						},
+						Data: []Row{row1, row2},
+					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -745,12 +782,14 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 				},
 				{
 					"rows result with column metadata",
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithResultPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							WithColumns(spec1, spec2))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							ColumnSpecs: []*ColumnMetadata{spec1, spec2},
+							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
+						},
+						Data: []Row{row1, row2},
+					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -767,11 +806,13 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 				},
 				{
 					"rows result with column metadata no global table spec last page",
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithColumns(spec1, spec3))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							ColumnSpecs: []*ColumnMetadata{spec1, spec3},
+						},
+						Data: []Row{row1, row2},
+					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -789,15 +830,15 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 				},
 				{
 					"rows result with continuous paging",
-					NewRowsResult(
-						WithRowsMetadata(
-							NewRowsMetadata(
-								WithContinuousPageNumber(42),
-								LastContinuousPage(),
-								WithColumns(spec1, spec2),
-							)),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount:          2,
+							ColumnSpecs:          []*ColumnMetadata{spec1, spec2},
+							LastContinuousPage:   true,
+							ContinuousPageNumber: 42,
+						},
+						Data: []Row{row1, row2},
+					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -828,12 +869,13 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"rows result without column metadata",
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithResultPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							NoColumnMetadata(2))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
+						},
+						Data: []Row{row1, row2},
+					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -844,12 +886,14 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 				},
 				{
 					"rows result with column metadata",
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithResultPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							WithColumns(spec1, spec2))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							ColumnSpecs: []*ColumnMetadata{spec1, spec2},
+							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
+						},
+						Data: []Row{row1, row2},
+					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -866,11 +910,13 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 				},
 				{
 					"rows result with column metadata no global table spec last page",
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithColumns(spec1, spec3))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							ColumnSpecs: []*ColumnMetadata{spec1, spec3},
+						},
+						Data: []Row{row1, row2},
+					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -888,13 +934,15 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 				},
 				{
 					"rows result with column metadata and new result metadata id",
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithNewResultMetadataId([]byte{1, 2, 3, 4}),
-							WithResultPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							WithColumns(spec1, spec2))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							NewResultMetadataId: []byte{1, 2, 3, 4},
+							ColumnCount:         2,
+							ColumnSpecs:         []*ColumnMetadata{spec1, spec2},
+							PagingState:         []byte{0xca, 0xfe, 0xba, 0xbe},
+						},
+						Data: []Row{row1, row2},
+					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -912,15 +960,15 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 				},
 				{
 					"rows result with continuous paging",
-					NewRowsResult(
-						WithRowsMetadata(
-							NewRowsMetadata(
-								WithContinuousPageNumber(42),
-								LastContinuousPage(),
-								WithColumns(spec1, spec2),
-							)),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount:          2,
+							ColumnSpecs:          []*ColumnMetadata{spec1, spec2},
+							LastContinuousPage:   true,
+							ContinuousPageNumber: 42,
+						},
+						Data: []Row{row1, row2},
+					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -995,12 +1043,13 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 						0, 0, 0, 4, 0, 0, 0, 2, // row2, col1
 						0, 0, 0, 5, w, o, r, l, d, // row2, col2
 					},
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithResultPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							NoColumnMetadata(2))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
+						},
+						Data: []Row{row1, row2},
+					},
 					nil,
 				},
 				{
@@ -1022,12 +1071,14 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 						0, 0, 0, 4, 0, 0, 0, 2, // row2, col1
 						0, 0, 0, 5, w, o, r, l, d, // row2, col2
 					},
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithResultPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							WithColumns(spec1, spec2))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							ColumnSpecs: []*ColumnMetadata{spec1, spec2},
+							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
+						},
+						Data: []Row{row1, row2},
+					},
 					nil,
 				},
 				{
@@ -1050,11 +1101,13 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 						0, 0, 0, 4, 0, 0, 0, 2, // row2, col1
 						0, 0, 0, 5, w, o, r, l, d, // row2, col2
 					},
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithColumns(spec1, spec3))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							ColumnSpecs: []*ColumnMetadata{spec1, spec3},
+						},
+						Data: []Row{row1, row2},
+					},
 					nil,
 				},
 			}
@@ -1085,12 +1138,13 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 						0, 0, 0, 4, 0, 0, 0, 2, // row2, col1
 						0, 0, 0, 5, w, o, r, l, d, // row2, col2
 					},
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithResultPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							NoColumnMetadata(2))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
+						},
+						Data: []Row{row1, row2},
+					},
 					nil,
 				},
 				{
@@ -1112,12 +1166,14 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 						0, 0, 0, 4, 0, 0, 0, 2, // row2, col1
 						0, 0, 0, 5, w, o, r, l, d, // row2, col2
 					},
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithResultPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							WithColumns(spec1, spec2))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							ColumnSpecs: []*ColumnMetadata{spec1, spec2},
+							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
+						},
+						Data: []Row{row1, row2},
+					},
 					nil,
 				},
 				{
@@ -1140,11 +1196,13 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 						0, 0, 0, 4, 0, 0, 0, 2, // row2, col1
 						0, 0, 0, 5, w, o, r, l, d, // row2, col2
 					},
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithColumns(spec1, spec3))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							ColumnSpecs: []*ColumnMetadata{spec1, spec3},
+						},
+						Data: []Row{row1, row2},
+					},
 					nil,
 				},
 			}
@@ -1175,12 +1233,13 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 						0, 0, 0, 4, 0, 0, 0, 2, // row2, col1
 						0, 0, 0, 5, w, o, r, l, d, // row2, col2
 					},
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithResultPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							NoColumnMetadata(2))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
+						},
+						Data: []Row{row1, row2},
+					},
 					nil,
 				},
 				{
@@ -1202,12 +1261,14 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 						0, 0, 0, 4, 0, 0, 0, 2, // row2, col1
 						0, 0, 0, 5, w, o, r, l, d, // row2, col2
 					},
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithResultPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							WithColumns(spec1, spec2))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							ColumnSpecs: []*ColumnMetadata{spec1, spec2},
+							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
+						},
+						Data: []Row{row1, row2},
+					},
 					nil,
 				},
 				{
@@ -1230,11 +1291,13 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 						0, 0, 0, 4, 0, 0, 0, 2, // row2, col1
 						0, 0, 0, 5, w, o, r, l, d, // row2, col2
 					},
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithColumns(spec1, spec3))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							ColumnSpecs: []*ColumnMetadata{spec1, spec3},
+						},
+						Data: []Row{row1, row2},
+					},
 					nil,
 				},
 				{
@@ -1256,15 +1319,15 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 						0, 0, 0, 4, 0, 0, 0, 2, // row2, col1
 						0, 0, 0, 5, w, o, r, l, d, // row2, col2
 					},
-					NewRowsResult(
-						WithRowsMetadata(
-							NewRowsMetadata(
-								WithContinuousPageNumber(42),
-								LastContinuousPage(),
-								WithColumns(spec1, spec2),
-							)),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount:          2,
+							ColumnSpecs:          []*ColumnMetadata{spec1, spec2},
+							LastContinuousPage:   true,
+							ContinuousPageNumber: 42,
+						},
+						Data: []Row{row1, row2},
+					},
 					nil,
 				},
 			}
@@ -1295,12 +1358,13 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 						0, 0, 0, 4, 0, 0, 0, 2, // row2, col1
 						0, 0, 0, 5, w, o, r, l, d, // row2, col2
 					},
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithResultPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							NoColumnMetadata(2))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
+						},
+						Data: []Row{row1, row2},
+					},
 					nil,
 				},
 				{
@@ -1322,12 +1386,14 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 						0, 0, 0, 4, 0, 0, 0, 2, // row2, col1
 						0, 0, 0, 5, w, o, r, l, d, // row2, col2
 					},
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithResultPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							WithColumns(spec1, spec2))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							ColumnSpecs: []*ColumnMetadata{spec1, spec2},
+							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
+						},
+						Data: []Row{row1, row2},
+					},
 					nil,
 				},
 				{
@@ -1350,11 +1416,13 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 						0, 0, 0, 4, 0, 0, 0, 2, // row2, col1
 						0, 0, 0, 5, w, o, r, l, d, // row2, col2
 					},
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithColumns(spec1, spec3))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount: 2,
+							ColumnSpecs: []*ColumnMetadata{spec1, spec3},
+						},
+						Data: []Row{row1, row2},
+					},
 					nil,
 				},
 				{
@@ -1377,13 +1445,15 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 						0, 0, 0, 4, 0, 0, 0, 2, // row2, col1
 						0, 0, 0, 5, w, o, r, l, d, // row2, col2
 					},
-					NewRowsResult(
-						WithRowsMetadata(NewRowsMetadata(
-							WithNewResultMetadataId([]byte{1, 2, 3, 4}),
-							WithResultPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-							WithColumns(spec1, spec2))),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							NewResultMetadataId: []byte{1, 2, 3, 4},
+							ColumnCount:         2,
+							ColumnSpecs:         []*ColumnMetadata{spec1, spec2},
+							PagingState:         []byte{0xca, 0xfe, 0xba, 0xbe},
+						},
+						Data: []Row{row1, row2},
+					},
 					nil,
 				},
 				{
@@ -1405,15 +1475,15 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 						0, 0, 0, 4, 0, 0, 0, 2, // row2, col1
 						0, 0, 0, 5, w, o, r, l, d, // row2, col2
 					},
-					NewRowsResult(
-						WithRowsMetadata(
-							NewRowsMetadata(
-								WithContinuousPageNumber(42),
-								LastContinuousPage(),
-								WithColumns(spec1, spec2),
-							)),
-						WithRowsData(row1, row2),
-					),
+					&RowsResult{
+						Metadata: &RowsMetadata{
+							ColumnCount:          2,
+							ColumnSpecs:          []*ColumnMetadata{spec1, spec2},
+							LastContinuousPage:   true,
+							ContinuousPageNumber: 42,
+						},
+						Data: []Row{row1, row2},
+					},
 					nil,
 				},
 			}
