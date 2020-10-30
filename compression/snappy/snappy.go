@@ -1,22 +1,22 @@
-package compression
+package snappy
 
 import (
 	"bytes"
 	"github.com/golang/snappy"
 )
 
-type SnappyCompressor struct{}
+type Compressor struct{}
 
-func (l SnappyCompressor) Algorithm() string {
+func (l Compressor) Algorithm() string {
 	return "SNAPPY"
 }
 
-func (l SnappyCompressor) Compress(uncompressedMessage *bytes.Buffer) (*bytes.Buffer, error) {
+func (l Compressor) Compress(uncompressedMessage *bytes.Buffer) (*bytes.Buffer, error) {
 	compressedMessage := snappy.Encode(nil, uncompressedMessage.Bytes())
 	return bytes.NewBuffer(compressedMessage), nil
 }
 
-func (l SnappyCompressor) Decompress(compressedMessage *bytes.Buffer) (*bytes.Buffer, error) {
+func (l Compressor) Decompress(compressedMessage *bytes.Buffer) (*bytes.Buffer, error) {
 	decompressedMessage, err := snappy.Decode(nil, compressedMessage.Bytes())
 	if err != nil {
 		return nil, err
