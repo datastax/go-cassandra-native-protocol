@@ -13,15 +13,15 @@ type TupleType interface {
 }
 
 type tupleType struct {
-	FieldTypes []DataType
+	fieldTypes []DataType
 }
 
 func (t *tupleType) GetFieldTypes() []DataType {
-	return t.FieldTypes
+	return t.fieldTypes
 }
 
 func NewTupleType(fieldTypes ...DataType) TupleType {
-	return &tupleType{FieldTypes: fieldTypes}
+	return &tupleType{fieldTypes: fieldTypes}
 }
 
 func (t *tupleType) GetDataTypeCode() primitive.DataTypeCode {
@@ -29,7 +29,7 @@ func (t *tupleType) GetDataTypeCode() primitive.DataTypeCode {
 }
 
 func (t *tupleType) String() string {
-	return fmt.Sprintf("tuple<%v>", t.FieldTypes)
+	return fmt.Sprintf("tuple<%v>", t.fieldTypes)
 }
 
 func (t *tupleType) MarshalJSON() ([]byte, error) {
@@ -74,9 +74,9 @@ func (c *tupleTypeCodec) decode(source io.Reader, version primitive.ProtocolVers
 		return nil, fmt.Errorf("cannot read tuple field count: %w", err)
 	} else {
 		tupleType := &tupleType{}
-		tupleType.FieldTypes = make([]DataType, fieldCount)
+		tupleType.fieldTypes = make([]DataType, fieldCount)
 		for i := 0; i < int(fieldCount); i++ {
-			if tupleType.FieldTypes[i], err = ReadDataType(source, version); err != nil {
+			if tupleType.fieldTypes[i], err = ReadDataType(source, version); err != nil {
 				return nil, fmt.Errorf("cannot read tuple field %d: %w", i, err)
 			}
 		}
