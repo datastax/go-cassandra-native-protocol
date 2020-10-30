@@ -2,12 +2,12 @@ package client
 
 import (
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/frame"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/message"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
 )
 
-func NewStartupRequest(c *CqlConnection, version cassandraprotocol.ProtocolVersion, streamId int16) *frame.Frame {
+func NewStartupRequest(c *CqlConnection, version primitives.ProtocolVersion, streamId int16) *frame.Frame {
 	var startup *message.Startup
 	if c.codec.CompressionAlgorithm() == "NONE" {
 		startup = message.NewStartup()
@@ -18,7 +18,7 @@ func NewStartupRequest(c *CqlConnection, version cassandraprotocol.ProtocolVersi
 	return request
 }
 
-func Handshake(client *CqlConnection, version cassandraprotocol.ProtocolVersion, streamId int16) error {
+func Handshake(client *CqlConnection, version primitives.ProtocolVersion, streamId int16) error {
 	if err := client.Send(NewStartupRequest(client, version, streamId)); err != nil {
 		return err
 	} else if response, err := client.Receive(); err != nil {
@@ -30,7 +30,7 @@ func Handshake(client *CqlConnection, version cassandraprotocol.ProtocolVersion,
 	}
 }
 
-func HandshakeAuth(client *CqlConnection, version cassandraprotocol.ProtocolVersion, streamId int16, username string, password string) error {
+func HandshakeAuth(client *CqlConnection, version primitives.ProtocolVersion, streamId int16, username string, password string) error {
 	authenticator := &PlainTextAuthenticator{
 		username: username,
 		password: password,

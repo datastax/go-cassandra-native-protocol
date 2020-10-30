@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
 	"io"
 )
@@ -21,8 +20,8 @@ func (m *Execute) IsResponse() bool {
 	return false
 }
 
-func (m *Execute) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeExecute
+func (m *Execute) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeExecute
 }
 
 func (m *Execute) String() string {
@@ -31,7 +30,7 @@ func (m *Execute) String() string {
 
 type ExecuteCodec struct{}
 
-func (c *ExecuteCodec) Encode(msg Message, dest io.Writer, version cassandraprotocol.ProtocolVersion) error {
+func (c *ExecuteCodec) Encode(msg Message, dest io.Writer, version primitives.ProtocolVersion) error {
 	execute, ok := msg.(*Execute)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.Execute, got %T", msg))
@@ -54,7 +53,7 @@ func (c *ExecuteCodec) Encode(msg Message, dest io.Writer, version cassandraprot
 	return nil
 }
 
-func (c *ExecuteCodec) EncodedLength(msg Message, version cassandraprotocol.ProtocolVersion) (size int, err error) {
+func (c *ExecuteCodec) EncodedLength(msg Message, version primitives.ProtocolVersion) (size int, err error) {
 	execute, ok := msg.(*Execute)
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected *message.Execute, got %T", msg))
@@ -70,7 +69,7 @@ func (c *ExecuteCodec) EncodedLength(msg Message, version cassandraprotocol.Prot
 	}
 }
 
-func (c *ExecuteCodec) Decode(source io.Reader, version cassandraprotocol.ProtocolVersion) (msg Message, err error) {
+func (c *ExecuteCodec) Decode(source io.Reader, version primitives.ProtocolVersion) (msg Message, err error) {
 	var execute = &Execute{
 		Options: nil,
 	}
@@ -92,6 +91,6 @@ func (c *ExecuteCodec) Decode(source io.Reader, version cassandraprotocol.Protoc
 	return execute, nil
 }
 
-func (c *ExecuteCodec) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeExecute
+func (c *ExecuteCodec) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeExecute
 }

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/message"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
 	"io"
@@ -13,13 +12,13 @@ import (
 // EncodeFrame encodes the entire frame, compressing the body if needed.
 func (c *Codec) EncodeFrame(frame *Frame, dest io.Writer) error {
 	version := frame.Header.Version
-	if err := cassandraprotocol.CheckProtocolVersion(version); err != nil {
+	if err := primitives.CheckProtocolVersion(version); err != nil {
 		return err
 	}
-	if version < cassandraprotocol.ProtocolVersion4 && frame.Body.CustomPayload != nil {
+	if version < primitives.ProtocolVersion4 && frame.Body.CustomPayload != nil {
 		return fmt.Errorf("custom payloads are not supported in protocol version %v", version)
 	}
-	if version < cassandraprotocol.ProtocolVersion4 && frame.Body.Warnings != nil {
+	if version < primitives.ProtocolVersion4 && frame.Body.Warnings != nil {
 		return fmt.Errorf("warnings are not supported in protocol version %v", version)
 	}
 	if c.compressor != nil && frame.IsCompressible() {
@@ -32,7 +31,7 @@ func (c *Codec) EncodeFrame(frame *Frame, dest io.Writer) error {
 // EncodeRawFrame encodes the header and writes the body as raw bytes.
 func (c *Codec) EncodeRawFrame(frame *RawFrame, dest io.Writer) error {
 	version := frame.RawHeader.Version
-	if err := cassandraprotocol.CheckProtocolVersion(version); err != nil {
+	if err := primitives.CheckProtocolVersion(version); err != nil {
 		return err
 	}
 	if err := c.encodeRawHeader(frame.RawHeader, dest); err != nil {

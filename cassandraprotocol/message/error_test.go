@@ -3,7 +3,6 @@ package message
 import (
 	"bytes"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
 	"github.com/stretchr/testify/assert"
 	"net"
@@ -13,7 +12,7 @@ import (
 func TestErrorCodec_Encode(test *testing.T) {
 	codec := &ErrorCodec{}
 	// errors encoded the same in all versions
-	for _, version := range cassandraprotocol.AllProtocolVersions() {
+	for _, version := range primitives.AllProtocolVersions() {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -108,7 +107,7 @@ func TestErrorCodec_Encode(test *testing.T) {
 				},
 				{
 					"unavailable",
-					&Unavailable{"BOOM", cassandraprotocol.ConsistencyLevelLocalQuorum, 3, 2},
+					&Unavailable{"BOOM", primitives.ConsistencyLevelLocalQuorum, 3, 2},
 					[]byte{
 						0, 0, 0b_0001_0000, 0b_0000_0000,
 						0, 4, B, O, O, M,
@@ -120,7 +119,7 @@ func TestErrorCodec_Encode(test *testing.T) {
 				},
 				{
 					"read timeout",
-					&ReadTimeout{"BOOM", cassandraprotocol.ConsistencyLevelLocalQuorum, 1, 2, true},
+					&ReadTimeout{"BOOM", primitives.ConsistencyLevelLocalQuorum, 1, 2, true},
 					[]byte{
 						0, 0, 0b_0001_0010, 0b_0000_0000,
 						0, 4, B, O, O, M,
@@ -133,7 +132,7 @@ func TestErrorCodec_Encode(test *testing.T) {
 				},
 				{
 					"write timeout",
-					&WriteTimeout{"BOOM", cassandraprotocol.ConsistencyLevelLocalQuorum, 1, 2, cassandraprotocol.WriteTypeBatchLog},
+					&WriteTimeout{"BOOM", primitives.ConsistencyLevelLocalQuorum, 1, 2, primitives.WriteTypeBatchLog},
 					[]byte{
 						0, 0, 0b_0001_0001, 0b_0000_0000,
 						0, 4, B, O, O, M,
@@ -191,14 +190,14 @@ func TestErrorCodec_Encode(test *testing.T) {
 		})
 	}
 	// num failures v3, v4
-	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion3, cassandraprotocol.ProtocolVersion4} {
+	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersion3, primitives.ProtocolVersion4} {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
 					"read failure",
 					&ReadFailure{
 						"BOOM",
-						cassandraprotocol.ConsistencyLevelLocalQuorum,
+						primitives.ConsistencyLevelLocalQuorum,
 						0,
 						2,
 						1,
@@ -220,12 +219,12 @@ func TestErrorCodec_Encode(test *testing.T) {
 					"write failure",
 					&WriteFailure{
 						"BOOM",
-						cassandraprotocol.ConsistencyLevelLocalQuorum,
+						primitives.ConsistencyLevelLocalQuorum,
 						0,
 						2,
 						1,
 						nil,
-						cassandraprotocol.WriteTypeBatchLog,
+						primitives.WriteTypeBatchLog,
 					},
 					[]byte{
 						0, 0, 0b_0001_0101, 0b_0000_0000,
@@ -250,18 +249,18 @@ func TestErrorCodec_Encode(test *testing.T) {
 		})
 	}
 	// reason map in v5, DSE v1, DSE v2
-	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion5, cassandraprotocol.ProtocolVersionDse1, cassandraprotocol.ProtocolVersionDse2} {
+	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersion5, primitives.ProtocolVersionDse1, primitives.ProtocolVersionDse2} {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
 					"read failure",
 					&ReadFailure{
 						"BOOM",
-						cassandraprotocol.ConsistencyLevelLocalQuorum,
+						primitives.ConsistencyLevelLocalQuorum,
 						0,
 						2,
 						0,
-						map[string]cassandraprotocol.ReasonMapFailureCode{"192.168.1.1": cassandraprotocol.ReasonMapFailureCodeTooManyTombstonesRead},
+						map[string]primitives.ReasonMapFailureCode{"192.168.1.1": primitives.ReasonMapFailureCodeTooManyTombstonesRead},
 						false,
 					},
 					[]byte{
@@ -281,12 +280,12 @@ func TestErrorCodec_Encode(test *testing.T) {
 					"write failure",
 					&WriteFailure{
 						"BOOM",
-						cassandraprotocol.ConsistencyLevelLocalQuorum,
+						primitives.ConsistencyLevelLocalQuorum,
 						0,
 						2,
 						0,
-						map[string]cassandraprotocol.ReasonMapFailureCode{"192.168.1.1": cassandraprotocol.ReasonMapFailureCodeTooManyTombstonesRead},
-						cassandraprotocol.WriteTypeBatchLog,
+						map[string]primitives.ReasonMapFailureCode{"192.168.1.1": primitives.ReasonMapFailureCodeTooManyTombstonesRead},
+						primitives.WriteTypeBatchLog,
 					},
 					[]byte{
 						0, 0, 0b_0001_0101, 0b_0000_0000,
@@ -317,7 +316,7 @@ func TestErrorCodec_Encode(test *testing.T) {
 func TestErrorCodec_EncodedLength(test *testing.T) {
 	codec := &ErrorCodec{}
 	// errors encoded the same in all versions
-	for _, version := range cassandraprotocol.AllProtocolVersions() {
+	for _, version := range primitives.AllProtocolVersions() {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -382,7 +381,7 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 				},
 				{
 					"unavailable",
-					&Unavailable{"BOOM", cassandraprotocol.ConsistencyLevelLocalQuorum, 3, 2},
+					&Unavailable{"BOOM", primitives.ConsistencyLevelLocalQuorum, 3, 2},
 					primitives.LengthOfInt +
 						primitives.LengthOfString("BOOM") +
 						primitives.LengthOfShort + // consistency
@@ -392,7 +391,7 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 				},
 				{
 					"read timeout",
-					&ReadTimeout{"BOOM", cassandraprotocol.ConsistencyLevelLocalQuorum, 1, 2, true},
+					&ReadTimeout{"BOOM", primitives.ConsistencyLevelLocalQuorum, 1, 2, true},
 					primitives.LengthOfInt +
 						primitives.LengthOfString("BOOM") +
 						primitives.LengthOfShort + // consistency
@@ -403,13 +402,13 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 				},
 				{
 					"write timeout",
-					&WriteTimeout{"BOOM", cassandraprotocol.ConsistencyLevelLocalQuorum, 1, 2, cassandraprotocol.WriteTypeBatchLog},
+					&WriteTimeout{"BOOM", primitives.ConsistencyLevelLocalQuorum, 1, 2, primitives.WriteTypeBatchLog},
 					primitives.LengthOfInt +
 						primitives.LengthOfString("BOOM") +
 						primitives.LengthOfShort + // consistency
 						primitives.LengthOfInt + // received
 						primitives.LengthOfInt + // block for
-						primitives.LengthOfString(cassandraprotocol.WriteTypeBatchLog), // write type
+						primitives.LengthOfString(primitives.WriteTypeBatchLog), // write type
 					nil,
 				},
 				{
@@ -450,14 +449,14 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 		})
 	}
 	// num failures in v3, v4
-	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion3, cassandraprotocol.ProtocolVersion4} {
+	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersion3, primitives.ProtocolVersion4} {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"read failure",
 					&ReadFailure{
 						"BOOM",
-						cassandraprotocol.ConsistencyLevelLocalQuorum,
+						primitives.ConsistencyLevelLocalQuorum,
 						0,
 						2,
 						1,
@@ -477,12 +476,12 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 					"write failure",
 					&WriteFailure{
 						"BOOM",
-						cassandraprotocol.ConsistencyLevelLocalQuorum,
+						primitives.ConsistencyLevelLocalQuorum,
 						0,
 						2,
 						1,
 						nil,
-						cassandraprotocol.WriteTypeBatchLog,
+						primitives.WriteTypeBatchLog,
 					},
 					primitives.LengthOfInt +
 						primitives.LengthOfString("BOOM") +
@@ -490,7 +489,7 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 						primitives.LengthOfInt + // received
 						primitives.LengthOfInt + // block for
 						primitives.LengthOfInt + // num failures
-						primitives.LengthOfString(cassandraprotocol.WriteTypeBatchLog), // write type
+						primitives.LengthOfString(primitives.WriteTypeBatchLog), // write type
 					nil,
 				},
 			}
@@ -504,18 +503,18 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 		})
 	}
 	// reason map in v5, DSE v1, DSE v2
-	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion5, cassandraprotocol.ProtocolVersionDse1, cassandraprotocol.ProtocolVersionDse2} {
+	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersion5, primitives.ProtocolVersionDse1, primitives.ProtocolVersionDse2} {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"read failure",
 					&ReadFailure{
 						"BOOM",
-						cassandraprotocol.ConsistencyLevelLocalQuorum,
+						primitives.ConsistencyLevelLocalQuorum,
 						0,
 						2,
 						0,
-						map[string]cassandraprotocol.ReasonMapFailureCode{"192.168.1.1": cassandraprotocol.ReasonMapFailureCodeTooManyTombstonesRead},
+						map[string]primitives.ReasonMapFailureCode{"192.168.1.1": primitives.ReasonMapFailureCodeTooManyTombstonesRead},
 						false,
 					},
 					primitives.LengthOfInt +
@@ -533,12 +532,12 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 					"write failure",
 					&WriteFailure{
 						"BOOM",
-						cassandraprotocol.ConsistencyLevelLocalQuorum,
+						primitives.ConsistencyLevelLocalQuorum,
 						0,
 						2,
 						0,
-						map[string]cassandraprotocol.ReasonMapFailureCode{"192.168.1.1": cassandraprotocol.ReasonMapFailureCodeTooManyTombstonesRead},
-						cassandraprotocol.WriteTypeBatchLog,
+						map[string]primitives.ReasonMapFailureCode{"192.168.1.1": primitives.ReasonMapFailureCodeTooManyTombstonesRead},
+						primitives.WriteTypeBatchLog,
 					},
 					primitives.LengthOfInt +
 						primitives.LengthOfString("BOOM") +
@@ -548,7 +547,7 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 						primitives.LengthOfInt + // map length
 						primitives.LengthOfByte + net.IPv4len + // map key length
 						primitives.LengthOfShort + // map value length (reason code)
-						primitives.LengthOfString(cassandraprotocol.WriteTypeBatchLog), // write type
+						primitives.LengthOfString(primitives.WriteTypeBatchLog), // write type
 					nil,
 				},
 			}
@@ -566,7 +565,7 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 func TestErrorCodec_Decode(test *testing.T) {
 	codec := &ErrorCodec{}
 	// errors encoded the same in all versions
-	for _, version := range cassandraprotocol.AllProtocolVersions() {
+	for _, version := range primitives.AllProtocolVersions() {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{
@@ -668,7 +667,7 @@ func TestErrorCodec_Decode(test *testing.T) {
 						0, 0, 0, 3,
 						0, 0, 0, 2,
 					},
-					&Unavailable{"BOOM", cassandraprotocol.ConsistencyLevelLocalQuorum, 3, 2},
+					&Unavailable{"BOOM", primitives.ConsistencyLevelLocalQuorum, 3, 2},
 					nil,
 				},
 				{
@@ -681,7 +680,7 @@ func TestErrorCodec_Decode(test *testing.T) {
 						0, 0, 0, 2,
 						1, // data present
 					},
-					&ReadTimeout{"BOOM", cassandraprotocol.ConsistencyLevelLocalQuorum, 1, 2, true},
+					&ReadTimeout{"BOOM", primitives.ConsistencyLevelLocalQuorum, 1, 2, true},
 					nil,
 				},
 				{
@@ -694,7 +693,7 @@ func TestErrorCodec_Decode(test *testing.T) {
 						0, 0, 0, 2,
 						0, 9, B, A, T, C, H, __, L, O, G,
 					},
-					&WriteTimeout{"BOOM", cassandraprotocol.ConsistencyLevelLocalQuorum, 1, 2, cassandraprotocol.WriteTypeBatchLog},
+					&WriteTimeout{"BOOM", primitives.ConsistencyLevelLocalQuorum, 1, 2, primitives.WriteTypeBatchLog},
 					nil,
 				},
 				{
@@ -744,7 +743,7 @@ func TestErrorCodec_Decode(test *testing.T) {
 		})
 	}
 	// num failures in v3, v4
-	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion3, cassandraprotocol.ProtocolVersion4} {
+	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersion3, primitives.ProtocolVersion4} {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{
@@ -760,7 +759,7 @@ func TestErrorCodec_Decode(test *testing.T) {
 					},
 					&ReadFailure{
 						"BOOM",
-						cassandraprotocol.ConsistencyLevelLocalQuorum,
+						primitives.ConsistencyLevelLocalQuorum,
 						0,
 						2,
 						1,
@@ -782,12 +781,12 @@ func TestErrorCodec_Decode(test *testing.T) {
 					},
 					&WriteFailure{
 						"BOOM",
-						cassandraprotocol.ConsistencyLevelLocalQuorum,
+						primitives.ConsistencyLevelLocalQuorum,
 						0,
 						2,
 						1,
 						nil,
-						cassandraprotocol.WriteTypeBatchLog,
+						primitives.WriteTypeBatchLog,
 					},
 					nil,
 				},
@@ -803,7 +802,7 @@ func TestErrorCodec_Decode(test *testing.T) {
 		})
 	}
 	// reason map in v5, DSE v1, DSE v2
-	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion5, cassandraprotocol.ProtocolVersionDse1, cassandraprotocol.ProtocolVersionDse2} {
+	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersion5, primitives.ProtocolVersionDse1, primitives.ProtocolVersionDse2} {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{
@@ -821,11 +820,11 @@ func TestErrorCodec_Decode(test *testing.T) {
 					},
 					&ReadFailure{
 						"BOOM",
-						cassandraprotocol.ConsistencyLevelLocalQuorum,
+						primitives.ConsistencyLevelLocalQuorum,
 						0,
 						2,
 						0,
-						map[string]cassandraprotocol.ReasonMapFailureCode{"192.168.1.1": cassandraprotocol.ReasonMapFailureCodeTooManyTombstonesRead},
+						map[string]primitives.ReasonMapFailureCode{"192.168.1.1": primitives.ReasonMapFailureCodeTooManyTombstonesRead},
 						false,
 					},
 					nil,
@@ -845,12 +844,12 @@ func TestErrorCodec_Decode(test *testing.T) {
 					},
 					&WriteFailure{
 						"BOOM",
-						cassandraprotocol.ConsistencyLevelLocalQuorum,
+						primitives.ConsistencyLevelLocalQuorum,
 						0,
 						2,
 						0,
-						map[string]cassandraprotocol.ReasonMapFailureCode{"192.168.1.1": cassandraprotocol.ReasonMapFailureCodeTooManyTombstonesRead},
-						cassandraprotocol.WriteTypeBatchLog,
+						map[string]primitives.ReasonMapFailureCode{"192.168.1.1": primitives.ReasonMapFailureCodeTooManyTombstonesRead},
+						primitives.WriteTypeBatchLog,
 					},
 					nil,
 				},

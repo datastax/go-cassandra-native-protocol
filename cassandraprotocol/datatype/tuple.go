@@ -3,7 +3,6 @@ package datatype
 import (
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
 	"io"
 )
@@ -25,8 +24,8 @@ func NewTupleType(fieldTypes ...DataType) TupleType {
 	return &tupleType{FieldTypes: fieldTypes}
 }
 
-func (t *tupleType) GetDataTypeCode() cassandraprotocol.DataTypeCode {
-	return cassandraprotocol.DataTypeCodeTuple
+func (t *tupleType) GetDataTypeCode() primitives.DataTypeCode {
+	return primitives.DataTypeCodeTuple
 }
 
 func (t *tupleType) String() string {
@@ -39,7 +38,7 @@ func (t *tupleType) MarshalJSON() ([]byte, error) {
 
 type tupleTypeCodec struct{}
 
-func (c *tupleTypeCodec) encode(t DataType, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
+func (c *tupleTypeCodec) encode(t DataType, dest io.Writer, version primitives.ProtocolVersion) (err error) {
 	tupleType, ok := t.(TupleType)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected TupleType, got %T", t))
@@ -54,7 +53,7 @@ func (c *tupleTypeCodec) encode(t DataType, dest io.Writer, version cassandrapro
 	return nil
 }
 
-func (c *tupleTypeCodec) encodedLength(t DataType, version cassandraprotocol.ProtocolVersion) (int, error) {
+func (c *tupleTypeCodec) encodedLength(t DataType, version primitives.ProtocolVersion) (int, error) {
 	if tupleType, ok := t.(TupleType); !ok {
 		return -1, errors.New(fmt.Sprintf("expected TupleType, got %T", t))
 	} else {
@@ -70,7 +69,7 @@ func (c *tupleTypeCodec) encodedLength(t DataType, version cassandraprotocol.Pro
 	}
 }
 
-func (c *tupleTypeCodec) decode(source io.Reader, version cassandraprotocol.ProtocolVersion) (DataType, error) {
+func (c *tupleTypeCodec) decode(source io.Reader, version primitives.ProtocolVersion) (DataType, error) {
 	if fieldCount, err := primitives.ReadShort(source); err != nil {
 		return nil, fmt.Errorf("cannot read tuple field count: %w", err)
 	} else {

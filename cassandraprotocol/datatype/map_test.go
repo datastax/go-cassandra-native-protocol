@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -12,13 +11,13 @@ import (
 
 func TestMapType(t *testing.T) {
 	mapType := NewMapType(Varchar, Int)
-	assert.Equal(t, cassandraprotocol.DataTypeCodeMap, mapType.GetDataTypeCode())
+	assert.Equal(t, primitives.DataTypeCodeMap, mapType.GetDataTypeCode())
 	assert.Equal(t, Varchar, mapType.GetKeyType())
 	assert.Equal(t, Int, mapType.GetValueType())
 }
 
 func TestMapTypeCodecEncode(t *testing.T) {
-	for _, version := range cassandraprotocol.AllProtocolVersions() {
+	for _, version := range primitives.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -30,8 +29,8 @@ func TestMapTypeCodecEncode(t *testing.T) {
 					"simple map",
 					NewMapType(Varchar, Int),
 					[]byte{
-						0, byte(cassandraprotocol.DataTypeCodeVarchar & 0xFF),
-						0, byte(cassandraprotocol.DataTypeCodeInt & 0xFF),
+						0, byte(primitives.DataTypeCodeVarchar & 0xFF),
+						0, byte(primitives.DataTypeCodeInt & 0xFF),
 					},
 					nil,
 				},
@@ -39,18 +38,18 @@ func TestMapTypeCodecEncode(t *testing.T) {
 					"complex map",
 					NewMapType(NewMapType(Varchar, Int), NewMapType(Boolean, Float)),
 					[]byte{
-						0, byte(cassandraprotocol.DataTypeCodeMap & 0xFF),
-						0, byte(cassandraprotocol.DataTypeCodeVarchar & 0xFF),
-						0, byte(cassandraprotocol.DataTypeCodeInt & 0xFF),
-						0, byte(cassandraprotocol.DataTypeCodeMap & 0xFF),
-						0, byte(cassandraprotocol.DataTypeCodeBoolean & 0xFF),
-						0, byte(cassandraprotocol.DataTypeCodeFloat & 0xFF),
+						0, byte(primitives.DataTypeCodeMap & 0xFF),
+						0, byte(primitives.DataTypeCodeVarchar & 0xFF),
+						0, byte(primitives.DataTypeCodeInt & 0xFF),
+						0, byte(primitives.DataTypeCodeMap & 0xFF),
+						0, byte(primitives.DataTypeCodeBoolean & 0xFF),
+						0, byte(primitives.DataTypeCodeFloat & 0xFF),
 					},
 					nil,
 				},
 				{"nil map", nil, nil, errors.New("expected MapType, got <nil>")},
 			}
-			codec, _ := findCodec(cassandraprotocol.DataTypeCodeMap)
+			codec, _ := findCodec(primitives.DataTypeCodeMap)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var dest = &bytes.Buffer{}
@@ -66,7 +65,7 @@ func TestMapTypeCodecEncode(t *testing.T) {
 }
 
 func TestMapTypeCodecEncodedLength(t *testing.T) {
-	for _, version := range cassandraprotocol.AllProtocolVersions() {
+	for _, version := range primitives.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -88,7 +87,7 @@ func TestMapTypeCodecEncodedLength(t *testing.T) {
 				},
 				{"nil map", nil, -1, errors.New("expected MapType, got <nil>")},
 			}
-			codec, _ := findCodec(cassandraprotocol.DataTypeCodeMap)
+			codec, _ := findCodec(primitives.DataTypeCodeMap)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var actual int
@@ -103,7 +102,7 @@ func TestMapTypeCodecEncodedLength(t *testing.T) {
 }
 
 func TestMapTypeCodecDecode(t *testing.T) {
-	for _, version := range cassandraprotocol.AllProtocolVersions() {
+	for _, version := range primitives.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -114,8 +113,8 @@ func TestMapTypeCodecDecode(t *testing.T) {
 				{
 					"simple map",
 					[]byte{
-						0, byte(cassandraprotocol.DataTypeCodeVarchar & 0xFF),
-						0, byte(cassandraprotocol.DataTypeCodeInt & 0xFF),
+						0, byte(primitives.DataTypeCodeVarchar & 0xFF),
+						0, byte(primitives.DataTypeCodeInt & 0xFF),
 					},
 					NewMapType(Varchar, Int),
 					nil,
@@ -123,12 +122,12 @@ func TestMapTypeCodecDecode(t *testing.T) {
 				{
 					"complex map",
 					[]byte{
-						0, byte(cassandraprotocol.DataTypeCodeMap & 0xFF),
-						0, byte(cassandraprotocol.DataTypeCodeVarchar & 0xFF),
-						0, byte(cassandraprotocol.DataTypeCodeInt & 0xFF),
-						0, byte(cassandraprotocol.DataTypeCodeMap & 0xFF),
-						0, byte(cassandraprotocol.DataTypeCodeBoolean & 0xFF),
-						0, byte(cassandraprotocol.DataTypeCodeFloat & 0xFF),
+						0, byte(primitives.DataTypeCodeMap & 0xFF),
+						0, byte(primitives.DataTypeCodeVarchar & 0xFF),
+						0, byte(primitives.DataTypeCodeInt & 0xFF),
+						0, byte(primitives.DataTypeCodeMap & 0xFF),
+						0, byte(primitives.DataTypeCodeBoolean & 0xFF),
+						0, byte(primitives.DataTypeCodeFloat & 0xFF),
 					},
 					NewMapType(NewMapType(Varchar, Int), NewMapType(Boolean, Float)),
 					nil,
@@ -143,7 +142,7 @@ func TestMapTypeCodecDecode(t *testing.T) {
 								errors.New("EOF")))),
 				},
 			}
-			codec, _ := findCodec(cassandraprotocol.DataTypeCodeMap)
+			codec, _ := findCodec(primitives.DataTypeCodeMap)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var source = bytes.NewBuffer(test.input)

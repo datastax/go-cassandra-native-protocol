@@ -2,14 +2,13 @@ package message
 
 import (
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
 	"io"
 )
 
 type Error interface {
 	Message
-	GetErrorCode() cassandraprotocol.ErrorCode
+	GetErrorCode() primitives.ErrorCode
 	GetErrorMessage() string
 }
 
@@ -23,12 +22,12 @@ func (m *ServerError) IsResponse() bool {
 	return true
 }
 
-func (m *ServerError) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeError
+func (m *ServerError) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeError
 }
 
-func (m *ServerError) GetErrorCode() cassandraprotocol.ErrorCode {
-	return cassandraprotocol.ErrorCodeServerError
+func (m *ServerError) GetErrorCode() primitives.ErrorCode {
+	return primitives.ErrorCodeServerError
 }
 
 func (m *ServerError) GetErrorMessage() string {
@@ -49,12 +48,12 @@ func (m *ProtocolError) IsResponse() bool {
 	return true
 }
 
-func (m *ProtocolError) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeError
+func (m *ProtocolError) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeError
 }
 
-func (m *ProtocolError) GetErrorCode() cassandraprotocol.ErrorCode {
-	return cassandraprotocol.ErrorCodeProtocolError
+func (m *ProtocolError) GetErrorCode() primitives.ErrorCode {
+	return primitives.ErrorCodeProtocolError
 }
 
 func (m *ProtocolError) GetErrorMessage() string {
@@ -75,12 +74,12 @@ func (m *AuthenticationError) IsResponse() bool {
 	return true
 }
 
-func (m *AuthenticationError) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeError
+func (m *AuthenticationError) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeError
 }
 
-func (m *AuthenticationError) GetErrorCode() cassandraprotocol.ErrorCode {
-	return cassandraprotocol.ErrorCodeAuthenticationError
+func (m *AuthenticationError) GetErrorCode() primitives.ErrorCode {
+	return primitives.ErrorCodeAuthenticationError
 }
 
 func (m *AuthenticationError) GetErrorMessage() string {
@@ -101,12 +100,12 @@ func (m *Overloaded) IsResponse() bool {
 	return true
 }
 
-func (m *Overloaded) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeError
+func (m *Overloaded) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeError
 }
 
-func (m *Overloaded) GetErrorCode() cassandraprotocol.ErrorCode {
-	return cassandraprotocol.ErrorCodeOverloaded
+func (m *Overloaded) GetErrorCode() primitives.ErrorCode {
+	return primitives.ErrorCodeOverloaded
 }
 
 func (m *Overloaded) GetErrorMessage() string {
@@ -127,12 +126,12 @@ func (m *IsBootstrapping) IsResponse() bool {
 	return true
 }
 
-func (m *IsBootstrapping) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeError
+func (m *IsBootstrapping) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeError
 }
 
-func (m *IsBootstrapping) GetErrorCode() cassandraprotocol.ErrorCode {
-	return cassandraprotocol.ErrorCodeIsBootstrapping
+func (m *IsBootstrapping) GetErrorCode() primitives.ErrorCode {
+	return primitives.ErrorCodeIsBootstrapping
 }
 
 func (m *IsBootstrapping) GetErrorMessage() string {
@@ -153,12 +152,12 @@ func (m *TruncateError) IsResponse() bool {
 	return true
 }
 
-func (m *TruncateError) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeError
+func (m *TruncateError) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeError
 }
 
-func (m *TruncateError) GetErrorCode() cassandraprotocol.ErrorCode {
-	return cassandraprotocol.ErrorCodeTruncateError
+func (m *TruncateError) GetErrorCode() primitives.ErrorCode {
+	return primitives.ErrorCodeTruncateError
 }
 
 func (m *TruncateError) GetErrorMessage() string {
@@ -179,12 +178,12 @@ func (m *SyntaxError) IsResponse() bool {
 	return true
 }
 
-func (m *SyntaxError) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeError
+func (m *SyntaxError) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeError
 }
 
-func (m *SyntaxError) GetErrorCode() cassandraprotocol.ErrorCode {
-	return cassandraprotocol.ErrorCodeSyntaxError
+func (m *SyntaxError) GetErrorCode() primitives.ErrorCode {
+	return primitives.ErrorCodeSyntaxError
 }
 
 func (m *SyntaxError) GetErrorMessage() string {
@@ -205,12 +204,12 @@ func (m *Unauthorized) IsResponse() bool {
 	return true
 }
 
-func (m *Unauthorized) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeError
+func (m *Unauthorized) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeError
 }
 
-func (m *Unauthorized) GetErrorCode() cassandraprotocol.ErrorCode {
-	return cassandraprotocol.ErrorCodeUnauthorized
+func (m *Unauthorized) GetErrorCode() primitives.ErrorCode {
+	return primitives.ErrorCodeUnauthorized
 }
 
 func (m *Unauthorized) GetErrorMessage() string {
@@ -231,12 +230,12 @@ func (m *Invalid) IsResponse() bool {
 	return true
 }
 
-func (m *Invalid) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeError
+func (m *Invalid) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeError
 }
 
-func (m *Invalid) GetErrorCode() cassandraprotocol.ErrorCode {
-	return cassandraprotocol.ErrorCodeInvalid
+func (m *Invalid) GetErrorCode() primitives.ErrorCode {
+	return primitives.ErrorCodeInvalid
 }
 
 func (m *Invalid) GetErrorMessage() string {
@@ -257,12 +256,12 @@ func (m *ConfigError) IsResponse() bool {
 	return true
 }
 
-func (m *ConfigError) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeError
+func (m *ConfigError) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeError
 }
 
-func (m *ConfigError) GetErrorCode() cassandraprotocol.ErrorCode {
-	return cassandraprotocol.ErrorCodeConfigError
+func (m *ConfigError) GetErrorCode() primitives.ErrorCode {
+	return primitives.ErrorCodeConfigError
 }
 
 func (m *ConfigError) GetErrorMessage() string {
@@ -278,7 +277,7 @@ func (m *ConfigError) String() string {
 type Unavailable struct {
 	ErrorMessage string
 	// The consistency level of the query that triggered the exception.
-	Consistency cassandraprotocol.ConsistencyLevel
+	Consistency primitives.ConsistencyLevel
 	// The number of nodes that should be alive to respect Consistency.
 	Required int32
 	//The number of replicas that were known to be alive when the request was processed (since an
@@ -290,12 +289,12 @@ func (m *Unavailable) IsResponse() bool {
 	return true
 }
 
-func (m *Unavailable) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeError
+func (m *Unavailable) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeError
 }
 
-func (m *Unavailable) GetErrorCode() cassandraprotocol.ErrorCode {
-	return cassandraprotocol.ErrorCodeUnavailable
+func (m *Unavailable) GetErrorCode() primitives.ErrorCode {
+	return primitives.ErrorCodeUnavailable
 }
 
 func (m *Unavailable) GetErrorMessage() string {
@@ -318,7 +317,7 @@ func (m *Unavailable) String() string {
 type ReadTimeout struct {
 	ErrorMessage string
 	// The consistency level of the query that triggered the exception.
-	Consistency cassandraprotocol.ConsistencyLevel
+	Consistency primitives.ConsistencyLevel
 	// The number of nodes having answered the request.
 	Received int32
 	// The number of replicas whose response is required to achieve Consistency.
@@ -334,12 +333,12 @@ func (m *ReadTimeout) IsResponse() bool {
 	return true
 }
 
-func (m *ReadTimeout) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeError
+func (m *ReadTimeout) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeError
 }
 
-func (m *ReadTimeout) GetErrorCode() cassandraprotocol.ErrorCode {
-	return cassandraprotocol.ErrorCodeReadTimeout
+func (m *ReadTimeout) GetErrorCode() primitives.ErrorCode {
+	return primitives.ErrorCodeReadTimeout
 }
 
 func (m *ReadTimeout) GetErrorMessage() string {
@@ -363,25 +362,25 @@ func (m *ReadTimeout) String() string {
 type WriteTimeout struct {
 	ErrorMessage string
 	// The consistency level of the query that triggered the exception.
-	Consistency cassandraprotocol.ConsistencyLevel
+	Consistency primitives.ConsistencyLevel
 	// The number of nodes having answered the request.
 	Received int32
 	// The number of replicas whose response is required to achieve Consistency.
 	BlockFor int32
 	// The type of the write that failed.
-	WriteType cassandraprotocol.WriteType
+	WriteType primitives.WriteType
 }
 
 func (m *WriteTimeout) IsResponse() bool {
 	return true
 }
 
-func (m *WriteTimeout) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeError
+func (m *WriteTimeout) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeError
 }
 
-func (m *WriteTimeout) GetErrorCode() cassandraprotocol.ErrorCode {
-	return cassandraprotocol.ErrorCodeWriteTimeout
+func (m *WriteTimeout) GetErrorCode() primitives.ErrorCode {
+	return primitives.ErrorCodeWriteTimeout
 }
 
 func (m *WriteTimeout) GetErrorMessage() string {
@@ -405,7 +404,7 @@ func (m *WriteTimeout) String() string {
 type ReadFailure struct {
 	ErrorMessage string
 	// The consistency level of the query that triggered the exception.
-	Consistency cassandraprotocol.ConsistencyLevel
+	Consistency primitives.ConsistencyLevel
 	// The number of nodes having answered the request.
 	Received int32
 	// The number of replicas whose response is required to achieve Consistency.
@@ -416,7 +415,7 @@ type ReadFailure struct {
 	// A map of endpoint to failure reason codes. This maps the endpoints of the replica nodes that
 	// failed when executing the request to a code representing the reason for the failure.
 	// Only filled when the protocol versions is >= 5.
-	ReasonMap map[string]cassandraprotocol.ReasonMapFailureCode
+	ReasonMap map[string]primitives.ReasonMapFailureCode
 	// Whether the replica that was asked for data responded.
 	DataPresent bool
 }
@@ -425,12 +424,12 @@ func (m *ReadFailure) IsResponse() bool {
 	return true
 }
 
-func (m *ReadFailure) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeError
+func (m *ReadFailure) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeError
 }
 
-func (m *ReadFailure) GetErrorCode() cassandraprotocol.ErrorCode {
-	return cassandraprotocol.ErrorCodeReadFailure
+func (m *ReadFailure) GetErrorCode() primitives.ErrorCode {
+	return primitives.ErrorCodeReadFailure
 }
 
 func (m *ReadFailure) GetErrorMessage() string {
@@ -454,7 +453,7 @@ func (m *ReadFailure) String() string {
 type WriteFailure struct {
 	ErrorMessage string
 	// The consistency level of the query that triggered the exception.
-	Consistency cassandraprotocol.ConsistencyLevel
+	Consistency primitives.ConsistencyLevel
 	// The number of nodes having answered the request.
 	Received int32
 	// The number of replicas whose response is required to achieve Consistency.
@@ -467,19 +466,19 @@ type WriteFailure struct {
 	// Only filled when the protocol versions is >= 5.
 	ReasonMap map[string]uint16
 	// The type of the write that failed.
-	WriteType cassandraprotocol.WriteType
+	WriteType primitives.WriteType
 }
 
 func (m *WriteFailure) IsResponse() bool {
 	return true
 }
 
-func (m *WriteFailure) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeError
+func (m *WriteFailure) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeError
 }
 
-func (m *WriteFailure) GetErrorCode() cassandraprotocol.ErrorCode {
-	return cassandraprotocol.ErrorCodeWriteFailure
+func (m *WriteFailure) GetErrorCode() primitives.ErrorCode {
+	return primitives.ErrorCodeWriteFailure
 }
 
 func (m *WriteFailure) GetErrorMessage() string {
@@ -511,12 +510,12 @@ func (m *FunctionFailure) IsResponse() bool {
 	return true
 }
 
-func (m *FunctionFailure) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeError
+func (m *FunctionFailure) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeError
 }
 
-func (m *FunctionFailure) GetErrorCode() cassandraprotocol.ErrorCode {
-	return cassandraprotocol.ErrorCodeFunctionFailure
+func (m *FunctionFailure) GetErrorCode() primitives.ErrorCode {
+	return primitives.ErrorCodeFunctionFailure
 }
 
 func (m *FunctionFailure) GetErrorMessage() string {
@@ -545,12 +544,12 @@ func (m *Unprepared) IsResponse() bool {
 	return true
 }
 
-func (m *Unprepared) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeError
+func (m *Unprepared) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeError
 }
 
-func (m *Unprepared) GetErrorCode() cassandraprotocol.ErrorCode {
-	return cassandraprotocol.ErrorCodeUnprepared
+func (m *Unprepared) GetErrorCode() primitives.ErrorCode {
+	return primitives.ErrorCodeUnprepared
 }
 
 func (m *Unprepared) GetErrorMessage() string {
@@ -578,12 +577,12 @@ func (m *AlreadyExists) IsResponse() bool {
 	return true
 }
 
-func (m *AlreadyExists) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeError
+func (m *AlreadyExists) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeError
 }
 
-func (m *AlreadyExists) GetErrorCode() cassandraprotocol.ErrorCode {
-	return cassandraprotocol.ErrorCodeAlreadyExists
+func (m *AlreadyExists) GetErrorCode() primitives.ErrorCode {
+	return primitives.ErrorCodeAlreadyExists
 }
 
 func (m *AlreadyExists) GetErrorMessage() string {
@@ -604,7 +603,7 @@ func (m *AlreadyExists) String() string {
 
 type ErrorCodec struct{}
 
-func (c *ErrorCodec) Encode(msg Message, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
+func (c *ErrorCodec) Encode(msg Message, dest io.Writer, version primitives.ProtocolVersion) (err error) {
 	errMsg, ok := msg.(Error)
 	if !ok {
 		return fmt.Errorf("expected Error, got %T", msg)
@@ -616,18 +615,18 @@ func (c *ErrorCodec) Encode(msg Message, dest io.Writer, version cassandraprotoc
 		return fmt.Errorf("cannot write ERROR message: %w", err)
 	}
 	switch errMsg.GetErrorCode() {
-	case cassandraprotocol.ErrorCodeServerError:
-	case cassandraprotocol.ErrorCodeProtocolError:
-	case cassandraprotocol.ErrorCodeAuthenticationError:
-	case cassandraprotocol.ErrorCodeOverloaded:
-	case cassandraprotocol.ErrorCodeIsBootstrapping:
-	case cassandraprotocol.ErrorCodeTruncateError:
-	case cassandraprotocol.ErrorCodeSyntaxError:
-	case cassandraprotocol.ErrorCodeUnauthorized:
-	case cassandraprotocol.ErrorCodeInvalid:
-	case cassandraprotocol.ErrorCodeConfigError:
+	case primitives.ErrorCodeServerError:
+	case primitives.ErrorCodeProtocolError:
+	case primitives.ErrorCodeAuthenticationError:
+	case primitives.ErrorCodeOverloaded:
+	case primitives.ErrorCodeIsBootstrapping:
+	case primitives.ErrorCodeTruncateError:
+	case primitives.ErrorCodeSyntaxError:
+	case primitives.ErrorCodeUnauthorized:
+	case primitives.ErrorCodeInvalid:
+	case primitives.ErrorCodeConfigError:
 
-	case cassandraprotocol.ErrorCodeUnavailable:
+	case primitives.ErrorCodeUnavailable:
 		unavailable, ok := errMsg.(*Unavailable)
 		if !ok {
 			return fmt.Errorf("expected *message.Unavailable, got %T", msg)
@@ -640,7 +639,7 @@ func (c *ErrorCodec) Encode(msg Message, dest io.Writer, version cassandraprotoc
 			return fmt.Errorf("cannot write ERROR UNAVAILABLE alive: %w", err)
 		}
 
-	case cassandraprotocol.ErrorCodeReadTimeout:
+	case primitives.ErrorCodeReadTimeout:
 		readTimeout, ok := errMsg.(*ReadTimeout)
 		if !ok {
 			return fmt.Errorf("expected *message.ReadTimeout, got %T", msg)
@@ -661,7 +660,7 @@ func (c *ErrorCodec) Encode(msg Message, dest io.Writer, version cassandraprotoc
 			return fmt.Errorf("cannot write ERROR READ TIMEOUT data present: %w", err)
 		}
 
-	case cassandraprotocol.ErrorCodeWriteTimeout:
+	case primitives.ErrorCodeWriteTimeout:
 		writeTimeout, ok := errMsg.(*WriteTimeout)
 		if !ok {
 			return fmt.Errorf("expected *message.WriteTimeout, got %T", msg)
@@ -676,7 +675,7 @@ func (c *ErrorCodec) Encode(msg Message, dest io.Writer, version cassandraprotoc
 			return fmt.Errorf("cannot write ERROR WRITE TIMEOUT write type: %w", err)
 		}
 
-	case cassandraprotocol.ErrorCodeReadFailure:
+	case primitives.ErrorCodeReadFailure:
 		readFailure, ok := errMsg.(*ReadFailure)
 		if !ok {
 			return fmt.Errorf("expected *message.ReadFailure, got %T", msg)
@@ -688,7 +687,7 @@ func (c *ErrorCodec) Encode(msg Message, dest io.Writer, version cassandraprotoc
 		} else if err = primitives.WriteInt(readFailure.BlockFor, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR READ FAILURE block for: %w", err)
 		}
-		if version >= cassandraprotocol.ProtocolVersion5 {
+		if version >= primitives.ProtocolVersion5 {
 			if err = primitives.WriteReasonMap(readFailure.ReasonMap, dest); err != nil {
 				return fmt.Errorf("cannot write ERROR READ FAILURE reason map: %w", err)
 			}
@@ -706,7 +705,7 @@ func (c *ErrorCodec) Encode(msg Message, dest io.Writer, version cassandraprotoc
 			return fmt.Errorf("cannot write ERROR READ FAILURE data present: %w", err)
 		}
 
-	case cassandraprotocol.ErrorCodeWriteFailure:
+	case primitives.ErrorCodeWriteFailure:
 		writeFailure, ok := errMsg.(*WriteFailure)
 		if !ok {
 			return fmt.Errorf("expected *message.WriteFailure, got %T", msg)
@@ -718,7 +717,7 @@ func (c *ErrorCodec) Encode(msg Message, dest io.Writer, version cassandraprotoc
 		} else if err = primitives.WriteInt(writeFailure.BlockFor, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR WRITE FAILURE block for: %w", err)
 		}
-		if version >= cassandraprotocol.ProtocolVersion5 {
+		if version >= primitives.ProtocolVersion5 {
 			if err = primitives.WriteReasonMap(writeFailure.ReasonMap, dest); err != nil {
 				return fmt.Errorf("cannot write ERROR WRITE FAILURE reason map: %w", err)
 			}
@@ -731,7 +730,7 @@ func (c *ErrorCodec) Encode(msg Message, dest io.Writer, version cassandraprotoc
 			return fmt.Errorf("cannot write ERROR WRITE FAILURE write type: %w", err)
 		}
 
-	case cassandraprotocol.ErrorCodeFunctionFailure:
+	case primitives.ErrorCodeFunctionFailure:
 		functionFailure, ok := errMsg.(*FunctionFailure)
 		if !ok {
 			return fmt.Errorf("expected *message.FunctionFailure, got %T", msg)
@@ -744,7 +743,7 @@ func (c *ErrorCodec) Encode(msg Message, dest io.Writer, version cassandraprotoc
 			return fmt.Errorf("cannot write ERROR FUNCTION FAILURE arguments: %w", err)
 		}
 
-	case cassandraprotocol.ErrorCodeAlreadyExists:
+	case primitives.ErrorCodeAlreadyExists:
 		alreadyExists, ok := errMsg.(*AlreadyExists)
 		if !ok {
 			return fmt.Errorf("expected *message.AlreadyExists, got %T", msg)
@@ -755,7 +754,7 @@ func (c *ErrorCodec) Encode(msg Message, dest io.Writer, version cassandraprotoc
 			return fmt.Errorf("cannot write ERROR ALREADY EXISTS table: %w", err)
 		}
 
-	case cassandraprotocol.ErrorCodeUnprepared:
+	case primitives.ErrorCodeUnprepared:
 		unprepared, ok := errMsg.(*Unprepared)
 		if !ok {
 			return fmt.Errorf("expected *message.Unprepared, got %T", msg)
@@ -770,34 +769,34 @@ func (c *ErrorCodec) Encode(msg Message, dest io.Writer, version cassandraprotoc
 	return err
 }
 
-func (c *ErrorCodec) EncodedLength(msg Message, version cassandraprotocol.ProtocolVersion) (length int, err error) {
+func (c *ErrorCodec) EncodedLength(msg Message, version primitives.ProtocolVersion) (length int, err error) {
 	errMsg := msg.(Error)
 	length += primitives.LengthOfInt // error code
 	length += primitives.LengthOfString(errMsg.GetErrorMessage())
 	switch errMsg.GetErrorCode() {
-	case cassandraprotocol.ErrorCodeServerError:
-	case cassandraprotocol.ErrorCodeProtocolError:
-	case cassandraprotocol.ErrorCodeAuthenticationError:
-	case cassandraprotocol.ErrorCodeOverloaded:
-	case cassandraprotocol.ErrorCodeIsBootstrapping:
-	case cassandraprotocol.ErrorCodeTruncateError:
-	case cassandraprotocol.ErrorCodeSyntaxError:
-	case cassandraprotocol.ErrorCodeUnauthorized:
-	case cassandraprotocol.ErrorCodeInvalid:
-	case cassandraprotocol.ErrorCodeConfigError:
+	case primitives.ErrorCodeServerError:
+	case primitives.ErrorCodeProtocolError:
+	case primitives.ErrorCodeAuthenticationError:
+	case primitives.ErrorCodeOverloaded:
+	case primitives.ErrorCodeIsBootstrapping:
+	case primitives.ErrorCodeTruncateError:
+	case primitives.ErrorCodeSyntaxError:
+	case primitives.ErrorCodeUnauthorized:
+	case primitives.ErrorCodeInvalid:
+	case primitives.ErrorCodeConfigError:
 
-	case cassandraprotocol.ErrorCodeUnavailable:
+	case primitives.ErrorCodeUnavailable:
 		length += primitives.LengthOfShort // consistency
 		length += primitives.LengthOfInt   // required
 		length += primitives.LengthOfInt   // alive
 
-	case cassandraprotocol.ErrorCodeReadTimeout:
+	case primitives.ErrorCodeReadTimeout:
 		length += primitives.LengthOfShort // consistency
 		length += primitives.LengthOfInt   // received
 		length += primitives.LengthOfInt   // block for
 		length += primitives.LengthOfByte  // data present
 
-	case cassandraprotocol.ErrorCodeWriteTimeout:
+	case primitives.ErrorCodeWriteTimeout:
 		writeTimeout, ok := errMsg.(*WriteTimeout)
 		if !ok {
 			return -1, fmt.Errorf("expected *message.WriteTimeout, got %T", msg)
@@ -807,12 +806,12 @@ func (c *ErrorCodec) EncodedLength(msg Message, version cassandraprotocol.Protoc
 		length += primitives.LengthOfInt                            // block for
 		length += primitives.LengthOfString(writeTimeout.WriteType) // write type
 
-	case cassandraprotocol.ErrorCodeReadFailure:
+	case primitives.ErrorCodeReadFailure:
 		length += primitives.LengthOfShort // consistency
 		length += primitives.LengthOfInt   // received
 		length += primitives.LengthOfInt   // block for
 		length += primitives.LengthOfByte  // data present
-		if version >= cassandraprotocol.ProtocolVersion5 {
+		if version >= primitives.ProtocolVersion5 {
 			readFailure, ok := errMsg.(*ReadFailure)
 			if !ok {
 				return -1, fmt.Errorf("expected *message.ReadFailure, got %T", msg)
@@ -826,7 +825,7 @@ func (c *ErrorCodec) EncodedLength(msg Message, version cassandraprotocol.Protoc
 			return length + primitives.LengthOfInt /* num failures */, nil
 		}
 
-	case cassandraprotocol.ErrorCodeWriteFailure:
+	case primitives.ErrorCodeWriteFailure:
 		writeFailure, ok := errMsg.(*WriteFailure)
 		if !ok {
 			return -1, fmt.Errorf("expected *message.WriteFailure, got %T", msg)
@@ -835,7 +834,7 @@ func (c *ErrorCodec) EncodedLength(msg Message, version cassandraprotocol.Protoc
 		length += primitives.LengthOfInt                            // received
 		length += primitives.LengthOfInt                            // block for
 		length += primitives.LengthOfString(writeFailure.WriteType) // write type
-		if version >= cassandraprotocol.ProtocolVersion5 {
+		if version >= primitives.ProtocolVersion5 {
 			if reasonMapLength, err := primitives.LengthOfReasonMap(writeFailure.ReasonMap); err != nil {
 				return -1, fmt.Errorf("cannot compute length of ERROR WRITE FAILURE rason map: %w", err)
 			} else {
@@ -845,18 +844,18 @@ func (c *ErrorCodec) EncodedLength(msg Message, version cassandraprotocol.Protoc
 			return length + primitives.LengthOfInt /* num failures */, nil
 		}
 
-	case cassandraprotocol.ErrorCodeFunctionFailure:
+	case primitives.ErrorCodeFunctionFailure:
 		functionFailure := errMsg.(*FunctionFailure)
 		length += primitives.LengthOfString(functionFailure.Keyspace)
 		length += primitives.LengthOfString(functionFailure.Function)
 		length += primitives.LengthOfStringList(functionFailure.Arguments)
 
-	case cassandraprotocol.ErrorCodeAlreadyExists:
+	case primitives.ErrorCodeAlreadyExists:
 		alreadyExists := errMsg.(*AlreadyExists)
 		length += primitives.LengthOfString(alreadyExists.Keyspace)
 		length += primitives.LengthOfString(alreadyExists.Table)
 
-	case cassandraprotocol.ErrorCodeUnprepared:
+	case primitives.ErrorCodeUnprepared:
 		unprepared := errMsg.(*Unprepared)
 		length += primitives.LengthOfShortBytes(unprepared.Id)
 
@@ -867,8 +866,8 @@ func (c *ErrorCodec) EncodedLength(msg Message, version cassandraprotocol.Protoc
 	return
 }
 
-func (c *ErrorCodec) Decode(source io.Reader, version cassandraprotocol.ProtocolVersion) (msg Message, err error) {
-	var code cassandraprotocol.ErrorCode
+func (c *ErrorCodec) Decode(source io.Reader, version primitives.ProtocolVersion) (msg Message, err error) {
+	var code primitives.ErrorCode
 	if code, err = primitives.ReadInt(source); err != nil {
 		return nil, fmt.Errorf("cannot read ERROR code: %w", err)
 	}
@@ -877,28 +876,28 @@ func (c *ErrorCodec) Decode(source io.Reader, version cassandraprotocol.Protocol
 		return nil, fmt.Errorf("cannot read ERROR message: %w", err)
 	}
 	switch code {
-	case cassandraprotocol.ErrorCodeServerError:
+	case primitives.ErrorCodeServerError:
 		return &ServerError{errorMsg}, nil
-	case cassandraprotocol.ErrorCodeProtocolError:
+	case primitives.ErrorCodeProtocolError:
 		return &ProtocolError{errorMsg}, nil
-	case cassandraprotocol.ErrorCodeAuthenticationError:
+	case primitives.ErrorCodeAuthenticationError:
 		return &AuthenticationError{errorMsg}, nil
-	case cassandraprotocol.ErrorCodeOverloaded:
+	case primitives.ErrorCodeOverloaded:
 		return &Overloaded{errorMsg}, nil
-	case cassandraprotocol.ErrorCodeIsBootstrapping:
+	case primitives.ErrorCodeIsBootstrapping:
 		return &IsBootstrapping{errorMsg}, nil
-	case cassandraprotocol.ErrorCodeTruncateError:
+	case primitives.ErrorCodeTruncateError:
 		return &TruncateError{errorMsg}, nil
-	case cassandraprotocol.ErrorCodeSyntaxError:
+	case primitives.ErrorCodeSyntaxError:
 		return &SyntaxError{errorMsg}, nil
-	case cassandraprotocol.ErrorCodeUnauthorized:
+	case primitives.ErrorCodeUnauthorized:
 		return &Unauthorized{errorMsg}, nil
-	case cassandraprotocol.ErrorCodeInvalid:
+	case primitives.ErrorCodeInvalid:
 		return &Invalid{errorMsg}, nil
-	case cassandraprotocol.ErrorCodeConfigError:
+	case primitives.ErrorCodeConfigError:
 		return &ConfigError{errorMsg}, nil
 
-	case cassandraprotocol.ErrorCodeUnavailable:
+	case primitives.ErrorCodeUnavailable:
 		var msg = &Unavailable{ErrorMessage: errorMsg}
 		if msg.Consistency, err = primitives.ReadShort(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR UNAVAILABLE consistency: %w", err)
@@ -911,7 +910,7 @@ func (c *ErrorCodec) Decode(source io.Reader, version cassandraprotocol.Protocol
 		}
 		return msg, nil
 
-	case cassandraprotocol.ErrorCodeReadTimeout:
+	case primitives.ErrorCodeReadTimeout:
 		var msg = &ReadTimeout{ErrorMessage: errorMsg}
 		if msg.Consistency, err = primitives.ReadShort(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR READ TIMEOUT consistency: %w", err)
@@ -933,7 +932,7 @@ func (c *ErrorCodec) Decode(source io.Reader, version cassandraprotocol.Protocol
 		}
 		return msg, nil
 
-	case cassandraprotocol.ErrorCodeWriteTimeout:
+	case primitives.ErrorCodeWriteTimeout:
 		var msg = &WriteTimeout{ErrorMessage: errorMsg}
 		if msg.Consistency, err = primitives.ReadShort(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR WRITE TIMEOUT consistency: %w", err)
@@ -949,7 +948,7 @@ func (c *ErrorCodec) Decode(source io.Reader, version cassandraprotocol.Protocol
 		}
 		return msg, nil
 
-	case cassandraprotocol.ErrorCodeReadFailure:
+	case primitives.ErrorCodeReadFailure:
 		var msg = &ReadFailure{ErrorMessage: errorMsg}
 		if msg.Consistency, err = primitives.ReadShort(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR READ FAILURE consistency: %w", err)
@@ -960,7 +959,7 @@ func (c *ErrorCodec) Decode(source io.Reader, version cassandraprotocol.Protocol
 		if msg.BlockFor, err = primitives.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR READ FAILURE block for: %w", err)
 		}
-		if version >= cassandraprotocol.ProtocolVersion5 {
+		if version >= primitives.ProtocolVersion5 {
 			if msg.ReasonMap, err = primitives.ReadReasonMap(source); err != nil {
 				return nil, fmt.Errorf("cannot read ERROR READ FAILURE reason map: %w", err)
 			}
@@ -980,7 +979,7 @@ func (c *ErrorCodec) Decode(source io.Reader, version cassandraprotocol.Protocol
 		}
 		return msg, nil
 
-	case cassandraprotocol.ErrorCodeWriteFailure:
+	case primitives.ErrorCodeWriteFailure:
 		var msg = &WriteFailure{ErrorMessage: errorMsg}
 		if msg.Consistency, err = primitives.ReadShort(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR WRITE FAILURE consistency: %w", err)
@@ -991,7 +990,7 @@ func (c *ErrorCodec) Decode(source io.Reader, version cassandraprotocol.Protocol
 		if msg.BlockFor, err = primitives.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR WRITE FAILURE block for: %w", err)
 		}
-		if version >= cassandraprotocol.ProtocolVersion5 {
+		if version >= primitives.ProtocolVersion5 {
 			if msg.ReasonMap, err = primitives.ReadReasonMap(source); err != nil {
 				return nil, fmt.Errorf("cannot read ERROR WRITE FAILURE reason map: %w", err)
 			}
@@ -1003,12 +1002,12 @@ func (c *ErrorCodec) Decode(source io.Reader, version cassandraprotocol.Protocol
 		if msg.WriteType, err = primitives.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR WRITE FAILURE write type: %w", err)
 		}
-		if err = cassandraprotocol.CheckWriteType(msg.WriteType); err != nil {
+		if err = primitives.CheckWriteType(msg.WriteType); err != nil {
 			return nil, err
 		}
 		return msg, nil
 
-	case cassandraprotocol.ErrorCodeFunctionFailure:
+	case primitives.ErrorCodeFunctionFailure:
 		var msg = &FunctionFailure{ErrorMessage: errorMsg}
 		if msg.Keyspace, err = primitives.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR FUNCTION FAILURE keyspace: %w", err)
@@ -1021,7 +1020,7 @@ func (c *ErrorCodec) Decode(source io.Reader, version cassandraprotocol.Protocol
 		}
 		return msg, nil
 
-	case cassandraprotocol.ErrorCodeAlreadyExists:
+	case primitives.ErrorCodeAlreadyExists:
 		var msg = &AlreadyExists{ErrorMessage: errorMsg}
 		if msg.Keyspace, err = primitives.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR ALREADY EXISTS keyspace: %w", err)
@@ -1031,7 +1030,7 @@ func (c *ErrorCodec) Decode(source io.Reader, version cassandraprotocol.Protocol
 		}
 		return msg, nil
 
-	case cassandraprotocol.ErrorCodeUnprepared:
+	case primitives.ErrorCodeUnprepared:
 		var msg = &Unprepared{ErrorMessage: errorMsg}
 		if msg.Id, err = primitives.ReadShortBytes(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR UNPREPARED id: %w", err)
@@ -1045,6 +1044,6 @@ func (c *ErrorCodec) Decode(source io.Reader, version cassandraprotocol.Protocol
 	return msg, err
 }
 
-func (c *ErrorCodec) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeError
+func (c *ErrorCodec) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeError
 }

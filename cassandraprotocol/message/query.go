@@ -3,7 +3,6 @@ package message
 import (
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
 	"io"
 )
@@ -21,14 +20,14 @@ func (q *Query) IsResponse() bool {
 	return false
 }
 
-func (q *Query) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeQuery
+func (q *Query) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeQuery
 }
 
 type QueryCodec struct {
 }
 
-func (c *QueryCodec) Encode(msg Message, dest io.Writer, version cassandraprotocol.ProtocolVersion) error {
+func (c *QueryCodec) Encode(msg Message, dest io.Writer, version primitives.ProtocolVersion) error {
 	query, ok := msg.(*Query)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.Query, got %T", msg))
@@ -48,7 +47,7 @@ func (c *QueryCodec) Encode(msg Message, dest io.Writer, version cassandraprotoc
 	return nil
 }
 
-func (c *QueryCodec) EncodedLength(msg Message, version cassandraprotocol.ProtocolVersion) (int, error) {
+func (c *QueryCodec) EncodedLength(msg Message, version primitives.ProtocolVersion) (int, error) {
 	query, ok := msg.(*Query)
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected *message.Query, got %T", msg))
@@ -61,7 +60,7 @@ func (c *QueryCodec) EncodedLength(msg Message, version cassandraprotocol.Protoc
 	return lengthOfQuery + lengthOfQueryOptions, nil
 }
 
-func (c *QueryCodec) Decode(source io.Reader, version cassandraprotocol.ProtocolVersion) (Message, error) {
+func (c *QueryCodec) Decode(source io.Reader, version primitives.ProtocolVersion) (Message, error) {
 	if query, err := primitives.ReadLongString(source); err != nil {
 		return nil, err
 	} else if query == "" {
@@ -73,6 +72,6 @@ func (c *QueryCodec) Decode(source io.Reader, version cassandraprotocol.Protocol
 	}
 }
 
-func (c *QueryCodec) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeQuery
+func (c *QueryCodec) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeQuery
 }

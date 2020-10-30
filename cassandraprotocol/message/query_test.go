@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -33,11 +32,11 @@ func TestQueryCodec_Encode(t *testing.T) {
 				&Query{
 					Query: "SELECT",
 					Options: NewQueryOptions(
-						WithConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalQuorum),
+						WithConsistencyLevel(primitives.ConsistencyLevelLocalQuorum),
 						SkipMetadata(),
 						WithPageSize(100),
 						WithPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-						WithSerialConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalSerial),
+						WithSerialConsistencyLevel(primitives.ConsistencyLevelLocalSerial),
 						WithDefaultTimestamp(123),
 					),
 				},
@@ -117,14 +116,14 @@ func TestQueryCodec_Encode(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				dest := &bytes.Buffer{}
-				err := codec.Encode(tt.input, dest, cassandraprotocol.ProtocolVersion3)
+				err := codec.Encode(tt.input, dest, primitives.ProtocolVersion3)
 				assert.Equal(t, tt.expected, dest.Bytes())
 				assert.Equal(t, tt.err, err)
 			})
 		}
 	})
 	// tests for version = 4
-	t.Run(fmt.Sprintf("version %d", cassandraprotocol.ProtocolVersion4), func(t *testing.T) {
+	t.Run(fmt.Sprintf("version %d", primitives.ProtocolVersion4), func(t *testing.T) {
 		tests := []struct {
 			name     string
 			input    Message
@@ -149,11 +148,11 @@ func TestQueryCodec_Encode(t *testing.T) {
 				&Query{
 					Query: "SELECT",
 					Options: NewQueryOptions(
-						WithConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalQuorum),
+						WithConsistencyLevel(primitives.ConsistencyLevelLocalQuorum),
 						SkipMetadata(),
 						WithPageSize(100),
 						WithPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-						WithSerialConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalSerial),
+						WithSerialConsistencyLevel(primitives.ConsistencyLevelLocalSerial),
 						WithDefaultTimestamp(123),
 					),
 				},
@@ -237,14 +236,14 @@ func TestQueryCodec_Encode(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				dest := &bytes.Buffer{}
-				err := codec.Encode(tt.input, dest, cassandraprotocol.ProtocolVersion4)
+				err := codec.Encode(tt.input, dest, primitives.ProtocolVersion4)
 				assert.Equal(t, tt.expected, dest.Bytes())
 				assert.Equal(t, tt.err, err)
 			})
 		}
 	})
 	// tests for version = 5
-	t.Run(fmt.Sprintf("version %v", cassandraprotocol.ProtocolVersion5), func(t *testing.T) {
+	t.Run(fmt.Sprintf("version %v", primitives.ProtocolVersion5), func(t *testing.T) {
 		tests := []encodeTestCase{
 			{
 				"query with keyspace and now-in-seconds",
@@ -303,14 +302,14 @@ func TestQueryCodec_Encode(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				dest := &bytes.Buffer{}
-				err := codec.Encode(tt.input, dest, cassandraprotocol.ProtocolVersion5)
+				err := codec.Encode(tt.input, dest, primitives.ProtocolVersion5)
 				assert.Equal(t, tt.expected, dest.Bytes())
 				assert.Equal(t, tt.err, err)
 			})
 		}
 	})
 	// tests for version = DSE v1
-	t.Run(fmt.Sprintf("version %d", cassandraprotocol.ProtocolVersionDse1), func(t *testing.T) {
+	t.Run(fmt.Sprintf("version %d", primitives.ProtocolVersionDse1), func(t *testing.T) {
 		tests := []struct {
 			name     string
 			input    Message
@@ -335,12 +334,12 @@ func TestQueryCodec_Encode(t *testing.T) {
 				&Query{
 					Query: "SELECT",
 					Options: NewQueryOptions(
-						WithConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalQuorum),
+						WithConsistencyLevel(primitives.ConsistencyLevelLocalQuorum),
 						SkipMetadata(),
 						WithPageSize(100),
 						WithPageSizeInBytes(),
 						WithPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-						WithSerialConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalSerial),
+						WithSerialConsistencyLevel(primitives.ConsistencyLevelLocalSerial),
 						WithDefaultTimestamp(123),
 						WithContinuousPagingOptions(&ContinuousPagingOptions{
 							MaxPages:       50,
@@ -430,14 +429,14 @@ func TestQueryCodec_Encode(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				dest := &bytes.Buffer{}
-				err := codec.Encode(tt.input, dest, cassandraprotocol.ProtocolVersionDse1)
+				err := codec.Encode(tt.input, dest, primitives.ProtocolVersionDse1)
 				assert.Equal(t, tt.expected, dest.Bytes())
 				assert.Equal(t, tt.err, err)
 			})
 		}
 	})
 	// tests for version = DSE v2
-	t.Run(fmt.Sprintf("version %v", cassandraprotocol.ProtocolVersionDse2), func(t *testing.T) {
+	t.Run(fmt.Sprintf("version %v", primitives.ProtocolVersionDse2), func(t *testing.T) {
 		tests := []encodeTestCase{
 			{
 				"query with keyspace and continuous options",
@@ -471,12 +470,12 @@ func TestQueryCodec_Encode(t *testing.T) {
 				&Query{
 					Query: "SELECT",
 					Options: NewQueryOptions(
-						WithConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalQuorum),
+						WithConsistencyLevel(primitives.ConsistencyLevelLocalQuorum),
 						SkipMetadata(),
 						WithPageSize(100),
 						WithPageSizeInBytes(),
 						WithPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-						WithSerialConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalSerial),
+						WithSerialConsistencyLevel(primitives.ConsistencyLevelLocalSerial),
 						WithDefaultTimestamp(123),
 						WithContinuousPagingOptions(&ContinuousPagingOptions{
 							MaxPages:       50,
@@ -537,7 +536,7 @@ func TestQueryCodec_Encode(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				dest := &bytes.Buffer{}
-				err := codec.Encode(tt.input, dest, cassandraprotocol.ProtocolVersionDse2)
+				err := codec.Encode(tt.input, dest, primitives.ProtocolVersionDse2)
 				assert.Equal(t, tt.expected, dest.Bytes())
 				assert.Equal(t, tt.err, err)
 			})
@@ -566,11 +565,11 @@ func TestQueryCodec_EncodedLength(t *testing.T) {
 				&Query{
 					Query: "SELECT",
 					Options: NewQueryOptions(
-						WithConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalQuorum),
+						WithConsistencyLevel(primitives.ConsistencyLevelLocalQuorum),
 						SkipMetadata(),
 						WithPageSize(100),
 						WithPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-						WithSerialConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalSerial),
+						WithSerialConsistencyLevel(primitives.ConsistencyLevelLocalSerial),
 						WithDefaultTimestamp(123),
 					),
 				},
@@ -637,14 +636,14 @@ func TestQueryCodec_EncodedLength(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				actual, err := codec.EncodedLength(tt.input, cassandraprotocol.ProtocolVersion3)
+				actual, err := codec.EncodedLength(tt.input, primitives.ProtocolVersion3)
 				assert.Equal(t, tt.expected, actual)
 				assert.Equal(t, tt.err, err)
 			})
 		}
 	})
 	// tests for version = 4
-	t.Run(fmt.Sprintf("version %d", cassandraprotocol.ProtocolVersion4), func(t *testing.T) {
+	t.Run(fmt.Sprintf("version %d", primitives.ProtocolVersion4), func(t *testing.T) {
 		tests := []struct {
 			name     string
 			input    Message
@@ -667,11 +666,11 @@ func TestQueryCodec_EncodedLength(t *testing.T) {
 				&Query{
 					Query: "SELECT",
 					Options: NewQueryOptions(
-						WithConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalQuorum),
+						WithConsistencyLevel(primitives.ConsistencyLevelLocalQuorum),
 						SkipMetadata(),
 						WithPageSize(100),
 						WithPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-						WithSerialConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalSerial),
+						WithSerialConsistencyLevel(primitives.ConsistencyLevelLocalSerial),
 						WithDefaultTimestamp(123),
 					),
 				},
@@ -742,14 +741,14 @@ func TestQueryCodec_EncodedLength(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				actual, err := codec.EncodedLength(tt.input, cassandraprotocol.ProtocolVersion4)
+				actual, err := codec.EncodedLength(tt.input, primitives.ProtocolVersion4)
 				assert.Equal(t, tt.expected, actual)
 				assert.Equal(t, tt.err, err)
 			})
 		}
 	})
 	// tests for version = 5
-	t.Run(fmt.Sprintf("version %v", cassandraprotocol.ProtocolVersion5), func(t *testing.T) {
+	t.Run(fmt.Sprintf("version %v", primitives.ProtocolVersion5), func(t *testing.T) {
 		tests := []encodedLengthTestCase{
 			{
 				"query with keyspace and now-in-seconds",
@@ -797,14 +796,14 @@ func TestQueryCodec_EncodedLength(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				actual, err := codec.EncodedLength(tt.input, cassandraprotocol.ProtocolVersion5)
+				actual, err := codec.EncodedLength(tt.input, primitives.ProtocolVersion5)
 				assert.Equal(t, tt.expected, actual)
 				assert.Equal(t, tt.err, err)
 			})
 		}
 	})
 	// tests for version = DSE v1
-	t.Run(fmt.Sprintf("version %d", cassandraprotocol.ProtocolVersionDse1), func(t *testing.T) {
+	t.Run(fmt.Sprintf("version %d", primitives.ProtocolVersionDse1), func(t *testing.T) {
 		tests := []struct {
 			name     string
 			input    Message
@@ -827,12 +826,12 @@ func TestQueryCodec_EncodedLength(t *testing.T) {
 				&Query{
 					Query: "SELECT",
 					Options: NewQueryOptions(
-						WithConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalQuorum),
+						WithConsistencyLevel(primitives.ConsistencyLevelLocalQuorum),
 						SkipMetadata(),
 						WithPageSize(100),
 						WithPageSizeInBytes(), // does not count for length
 						WithPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-						WithSerialConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalSerial),
+						WithSerialConsistencyLevel(primitives.ConsistencyLevelLocalSerial),
 						WithDefaultTimestamp(123),
 						WithContinuousPagingOptions(&ContinuousPagingOptions{
 							MaxPages:       50,
@@ -908,14 +907,14 @@ func TestQueryCodec_EncodedLength(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				actual, err := codec.EncodedLength(tt.input, cassandraprotocol.ProtocolVersionDse1)
+				actual, err := codec.EncodedLength(tt.input, primitives.ProtocolVersionDse1)
 				assert.Equal(t, tt.expected, actual)
 				assert.Equal(t, tt.err, err)
 			})
 		}
 	})
 	// tests for version = DSE v2
-	t.Run(fmt.Sprintf("version %v", cassandraprotocol.ProtocolVersionDse2), func(t *testing.T) {
+	t.Run(fmt.Sprintf("version %v", primitives.ProtocolVersionDse2), func(t *testing.T) {
 		tests := []encodedLengthTestCase{
 			{
 				"query with keyspace",
@@ -969,7 +968,7 @@ func TestQueryCodec_EncodedLength(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				actual, err := codec.EncodedLength(tt.input, cassandraprotocol.ProtocolVersionDse2)
+				actual, err := codec.EncodedLength(tt.input, primitives.ProtocolVersionDse2)
 				assert.Equal(t, tt.expected, actual)
 				assert.Equal(t, tt.err, err)
 			})
@@ -980,7 +979,7 @@ func TestQueryCodec_EncodedLength(t *testing.T) {
 func TestQueryCodec_Decode(t *testing.T) {
 	codec := &QueryCodec{}
 	// tests for version 3
-	t.Run(fmt.Sprintf("version %d", cassandraprotocol.ProtocolVersion3), func(t *testing.T) {
+	t.Run(fmt.Sprintf("version %d", primitives.ProtocolVersion3), func(t *testing.T) {
 		tests := []decodeTestCase{
 			{
 				"query with default options",
@@ -1009,11 +1008,11 @@ func TestQueryCodec_Decode(t *testing.T) {
 				&Query{
 					Query: "SELECT",
 					Options: NewQueryOptions(
-						WithConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalQuorum),
+						WithConsistencyLevel(primitives.ConsistencyLevelLocalQuorum),
 						SkipMetadata(),
 						WithPageSize(100),
 						WithPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-						WithSerialConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalSerial),
+						WithSerialConsistencyLevel(primitives.ConsistencyLevelLocalSerial),
 						WithDefaultTimestamp(123),
 					),
 				},
@@ -1082,14 +1081,14 @@ func TestQueryCodec_Decode(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				source := bytes.NewBuffer(tt.input)
-				actual, err := codec.Decode(source, cassandraprotocol.ProtocolVersion3)
+				actual, err := codec.Decode(source, primitives.ProtocolVersion3)
 				assert.Equal(t, tt.expected, actual)
 				assert.Equal(t, tt.err, err)
 			})
 		}
 	})
 	// tests for version = 4
-	t.Run(fmt.Sprintf("version %d", cassandraprotocol.ProtocolVersion4), func(t *testing.T) {
+	t.Run(fmt.Sprintf("version %d", primitives.ProtocolVersion4), func(t *testing.T) {
 		tests := []struct {
 			name     string
 			input    []byte
@@ -1123,11 +1122,11 @@ func TestQueryCodec_Decode(t *testing.T) {
 				&Query{
 					Query: "SELECT",
 					Options: NewQueryOptions(
-						WithConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalQuorum),
+						WithConsistencyLevel(primitives.ConsistencyLevelLocalQuorum),
 						SkipMetadata(),
 						WithPageSize(100),
 						WithPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-						WithSerialConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalSerial),
+						WithSerialConsistencyLevel(primitives.ConsistencyLevelLocalSerial),
 						WithDefaultTimestamp(123),
 					),
 				},
@@ -1200,14 +1199,14 @@ func TestQueryCodec_Decode(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				source := bytes.NewBuffer(tt.input)
-				actual, err := codec.Decode(source, cassandraprotocol.ProtocolVersion4)
+				actual, err := codec.Decode(source, primitives.ProtocolVersion4)
 				assert.Equal(t, tt.expected, actual)
 				assert.Equal(t, tt.err, err)
 			})
 		}
 	})
 	// tests for version = 5
-	t.Run(fmt.Sprintf("version %v", cassandraprotocol.ProtocolVersion5), func(t *testing.T) {
+	t.Run(fmt.Sprintf("version %v", primitives.ProtocolVersion5), func(t *testing.T) {
 		tests := []decodeTestCase{
 			{
 				"query with keyspace and now-in-seconds",
@@ -1266,14 +1265,14 @@ func TestQueryCodec_Decode(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				source := bytes.NewBuffer(tt.input)
-				actual, err := codec.Decode(source, cassandraprotocol.ProtocolVersion5)
+				actual, err := codec.Decode(source, primitives.ProtocolVersion5)
 				assert.Equal(t, tt.expected, actual)
 				assert.Equal(t, tt.err, err)
 			})
 		}
 	})
 	// tests for version = DSE v1
-	t.Run(fmt.Sprintf("version %d", cassandraprotocol.ProtocolVersionDse1), func(t *testing.T) {
+	t.Run(fmt.Sprintf("version %d", primitives.ProtocolVersionDse1), func(t *testing.T) {
 		tests := []struct {
 			name     string
 			input    []byte
@@ -1309,12 +1308,12 @@ func TestQueryCodec_Decode(t *testing.T) {
 				&Query{
 					Query: "SELECT",
 					Options: NewQueryOptions(
-						WithConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalQuorum),
+						WithConsistencyLevel(primitives.ConsistencyLevelLocalQuorum),
 						SkipMetadata(),
 						WithPageSize(100),
 						WithPageSizeInBytes(),
 						WithPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-						WithSerialConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalSerial),
+						WithSerialConsistencyLevel(primitives.ConsistencyLevelLocalSerial),
 						WithDefaultTimestamp(123),
 						WithContinuousPagingOptions(&ContinuousPagingOptions{
 							MaxPages:       50,
@@ -1391,14 +1390,14 @@ func TestQueryCodec_Decode(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				source := bytes.NewBuffer(tt.input)
-				actual, err := codec.Decode(source, cassandraprotocol.ProtocolVersionDse1)
+				actual, err := codec.Decode(source, primitives.ProtocolVersionDse1)
 				assert.Equal(t, tt.expected, actual)
 				assert.Equal(t, tt.err, err)
 			})
 		}
 	})
 	// tests for version = DSE v2
-	t.Run(fmt.Sprintf("version %v", cassandraprotocol.ProtocolVersionDse2), func(t *testing.T) {
+	t.Run(fmt.Sprintf("version %v", primitives.ProtocolVersionDse2), func(t *testing.T) {
 		tests := []decodeTestCase{
 			{
 				"query with keyspace and continuous paging",
@@ -1444,12 +1443,12 @@ func TestQueryCodec_Decode(t *testing.T) {
 				&Query{
 					Query: "SELECT",
 					Options: NewQueryOptions(
-						WithConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalQuorum),
+						WithConsistencyLevel(primitives.ConsistencyLevelLocalQuorum),
 						SkipMetadata(),
 						WithPageSize(100),
 						WithPageSizeInBytes(),
 						WithPagingState([]byte{0xca, 0xfe, 0xba, 0xbe}),
-						WithSerialConsistencyLevel(cassandraprotocol.ConsistencyLevelLocalSerial),
+						WithSerialConsistencyLevel(primitives.ConsistencyLevelLocalSerial),
 						WithDefaultTimestamp(123),
 						WithContinuousPagingOptions(&ContinuousPagingOptions{
 							MaxPages:       50,
@@ -1498,7 +1497,7 @@ func TestQueryCodec_Decode(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				source := bytes.NewBuffer(tt.input)
-				actual, err := codec.Decode(source, cassandraprotocol.ProtocolVersionDse2)
+				actual, err := codec.Decode(source, primitives.ProtocolVersionDse2)
 				assert.Equal(t, tt.expected, actual)
 				assert.Equal(t, tt.err, err)
 			})

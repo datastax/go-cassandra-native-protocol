@@ -3,7 +3,6 @@ package message
 import (
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
 	"io"
 )
@@ -16,8 +15,8 @@ func (m *Authenticate) IsResponse() bool {
 	return true
 }
 
-func (m *Authenticate) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeAuthenticate
+func (m *Authenticate) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeAuthenticate
 }
 
 func (m *Authenticate) String() string {
@@ -26,7 +25,7 @@ func (m *Authenticate) String() string {
 
 type AuthenticateCodec struct{}
 
-func (c *AuthenticateCodec) Encode(msg Message, dest io.Writer, _ cassandraprotocol.ProtocolVersion) error {
+func (c *AuthenticateCodec) Encode(msg Message, dest io.Writer, _ primitives.ProtocolVersion) error {
 	authenticate, ok := msg.(*Authenticate)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.Authenticate, got %T", msg))
@@ -37,7 +36,7 @@ func (c *AuthenticateCodec) Encode(msg Message, dest io.Writer, _ cassandraproto
 	return primitives.WriteString(authenticate.Authenticator, dest)
 }
 
-func (c *AuthenticateCodec) EncodedLength(msg Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
+func (c *AuthenticateCodec) EncodedLength(msg Message, _ primitives.ProtocolVersion) (int, error) {
 	authenticate, ok := msg.(*Authenticate)
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected *message.Authenticate, got %T", msg))
@@ -45,7 +44,7 @@ func (c *AuthenticateCodec) EncodedLength(msg Message, _ cassandraprotocol.Proto
 	return primitives.LengthOfString(authenticate.Authenticator), nil
 }
 
-func (c *AuthenticateCodec) Decode(source io.Reader, _ cassandraprotocol.ProtocolVersion) (Message, error) {
+func (c *AuthenticateCodec) Decode(source io.Reader, _ primitives.ProtocolVersion) (Message, error) {
 	if authenticator, err := primitives.ReadString(source); err != nil {
 		return nil, err
 	} else {
@@ -53,6 +52,6 @@ func (c *AuthenticateCodec) Decode(source io.Reader, _ cassandraprotocol.Protoco
 	}
 }
 
-func (c *AuthenticateCodec) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeAuthenticate
+func (c *AuthenticateCodec) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeAuthenticate
 }

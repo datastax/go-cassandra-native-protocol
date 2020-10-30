@@ -3,16 +3,15 @@ package message
 import (
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
 	"io"
 )
 
 type Batch struct {
-	Type              cassandraprotocol.BatchType
+	Type              primitives.BatchType
 	Children          []*BatchChild
-	Consistency       cassandraprotocol.ConsistencyLevel
-	SerialConsistency cassandraprotocol.ConsistencyLevel
+	Consistency       primitives.ConsistencyLevel
+	SerialConsistency primitives.ConsistencyLevel
 	DefaultTimestamp  int64
 	// Introduced in Protocol Version 5, also present in DSE protocol v2.
 	Keyspace string
@@ -22,9 +21,9 @@ type Batch struct {
 
 func NewBatch(customizers ...BatchCustomizer) *Batch {
 	batch := &Batch{
-		Type:              cassandraprotocol.BatchTypeLogged,
-		Consistency:       cassandraprotocol.ConsistencyLevelOne,
-		SerialConsistency: cassandraprotocol.ConsistencyLevelSerial,
+		Type:              primitives.BatchTypeLogged,
+		Consistency:       primitives.ConsistencyLevelOne,
+		SerialConsistency: primitives.ConsistencyLevelSerial,
 		DefaultTimestamp:  DefaultTimestampNone,
 		NowInSeconds:      NowInSecondsNone,
 	}
@@ -36,7 +35,7 @@ func NewBatch(customizers ...BatchCustomizer) *Batch {
 
 type BatchCustomizer func(*Batch)
 
-func WithBatchType(batchType cassandraprotocol.BatchType) BatchCustomizer {
+func WithBatchType(batchType primitives.BatchType) BatchCustomizer {
 	return func(batch *Batch) {
 		batch.Type = batchType
 	}
@@ -48,13 +47,13 @@ func WithBatchChildren(children ...*BatchChild) BatchCustomizer {
 	}
 }
 
-func WithBatchConsistencyLevel(consistency cassandraprotocol.ConsistencyLevel) BatchCustomizer {
+func WithBatchConsistencyLevel(consistency primitives.ConsistencyLevel) BatchCustomizer {
 	return func(batch *Batch) {
 		batch.Consistency = consistency
 	}
 }
 
-func WithBatchSerialConsistencyLevel(consistency cassandraprotocol.ConsistencyLevel) BatchCustomizer {
+func WithBatchSerialConsistencyLevel(consistency primitives.ConsistencyLevel) BatchCustomizer {
 	return func(batch *Batch) {
 		batch.SerialConsistency = consistency
 	}
@@ -82,27 +81,27 @@ func (m *Batch) IsResponse() bool {
 	return false
 }
 
-func (m *Batch) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeBatch
+func (m *Batch) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeBatch
 }
 
 func (m *Batch) String() string {
 	return fmt.Sprintf("BATCH (%d statements)", len(m.Children))
 }
 
-func (m *Batch) Flags() cassandraprotocol.QueryFlag {
-	var flags cassandraprotocol.QueryFlag
-	if m.SerialConsistency != cassandraprotocol.ConsistencyLevelSerial {
-		flags |= cassandraprotocol.QueryFlagSerialConsistency
+func (m *Batch) Flags() primitives.QueryFlag {
+	var flags primitives.QueryFlag
+	if m.SerialConsistency != primitives.ConsistencyLevelSerial {
+		flags |= primitives.QueryFlagSerialConsistency
 	}
 	if m.DefaultTimestamp != DefaultTimestampNone {
-		flags |= cassandraprotocol.QueryFlagDefaultTimestamp
+		flags |= primitives.QueryFlagDefaultTimestamp
 	}
 	if m.Keyspace != "" {
-		flags |= cassandraprotocol.QueryFlagWithKeyspace
+		flags |= primitives.QueryFlagWithKeyspace
 	}
 	if m.NowInSeconds != NowInSecondsNone {
-		flags |= cassandraprotocol.QueryFlagNowInSeconds
+		flags |= primitives.QueryFlagNowInSeconds
 	}
 	return flags
 }
@@ -124,12 +123,12 @@ func NewPreparedBatchChild(preparedId []byte, values ...*primitives.Value) *Batc
 
 type BatchCodec struct{}
 
-func (c *BatchCodec) Encode(msg Message, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
+func (c *BatchCodec) Encode(msg Message, dest io.Writer, version primitives.ProtocolVersion) (err error) {
 	batch, ok := msg.(*Batch)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.Batch, got %T", msg))
 	}
-	if err = cassandraprotocol.CheckBatchType(batch.Type); err != nil {
+	if err = primitives.CheckBatchType(batch.Type); err != nil {
 		return err
 	} else if err = primitives.WriteByte(batch.Type, dest); err != nil {
 		return fmt.Errorf("cannot write BATCH type: %w", err)
@@ -171,7 +170,7 @@ func (c *BatchCodec) Encode(msg Message, dest io.Writer, version cassandraprotoc
 		return fmt.Errorf("cannot write BATCH consistency: %w", err)
 	}
 	flags := batch.Flags()
-	if version >= cassandraprotocol.ProtocolVersion5 {
+	if version >= primitives.ProtocolVersion5 {
 		err = primitives.WriteInt(int32(flags), dest)
 	} else {
 		err = primitives.WriteByte(uint8(flags), dest)
@@ -179,25 +178,25 @@ func (c *BatchCodec) Encode(msg Message, dest io.Writer, version cassandraprotoc
 	if err != nil {
 		return fmt.Errorf("cannot write BATCH query flags: %w", err)
 	}
-	if flags&cassandraprotocol.QueryFlagSerialConsistency > 0 {
+	if flags&primitives.QueryFlagSerialConsistency > 0 {
 		if err = primitives.WriteShort(batch.SerialConsistency, dest); err != nil {
 			return fmt.Errorf("cannot write BATCH serial consistency: %w", err)
 		}
 	}
-	if flags&cassandraprotocol.QueryFlagDefaultTimestamp > 0 {
+	if flags&primitives.QueryFlagDefaultTimestamp > 0 {
 		if err = primitives.WriteLong(batch.DefaultTimestamp, dest); err != nil {
 			return fmt.Errorf("cannot write BATCH default timestamp: %w", err)
 		}
 	}
-	if flags&cassandraprotocol.QueryFlagWithKeyspace > 0 {
+	if flags&primitives.QueryFlagWithKeyspace > 0 {
 		if batch.Keyspace == "" {
 			return errors.New("cannot write BATCH empty keyspace")
 		} else if err = primitives.WriteString(batch.Keyspace, dest); err != nil {
 			return fmt.Errorf("cannot write BATCH keyspace: %w", err)
 		}
 	}
-	if flags&cassandraprotocol.QueryFlagNowInSeconds > 0 {
-		if version < cassandraprotocol.ProtocolVersion5 {
+	if flags&primitives.QueryFlagNowInSeconds > 0 {
+		if version < primitives.ProtocolVersion5 {
 			return fmt.Errorf("cannot set BATCH now-in-seconds with protocol version %d", version)
 		} else if err = primitives.WriteInt(batch.NowInSeconds, dest); err != nil {
 			return fmt.Errorf("cannot write BATCH now-in-seconds: %w", err)
@@ -206,7 +205,7 @@ func (c *BatchCodec) Encode(msg Message, dest io.Writer, version cassandraprotoc
 	return nil
 }
 
-func (c *BatchCodec) EncodedLength(msg Message, version cassandraprotocol.ProtocolVersion) (length int, err error) {
+func (c *BatchCodec) EncodedLength(msg Message, version primitives.ProtocolVersion) (length int, err error) {
 	batch, ok := msg.(*Batch)
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected *message.Batch, got %T", msg))
@@ -235,32 +234,32 @@ func (c *BatchCodec) EncodedLength(msg Message, version cassandraprotocol.Protoc
 	}
 	length += primitives.LengthOfShort // consistency level
 	// flags
-	if version >= cassandraprotocol.ProtocolVersion5 {
+	if version >= primitives.ProtocolVersion5 {
 		length += primitives.LengthOfInt
 	} else {
 		length += primitives.LengthOfByte
 	}
 	flags := batch.Flags()
-	if flags&cassandraprotocol.QueryFlagSerialConsistency > 0 {
+	if flags&primitives.QueryFlagSerialConsistency > 0 {
 		length += primitives.LengthOfShort
 	}
-	if flags&cassandraprotocol.QueryFlagDefaultTimestamp > 0 {
+	if flags&primitives.QueryFlagDefaultTimestamp > 0 {
 		length += primitives.LengthOfLong
 	}
-	if flags&cassandraprotocol.QueryFlagWithKeyspace > 0 {
+	if flags&primitives.QueryFlagWithKeyspace > 0 {
 		length += primitives.LengthOfString(batch.Keyspace)
 	}
-	if flags&cassandraprotocol.QueryFlagNowInSeconds > 0 {
+	if flags&primitives.QueryFlagNowInSeconds > 0 {
 		length += primitives.LengthOfInt
 	}
 	return length, nil
 }
 
-func (c *BatchCodec) Decode(source io.Reader, version cassandraprotocol.ProtocolVersion) (msg Message, err error) {
+func (c *BatchCodec) Decode(source io.Reader, version primitives.ProtocolVersion) (msg Message, err error) {
 	batch := NewBatch()
 	if batch.Type, err = primitives.ReadByte(source); err != nil {
 		return nil, fmt.Errorf("cannot read BATCH type: %w", err)
-	} else if err = cassandraprotocol.CheckBatchType(batch.Type); err != nil {
+	} else if err = primitives.CheckBatchType(batch.Type); err != nil {
 		return nil, err
 	}
 	var childrenCount uint16
@@ -294,39 +293,39 @@ func (c *BatchCodec) Decode(source io.Reader, version cassandraprotocol.Protocol
 	if batch.Consistency, err = primitives.ReadShort(source); err != nil {
 		return nil, fmt.Errorf("cannot read BATCH consistency: %w", err)
 	}
-	var flags cassandraprotocol.QueryFlag
-	if version >= cassandraprotocol.ProtocolVersion5 {
+	var flags primitives.QueryFlag
+	if version >= primitives.ProtocolVersion5 {
 		var f int32
 		f, err = primitives.ReadInt(source)
-		flags = cassandraprotocol.QueryFlag(f)
+		flags = primitives.QueryFlag(f)
 	} else {
 		var f uint8
 		f, err = primitives.ReadByte(source)
-		flags = cassandraprotocol.QueryFlag(f)
+		flags = primitives.QueryFlag(f)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("cannot read BATCH query flags: %w", err)
 	}
-	if flags&cassandraprotocol.QueryFlagValueNames > 0 {
+	if flags&primitives.QueryFlagValueNames > 0 {
 		return nil, errors.New("cannot use BATCH with named values, see CASSANDRA-10246")
 	}
-	if flags&cassandraprotocol.QueryFlagSerialConsistency > 0 {
+	if flags&primitives.QueryFlagSerialConsistency > 0 {
 		if batch.SerialConsistency, err = primitives.ReadShort(source); err != nil {
 			return nil, fmt.Errorf("cannot read BATCH serial consistency: %w", err)
 		}
 	}
-	if flags&cassandraprotocol.QueryFlagDefaultTimestamp > 0 {
+	if flags&primitives.QueryFlagDefaultTimestamp > 0 {
 		if batch.DefaultTimestamp, err = primitives.ReadLong(source); err != nil {
 			return nil, fmt.Errorf("cannot read BATCH default timestamp: %w", err)
 		}
 	}
-	if version >= cassandraprotocol.ProtocolVersion5 {
-		if flags&cassandraprotocol.QueryFlagWithKeyspace > 0 {
+	if version >= primitives.ProtocolVersion5 {
+		if flags&primitives.QueryFlagWithKeyspace > 0 {
 			if batch.Keyspace, err = primitives.ReadString(source); err != nil {
 				return nil, fmt.Errorf("cannot read BATCH keyspace: %w", err)
 			}
 		}
-		if flags&cassandraprotocol.QueryFlagNowInSeconds > 0 {
+		if flags&primitives.QueryFlagNowInSeconds > 0 {
 			if batch.NowInSeconds, err = primitives.ReadInt(source); err != nil {
 				return nil, fmt.Errorf("cannot read BATCH now-in-seconds: %w", err)
 			}
@@ -335,6 +334,6 @@ func (c *BatchCodec) Decode(source io.Reader, version cassandraprotocol.Protocol
 	return batch, nil
 }
 
-func (c *BatchCodec) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeBatch
+func (c *BatchCodec) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeBatch
 }

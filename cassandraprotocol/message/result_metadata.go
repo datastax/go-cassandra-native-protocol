@@ -2,7 +2,6 @@ package message
 
 import (
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/datatype"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
 	"io"
@@ -36,9 +35,9 @@ func WithResultColumns(specs ...*ColumnMetadata) func(metadata *VariablesMetadat
 	}
 }
 
-func (rm *VariablesMetadata) Flags() (flag cassandraprotocol.VariablesFlag) {
+func (rm *VariablesMetadata) Flags() (flag primitives.VariablesFlag) {
 	if len(rm.ColumnSpecs) > 0 && haveSameTable(rm.ColumnSpecs) {
-		flag |= cassandraprotocol.VariablesFlagGlobalTablesSpec
+		flag |= primitives.VariablesFlagGlobalTablesSpec
 	}
 	return flag
 }
@@ -110,22 +109,22 @@ func LastContinuousPage() func(metadata *RowsMetadata) {
 	}
 }
 
-func (rm *RowsMetadata) Flags() (flag cassandraprotocol.RowsFlag) {
+func (rm *RowsMetadata) Flags() (flag primitives.RowsFlag) {
 	if len(rm.ColumnSpecs) == 0 {
-		flag |= cassandraprotocol.RowsFlagNoMetadata
+		flag |= primitives.RowsFlagNoMetadata
 	} else if haveSameTable(rm.ColumnSpecs) {
-		flag |= cassandraprotocol.RowsFlagGlobalTablesSpec
+		flag |= primitives.RowsFlagGlobalTablesSpec
 	}
 	if rm.PagingState != nil {
-		flag |= cassandraprotocol.RowsFlagHasMorePages
+		flag |= primitives.RowsFlagHasMorePages
 	}
 	if rm.NewResultMetadataId != nil {
-		flag |= cassandraprotocol.RowsFlagMetadataChanged
+		flag |= primitives.RowsFlagMetadataChanged
 	}
 	if rm.ContinuousPageNumber > 0 {
-		flag |= cassandraprotocol.RowsFlagDseContinuousPaging
+		flag |= primitives.RowsFlagDseContinuousPaging
 		if rm.LastContinuousPage {
-			flag |= cassandraprotocol.RowsFlagDseLastContinuousPage
+			flag |= primitives.RowsFlagDseLastContinuousPage
 		}
 	}
 	return flag
@@ -139,7 +138,7 @@ type ColumnMetadata struct {
 	Type     datatype.DataType
 }
 
-func encodeVariablesMetadata(metadata *VariablesMetadata, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
+func encodeVariablesMetadata(metadata *VariablesMetadata, dest io.Writer, version primitives.ProtocolVersion) (err error) {
 	flags := metadata.Flags()
 	if err = primitives.WriteInt(int32(flags), dest); err != nil {
 		return fmt.Errorf("cannot write RESULT Prepared variables metadata flags: %w", err)
@@ -147,7 +146,7 @@ func encodeVariablesMetadata(metadata *VariablesMetadata, dest io.Writer, versio
 	if err = primitives.WriteInt(int32(len(metadata.ColumnSpecs)), dest); err != nil {
 		return fmt.Errorf("cannot write RESULT Prepared variables metadata column count: %w", err)
 	}
-	if version >= cassandraprotocol.ProtocolVersion4 {
+	if version >= primitives.ProtocolVersion4 {
 		if err = primitives.WriteInt(int32(len(metadata.PkIndices)), dest); err != nil {
 			return fmt.Errorf("cannot write RESULT Prepared variables metadata pk indices length: %w", err)
 		}
@@ -158,7 +157,7 @@ func encodeVariablesMetadata(metadata *VariablesMetadata, dest io.Writer, versio
 		}
 	}
 	if len(metadata.ColumnSpecs) > 0 {
-		globalTableSpec := flags&cassandraprotocol.VariablesFlagGlobalTablesSpec > 0
+		globalTableSpec := flags&primitives.VariablesFlagGlobalTablesSpec > 0
 		if err = encodeColumnSpecs(globalTableSpec, metadata.ColumnSpecs, dest, version); err != nil {
 			return fmt.Errorf("cannot write RESULT Prepared variables metadata column specs: %w", err)
 		}
@@ -166,15 +165,15 @@ func encodeVariablesMetadata(metadata *VariablesMetadata, dest io.Writer, versio
 	return nil
 }
 
-func lengthOfVariablesMetadata(metadata *VariablesMetadata, version cassandraprotocol.ProtocolVersion) (length int, err error) {
+func lengthOfVariablesMetadata(metadata *VariablesMetadata, version primitives.ProtocolVersion) (length int, err error) {
 	length += primitives.LengthOfInt // flags
 	length += primitives.LengthOfInt // column count
-	if version >= cassandraprotocol.ProtocolVersion4 {
+	if version >= primitives.ProtocolVersion4 {
 		length += primitives.LengthOfInt // pk count
 		length += primitives.LengthOfShort * len(metadata.PkIndices)
 	}
 	if len(metadata.ColumnSpecs) > 0 {
-		globalTableSpec := metadata.Flags()&cassandraprotocol.VariablesFlagGlobalTablesSpec > 0
+		globalTableSpec := metadata.Flags()&primitives.VariablesFlagGlobalTablesSpec > 0
 		var lcs int
 		if lcs, err = lengthOfColumnSpecs(globalTableSpec, metadata.ColumnSpecs, version); err != nil {
 			return -1, fmt.Errorf("cannot compute length of RESULT Prepared variables metadata column specs: %w", err)
@@ -184,18 +183,18 @@ func lengthOfVariablesMetadata(metadata *VariablesMetadata, version cassandrapro
 	return length, nil
 }
 
-func decodeVariablesMetadata(source io.Reader, version cassandraprotocol.ProtocolVersion) (metadata *VariablesMetadata, err error) {
+func decodeVariablesMetadata(source io.Reader, version primitives.ProtocolVersion) (metadata *VariablesMetadata, err error) {
 	metadata = &VariablesMetadata{}
 	var f int32
 	if f, err = primitives.ReadInt(source); err != nil {
 		return nil, fmt.Errorf("cannot read RESULT Prepared variables metadata flags: %w", err)
 	}
-	var flags = cassandraprotocol.VariablesFlag(f)
+	var flags = primitives.VariablesFlag(f)
 	var columnCount int32
 	if columnCount, err = primitives.ReadInt(source); err != nil {
 		return nil, fmt.Errorf("cannot read RESULT Prepared variables metadata column count: %w", err)
 	}
-	if version >= cassandraprotocol.ProtocolVersion4 {
+	if version >= primitives.ProtocolVersion4 {
 		var pkCount int32
 		if pkCount, err = primitives.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read RESULT Prepared variables metadata pk indices length: %w", err)
@@ -211,7 +210,7 @@ func decodeVariablesMetadata(source io.Reader, version cassandraprotocol.Protoco
 	}
 	if columnCount > 0 {
 		metadata.ColumnSpecs = make([]*ColumnMetadata, columnCount)
-		globalTableSpec := flags&cassandraprotocol.VariablesFlagGlobalTablesSpec > 0
+		globalTableSpec := flags&primitives.VariablesFlagGlobalTablesSpec > 0
 		if metadata.ColumnSpecs, err = decodeColumnSpecs(globalTableSpec, columnCount, source, version); err != nil {
 			return nil, fmt.Errorf("cannot read RESULT Prepared variables metadata column specs: %w", err)
 		}
@@ -219,7 +218,7 @@ func decodeVariablesMetadata(source io.Reader, version cassandraprotocol.Protoco
 	return metadata, nil
 }
 
-func encodeRowsMetadata(metadata *RowsMetadata, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
+func encodeRowsMetadata(metadata *RowsMetadata, dest io.Writer, version primitives.ProtocolVersion) (err error) {
 	flags := metadata.Flags()
 	if err = primitives.WriteInt(int32(flags), dest); err != nil {
 		return fmt.Errorf("cannot write RESULT Rows metadata flags: %w", err)
@@ -235,23 +234,23 @@ func encodeRowsMetadata(metadata *RowsMetadata, dest io.Writer, version cassandr
 	if err = primitives.WriteInt(metadata.ColumnCount, dest); err != nil {
 		return fmt.Errorf("cannot write RESULT Rows metadata column count: %w", err)
 	}
-	if flags&cassandraprotocol.RowsFlagHasMorePages > 0 {
+	if flags&primitives.RowsFlagHasMorePages > 0 {
 		if err = primitives.WriteBytes(metadata.PagingState, dest); err != nil {
 			return fmt.Errorf("cannot write RESULT Rows metadata paging state: %w", err)
 		}
 	}
-	if flags&cassandraprotocol.RowsFlagMetadataChanged > 0 {
+	if flags&primitives.RowsFlagMetadataChanged > 0 {
 		if err = primitives.WriteShortBytes(metadata.NewResultMetadataId, dest); err != nil {
 			return fmt.Errorf("cannot write RESULT Rows metadata new result metadata id: %w", err)
 		}
 	}
-	if flags&cassandraprotocol.RowsFlagDseContinuousPaging > 0 {
+	if flags&primitives.RowsFlagDseContinuousPaging > 0 {
 		if err = primitives.WriteInt(metadata.ContinuousPageNumber, dest); err != nil {
 			return fmt.Errorf("cannot write RESULT Rows metadata continuous page number: %w", err)
 		}
 	}
-	if flags&cassandraprotocol.RowsFlagNoMetadata == 0 && columnSpecsLength > 0 {
-		globalTableSpec := flags&cassandraprotocol.RowsFlagGlobalTablesSpec > 0
+	if flags&primitives.RowsFlagNoMetadata == 0 && columnSpecsLength > 0 {
+		globalTableSpec := flags&primitives.RowsFlagGlobalTablesSpec > 0
 		if err = encodeColumnSpecs(globalTableSpec, metadata.ColumnSpecs, dest, version); err != nil {
 			return fmt.Errorf("cannot write RESULT Rows metadata column specs: %w", err)
 		}
@@ -259,21 +258,21 @@ func encodeRowsMetadata(metadata *RowsMetadata, dest io.Writer, version cassandr
 	return nil
 }
 
-func lengthOfRowsMetadata(metadata *RowsMetadata, version cassandraprotocol.ProtocolVersion) (length int, err error) {
+func lengthOfRowsMetadata(metadata *RowsMetadata, version primitives.ProtocolVersion) (length int, err error) {
 	length += primitives.LengthOfInt // flags
 	length += primitives.LengthOfInt // column count
 	flags := metadata.Flags()
-	if flags&cassandraprotocol.RowsFlagHasMorePages > 0 {
+	if flags&primitives.RowsFlagHasMorePages > 0 {
 		length += primitives.LengthOfBytes(metadata.PagingState)
 	}
-	if flags&cassandraprotocol.RowsFlagMetadataChanged > 0 {
+	if flags&primitives.RowsFlagMetadataChanged > 0 {
 		length += primitives.LengthOfShortBytes(metadata.NewResultMetadataId)
 	}
-	if flags&cassandraprotocol.RowsFlagDseContinuousPaging > 0 {
+	if flags&primitives.RowsFlagDseContinuousPaging > 0 {
 		length += primitives.LengthOfInt // continuous page number
 	}
-	if flags&cassandraprotocol.RowsFlagNoMetadata == 0 && len(metadata.ColumnSpecs) > 0 {
-		globalTableSpec := flags&cassandraprotocol.RowsFlagGlobalTablesSpec > 0
+	if flags&primitives.RowsFlagNoMetadata == 0 && len(metadata.ColumnSpecs) > 0 {
+		globalTableSpec := flags&primitives.RowsFlagGlobalTablesSpec > 0
 		var lengthOfSpecs int
 		if lengthOfSpecs, err = lengthOfColumnSpecs(globalTableSpec, metadata.ColumnSpecs, version); err != nil {
 			return -1, fmt.Errorf("cannot compute length of RESULT Rows metadata column specs: %w", err)
@@ -283,35 +282,35 @@ func lengthOfRowsMetadata(metadata *RowsMetadata, version cassandraprotocol.Prot
 	return length, nil
 }
 
-func decodeRowsMetadata(source io.Reader, version cassandraprotocol.ProtocolVersion) (metadata *RowsMetadata, err error) {
+func decodeRowsMetadata(source io.Reader, version primitives.ProtocolVersion) (metadata *RowsMetadata, err error) {
 	metadata = &RowsMetadata{}
 	var f int32
 	if f, err = primitives.ReadInt(source); err != nil {
 		return nil, fmt.Errorf("cannot read RESULT Rows metadata flags: %w", err)
 	}
-	var flags = cassandraprotocol.RowsFlag(f)
+	var flags = primitives.RowsFlag(f)
 	if metadata.ColumnCount, err = primitives.ReadInt(source); err != nil {
 		return nil, fmt.Errorf("cannot read RESULT Rows metadata column count: %w", err)
 	}
-	if flags&cassandraprotocol.RowsFlagHasMorePages > 0 {
+	if flags&primitives.RowsFlagHasMorePages > 0 {
 		if metadata.PagingState, err = primitives.ReadBytes(source); err != nil {
 			return nil, fmt.Errorf("cannot read RESULT Rows metadata paging state: %w", err)
 		}
 	}
-	if flags&cassandraprotocol.RowsFlagMetadataChanged > 0 {
+	if flags&primitives.RowsFlagMetadataChanged > 0 {
 		if metadata.NewResultMetadataId, err = primitives.ReadShortBytes(source); err != nil {
 			return nil, fmt.Errorf("cannot read RESULT Rows metadata new result metadata id: %w", err)
 		}
 	}
-	if flags&cassandraprotocol.RowsFlagDseContinuousPaging > 0 {
+	if flags&primitives.RowsFlagDseContinuousPaging > 0 {
 		if metadata.ContinuousPageNumber, err = primitives.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read RESULT Rows metadata continuous paging number: %w", err)
 		}
-		metadata.LastContinuousPage = flags&cassandraprotocol.RowsFlagDseLastContinuousPage > 0
+		metadata.LastContinuousPage = flags&primitives.RowsFlagDseLastContinuousPage > 0
 	}
-	if flags&cassandraprotocol.RowsFlagNoMetadata == 0 {
+	if flags&primitives.RowsFlagNoMetadata == 0 {
 		metadata.ColumnSpecs = make([]*ColumnMetadata, metadata.ColumnCount)
-		globalTableSpec := flags&cassandraprotocol.RowsFlagGlobalTablesSpec > 0
+		globalTableSpec := flags&primitives.RowsFlagGlobalTablesSpec > 0
 		if metadata.ColumnSpecs, err = decodeColumnSpecs(globalTableSpec, metadata.ColumnCount, source, version); err != nil {
 			return nil, fmt.Errorf("cannot read RESULT Rows metadata column specs: %w", err)
 		}
@@ -319,7 +318,7 @@ func decodeRowsMetadata(source io.Reader, version cassandraprotocol.ProtocolVers
 	return metadata, nil
 }
 
-func encodeColumnSpecs(globalTableSpec bool, specs []*ColumnMetadata, dest io.Writer, version cassandraprotocol.ProtocolVersion) (err error) {
+func encodeColumnSpecs(globalTableSpec bool, specs []*ColumnMetadata, dest io.Writer, version primitives.ProtocolVersion) (err error) {
 	if globalTableSpec {
 		firstSpec := specs[0]
 		if err = primitives.WriteString(firstSpec.Keyspace, dest); err != nil {
@@ -348,7 +347,7 @@ func encodeColumnSpecs(globalTableSpec bool, specs []*ColumnMetadata, dest io.Wr
 	return nil
 }
 
-func lengthOfColumnSpecs(globalTableSpec bool, specs []*ColumnMetadata, version cassandraprotocol.ProtocolVersion) (length int, err error) {
+func lengthOfColumnSpecs(globalTableSpec bool, specs []*ColumnMetadata, version primitives.ProtocolVersion) (length int, err error) {
 	if globalTableSpec {
 		firstSpec := specs[0]
 		length += primitives.LengthOfString(firstSpec.Keyspace)
@@ -369,7 +368,7 @@ func lengthOfColumnSpecs(globalTableSpec bool, specs []*ColumnMetadata, version 
 	return
 }
 
-func decodeColumnSpecs(globalTableSpec bool, columnCount int32, source io.Reader, version cassandraprotocol.ProtocolVersion) (specs []*ColumnMetadata, err error) {
+func decodeColumnSpecs(globalTableSpec bool, columnCount int32, source io.Reader, version primitives.ProtocolVersion) (specs []*ColumnMetadata, err error) {
 	var globalKsName string
 	var globalTableName string
 	if globalTableSpec {

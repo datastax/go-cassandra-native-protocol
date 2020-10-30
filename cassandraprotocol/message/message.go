@@ -1,26 +1,26 @@
 package message
 
 import (
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
 	"io"
 )
 
 type Message interface {
 	IsResponse() bool
-	GetOpCode() cassandraprotocol.OpCode
+	GetOpCode() primitives.OpCode
 }
 
 type Encoder interface {
-	Encode(msg Message, dest io.Writer, version cassandraprotocol.ProtocolVersion) error
-	EncodedLength(msg Message, version cassandraprotocol.ProtocolVersion) (int, error)
+	Encode(msg Message, dest io.Writer, version primitives.ProtocolVersion) error
+	EncodedLength(msg Message, version primitives.ProtocolVersion) (int, error)
 }
 
 type Decoder interface {
-	Decode(source io.Reader, version cassandraprotocol.ProtocolVersion) (Message, error)
+	Decode(source io.Reader, version primitives.ProtocolVersion) (Message, error)
 }
 
 type Codec interface {
 	Encoder
 	Decoder
-	GetOpCode() cassandraprotocol.OpCode
+	GetOpCode() primitives.OpCode
 }

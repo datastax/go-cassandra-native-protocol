@@ -3,7 +3,6 @@ package message
 import (
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
 	"io"
 )
@@ -51,8 +50,8 @@ func (m *Startup) IsResponse() bool {
 	return false
 }
 
-func (m *Startup) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeStartup
+func (m *Startup) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeStartup
 }
 
 func (m *Startup) String() string {
@@ -61,7 +60,7 @@ func (m *Startup) String() string {
 
 type StartupCodec struct{}
 
-func (c *StartupCodec) Encode(msg Message, dest io.Writer, _ cassandraprotocol.ProtocolVersion) error {
+func (c *StartupCodec) Encode(msg Message, dest io.Writer, _ primitives.ProtocolVersion) error {
 	startup, ok := msg.(*Startup)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.Startup, got %T", msg))
@@ -69,7 +68,7 @@ func (c *StartupCodec) Encode(msg Message, dest io.Writer, _ cassandraprotocol.P
 	return primitives.WriteStringMap(startup.Options, dest)
 }
 
-func (c *StartupCodec) EncodedLength(msg Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
+func (c *StartupCodec) EncodedLength(msg Message, _ primitives.ProtocolVersion) (int, error) {
 	startup, ok := msg.(*Startup)
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected *message.Startup, got %T", msg))
@@ -77,7 +76,7 @@ func (c *StartupCodec) EncodedLength(msg Message, _ cassandraprotocol.ProtocolVe
 	return primitives.LengthOfStringMap(startup.Options), nil
 }
 
-func (c *StartupCodec) Decode(source io.Reader, _ cassandraprotocol.ProtocolVersion) (Message, error) {
+func (c *StartupCodec) Decode(source io.Reader, _ primitives.ProtocolVersion) (Message, error) {
 	if options, err := primitives.ReadStringMap(source); err != nil {
 		return nil, err
 	} else {
@@ -85,6 +84,6 @@ func (c *StartupCodec) Decode(source io.Reader, _ cassandraprotocol.ProtocolVers
 	}
 }
 
-func (c *StartupCodec) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeStartup
+func (c *StartupCodec) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeStartup
 }

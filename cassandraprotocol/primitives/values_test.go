@@ -4,14 +4,13 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestReadValue(t *testing.T) {
 	// versions < 4
-	for _, version := range cassandraprotocol.AllProtocolVersionsLesserThan(cassandraprotocol.ProtocolVersion4) {
+	for _, version := range AllProtocolVersionsLesserThan(ProtocolVersion4) {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -92,7 +91,7 @@ func TestReadValue(t *testing.T) {
 		})
 	}
 	// versions >= 4
-	for _, version := range cassandraprotocol.AllProtocolVersionsGreaterThanOrEqualTo(cassandraprotocol.ProtocolVersion4) {
+	for _, version := range AllProtocolVersionsGreaterThanOrEqualTo(ProtocolVersion4) {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			var tests = []struct {
 				name     string
@@ -176,7 +175,7 @@ func TestReadValue(t *testing.T) {
 
 func TestWriteValue(t *testing.T) {
 	// versions < 4
-	for _, version := range []cassandraprotocol.ProtocolVersion{cassandraprotocol.ProtocolVersion3} {
+	for _, version := range []ProtocolVersion{ProtocolVersion3} {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -253,7 +252,7 @@ func TestWriteValue(t *testing.T) {
 		})
 	}
 	// versions >= 4
-	for _, version := range cassandraprotocol.AllProtocolVersionsGreaterThanOrEqualTo(cassandraprotocol.ProtocolVersion4) {
+	for _, version := range AllProtocolVersionsGreaterThanOrEqualTo(ProtocolVersion4) {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			var tests = []struct {
 				name     string
@@ -403,7 +402,7 @@ func TestLengthOfValue(t *testing.T) {
 }
 
 func TestReadPositionalValues(t *testing.T) {
-	for _, version := range cassandraprotocol.AllProtocolVersions() {
+	for _, version := range AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -498,7 +497,7 @@ func TestReadPositionalValues(t *testing.T) {
 
 func TestWritePositionalValues(t *testing.T) {
 	// versions < 4
-	for _, version := range cassandraprotocol.AllProtocolVersionsLesserThan(cassandraprotocol.ProtocolVersion4) {
+	for _, version := range AllProtocolVersionsLesserThan(ProtocolVersion4) {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -604,7 +603,7 @@ func TestWritePositionalValues(t *testing.T) {
 		})
 	}
 	// versions >= 4
-	for _, version := range cassandraprotocol.AllProtocolVersionsGreaterThanOrEqualTo(cassandraprotocol.ProtocolVersion4) {
+	for _, version := range AllProtocolVersionsGreaterThanOrEqualTo(ProtocolVersion4) {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			var tests = []struct {
 				name     string
@@ -810,7 +809,7 @@ func TestLengthOfPositionalValues(t *testing.T) {
 }
 
 func TestReadNamedValues(t *testing.T) {
-	for _, version := range cassandraprotocol.AllProtocolVersions() {
+	for _, version := range AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -924,7 +923,7 @@ func TestReadNamedValues(t *testing.T) {
 }
 
 func TestWriteNamedValues(t *testing.T) {
-	for _, version := range cassandraprotocol.AllProtocolVersions() {
+	for _, version := range AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []struct {
 				name     string

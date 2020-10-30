@@ -1,4 +1,4 @@
-package cassandraprotocol
+package primitives
 
 type ProtocolVersion = uint8
 

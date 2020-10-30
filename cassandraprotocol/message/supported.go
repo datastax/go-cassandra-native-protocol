@@ -3,7 +3,6 @@ package message
 import (
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
 	"io"
 )
@@ -16,8 +15,8 @@ func (m *Supported) IsResponse() bool {
 	return true
 }
 
-func (m *Supported) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeSupported
+func (m *Supported) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeSupported
 }
 
 func (m *Supported) String() string {
@@ -26,7 +25,7 @@ func (m *Supported) String() string {
 
 type SupportedCodec struct{}
 
-func (c *SupportedCodec) Encode(msg Message, dest io.Writer, _ cassandraprotocol.ProtocolVersion) error {
+func (c *SupportedCodec) Encode(msg Message, dest io.Writer, _ primitives.ProtocolVersion) error {
 	supported, ok := msg.(*Supported)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.Supported, got %T", msg))
@@ -37,7 +36,7 @@ func (c *SupportedCodec) Encode(msg Message, dest io.Writer, _ cassandraprotocol
 	return nil
 }
 
-func (c *SupportedCodec) EncodedLength(msg Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
+func (c *SupportedCodec) EncodedLength(msg Message, _ primitives.ProtocolVersion) (int, error) {
 	supported, ok := msg.(*Supported)
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected *message.Supported, got %T", msg))
@@ -45,7 +44,7 @@ func (c *SupportedCodec) EncodedLength(msg Message, _ cassandraprotocol.Protocol
 	return primitives.LengthOfStringMultiMap(supported.Options), nil
 }
 
-func (c *SupportedCodec) Decode(source io.Reader, _ cassandraprotocol.ProtocolVersion) (Message, error) {
+func (c *SupportedCodec) Decode(source io.Reader, _ primitives.ProtocolVersion) (Message, error) {
 	if options, err := primitives.ReadStringMultiMap(source); err != nil {
 		return nil, err
 	} else {
@@ -53,6 +52,6 @@ func (c *SupportedCodec) Decode(source io.Reader, _ cassandraprotocol.ProtocolVe
 	}
 }
 
-func (c *SupportedCodec) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeSupported
+func (c *SupportedCodec) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeSupported
 }

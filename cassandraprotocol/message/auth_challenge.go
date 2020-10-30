@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
 	"io"
 )
@@ -17,8 +16,8 @@ func (m *AuthChallenge) IsResponse() bool {
 	return true
 }
 
-func (m *AuthChallenge) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeAuthChallenge
+func (m *AuthChallenge) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeAuthChallenge
 }
 
 func (m *AuthChallenge) String() string {
@@ -27,7 +26,7 @@ func (m *AuthChallenge) String() string {
 
 type AuthChallengeCodec struct{}
 
-func (c *AuthChallengeCodec) Encode(msg Message, dest io.Writer, _ cassandraprotocol.ProtocolVersion) error {
+func (c *AuthChallengeCodec) Encode(msg Message, dest io.Writer, _ primitives.ProtocolVersion) error {
 	authChallenge, ok := msg.(*AuthChallenge)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.AuthChallenge, got %T", msg))
@@ -38,7 +37,7 @@ func (c *AuthChallengeCodec) Encode(msg Message, dest io.Writer, _ cassandraprot
 	return primitives.WriteBytes(authChallenge.Token, dest)
 }
 
-func (c *AuthChallengeCodec) EncodedLength(msg Message, _ cassandraprotocol.ProtocolVersion) (int, error) {
+func (c *AuthChallengeCodec) EncodedLength(msg Message, _ primitives.ProtocolVersion) (int, error) {
 	authChallenge, ok := msg.(*AuthChallenge)
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected *message.AuthChallenge, got %T", msg))
@@ -46,7 +45,7 @@ func (c *AuthChallengeCodec) EncodedLength(msg Message, _ cassandraprotocol.Prot
 	return primitives.LengthOfBytes(authChallenge.Token), nil
 }
 
-func (c *AuthChallengeCodec) Decode(source io.Reader, _ cassandraprotocol.ProtocolVersion) (Message, error) {
+func (c *AuthChallengeCodec) Decode(source io.Reader, _ primitives.ProtocolVersion) (Message, error) {
 	if token, err := primitives.ReadBytes(source); err != nil {
 		return nil, err
 	} else {
@@ -54,6 +53,6 @@ func (c *AuthChallengeCodec) Decode(source io.Reader, _ cassandraprotocol.Protoc
 	}
 }
 
-func (c *AuthChallengeCodec) GetOpCode() cassandraprotocol.OpCode {
-	return cassandraprotocol.OpCodeAuthChallenge
+func (c *AuthChallengeCodec) GetOpCode() primitives.OpCode {
+	return primitives.OpCodeAuthChallenge
 }
