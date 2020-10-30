@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"io"
 )
 
@@ -20,8 +20,8 @@ func (m *Execute) IsResponse() bool {
 	return false
 }
 
-func (m *Execute) GetOpCode() primitives.OpCode {
-	return primitives.OpCodeExecute
+func (m *Execute) GetOpCode() primitive.OpCode {
+	return primitive.OpCodeExecute
 }
 
 func (m *Execute) String() string {
@@ -30,20 +30,20 @@ func (m *Execute) String() string {
 
 type ExecuteCodec struct{}
 
-func (c *ExecuteCodec) Encode(msg Message, dest io.Writer, version primitives.ProtocolVersion) error {
+func (c *ExecuteCodec) Encode(msg Message, dest io.Writer, version primitive.ProtocolVersion) error {
 	execute, ok := msg.(*Execute)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.Execute, got %T", msg))
 	}
 	if len(execute.QueryId) == 0 {
 		return errors.New("EXECUTE missing query id")
-	} else if err := primitives.WriteShortBytes(execute.QueryId, dest); err != nil {
+	} else if err := primitive.WriteShortBytes(execute.QueryId, dest); err != nil {
 		return fmt.Errorf("cannot write EXECUTE query id: %w", err)
 	}
 	if hasResultMetadataId(version) {
 		if len(execute.ResultMetadataId) == 0 {
 			return errors.New("EXECUTE missing result metadata id")
-		} else if err := primitives.WriteShortBytes(execute.ResultMetadataId, dest); err != nil {
+		} else if err := primitive.WriteShortBytes(execute.ResultMetadataId, dest); err != nil {
 			return fmt.Errorf("cannot write EXECUTE result metadata id: %w", err)
 		}
 	}
@@ -53,14 +53,14 @@ func (c *ExecuteCodec) Encode(msg Message, dest io.Writer, version primitives.Pr
 	return nil
 }
 
-func (c *ExecuteCodec) EncodedLength(msg Message, version primitives.ProtocolVersion) (size int, err error) {
+func (c *ExecuteCodec) EncodedLength(msg Message, version primitive.ProtocolVersion) (size int, err error) {
 	execute, ok := msg.(*Execute)
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected *message.Execute, got %T", msg))
 	}
-	size += primitives.LengthOfShortBytes(execute.QueryId)
+	size += primitive.LengthOfShortBytes(execute.QueryId)
 	if hasResultMetadataId(version) {
-		size += primitives.LengthOfShortBytes(execute.ResultMetadataId)
+		size += primitive.LengthOfShortBytes(execute.ResultMetadataId)
 	}
 	if lengthOfQueryOptions, err := LengthOfQueryOptions(execute.Options, version); err == nil {
 		return size + lengthOfQueryOptions, nil
@@ -69,17 +69,17 @@ func (c *ExecuteCodec) EncodedLength(msg Message, version primitives.ProtocolVer
 	}
 }
 
-func (c *ExecuteCodec) Decode(source io.Reader, version primitives.ProtocolVersion) (msg Message, err error) {
+func (c *ExecuteCodec) Decode(source io.Reader, version primitive.ProtocolVersion) (msg Message, err error) {
 	var execute = &Execute{
 		Options: nil,
 	}
-	if execute.QueryId, err = primitives.ReadShortBytes(source); err != nil {
+	if execute.QueryId, err = primitive.ReadShortBytes(source); err != nil {
 		return nil, fmt.Errorf("cannot read EXECUTE query id: %w", err)
 	} else if len(execute.QueryId) == 0 {
 		return nil, errors.New("EXECUTE missing query id")
 	}
 	if hasResultMetadataId(version) {
-		if execute.ResultMetadataId, err = primitives.ReadShortBytes(source); err != nil {
+		if execute.ResultMetadataId, err = primitive.ReadShortBytes(source); err != nil {
 			return nil, fmt.Errorf("cannot read EXECUTE result metadata id: %w", err)
 		} else if len(execute.ResultMetadataId) == 0 {
 			return nil, errors.New("EXECUTE missing result metadata id")
@@ -91,6 +91,6 @@ func (c *ExecuteCodec) Decode(source io.Reader, version primitives.ProtocolVersi
 	return execute, nil
 }
 
-func (c *ExecuteCodec) GetOpCode() primitives.OpCode {
-	return primitives.OpCodeExecute
+func (c *ExecuteCodec) GetOpCode() primitive.OpCode {
+	return primitive.OpCodeExecute
 }

@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"io"
 )
 
@@ -16,8 +16,8 @@ func (m *AuthChallenge) IsResponse() bool {
 	return true
 }
 
-func (m *AuthChallenge) GetOpCode() primitives.OpCode {
-	return primitives.OpCodeAuthChallenge
+func (m *AuthChallenge) GetOpCode() primitive.OpCode {
+	return primitive.OpCodeAuthChallenge
 }
 
 func (m *AuthChallenge) String() string {
@@ -26,7 +26,7 @@ func (m *AuthChallenge) String() string {
 
 type AuthChallengeCodec struct{}
 
-func (c *AuthChallengeCodec) Encode(msg Message, dest io.Writer, _ primitives.ProtocolVersion) error {
+func (c *AuthChallengeCodec) Encode(msg Message, dest io.Writer, _ primitive.ProtocolVersion) error {
 	authChallenge, ok := msg.(*AuthChallenge)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.AuthChallenge, got %T", msg))
@@ -34,25 +34,25 @@ func (c *AuthChallengeCodec) Encode(msg Message, dest io.Writer, _ primitives.Pr
 	if authChallenge.Token == nil {
 		return errors.New("AUTH_CHALLENGE token cannot be nil")
 	}
-	return primitives.WriteBytes(authChallenge.Token, dest)
+	return primitive.WriteBytes(authChallenge.Token, dest)
 }
 
-func (c *AuthChallengeCodec) EncodedLength(msg Message, _ primitives.ProtocolVersion) (int, error) {
+func (c *AuthChallengeCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) (int, error) {
 	authChallenge, ok := msg.(*AuthChallenge)
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected *message.AuthChallenge, got %T", msg))
 	}
-	return primitives.LengthOfBytes(authChallenge.Token), nil
+	return primitive.LengthOfBytes(authChallenge.Token), nil
 }
 
-func (c *AuthChallengeCodec) Decode(source io.Reader, _ primitives.ProtocolVersion) (Message, error) {
-	if token, err := primitives.ReadBytes(source); err != nil {
+func (c *AuthChallengeCodec) Decode(source io.Reader, _ primitive.ProtocolVersion) (Message, error) {
+	if token, err := primitive.ReadBytes(source); err != nil {
 		return nil, err
 	} else {
 		return &AuthChallenge{Token: token}, nil
 	}
 }
 
-func (c *AuthChallengeCodec) GetOpCode() primitives.OpCode {
-	return primitives.OpCodeAuthChallenge
+func (c *AuthChallengeCodec) GetOpCode() primitive.OpCode {
+	return primitive.OpCodeAuthChallenge
 }

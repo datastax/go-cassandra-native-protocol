@@ -3,14 +3,14 @@ package message
 import (
 	"bytes"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestResultCodec_Encode_Other(test *testing.T) {
 	codec := &ResultCodec{}
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -45,19 +45,19 @@ func TestResultCodec_Encode_Other(test *testing.T) {
 
 func TestResultCodec_EncodedLength_Other(test *testing.T) {
 	codec := &ResultCodec{}
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"void result",
 					&VoidResult{},
-					primitives.LengthOfInt,
+					primitive.LengthOfInt,
 					nil,
 				},
 				{
 					"set keyspace result",
 					&SetKeyspaceResult{Keyspace: "ks1"},
-					primitives.LengthOfInt + primitives.LengthOfString("ks1"),
+					primitive.LengthOfInt + primitive.LengthOfString("ks1"),
 					nil,
 				},
 			}
@@ -74,7 +74,7 @@ func TestResultCodec_EncodedLength_Other(test *testing.T) {
 
 func TestResultCodec_Decode_Other(test *testing.T) {
 	codec := &ResultCodec{}
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{

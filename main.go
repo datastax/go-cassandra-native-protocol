@@ -7,13 +7,13 @@ import (
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/frame"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/message"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 )
 
 func main() {
 
 	if startupFrame, err := frame.NewRequestFrame(
-		primitives.ProtocolVersion4,
+		primitive.ProtocolVersion4,
 		1,
 		true,
 		nil,
@@ -25,7 +25,7 @@ func main() {
 	}
 
 	if queryFrame, err := frame.NewRequestFrame(
-		primitives.ProtocolVersion4,
+		primitive.ProtocolVersion4,
 		1,
 		true,
 		nil,
@@ -37,7 +37,7 @@ func main() {
 	}
 
 	if rowsFrame, err := frame.NewResponseFrame(
-		primitives.ProtocolVersion4,
+		primitive.ProtocolVersion4,
 		1,
 		nil,
 		map[string][]byte{"hello": {0xca, 0xfe, 0xba, 0xbe}},

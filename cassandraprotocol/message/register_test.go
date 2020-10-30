@@ -4,22 +4,22 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestRegisterCodec_Encode(t *testing.T) {
 	codec := &RegisterCodec{}
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodeTestCase{
 				{
 					"register all events",
-					&Register{EventTypes: []primitives.EventType{
-						primitives.EventTypeSchemaChange,
-						primitives.EventTypeTopologyChange,
-						primitives.EventTypeStatusChange,
+					&Register{EventTypes: []primitive.EventType{
+						primitive.EventTypeSchemaChange,
+						primitive.EventTypeTopologyChange,
+						primitive.EventTypeStatusChange,
 					}},
 					[]byte{
 						0, 3, // list length
@@ -46,7 +46,7 @@ func TestRegisterCodec_Encode(t *testing.T) {
 				},
 				{
 					"register with wrong event",
-					&Register{EventTypes: []primitives.EventType{"NOT A VALID EVENT"}},
+					&Register{EventTypes: []primitive.EventType{"NOT A VALID EVENT"}},
 					nil,
 					errors.New("invalid event type: NOT A VALID EVENT"),
 				},
@@ -65,20 +65,20 @@ func TestRegisterCodec_Encode(t *testing.T) {
 
 func TestRegisterCodec_EncodedLength(t *testing.T) {
 	codec := &RegisterCodec{}
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"register all events",
-					&Register{EventTypes: []primitives.EventType{
-						primitives.EventTypeSchemaChange,
-						primitives.EventTypeTopologyChange,
-						primitives.EventTypeStatusChange,
+					&Register{EventTypes: []primitive.EventType{
+						primitive.EventTypeSchemaChange,
+						primitive.EventTypeTopologyChange,
+						primitive.EventTypeStatusChange,
 					}},
-					primitives.LengthOfShort + // list length
-						primitives.LengthOfString("SCHEMA_CHANGE") +
-						primitives.LengthOfString("TOPOLOGY_CHANGE") +
-						primitives.LengthOfString("STATUS_CHANGE"),
+					primitive.LengthOfShort + // list length
+						primitive.LengthOfString("SCHEMA_CHANGE") +
+						primitive.LengthOfString("TOPOLOGY_CHANGE") +
+						primitive.LengthOfString("STATUS_CHANGE"),
 					nil,
 				},
 				{
@@ -101,7 +101,7 @@ func TestRegisterCodec_EncodedLength(t *testing.T) {
 
 func TestRegisterCodec_Decode(t *testing.T) {
 	codec := &RegisterCodec{}
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []decodeTestCase{
 				{
@@ -115,17 +115,17 @@ func TestRegisterCodec_Decode(t *testing.T) {
 						// element STATUS_CHANGE
 						0, 13, S, T, A, T, U, S, __, C, H, A, N, G, E,
 					},
-					&Register{EventTypes: []primitives.EventType{
-						primitives.EventTypeSchemaChange,
-						primitives.EventTypeTopologyChange,
-						primitives.EventTypeStatusChange,
+					&Register{EventTypes: []primitive.EventType{
+						primitive.EventTypeSchemaChange,
+						primitive.EventTypeTopologyChange,
+						primitive.EventTypeStatusChange,
 					}},
 					nil,
 				},
 				{
 					"register with no events", // not tolerated when encoding
 					[]byte{0, 0},
-					&Register{EventTypes: []primitives.EventType{}},
+					&Register{EventTypes: []primitive.EventType{}},
 					nil,
 				},
 				{

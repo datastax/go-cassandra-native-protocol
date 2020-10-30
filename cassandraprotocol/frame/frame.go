@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/message"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 )
 
 type Frame struct {
@@ -17,22 +17,22 @@ type Frame struct {
 // Flags return the header flags for this frame. Flags are dynamically computed from the frame's internal state.
 // It is a method declared at frame level even if the flags are encoded in the header, because some flags also
 // affect how the body is encoded.
-func (f *Frame) Flags(compress bool) primitives.HeaderFlag {
-	var flags primitives.HeaderFlag = 0
+func (f *Frame) Flags(compress bool) primitive.HeaderFlag {
+	var flags primitive.HeaderFlag = 0
 	if compress && f.IsCompressible() {
-		flags |= primitives.HeaderFlagCompressed
+		flags |= primitive.HeaderFlagCompressed
 	}
 	if f.Body.TracingId != nil || f.Header.TracingRequested {
-		flags |= primitives.HeaderFlagTracing
+		flags |= primitive.HeaderFlagTracing
 	}
 	if f.Body.CustomPayload != nil {
-		flags |= primitives.HeaderFlagCustomPayload
+		flags |= primitive.HeaderFlagCustomPayload
 	}
 	if f.Body.Warnings != nil {
-		flags |= primitives.HeaderFlagWarning
+		flags |= primitive.HeaderFlagWarning
 	}
-	if primitives.IsProtocolVersionBeta(f.Header.Version) {
-		flags |= primitives.HeaderFlagUseBeta
+	if primitive.IsProtocolVersionBeta(f.Header.Version) {
+		flags |= primitive.HeaderFlagUseBeta
 	}
 	return flags
 }
@@ -55,7 +55,7 @@ func (f *Frame) Dump() (string, error) {
 }
 
 type Header struct {
-	Version primitives.ProtocolVersion
+	Version primitive.ProtocolVersion
 	// The stream id. The protocol spec states that the stream id is a [short], but this is wrong: the stream id
 	// is signed and can be negative, which is why it has type int16.
 	StreamId int16
@@ -68,7 +68,7 @@ type Header struct {
 
 type Body struct {
 	// The tracing id. Only valid for response frames, ignored otherwise.
-	TracingId *primitives.UUID
+	TracingId *primitive.UUID
 	// The custom payload, or nil if no custom payload is defined.
 	// Custom payloads are only valid from Protocol Version 4 onwards.
 	CustomPayload map[string][]byte
@@ -79,7 +79,7 @@ type Body struct {
 }
 
 func NewRequestFrame(
-	version primitives.ProtocolVersion,
+	version primitive.ProtocolVersion,
 	streamId int16,
 	tracing bool,
 	customPayload map[string][]byte,
@@ -102,9 +102,9 @@ func NewRequestFrame(
 }
 
 func NewResponseFrame(
-	version primitives.ProtocolVersion,
+	version primitive.ProtocolVersion,
 	streamId int16,
-	tracingId *primitives.UUID,
+	tracingId *primitive.UUID,
 	customPayload map[string][]byte,
 	warnings []string,
 	message message.Message,
@@ -139,10 +139,10 @@ func (b *Body) String() string {
 	return fmt.Sprintf("{tracing id: %v, payload: %v, warnings: %v, message: %v}", b.TracingId, b.CustomPayload, b.Warnings, b.Message)
 }
 
-func isCompressible(opCode primitives.OpCode) bool {
+func isCompressible(opCode primitive.OpCode) bool {
 	// STARTUP should never be compressed as per protocol specs
-	return opCode != primitives.OpCodeStartup &&
+	return opCode != primitive.OpCodeStartup &&
 		// OPTIONS and READY are empty and as such do not benefit from compression
-		opCode != primitives.OpCodeOptions &&
-		opCode != primitives.OpCodeReady
+		opCode != primitive.OpCodeOptions &&
+		opCode != primitive.OpCodeReady
 }

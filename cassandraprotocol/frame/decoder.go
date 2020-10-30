@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"io"
 	"io/ioutil"
 )
@@ -19,7 +19,7 @@ func (c *Codec) DecodeFrame(source io.Reader) (*Frame, error) {
 		header := &Header{
 			Version:          rawHeader.Version,
 			StreamId:         rawHeader.StreamId,
-			TracingRequested: body.TracingId != nil || rawHeader.Flags&primitives.HeaderFlagTracing != 0,
+			TracingRequested: body.TracingId != nil || rawHeader.Flags&primitive.HeaderFlagTracing != 0,
 		}
 		return &Frame{Header: header, Body: body}, nil
 	}
@@ -39,7 +39,7 @@ func (c *Codec) DecodeRawFrame(source io.Reader) (*RawFrame, error) {
 // DecodeRawHeader only decodes the frame header, leaving the body contents in the source. After calling this function,
 // one must either call DecodeBody, DecodeRawBody or DiscardBody to fully read or discard the body contents.
 func (c *Codec) DecodeRawHeader(source io.Reader) (*RawHeader, error) {
-	if versionAndDirection, err := primitives.ReadByte(source); err != nil {
+	if versionAndDirection, err := primitive.ReadByte(source); err != nil {
 		return nil, fmt.Errorf("cannot decode header version and direction: %w", err)
 	} else {
 		isResponse := (versionAndDirection & 0b1000_0000) > 0
@@ -49,17 +49,17 @@ func (c *Codec) DecodeRawHeader(source io.Reader) (*RawHeader, error) {
 			Version:    version,
 		}
 		var streamId uint16
-		if err := primitives.CheckProtocolVersion(version); err != nil {
+		if err := primitive.CheckProtocolVersion(version); err != nil {
 			return nil, err
-		} else if header.Flags, err = primitives.ReadByte(source); err != nil {
+		} else if header.Flags, err = primitive.ReadByte(source); err != nil {
 			return nil, fmt.Errorf("cannot decode header flags: %w", err)
-		} else if primitives.IsProtocolVersionBeta(version) && header.Flags&primitives.HeaderFlagUseBeta == 0 {
+		} else if primitive.IsProtocolVersionBeta(version) && header.Flags&primitive.HeaderFlagUseBeta == 0 {
 			return nil, fmt.Errorf("expected USE_BETA flag to be set for protocol version %v", version)
-		} else if streamId, err = primitives.ReadShort(source); err != nil {
+		} else if streamId, err = primitive.ReadShort(source); err != nil {
 			return nil, fmt.Errorf("cannot decode header stream id: %w", err)
-		} else if header.OpCode, err = primitives.ReadByte(source); err != nil {
+		} else if header.OpCode, err = primitive.ReadByte(source); err != nil {
 			return nil, fmt.Errorf("cannot decode header opcode: %w", err)
-		} else if header.BodyLength, err = primitives.ReadInt(source); err != nil {
+		} else if header.BodyLength, err = primitive.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot decode header body length: %w", err)
 		}
 		header.StreamId = int16(streamId)
@@ -70,7 +70,7 @@ func (c *Codec) DecodeRawHeader(source io.Reader) (*RawHeader, error) {
 // DecodeBody decodes a frame body, decompressing it if required. It is illegal to call this method before calling
 // DecodeRawHeader.
 func (c *Codec) DecodeBody(header *RawHeader, source io.Reader) (body *Body, err error) {
-	if compressed := header.Flags&primitives.HeaderFlagCompressed > 0; compressed {
+	if compressed := header.Flags&primitive.HeaderFlagCompressed > 0; compressed {
 		if c.compressor == nil {
 			return nil, errors.New("cannot decompress body: no compressor available")
 		} else if source, err = c.DecompressBody(header.BodyLength, source); err != nil {
@@ -78,18 +78,18 @@ func (c *Codec) DecodeBody(header *RawHeader, source io.Reader) (body *Body, err
 		}
 	}
 	body = &Body{}
-	if header.IsResponse && header.Flags&primitives.HeaderFlagTracing > 0 {
-		if body.TracingId, err = primitives.ReadUuid(source); err != nil {
+	if header.IsResponse && header.Flags&primitive.HeaderFlagTracing > 0 {
+		if body.TracingId, err = primitive.ReadUuid(source); err != nil {
 			return nil, fmt.Errorf("cannot decode body tracing id: %w", err)
 		}
 	}
-	if header.Flags&primitives.HeaderFlagCustomPayload > 0 {
-		if body.CustomPayload, err = primitives.ReadBytesMap(source); err != nil {
+	if header.Flags&primitive.HeaderFlagCustomPayload > 0 {
+		if body.CustomPayload, err = primitive.ReadBytesMap(source); err != nil {
 			return nil, fmt.Errorf("cannot decode body custom payload: %w", err)
 		}
 	}
-	if header.IsResponse && header.Flags&primitives.HeaderFlagWarning > 0 {
-		if body.Warnings, err = primitives.ReadStringList(source); err != nil {
+	if header.IsResponse && header.Flags&primitive.HeaderFlagWarning > 0 {
+		if body.Warnings, err = primitive.ReadStringList(source); err != nil {
 			return nil, fmt.Errorf("cannot decode body warnings: %w", err)
 		}
 	}

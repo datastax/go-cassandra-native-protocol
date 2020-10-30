@@ -4,15 +4,15 @@ import (
 	"bytes"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/compression"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/message"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-var uuid = primitives.UUID{0xC0, 0xD1, 0xD2, 0x1E, 0xBB, 0x01, 0x41, 0x96, 0x86, 0xDB, 0xBC, 0x31, 0x7B, 0xC1, 0x79, 0x6A}
+var uuid = primitive.UUID{0xC0, 0xD1, 0xD2, 0x1E, 0xBB, 0x01, 0x41, 0x96, 0x86, 0xDB, 0xBC, 0x31, 0x7B, 0xC1, 0x79, 0x6A}
 
 var request, _ = NewRequestFrame(
-	primitives.ProtocolVersion4,
+	primitive.ProtocolVersion4,
 	1,
 	true,
 	map[string][]byte{"hello": {0xca, 0xfe, 0xba, 0xbe}},
@@ -20,7 +20,7 @@ var request, _ = NewRequestFrame(
 )
 
 var response, _ = NewResponseFrame(
-	primitives.ProtocolVersion4,
+	primitive.ProtocolVersion4,
 	1,
 	&uuid,
 	map[string][]byte{"hello": {0xca, 0xfe, 0xba, 0xbe}},
@@ -167,9 +167,9 @@ func TestConvertToRawFrame(t *testing.T) {
 			assert.Equal(t, test.frame.Header.StreamId, rawFrame.RawHeader.StreamId)
 			assert.Equal(t, test.frame.Header.Version, rawFrame.RawHeader.Version)
 			if test.frame.Header.TracingRequested {
-				assert.Equal(t, primitives.HeaderFlagTracing, rawFrame.RawHeader.Flags&primitives.HeaderFlagTracing)
+				assert.Equal(t, primitive.HeaderFlagTracing, rawFrame.RawHeader.Flags&primitive.HeaderFlagTracing)
 			} else {
-				assert.Equal(t, 0, rawFrame.RawHeader.Flags&primitives.HeaderFlagTracing)
+				assert.Equal(t, 0, rawFrame.RawHeader.Flags&primitive.HeaderFlagTracing)
 			}
 			assert.Equal(t, test.frame.Body.Message.GetOpCode(), rawFrame.RawHeader.OpCode)
 			assert.Equal(t, test.frame.Body.Message.IsResponse(), rawFrame.RawHeader.IsResponse)

@@ -4,14 +4,14 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestStartupCodec_Encode(t *testing.T) {
 	codec := &StartupCodec{}
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -130,35 +130,35 @@ func TestStartupCodec_EncodedLength(t *testing.T) {
 		{
 			"startup with default options",
 			NewStartup(),
-			primitives.LengthOfShort + // map length
-				primitives.LengthOfString("CQL_VERSION") + // map key
-				primitives.LengthOfString("3.0.0"), // map value
+			primitive.LengthOfShort + // map length
+				primitive.LengthOfString("CQL_VERSION") + // map key
+				primitive.LengthOfString("3.0.0"), // map value
 			nil,
 		},
 		{
 			"startup with nil options",
 			&Startup{},
-			primitives.LengthOfShort, // map length
+			primitive.LengthOfShort, // map length
 			nil,
 		},
 		{
 			"startup with compression",
 			NewStartup(WithCompression("LZ4")),
-			primitives.LengthOfShort + // map length
-				primitives.LengthOfString("CQL_VERSION") + // map key
-				primitives.LengthOfString("3.0.0") + // map value
-				primitives.LengthOfString("COMPRESSION") + // map key
-				primitives.LengthOfString("LZ4"), // map value
+			primitive.LengthOfShort + // map length
+				primitive.LengthOfString("CQL_VERSION") + // map key
+				primitive.LengthOfString("3.0.0") + // map value
+				primitive.LengthOfString("COMPRESSION") + // map key
+				primitive.LengthOfString("LZ4"), // map value
 			nil,
 		},
 		{
 			"startup with custom options",
 			NewStartup(WithOptions(map[string]string{"CQL_VERSION": "3.4.5", "COMPRESSION": "SNAPPY"})),
-			primitives.LengthOfShort + // map length
-				primitives.LengthOfString("CQL_VERSION") + // map key
-				primitives.LengthOfString("3.4.5") + // map value
-				primitives.LengthOfString("COMPRESSION") + // map key
-				primitives.LengthOfString("SNAPPY"), // map value
+			primitive.LengthOfShort + // map length
+				primitive.LengthOfString("CQL_VERSION") + // map key
+				primitive.LengthOfString("3.4.5") + // map value
+				primitive.LengthOfString("COMPRESSION") + // map key
+				primitive.LengthOfString("SNAPPY"), // map value
 			nil,
 		},
 		{
@@ -170,7 +170,7 @@ func TestStartupCodec_EncodedLength(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			for _, version := range primitives.AllProtocolVersions() {
+			for _, version := range primitive.AllProtocolVersions() {
 				t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 					actual, err := codec.EncodedLength(tt.input, version)
 					assert.Equal(t, tt.expected, actual)
@@ -183,7 +183,7 @@ func TestStartupCodec_EncodedLength(t *testing.T) {
 
 func TestStartupCodec_Decode(t *testing.T) {
 	codec := &StartupCodec{}
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []decodeTestCase{
 				{

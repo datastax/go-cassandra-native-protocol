@@ -4,14 +4,14 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestReadyCodec_Encode(t *testing.T) {
 	codec := &ReadyCodec{}
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -41,7 +41,7 @@ func TestReadyCodec_Encode(t *testing.T) {
 
 func TestReadyCodec_EncodedLength(t *testing.T) {
 	codec := &ReadyCodec{}
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -70,7 +70,7 @@ func TestReadyCodec_EncodedLength(t *testing.T) {
 
 func TestReadyCodec_Decode(t *testing.T) {
 	codec := &ReadyCodec{}
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []decodeTestCase{
 				{

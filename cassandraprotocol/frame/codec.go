@@ -3,12 +3,12 @@ package frame
 import (
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/compression"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/message"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 )
 
 type Codec struct {
 	compressor    compression.MessageCompressor
-	messageCodecs map[primitives.OpCode]message.Codec
+	messageCodecs map[primitive.OpCode]message.Codec
 }
 
 var defaultMessageCodecs = []message.Codec{
@@ -35,7 +35,7 @@ var defaultMessageCodecs = []message.Codec{
 type CodecCustomizer func(*Codec)
 
 func NewCodec(customizers ...CodecCustomizer) *Codec {
-	frameCodec := &Codec{messageCodecs: make(map[primitives.OpCode]message.Codec, len(defaultMessageCodecs))}
+	frameCodec := &Codec{messageCodecs: make(map[primitive.OpCode]message.Codec, len(defaultMessageCodecs))}
 	for _, messageCodec := range defaultMessageCodecs {
 		frameCodec.messageCodecs[messageCodec.GetOpCode()] = messageCodec
 	}

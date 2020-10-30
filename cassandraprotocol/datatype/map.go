@@ -3,7 +3,7 @@ package datatype
 import (
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"io"
 )
 
@@ -26,8 +26,8 @@ func (t *mapType) GetValueType() DataType {
 	return t.valueType
 }
 
-func (t *mapType) GetDataTypeCode() primitives.DataTypeCode {
-	return primitives.DataTypeCodeMap
+func (t *mapType) GetDataTypeCode() primitive.DataTypeCode {
+	return primitive.DataTypeCodeMap
 }
 
 func (t *mapType) String() string {
@@ -44,7 +44,7 @@ func NewMapType(keyType DataType, valueType DataType) MapType {
 
 type mapTypeCodec struct{}
 
-func (c *mapTypeCodec) encode(t DataType, dest io.Writer, version primitives.ProtocolVersion) (err error) {
+func (c *mapTypeCodec) encode(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error) {
 	mapType, ok := t.(MapType)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected MapType, got %T", t))
@@ -56,7 +56,7 @@ func (c *mapTypeCodec) encode(t DataType, dest io.Writer, version primitives.Pro
 	return nil
 }
 
-func (c *mapTypeCodec) encodedLength(t DataType, version primitives.ProtocolVersion) (length int, err error) {
+func (c *mapTypeCodec) encodedLength(t DataType, version primitive.ProtocolVersion) (length int, err error) {
 	mapType, ok := t.(MapType)
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected MapType, got %T", t))
@@ -74,7 +74,7 @@ func (c *mapTypeCodec) encodedLength(t DataType, version primitives.ProtocolVers
 	return length, nil
 }
 
-func (c *mapTypeCodec) decode(source io.Reader, version primitives.ProtocolVersion) (decoded DataType, err error) {
+func (c *mapTypeCodec) decode(source io.Reader, version primitive.ProtocolVersion) (decoded DataType, err error) {
 	mapType := &mapType{}
 	if mapType.keyType, err = ReadDataType(source, version); err != nil {
 		return nil, fmt.Errorf("cannot read map key type: %w", err)

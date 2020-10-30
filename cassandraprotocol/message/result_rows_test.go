@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/datatype"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -41,7 +41,7 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 	}
 	codec := &ResultCodec{}
 	// versions < 5
-	for _, version := range primitives.AllProtocolVersionsLesserThan(primitives.ProtocolVersion5) {
+	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion5) {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -131,7 +131,7 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 		})
 	}
 	// version = 5
-	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersion5} {
+	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion5} {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -250,7 +250,7 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 		})
 	}
 	// DSE v1
-	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersionDse1} {
+	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersionDse1} {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -370,7 +370,7 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 		})
 	}
 	// DSE v2
-	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersionDse2} {
+	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersionDse2} {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -552,7 +552,7 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 	}
 	codec := &ResultCodec{}
 	// versions < 5
-	for _, version := range primitives.AllProtocolVersionsLesserThan(primitives.ProtocolVersion5) {
+	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion5) {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -563,11 +563,11 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							NoColumnMetadata(2))),
 						WithRowsData(row1, row2),
 					),
-					primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfBytes([]byte{0xca, 0xfe, 0xba, 0xbe}) +
-						primitives.LengthOfInt +
+					primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfBytes([]byte{0xca, 0xfe, 0xba, 0xbe}) +
+						primitive.LengthOfInt +
 						8*2 + 9*2, // data
 					nil,
 				},
@@ -579,17 +579,17 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							WithColumns(spec1, spec2))),
 						WithRowsData(row1, row2),
 					),
-					primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfBytes([]byte{0xca, 0xfe, 0xba, 0xbe}) +
-						primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("table1") +
-						primitives.LengthOfString("col1") +
-						primitives.LengthOfShort +
-						primitives.LengthOfString("col2") +
-						primitives.LengthOfShort +
-						primitives.LengthOfInt +
+					primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfBytes([]byte{0xca, 0xfe, 0xba, 0xbe}) +
+						primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("table1") +
+						primitive.LengthOfString("col1") +
+						primitive.LengthOfShort +
+						primitive.LengthOfString("col2") +
+						primitive.LengthOfShort +
+						primitive.LengthOfInt +
 						8*2 + 9*2, // data
 					nil,
 				},
@@ -600,18 +600,18 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							WithColumns(spec1, spec3))),
 						WithRowsData(row1, row2),
 					),
-					primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("table1") +
-						primitives.LengthOfString("col1") +
-						primitives.LengthOfShort +
-						primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("table2") +
-						primitives.LengthOfString("col2") +
-						primitives.LengthOfShort +
-						primitives.LengthOfInt +
+					primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("table1") +
+						primitive.LengthOfString("col1") +
+						primitive.LengthOfShort +
+						primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("table2") +
+						primitive.LengthOfString("col2") +
+						primitive.LengthOfShort +
+						primitive.LengthOfInt +
 						8*2 + 9*2, // data
 					nil,
 				},
@@ -626,7 +626,7 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 		})
 	}
 	// version = 5
-	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersion5} {
+	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion5} {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -637,11 +637,11 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							NoColumnMetadata(2))),
 						WithRowsData(row1, row2),
 					),
-					primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfBytes([]byte{0xca, 0xfe, 0xba, 0xbe}) +
-						primitives.LengthOfInt +
+					primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfBytes([]byte{0xca, 0xfe, 0xba, 0xbe}) +
+						primitive.LengthOfInt +
 						8*2 + 9*2, // data
 					nil,
 				},
@@ -653,17 +653,17 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							WithColumns(spec1, spec2))),
 						WithRowsData(row1, row2),
 					),
-					primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfBytes([]byte{0xca, 0xfe, 0xba, 0xbe}) +
-						primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("table1") +
-						primitives.LengthOfString("col1") +
-						primitives.LengthOfShort +
-						primitives.LengthOfString("col2") +
-						primitives.LengthOfShort +
-						primitives.LengthOfInt +
+					primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfBytes([]byte{0xca, 0xfe, 0xba, 0xbe}) +
+						primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("table1") +
+						primitive.LengthOfString("col1") +
+						primitive.LengthOfShort +
+						primitive.LengthOfString("col2") +
+						primitive.LengthOfShort +
+						primitive.LengthOfInt +
 						8*2 + 9*2, // data
 					nil,
 				},
@@ -674,18 +674,18 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							WithColumns(spec1, spec3))),
 						WithRowsData(row1, row2),
 					),
-					primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("table1") +
-						primitives.LengthOfString("col1") +
-						primitives.LengthOfShort +
-						primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("table2") +
-						primitives.LengthOfString("col2") +
-						primitives.LengthOfShort +
-						primitives.LengthOfInt +
+					primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("table1") +
+						primitive.LengthOfString("col1") +
+						primitive.LengthOfShort +
+						primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("table2") +
+						primitive.LengthOfString("col2") +
+						primitive.LengthOfShort +
+						primitive.LengthOfInt +
 						8*2 + 9*2, // data
 					nil,
 				},
@@ -698,18 +698,18 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							WithColumns(spec1, spec2))),
 						WithRowsData(row1, row2),
 					),
-					primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfBytes([]byte{0xca, 0xfe, 0xba, 0xbe}) +
-						primitives.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
-						primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("table1") +
-						primitives.LengthOfString("col1") +
-						primitives.LengthOfShort +
-						primitives.LengthOfString("col2") +
-						primitives.LengthOfShort +
-						primitives.LengthOfInt +
+					primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfBytes([]byte{0xca, 0xfe, 0xba, 0xbe}) +
+						primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
+						primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("table1") +
+						primitive.LengthOfString("col1") +
+						primitive.LengthOfShort +
+						primitive.LengthOfString("col2") +
+						primitive.LengthOfShort +
+						primitive.LengthOfInt +
 						8*2 + 9*2, // data
 					nil,
 				},
@@ -724,7 +724,7 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 		})
 	}
 	// DSE v1
-	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersionDse1} {
+	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersionDse1} {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -735,11 +735,11 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							NoColumnMetadata(2))),
 						WithRowsData(row1, row2),
 					),
-					primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfBytes([]byte{0xca, 0xfe, 0xba, 0xbe}) +
-						primitives.LengthOfInt +
+					primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfBytes([]byte{0xca, 0xfe, 0xba, 0xbe}) +
+						primitive.LengthOfInt +
 						8*2 + 9*2, // data
 					nil,
 				},
@@ -751,17 +751,17 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							WithColumns(spec1, spec2))),
 						WithRowsData(row1, row2),
 					),
-					primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfBytes([]byte{0xca, 0xfe, 0xba, 0xbe}) +
-						primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("table1") +
-						primitives.LengthOfString("col1") +
-						primitives.LengthOfShort +
-						primitives.LengthOfString("col2") +
-						primitives.LengthOfShort +
-						primitives.LengthOfInt +
+					primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfBytes([]byte{0xca, 0xfe, 0xba, 0xbe}) +
+						primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("table1") +
+						primitive.LengthOfString("col1") +
+						primitive.LengthOfShort +
+						primitive.LengthOfString("col2") +
+						primitive.LengthOfShort +
+						primitive.LengthOfInt +
 						8*2 + 9*2, // data
 					nil,
 				},
@@ -772,18 +772,18 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							WithColumns(spec1, spec3))),
 						WithRowsData(row1, row2),
 					),
-					primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("table1") +
-						primitives.LengthOfString("col1") +
-						primitives.LengthOfShort +
-						primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("table2") +
-						primitives.LengthOfString("col2") +
-						primitives.LengthOfShort +
-						primitives.LengthOfInt +
+					primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("table1") +
+						primitive.LengthOfString("col1") +
+						primitive.LengthOfShort +
+						primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("table2") +
+						primitive.LengthOfString("col2") +
+						primitive.LengthOfShort +
+						primitive.LengthOfInt +
 						8*2 + 9*2, // data
 					nil,
 				},
@@ -798,17 +798,17 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							)),
 						WithRowsData(row1, row2),
 					),
-					primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("table1") +
-						primitives.LengthOfString("col1") +
-						primitives.LengthOfShort +
-						primitives.LengthOfString("col2") +
-						primitives.LengthOfShort +
-						primitives.LengthOfInt +
+					primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("table1") +
+						primitive.LengthOfString("col1") +
+						primitive.LengthOfShort +
+						primitive.LengthOfString("col2") +
+						primitive.LengthOfShort +
+						primitive.LengthOfInt +
 						8*2 + 9*2, // data
 					nil,
 				},
@@ -823,7 +823,7 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 		})
 	}
 	// DSE v2
-	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersionDse2} {
+	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersionDse2} {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -834,11 +834,11 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							NoColumnMetadata(2))),
 						WithRowsData(row1, row2),
 					),
-					primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfBytes([]byte{0xca, 0xfe, 0xba, 0xbe}) +
-						primitives.LengthOfInt +
+					primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfBytes([]byte{0xca, 0xfe, 0xba, 0xbe}) +
+						primitive.LengthOfInt +
 						8*2 + 9*2, // data
 					nil,
 				},
@@ -850,17 +850,17 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							WithColumns(spec1, spec2))),
 						WithRowsData(row1, row2),
 					),
-					primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfBytes([]byte{0xca, 0xfe, 0xba, 0xbe}) +
-						primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("table1") +
-						primitives.LengthOfString("col1") +
-						primitives.LengthOfShort +
-						primitives.LengthOfString("col2") +
-						primitives.LengthOfShort +
-						primitives.LengthOfInt +
+					primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfBytes([]byte{0xca, 0xfe, 0xba, 0xbe}) +
+						primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("table1") +
+						primitive.LengthOfString("col1") +
+						primitive.LengthOfShort +
+						primitive.LengthOfString("col2") +
+						primitive.LengthOfShort +
+						primitive.LengthOfInt +
 						8*2 + 9*2, // data
 					nil,
 				},
@@ -871,18 +871,18 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							WithColumns(spec1, spec3))),
 						WithRowsData(row1, row2),
 					),
-					primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("table1") +
-						primitives.LengthOfString("col1") +
-						primitives.LengthOfShort +
-						primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("table2") +
-						primitives.LengthOfString("col2") +
-						primitives.LengthOfShort +
-						primitives.LengthOfInt +
+					primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("table1") +
+						primitive.LengthOfString("col1") +
+						primitive.LengthOfShort +
+						primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("table2") +
+						primitive.LengthOfString("col2") +
+						primitive.LengthOfShort +
+						primitive.LengthOfInt +
 						8*2 + 9*2, // data
 					nil,
 				},
@@ -895,18 +895,18 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							WithColumns(spec1, spec2))),
 						WithRowsData(row1, row2),
 					),
-					primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfBytes([]byte{0xca, 0xfe, 0xba, 0xbe}) +
-						primitives.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
-						primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("table1") +
-						primitives.LengthOfString("col1") +
-						primitives.LengthOfShort +
-						primitives.LengthOfString("col2") +
-						primitives.LengthOfShort +
-						primitives.LengthOfInt +
+					primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfBytes([]byte{0xca, 0xfe, 0xba, 0xbe}) +
+						primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
+						primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("table1") +
+						primitive.LengthOfString("col1") +
+						primitive.LengthOfShort +
+						primitive.LengthOfString("col2") +
+						primitive.LengthOfShort +
+						primitive.LengthOfInt +
 						8*2 + 9*2, // data
 					nil,
 				},
@@ -921,17 +921,17 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							)),
 						WithRowsData(row1, row2),
 					),
-					primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfInt +
-						primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("table1") +
-						primitives.LengthOfString("col1") +
-						primitives.LengthOfShort +
-						primitives.LengthOfString("col2") +
-						primitives.LengthOfShort +
-						primitives.LengthOfInt +
+					primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfInt +
+						primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("table1") +
+						primitive.LengthOfString("col1") +
+						primitive.LengthOfShort +
+						primitive.LengthOfString("col2") +
+						primitive.LengthOfShort +
+						primitive.LengthOfInt +
 						8*2 + 9*2, // data
 					nil,
 				},
@@ -979,7 +979,7 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 	}
 	codec := &ResultCodec{}
 	// versions < 5
-	for _, version := range primitives.AllProtocolVersionsLesserThan(primitives.ProtocolVersion5) {
+	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion5) {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{
@@ -1069,7 +1069,7 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 		})
 	}
 	// versions = 5
-	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersion5} {
+	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion5} {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{
@@ -1159,7 +1159,7 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 		})
 	}
 	// DSE v1
-	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersionDse1} {
+	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersionDse1} {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{
@@ -1279,7 +1279,7 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 		})
 	}
 	// DSE v2
-	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersionDse2} {
+	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersionDse2} {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{

@@ -1,7 +1,7 @@
 package datatype
 
 import (
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -10,28 +10,28 @@ func TestPrimitiveType(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    PrimitiveType
-		expected primitives.DataTypeCode
+		expected primitive.DataTypeCode
 	}{
-		{"Ascii", Ascii, primitives.DataTypeCodeAscii},
-		{"Bigint", Bigint, primitives.DataTypeCodeBigint},
-		{"Blob", Blob, primitives.DataTypeCodeBlob},
-		{"Boolean", Boolean, primitives.DataTypeCodeBoolean},
-		{"Counter", Counter, primitives.DataTypeCodeCounter},
-		{"Decimal", Decimal, primitives.DataTypeCodeDecimal},
-		{"Double", Double, primitives.DataTypeCodeDouble},
-		{"Float", Float, primitives.DataTypeCodeFloat},
-		{"Int", Int, primitives.DataTypeCodeInt},
-		{"Timestamp", Timestamp, primitives.DataTypeCodeTimestamp},
-		{"Uuid", Uuid, primitives.DataTypeCodeUuid},
-		{"Varchar", Varchar, primitives.DataTypeCodeVarchar},
-		{"Varint", Varint, primitives.DataTypeCodeVarint},
-		{"Timeuuid", Timeuuid, primitives.DataTypeCodeTimeuuid},
-		{"Inet", Inet, primitives.DataTypeCodeInet},
-		{"Date", Date, primitives.DataTypeCodeDate},
-		{"Time", Time, primitives.DataTypeCodeTime},
-		{"Smallint", Smallint, primitives.DataTypeCodeSmallint},
-		{"Tinyint", Tinyint, primitives.DataTypeCodeTinyint},
-		{"Duration", Duration, primitives.DataTypeCodeDuration},
+		{"Ascii", Ascii, primitive.DataTypeCodeAscii},
+		{"Bigint", Bigint, primitive.DataTypeCodeBigint},
+		{"Blob", Blob, primitive.DataTypeCodeBlob},
+		{"Boolean", Boolean, primitive.DataTypeCodeBoolean},
+		{"Counter", Counter, primitive.DataTypeCodeCounter},
+		{"Decimal", Decimal, primitive.DataTypeCodeDecimal},
+		{"Double", Double, primitive.DataTypeCodeDouble},
+		{"Float", Float, primitive.DataTypeCodeFloat},
+		{"Int", Int, primitive.DataTypeCodeInt},
+		{"Timestamp", Timestamp, primitive.DataTypeCodeTimestamp},
+		{"Uuid", Uuid, primitive.DataTypeCodeUuid},
+		{"Varchar", Varchar, primitive.DataTypeCodeVarchar},
+		{"Varint", Varint, primitive.DataTypeCodeVarint},
+		{"Timeuuid", Timeuuid, primitive.DataTypeCodeTimeuuid},
+		{"Inet", Inet, primitive.DataTypeCodeInet},
+		{"Date", Date, primitive.DataTypeCodeDate},
+		{"Time", Time, primitive.DataTypeCodeTime},
+		{"Smallint", Smallint, primitive.DataTypeCodeSmallint},
+		{"Tinyint", Tinyint, primitive.DataTypeCodeTinyint},
+		{"Duration", Duration, primitive.DataTypeCodeDuration},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

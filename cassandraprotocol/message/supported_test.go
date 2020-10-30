@@ -4,14 +4,14 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestSupportedCodec_Encode(test *testing.T) {
 	codec := &SupportedCodec{}
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []struct {
 				name     string
@@ -118,43 +118,43 @@ func TestSupportedCodec_Encode(test *testing.T) {
 
 func TestSupportedCodec_EncodedLength(test *testing.T) {
 	codec := &SupportedCodec{}
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"supported with nil options",
 					&Supported{},
-					primitives.LengthOfShort, // map length
+					primitive.LengthOfShort, // map length
 					nil,
 				},
 				{
 					"supported with empty options",
 					&Supported{Options: map[string][]string{}},
-					primitives.LengthOfShort, // map length
+					primitive.LengthOfShort, // map length
 					nil,
 				},
 				{
 					"supported with 1 option",
 					&Supported{Options: map[string][]string{"option1": {"value1a", "value1b"}}},
-					primitives.LengthOfShort + // map length
-						primitives.LengthOfString("option1") + // map key
-						primitives.LengthOfShort + // list length
-						primitives.LengthOfString("value1a") + // map value
-						primitives.LengthOfString("value1b"), // map value
+					primitive.LengthOfShort + // map length
+						primitive.LengthOfString("option1") + // map key
+						primitive.LengthOfShort + // list length
+						primitive.LengthOfString("value1a") + // map value
+						primitive.LengthOfString("value1b"), // map value
 					nil,
 				},
 				{
 					"supported with 2 options",
 					&Supported{Options: map[string][]string{"option1": {"value1a", "value1b"}, "option2": {"value2a", "value2b"}}},
-					primitives.LengthOfShort + // map length
-						primitives.LengthOfString("option1") + // map key
-						primitives.LengthOfShort + // list length
-						primitives.LengthOfString("value1a") + // map value
-						primitives.LengthOfString("value1b") + // map value
-						primitives.LengthOfString("option2") + // map key
-						primitives.LengthOfShort + // list length
-						primitives.LengthOfString("value2a") + // map value
-						primitives.LengthOfString("value2b"), // map value
+					primitive.LengthOfShort + // map length
+						primitive.LengthOfString("option1") + // map key
+						primitive.LengthOfShort + // list length
+						primitive.LengthOfString("value1a") + // map value
+						primitive.LengthOfString("value1b") + // map value
+						primitive.LengthOfString("option2") + // map key
+						primitive.LengthOfShort + // list length
+						primitive.LengthOfString("value2a") + // map value
+						primitive.LengthOfString("value2b"), // map value
 					nil,
 				},
 				{
@@ -177,7 +177,7 @@ func TestSupportedCodec_EncodedLength(test *testing.T) {
 
 func TestSupportedCodec_Decode(test *testing.T) {
 	codec := &SupportedCodec{}
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{

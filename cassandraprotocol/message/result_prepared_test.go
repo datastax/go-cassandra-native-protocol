@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/datatype"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -12,7 +12,7 @@ import (
 func TestResultCodec_Encode_Prepared(test *testing.T) {
 	codec := &ResultCodec{}
 	// versions < 4
-	for _, version := range primitives.AllProtocolVersionsLesserThan(primitives.ProtocolVersion4) {
+	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -114,7 +114,7 @@ func TestResultCodec_Encode_Prepared(test *testing.T) {
 		})
 	}
 	// version 4
-	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersion4, primitives.ProtocolVersionDse1} {
+	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion4, primitive.ProtocolVersionDse1} {
 		test.Run(fmt.Sprintf("version %d", version), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -226,7 +226,7 @@ func TestResultCodec_Encode_Prepared(test *testing.T) {
 		})
 	}
 	// versions 5, DSE v2
-	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersion5, primitives.ProtocolVersionDse2} {
+	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion5, primitive.ProtocolVersionDse2} {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -350,18 +350,18 @@ func TestResultCodec_Encode_Prepared(test *testing.T) {
 func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 	codec := &ResultCodec{}
 	// versions < 4
-	for _, version := range primitives.AllProtocolVersionsLesserThan(primitives.ProtocolVersion4) {
+	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"prepared result without bound variables",
 					NewPreparedResult(WithPreparedQueryId([]byte{1, 2, 3, 4})),
-					primitives.LengthOfInt + //result type
-						primitives.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
-						primitives.LengthOfInt + // flags
-						primitives.LengthOfInt + //column count
-						primitives.LengthOfInt + // flags
-						primitives.LengthOfInt, // column count
+					primitive.LengthOfInt + //result type
+						primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
+						primitive.LengthOfInt + // flags
+						primitive.LengthOfInt + //column count
+						primitive.LengthOfInt + // flags
+						primitive.LengthOfInt, // column count
 					nil,
 				},
 				{
@@ -378,16 +378,16 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 									Type:     datatype.Int,
 								}))),
 					),
-					primitives.LengthOfInt + //result type
-						primitives.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
-						primitives.LengthOfInt + // flags
-						primitives.LengthOfInt + // column count
-						primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("table1") +
-						primitives.LengthOfString("col1") +
-						primitives.LengthOfShort + //col type
-						primitives.LengthOfInt + // flags
-						primitives.LengthOfInt, // column count
+					primitive.LengthOfInt + //result type
+						primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
+						primitive.LengthOfInt + // flags
+						primitive.LengthOfInt + // column count
+						primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("table1") +
+						primitive.LengthOfString("col1") +
+						primitive.LengthOfShort + //col type
+						primitive.LengthOfInt + // flags
+						primitive.LengthOfInt, // column count
 					nil,
 				},
 				{
@@ -412,20 +412,20 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 									Index:    0,
 									Type:     datatype.Varchar,
 								})))),
-					primitives.LengthOfInt + //result type
-						primitives.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
-						primitives.LengthOfInt + // flags
-						primitives.LengthOfInt + // column count
-						primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("table1") +
-						primitives.LengthOfString("col1") +
-						primitives.LengthOfShort + //col type
-						primitives.LengthOfInt + // flags
-						primitives.LengthOfInt + // column count
-						primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("table1") +
-						primitives.LengthOfString("col2") +
-						primitives.LengthOfShort, //col type
+					primitive.LengthOfInt + //result type
+						primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
+						primitive.LengthOfInt + // flags
+						primitive.LengthOfInt + // column count
+						primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("table1") +
+						primitive.LengthOfString("col1") +
+						primitive.LengthOfShort + //col type
+						primitive.LengthOfInt + // flags
+						primitive.LengthOfInt + // column count
+						primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("table1") +
+						primitive.LengthOfString("col2") +
+						primitive.LengthOfShort, //col type
 					nil,
 				},
 			}
@@ -439,19 +439,19 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 		})
 	}
 	// version 4
-	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersion4, primitives.ProtocolVersionDse1} {
+	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion4, primitive.ProtocolVersionDse1} {
 		test.Run(fmt.Sprintf("version %d", version), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"prepared result without bound variables",
 					NewPreparedResult(WithPreparedQueryId([]byte{1, 2, 3, 4})),
-					primitives.LengthOfInt + //result type
-						primitives.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
-						primitives.LengthOfInt + // flags
-						primitives.LengthOfInt + //column count
-						primitives.LengthOfInt + // pk count
-						primitives.LengthOfInt + // flags
-						primitives.LengthOfInt, // column count
+					primitive.LengthOfInt + //result type
+						primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
+						primitive.LengthOfInt + // flags
+						primitive.LengthOfInt + //column count
+						primitive.LengthOfInt + // pk count
+						primitive.LengthOfInt + // flags
+						primitive.LengthOfInt, // column count
 					nil,
 				},
 				{
@@ -470,18 +470,18 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 								}),
 							)),
 					),
-					primitives.LengthOfInt + //result type
-						primitives.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
-						primitives.LengthOfInt + // flags
-						primitives.LengthOfInt + // column count
-						primitives.LengthOfInt + // pk count
-						primitives.LengthOfShort + // pk1
-						primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("table1") +
-						primitives.LengthOfString("col1") +
-						primitives.LengthOfShort + //col type
-						primitives.LengthOfInt + // flags
-						primitives.LengthOfInt, // column count
+					primitive.LengthOfInt + //result type
+						primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
+						primitive.LengthOfInt + // flags
+						primitive.LengthOfInt + // column count
+						primitive.LengthOfInt + // pk count
+						primitive.LengthOfShort + // pk1
+						primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("table1") +
+						primitive.LengthOfString("col1") +
+						primitive.LengthOfShort + //col type
+						primitive.LengthOfInt + // flags
+						primitive.LengthOfInt, // column count
 					nil,
 				},
 				{
@@ -509,22 +509,22 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 									Type:     datatype.Varchar,
 								})),
 						)),
-					primitives.LengthOfInt + //result type
-						primitives.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
-						primitives.LengthOfInt + // flags
-						primitives.LengthOfInt + // column count
-						primitives.LengthOfInt + // pk count
-						primitives.LengthOfShort + // pk1
-						primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("table1") +
-						primitives.LengthOfString("col1") +
-						primitives.LengthOfShort + //col type
-						primitives.LengthOfInt + // flags
-						primitives.LengthOfInt + // column count
-						primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("table1") +
-						primitives.LengthOfString("col2") +
-						primitives.LengthOfShort, //col type
+					primitive.LengthOfInt + //result type
+						primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
+						primitive.LengthOfInt + // flags
+						primitive.LengthOfInt + // column count
+						primitive.LengthOfInt + // pk count
+						primitive.LengthOfShort + // pk1
+						primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("table1") +
+						primitive.LengthOfString("col1") +
+						primitive.LengthOfShort + //col type
+						primitive.LengthOfInt + // flags
+						primitive.LengthOfInt + // column count
+						primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("table1") +
+						primitive.LengthOfString("col2") +
+						primitive.LengthOfShort, //col type
 					nil,
 				},
 			}
@@ -538,7 +538,7 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 		})
 	}
 	// versions 5, DSE v2
-	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersion5, primitives.ProtocolVersionDse2} {
+	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion5, primitive.ProtocolVersionDse2} {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -547,14 +547,14 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 						WithPreparedQueryId([]byte{1, 2, 3, 4}),
 						WithResultMetadataId([]byte{5, 6, 7, 8}),
 					),
-					primitives.LengthOfInt + //result type
-						primitives.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
-						primitives.LengthOfShortBytes([]byte{5, 6, 7, 8}) +
-						primitives.LengthOfInt + // flags
-						primitives.LengthOfInt + //column count
-						primitives.LengthOfInt + // pk count
-						primitives.LengthOfInt + // flags
-						primitives.LengthOfInt, // column count
+					primitive.LengthOfInt + //result type
+						primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
+						primitive.LengthOfShortBytes([]byte{5, 6, 7, 8}) +
+						primitive.LengthOfInt + // flags
+						primitive.LengthOfInt + //column count
+						primitive.LengthOfInt + // pk count
+						primitive.LengthOfInt + // flags
+						primitive.LengthOfInt, // column count
 					nil,
 				},
 				{
@@ -574,19 +574,19 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 								}),
 							)),
 					),
-					primitives.LengthOfInt + //result type
-						primitives.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
-						primitives.LengthOfShortBytes([]byte{5, 6, 7, 8}) +
-						primitives.LengthOfInt + // flags
-						primitives.LengthOfInt + //column count
-						primitives.LengthOfInt + // pk count
-						primitives.LengthOfShort + // pk1
-						primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("table1") +
-						primitives.LengthOfString("col1") +
-						primitives.LengthOfShort + //col type
-						primitives.LengthOfInt + // flags
-						primitives.LengthOfInt, // column count
+					primitive.LengthOfInt + //result type
+						primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
+						primitive.LengthOfShortBytes([]byte{5, 6, 7, 8}) +
+						primitive.LengthOfInt + // flags
+						primitive.LengthOfInt + //column count
+						primitive.LengthOfInt + // pk count
+						primitive.LengthOfShort + // pk1
+						primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("table1") +
+						primitive.LengthOfString("col1") +
+						primitive.LengthOfShort + //col type
+						primitive.LengthOfInt + // flags
+						primitive.LengthOfInt, // column count
 					nil,
 				},
 				{
@@ -615,23 +615,23 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 									Type:     datatype.Varchar,
 								})),
 						)),
-					primitives.LengthOfInt + //result type
-						primitives.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
-						primitives.LengthOfShortBytes([]byte{5, 6, 7, 8}) +
-						primitives.LengthOfInt + // flags
-						primitives.LengthOfInt + //column count
-						primitives.LengthOfInt + // pk count
-						primitives.LengthOfShort + // pk1
-						primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("table1") +
-						primitives.LengthOfString("col1") +
-						primitives.LengthOfShort + //col type
-						primitives.LengthOfInt + // flags
-						primitives.LengthOfInt + // column count
-						primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("table1") +
-						primitives.LengthOfString("col2") +
-						primitives.LengthOfShort, //col type
+					primitive.LengthOfInt + //result type
+						primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
+						primitive.LengthOfShortBytes([]byte{5, 6, 7, 8}) +
+						primitive.LengthOfInt + // flags
+						primitive.LengthOfInt + //column count
+						primitive.LengthOfInt + // pk count
+						primitive.LengthOfShort + // pk1
+						primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("table1") +
+						primitive.LengthOfString("col1") +
+						primitive.LengthOfShort + //col type
+						primitive.LengthOfInt + // flags
+						primitive.LengthOfInt + // column count
+						primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("table1") +
+						primitive.LengthOfString("col2") +
+						primitive.LengthOfShort, //col type
 					nil,
 				},
 			}
@@ -649,7 +649,7 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 func TestResultCodec_Decode_Prepared(test *testing.T) {
 	codec := &ResultCodec{}
 	// versions < 4
-	for _, version := range primitives.AllProtocolVersionsLesserThan(primitives.ProtocolVersion4) {
+	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{
@@ -752,7 +752,7 @@ func TestResultCodec_Decode_Prepared(test *testing.T) {
 		})
 	}
 	// version 4
-	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersion4, primitives.ProtocolVersionDse1} {
+	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion4, primitive.ProtocolVersionDse1} {
 		test.Run(fmt.Sprintf("version %d", version), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{
@@ -866,7 +866,7 @@ func TestResultCodec_Decode_Prepared(test *testing.T) {
 		})
 	}
 	// versions 5, DSE v2
-	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersion5, primitives.ProtocolVersionDse2} {
+	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion5, primitive.ProtocolVersionDse2} {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{

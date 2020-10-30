@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"io"
 )
 
@@ -16,8 +16,8 @@ func (m *AuthSuccess) IsResponse() bool {
 	return true
 }
 
-func (m *AuthSuccess) GetOpCode() primitives.OpCode {
-	return primitives.OpCodeAuthSuccess
+func (m *AuthSuccess) GetOpCode() primitive.OpCode {
+	return primitive.OpCodeAuthSuccess
 }
 
 func (m *AuthSuccess) String() string {
@@ -26,7 +26,7 @@ func (m *AuthSuccess) String() string {
 
 type AuthSuccessCodec struct{}
 
-func (c *AuthSuccessCodec) Encode(msg Message, dest io.Writer, _ primitives.ProtocolVersion) error {
+func (c *AuthSuccessCodec) Encode(msg Message, dest io.Writer, _ primitive.ProtocolVersion) error {
 	authSuccess, ok := msg.(*AuthSuccess)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.AuthSuccess, got %T", msg))
@@ -34,25 +34,25 @@ func (c *AuthSuccessCodec) Encode(msg Message, dest io.Writer, _ primitives.Prot
 	if authSuccess.Token == nil {
 		return errors.New("AUTH_SUCCESS token cannot be nil")
 	}
-	return primitives.WriteBytes(authSuccess.Token, dest)
+	return primitive.WriteBytes(authSuccess.Token, dest)
 }
 
-func (c *AuthSuccessCodec) EncodedLength(msg Message, _ primitives.ProtocolVersion) (int, error) {
+func (c *AuthSuccessCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) (int, error) {
 	authSuccess, ok := msg.(*AuthSuccess)
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected *message.AuthSuccess, got %T", msg))
 	}
-	return primitives.LengthOfBytes(authSuccess.Token), nil
+	return primitive.LengthOfBytes(authSuccess.Token), nil
 }
 
-func (c *AuthSuccessCodec) Decode(source io.Reader, _ primitives.ProtocolVersion) (Message, error) {
-	if token, err := primitives.ReadBytes(source); err != nil {
+func (c *AuthSuccessCodec) Decode(source io.Reader, _ primitive.ProtocolVersion) (Message, error) {
+	if token, err := primitive.ReadBytes(source); err != nil {
 		return nil, err
 	} else {
 		return &AuthSuccess{Token: token}, nil
 	}
 }
 
-func (c *AuthSuccessCodec) GetOpCode() primitives.OpCode {
-	return primitives.OpCodeAuthSuccess
+func (c *AuthSuccessCodec) GetOpCode() primitive.OpCode {
+	return primitive.OpCodeAuthSuccess
 }

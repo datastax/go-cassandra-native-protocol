@@ -3,7 +3,7 @@ package datatype
 import (
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"io"
 )
 
@@ -24,8 +24,8 @@ func NewTupleType(fieldTypes ...DataType) TupleType {
 	return &tupleType{FieldTypes: fieldTypes}
 }
 
-func (t *tupleType) GetDataTypeCode() primitives.DataTypeCode {
-	return primitives.DataTypeCodeTuple
+func (t *tupleType) GetDataTypeCode() primitive.DataTypeCode {
+	return primitive.DataTypeCodeTuple
 }
 
 func (t *tupleType) String() string {
@@ -38,11 +38,11 @@ func (t *tupleType) MarshalJSON() ([]byte, error) {
 
 type tupleTypeCodec struct{}
 
-func (c *tupleTypeCodec) encode(t DataType, dest io.Writer, version primitives.ProtocolVersion) (err error) {
+func (c *tupleTypeCodec) encode(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error) {
 	tupleType, ok := t.(TupleType)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected TupleType, got %T", t))
-	} else if err = primitives.WriteShort(uint16(len(tupleType.GetFieldTypes())), dest); err != nil {
+	} else if err = primitive.WriteShort(uint16(len(tupleType.GetFieldTypes())), dest); err != nil {
 		return fmt.Errorf("cannot write tuple type field count: %w", err)
 	}
 	for i, fieldType := range tupleType.GetFieldTypes() {
@@ -53,11 +53,11 @@ func (c *tupleTypeCodec) encode(t DataType, dest io.Writer, version primitives.P
 	return nil
 }
 
-func (c *tupleTypeCodec) encodedLength(t DataType, version primitives.ProtocolVersion) (int, error) {
+func (c *tupleTypeCodec) encodedLength(t DataType, version primitive.ProtocolVersion) (int, error) {
 	if tupleType, ok := t.(TupleType); !ok {
 		return -1, errors.New(fmt.Sprintf("expected TupleType, got %T", t))
 	} else {
-		length := primitives.LengthOfShort // field count
+		length := primitive.LengthOfShort // field count
 		for i, fieldType := range tupleType.GetFieldTypes() {
 			if fieldLength, err := LengthOfDataType(fieldType, version); err != nil {
 				return -1, fmt.Errorf("cannot compute length of tuple field %d: %w", i, err)
@@ -69,8 +69,8 @@ func (c *tupleTypeCodec) encodedLength(t DataType, version primitives.ProtocolVe
 	}
 }
 
-func (c *tupleTypeCodec) decode(source io.Reader, version primitives.ProtocolVersion) (DataType, error) {
-	if fieldCount, err := primitives.ReadShort(source); err != nil {
+func (c *tupleTypeCodec) decode(source io.Reader, version primitive.ProtocolVersion) (DataType, error) {
+	if fieldCount, err := primitive.ReadShort(source); err != nil {
 		return nil, fmt.Errorf("cannot read tuple field count: %w", err)
 	} else {
 		tupleType := &tupleType{}

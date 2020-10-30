@@ -3,7 +3,7 @@ package message
 import (
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"io"
 )
 
@@ -20,21 +20,21 @@ func (q *Query) IsResponse() bool {
 	return false
 }
 
-func (q *Query) GetOpCode() primitives.OpCode {
-	return primitives.OpCodeQuery
+func (q *Query) GetOpCode() primitive.OpCode {
+	return primitive.OpCodeQuery
 }
 
 type QueryCodec struct {
 }
 
-func (c *QueryCodec) Encode(msg Message, dest io.Writer, version primitives.ProtocolVersion) error {
+func (c *QueryCodec) Encode(msg Message, dest io.Writer, version primitive.ProtocolVersion) error {
 	query, ok := msg.(*Query)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.Query, got %T", msg))
 	}
 	if query.Query == "" {
 		return errors.New("cannot write QUERY empty query string")
-	} else if err := primitives.WriteLongString(query.Query, dest); err != nil {
+	} else if err := primitive.WriteLongString(query.Query, dest); err != nil {
 		return fmt.Errorf("cannot write QUERY query string: %w", err)
 	}
 	options := query.Options
@@ -47,12 +47,12 @@ func (c *QueryCodec) Encode(msg Message, dest io.Writer, version primitives.Prot
 	return nil
 }
 
-func (c *QueryCodec) EncodedLength(msg Message, version primitives.ProtocolVersion) (int, error) {
+func (c *QueryCodec) EncodedLength(msg Message, version primitive.ProtocolVersion) (int, error) {
 	query, ok := msg.(*Query)
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected *message.Query, got %T", msg))
 	}
-	lengthOfQuery := primitives.LengthOfLongString(query.Query)
+	lengthOfQuery := primitive.LengthOfLongString(query.Query)
 	lengthOfQueryOptions, err := LengthOfQueryOptions(query.Options, version)
 	if err != nil {
 		return -1, fmt.Errorf("cannot compute size of QUERY message: %w", err)
@@ -60,8 +60,8 @@ func (c *QueryCodec) EncodedLength(msg Message, version primitives.ProtocolVersi
 	return lengthOfQuery + lengthOfQueryOptions, nil
 }
 
-func (c *QueryCodec) Decode(source io.Reader, version primitives.ProtocolVersion) (Message, error) {
-	if query, err := primitives.ReadLongString(source); err != nil {
+func (c *QueryCodec) Decode(source io.Reader, version primitive.ProtocolVersion) (Message, error) {
+	if query, err := primitive.ReadLongString(source); err != nil {
 		return nil, err
 	} else if query == "" {
 		return nil, fmt.Errorf("cannot read QUERY empty query string")
@@ -72,6 +72,6 @@ func (c *QueryCodec) Decode(source io.Reader, version primitives.ProtocolVersion
 	}
 }
 
-func (c *QueryCodec) GetOpCode() primitives.OpCode {
-	return primitives.OpCodeQuery
+func (c *QueryCodec) GetOpCode() primitive.OpCode {
+	return primitive.OpCodeQuery
 }

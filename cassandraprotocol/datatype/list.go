@@ -3,7 +3,7 @@ package datatype
 import (
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"io"
 )
 
@@ -24,8 +24,8 @@ func NewListType(elementType DataType) ListType {
 	return &listType{elementType: elementType}
 }
 
-func (t *listType) GetDataTypeCode() primitives.DataTypeCode {
-	return primitives.DataTypeCodeList
+func (t *listType) GetDataTypeCode() primitive.DataTypeCode {
+	return primitive.DataTypeCodeList
 }
 
 func (t *listType) String() string {
@@ -38,7 +38,7 @@ func (t *listType) MarshalJSON() ([]byte, error) {
 
 type listTypeCodec struct{}
 
-func (c *listTypeCodec) encode(t DataType, dest io.Writer, version primitives.ProtocolVersion) (err error) {
+func (c *listTypeCodec) encode(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error) {
 	if listType, ok := t.(ListType); !ok {
 		return errors.New(fmt.Sprintf("expected ListType, got %T", t))
 	} else if err = WriteDataType(listType.GetElementType(), dest, version); err != nil {
@@ -47,7 +47,7 @@ func (c *listTypeCodec) encode(t DataType, dest io.Writer, version primitives.Pr
 	return nil
 }
 
-func (c *listTypeCodec) encodedLength(t DataType, version primitives.ProtocolVersion) (length int, err error) {
+func (c *listTypeCodec) encodedLength(t DataType, version primitive.ProtocolVersion) (length int, err error) {
 	if listType, ok := t.(ListType); !ok {
 		return -1, errors.New(fmt.Sprintf("expected ListType, got %T", t))
 	} else if elementLength, err := LengthOfDataType(listType.GetElementType(), version); err != nil {
@@ -58,7 +58,7 @@ func (c *listTypeCodec) encodedLength(t DataType, version primitives.ProtocolVer
 	return length, nil
 }
 
-func (c *listTypeCodec) decode(source io.Reader, version primitives.ProtocolVersion) (decoded DataType, err error) {
+func (c *listTypeCodec) decode(source io.Reader, version primitive.ProtocolVersion) (decoded DataType, err error) {
 	listType := &listType{}
 	if listType.elementType, err = ReadDataType(source, version); err != nil {
 		return nil, fmt.Errorf("cannot read list element type: %w", err)
