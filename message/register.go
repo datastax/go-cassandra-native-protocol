@@ -23,9 +23,9 @@ func (m *Register) String() string {
 	return fmt.Sprint("REGISTER ", m.EventTypes)
 }
 
-type RegisterCodec struct{}
+type registerCodec struct{}
 
-func (c *RegisterCodec) Encode(msg Message, dest io.Writer, _ primitive.ProtocolVersion) error {
+func (c *registerCodec) Encode(msg Message, dest io.Writer, _ primitive.ProtocolVersion) error {
 	register, ok := msg.(*Register)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.Register, got %T", msg))
@@ -41,7 +41,7 @@ func (c *RegisterCodec) Encode(msg Message, dest io.Writer, _ primitive.Protocol
 	return primitive.WriteStringList(register.EventTypes, dest)
 }
 
-func (c *RegisterCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) (int, error) {
+func (c *registerCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) (int, error) {
 	register, ok := msg.(*Register)
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected *message.Register, got %T", msg))
@@ -49,7 +49,7 @@ func (c *RegisterCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) 
 	return primitive.LengthOfStringList(register.EventTypes), nil
 }
 
-func (c *RegisterCodec) Decode(source io.Reader, _ primitive.ProtocolVersion) (Message, error) {
+func (c *registerCodec) Decode(source io.Reader, _ primitive.ProtocolVersion) (Message, error) {
 	if eventTypes, err := primitive.ReadStringList(source); err != nil {
 		return nil, err
 	} else {
@@ -62,6 +62,6 @@ func (c *RegisterCodec) Decode(source io.Reader, _ primitive.ProtocolVersion) (M
 	}
 }
 
-func (c *RegisterCodec) GetOpCode() primitive.OpCode {
+func (c *registerCodec) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeRegister
 }

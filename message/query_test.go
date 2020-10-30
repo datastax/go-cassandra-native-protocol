@@ -10,7 +10,7 @@ import (
 )
 
 func TestQueryCodec_Encode(t *testing.T) {
-	codec := &QueryCodec{}
+	codec := &queryCodec{}
 	// tests for version 3
 	t.Run("version 3", func(t *testing.T) {
 		tests := []encodeTestCase{
@@ -545,7 +545,7 @@ func TestQueryCodec_Encode(t *testing.T) {
 }
 
 func TestQueryCodec_EncodedLength(t *testing.T) {
-	codec := &QueryCodec{}
+	codec := &queryCodec{}
 	// tests for version 3
 	t.Run("version 3", func(t *testing.T) {
 		tests := []encodedLengthTestCase{
@@ -977,7 +977,7 @@ func TestQueryCodec_EncodedLength(t *testing.T) {
 }
 
 func TestQueryCodec_Decode(t *testing.T) {
-	codec := &QueryCodec{}
+	codec := &queryCodec{}
 	// tests for version 3
 	t.Run(fmt.Sprintf("version %d", primitive.ProtocolVersion3), func(t *testing.T) {
 		tests := []decodeTestCase{

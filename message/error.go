@@ -601,9 +601,9 @@ func (m *AlreadyExists) String() string {
 
 // CODEC
 
-type ErrorCodec struct{}
+type errorCodec struct{}
 
-func (c *ErrorCodec) Encode(msg Message, dest io.Writer, version primitive.ProtocolVersion) (err error) {
+func (c *errorCodec) Encode(msg Message, dest io.Writer, version primitive.ProtocolVersion) (err error) {
 	errMsg, ok := msg.(Error)
 	if !ok {
 		return fmt.Errorf("expected Error, got %T", msg)
@@ -769,7 +769,7 @@ func (c *ErrorCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 	return err
 }
 
-func (c *ErrorCodec) EncodedLength(msg Message, version primitive.ProtocolVersion) (length int, err error) {
+func (c *errorCodec) EncodedLength(msg Message, version primitive.ProtocolVersion) (length int, err error) {
 	errMsg := msg.(Error)
 	length += primitive.LengthOfInt // error code
 	length += primitive.LengthOfString(errMsg.GetErrorMessage())
@@ -866,7 +866,7 @@ func (c *ErrorCodec) EncodedLength(msg Message, version primitive.ProtocolVersio
 	return
 }
 
-func (c *ErrorCodec) Decode(source io.Reader, version primitive.ProtocolVersion) (msg Message, err error) {
+func (c *errorCodec) Decode(source io.Reader, version primitive.ProtocolVersion) (msg Message, err error) {
 	var code primitive.ErrorCode
 	if code, err = primitive.ReadInt(source); err != nil {
 		return nil, fmt.Errorf("cannot read ERROR code: %w", err)
@@ -1044,6 +1044,6 @@ func (c *ErrorCodec) Decode(source io.Reader, version primitive.ProtocolVersion)
 	return msg, err
 }
 
-func (c *ErrorCodec) GetOpCode() primitive.OpCode {
+func (c *errorCodec) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
 }

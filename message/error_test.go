@@ -10,7 +10,7 @@ import (
 )
 
 func TestErrorCodec_Encode(test *testing.T) {
-	codec := &ErrorCodec{}
+	codec := &errorCodec{}
 	// errors encoded the same in all versions
 	for _, version := range primitive.AllProtocolVersions() {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
@@ -314,7 +314,7 @@ func TestErrorCodec_Encode(test *testing.T) {
 }
 
 func TestErrorCodec_EncodedLength(test *testing.T) {
-	codec := &ErrorCodec{}
+	codec := &errorCodec{}
 	// errors encoded the same in all versions
 	for _, version := range primitive.AllProtocolVersions() {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
@@ -563,7 +563,7 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 }
 
 func TestErrorCodec_Decode(test *testing.T) {
-	codec := &ErrorCodec{}
+	codec := &errorCodec{}
 	// errors encoded the same in all versions
 	for _, version := range primitive.AllProtocolVersions() {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {

@@ -202,9 +202,9 @@ func (m *RowsResult) String() string {
 
 // CODEC
 
-type ResultCodec struct{}
+type resultCodec struct{}
 
-func (c *ResultCodec) Encode(msg Message, dest io.Writer, version primitive.ProtocolVersion) (err error) {
+func (c *resultCodec) Encode(msg Message, dest io.Writer, version primitive.ProtocolVersion) (err error) {
 	result, ok := msg.(Result)
 	if !ok {
 		return fmt.Errorf("expected message.Result, got %T", msg)
@@ -327,7 +327,7 @@ func (c *ResultCodec) Encode(msg Message, dest io.Writer, version primitive.Prot
 	return nil
 }
 
-func (c *ResultCodec) EncodedLength(msg Message, version primitive.ProtocolVersion) (length int, err error) {
+func (c *resultCodec) EncodedLength(msg Message, version primitive.ProtocolVersion) (length int, err error) {
 	result, ok := msg.(Result)
 	if !ok {
 		return -1, fmt.Errorf("expected interface Result, got %T", msg)
@@ -417,7 +417,7 @@ func (c *ResultCodec) EncodedLength(msg Message, version primitive.ProtocolVersi
 	return length, nil
 }
 
-func (c *ResultCodec) Decode(source io.Reader, version primitive.ProtocolVersion) (msg Message, err error) {
+func (c *resultCodec) Decode(source io.Reader, version primitive.ProtocolVersion) (msg Message, err error) {
 	var resultType primitive.ResultType
 	if resultType, err = primitive.ReadInt(source); err != nil {
 		return nil, fmt.Errorf("cannot read RESULT type: %w", err)
@@ -507,7 +507,7 @@ func (c *ResultCodec) Decode(source io.Reader, version primitive.ProtocolVersion
 	}
 }
 
-func (c *ResultCodec) GetOpCode() primitive.OpCode {
+func (c *resultCodec) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeResult
 }
 

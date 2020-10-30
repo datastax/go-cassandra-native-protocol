@@ -121,9 +121,9 @@ func NewPreparedBatchChild(preparedId []byte, values ...*primitive.Value) *Batch
 	return &BatchChild{QueryOrId: preparedId, Values: values}
 }
 
-type BatchCodec struct{}
+type batchCodec struct{}
 
-func (c *BatchCodec) Encode(msg Message, dest io.Writer, version primitive.ProtocolVersion) (err error) {
+func (c *batchCodec) Encode(msg Message, dest io.Writer, version primitive.ProtocolVersion) (err error) {
 	batch, ok := msg.(*Batch)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.Batch, got %T", msg))
@@ -205,7 +205,7 @@ func (c *BatchCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 	return nil
 }
 
-func (c *BatchCodec) EncodedLength(msg Message, version primitive.ProtocolVersion) (length int, err error) {
+func (c *batchCodec) EncodedLength(msg Message, version primitive.ProtocolVersion) (length int, err error) {
 	batch, ok := msg.(*Batch)
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected *message.Batch, got %T", msg))
@@ -255,7 +255,7 @@ func (c *BatchCodec) EncodedLength(msg Message, version primitive.ProtocolVersio
 	return length, nil
 }
 
-func (c *BatchCodec) Decode(source io.Reader, version primitive.ProtocolVersion) (msg Message, err error) {
+func (c *batchCodec) Decode(source io.Reader, version primitive.ProtocolVersion) (msg Message, err error) {
 	batch := NewBatch()
 	if batch.Type, err = primitive.ReadByte(source); err != nil {
 		return nil, fmt.Errorf("cannot read BATCH type: %w", err)
@@ -334,6 +334,6 @@ func (c *BatchCodec) Decode(source io.Reader, version primitive.ProtocolVersion)
 	return batch, nil
 }
 
-func (c *BatchCodec) GetOpCode() primitive.OpCode {
+func (c *batchCodec) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeBatch
 }

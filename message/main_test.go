@@ -1,5 +1,6 @@
 package message
 
+//goland:noinspection GoUnusedConst
 const (
 	__  = byte('_')
 	dot = byte('.')

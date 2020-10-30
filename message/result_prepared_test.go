@@ -10,7 +10,7 @@ import (
 )
 
 func TestResultCodec_Encode_Prepared(test *testing.T) {
-	codec := &ResultCodec{}
+	codec := &resultCodec{}
 	// versions < 4
 	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
@@ -348,7 +348,7 @@ func TestResultCodec_Encode_Prepared(test *testing.T) {
 }
 
 func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
-	codec := &ResultCodec{}
+	codec := &resultCodec{}
 	// versions < 4
 	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
@@ -647,7 +647,7 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 }
 
 func TestResultCodec_Decode_Prepared(test *testing.T) {
-	codec := &ResultCodec{}
+	codec := &resultCodec{}
 	// versions < 4
 	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {

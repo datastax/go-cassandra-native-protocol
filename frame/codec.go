@@ -11,32 +11,11 @@ type Codec struct {
 	messageCodecs map[primitive.OpCode]message.Codec
 }
 
-var defaultMessageCodecs = []message.Codec{
-	&message.StartupCodec{},
-	&message.OptionsCodec{},
-	&message.QueryCodec{},
-	&message.PrepareCodec{},
-	&message.ExecuteCodec{},
-	&message.RegisterCodec{},
-	&message.BatchCodec{},
-	&message.AuthResponseCodec{},
-	&message.ErrorCodec{},
-	&message.ReadyCodec{},
-	&message.AuthenticateCodec{},
-	&message.SupportedCodec{},
-	&message.ResultCodec{},
-	&message.EventCodec{},
-	&message.AuthChallengeCodec{},
-	&message.AuthSuccessCodec{},
-	// DSE-specific
-	&message.ReviseCodec{},
-}
-
 type CodecCustomizer func(*Codec)
 
 func NewCodec(customizers ...CodecCustomizer) *Codec {
-	frameCodec := &Codec{messageCodecs: make(map[primitive.OpCode]message.Codec, len(defaultMessageCodecs))}
-	for _, messageCodec := range defaultMessageCodecs {
+	frameCodec := &Codec{messageCodecs: make(map[primitive.OpCode]message.Codec, len(message.DefaultMessageCodecs))}
+	for _, messageCodec := range message.DefaultMessageCodecs {
 		frameCodec.messageCodecs[messageCodec.GetOpCode()] = messageCodec
 	}
 	for _, customizer := range customizers {

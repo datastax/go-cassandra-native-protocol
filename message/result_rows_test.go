@@ -39,7 +39,7 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 		Index:    0,
 		Type:     datatype.Varchar,
 	}
-	codec := &ResultCodec{}
+	codec := &resultCodec{}
 	// versions < 5
 	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion5) {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
@@ -550,7 +550,7 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 		Index:    0,
 		Type:     datatype.Varchar,
 	}
-	codec := &ResultCodec{}
+	codec := &resultCodec{}
 	// versions < 5
 	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion5) {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
@@ -977,7 +977,7 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 		Index:    0,
 		Type:     datatype.Varchar,
 	}
-	codec := &ResultCodec{}
+	codec := &resultCodec{}
 	// versions < 5
 	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion5) {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {

@@ -24,10 +24,9 @@ func (q *Query) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeQuery
 }
 
-type QueryCodec struct {
-}
+type queryCodec struct{}
 
-func (c *QueryCodec) Encode(msg Message, dest io.Writer, version primitive.ProtocolVersion) error {
+func (c *queryCodec) Encode(msg Message, dest io.Writer, version primitive.ProtocolVersion) error {
 	query, ok := msg.(*Query)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.Query, got %T", msg))
@@ -47,7 +46,7 @@ func (c *QueryCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 	return nil
 }
 
-func (c *QueryCodec) EncodedLength(msg Message, version primitive.ProtocolVersion) (int, error) {
+func (c *queryCodec) EncodedLength(msg Message, version primitive.ProtocolVersion) (int, error) {
 	query, ok := msg.(*Query)
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected *message.Query, got %T", msg))
@@ -60,7 +59,7 @@ func (c *QueryCodec) EncodedLength(msg Message, version primitive.ProtocolVersio
 	return lengthOfQuery + lengthOfQueryOptions, nil
 }
 
-func (c *QueryCodec) Decode(source io.Reader, version primitive.ProtocolVersion) (Message, error) {
+func (c *queryCodec) Decode(source io.Reader, version primitive.ProtocolVersion) (Message, error) {
 	if query, err := primitive.ReadLongString(source); err != nil {
 		return nil, err
 	} else if query == "" {
@@ -72,6 +71,6 @@ func (c *QueryCodec) Decode(source io.Reader, version primitive.ProtocolVersion)
 	}
 }
 
-func (c *QueryCodec) GetOpCode() primitive.OpCode {
+func (c *queryCodec) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeQuery
 }

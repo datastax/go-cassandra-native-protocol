@@ -92,9 +92,9 @@ func (m *TopologyChangeEvent) String() string {
 
 // EVENT CODEC
 
-type EventCodec struct{}
+type eventCodec struct{}
 
-func (c *EventCodec) Encode(msg Message, dest io.Writer, version primitive.ProtocolVersion) (err error) {
+func (c *eventCodec) Encode(msg Message, dest io.Writer, version primitive.ProtocolVersion) (err error) {
 	event, ok := msg.(Event)
 	if !ok {
 		return fmt.Errorf("expected message.Event, got %T", msg)
@@ -185,7 +185,7 @@ func (c *EventCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 	return errors.New("unknown EVENT type: " + event.GetEventType())
 }
 
-func (c *EventCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) (length int, err error) {
+func (c *eventCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) (length int, err error) {
 	event, ok := msg.(Event)
 	if !ok {
 		return -1, fmt.Errorf("expected message.Event, got %T", msg)
@@ -243,7 +243,7 @@ func (c *EventCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) (le
 	return -1, errors.New("unknown EVENT type: " + event.GetEventType())
 }
 
-func (c *EventCodec) Decode(source io.Reader, version primitive.ProtocolVersion) (Message, error) {
+func (c *eventCodec) Decode(source io.Reader, version primitive.ProtocolVersion) (Message, error) {
 	eventType, err := primitive.ReadString(source)
 	if err != nil {
 		return nil, err
@@ -306,6 +306,6 @@ func (c *EventCodec) Decode(source io.Reader, version primitive.ProtocolVersion)
 	return nil, errors.New("unknown EVENT type: " + eventType)
 }
 
-func (c *EventCodec) GetOpCode() primitive.OpCode {
+func (c *eventCodec) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeEvent
 }
