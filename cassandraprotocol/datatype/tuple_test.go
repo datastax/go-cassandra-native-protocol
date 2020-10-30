@@ -4,19 +4,19 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestTupleType(t *testing.T) {
 	tupleType := NewTupleType(Varchar, Int)
-	assert.Equal(t, primitives.DataTypeCodeTuple, tupleType.GetDataTypeCode())
+	assert.Equal(t, primitive.DataTypeCodeTuple, tupleType.GetDataTypeCode())
 	assert.Equal(t, []DataType{Varchar, Int}, tupleType.GetFieldTypes())
 }
 
 func TestTupleTypeCodecEncode(t *testing.T) {
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -29,8 +29,8 @@ func TestTupleTypeCodecEncode(t *testing.T) {
 					NewTupleType(Varchar, Int),
 					[]byte{
 						0, 2, // field count
-						0, byte(primitives.DataTypeCodeVarchar & 0xFF),
-						0, byte(primitives.DataTypeCodeInt & 0xFF),
+						0, byte(primitive.DataTypeCodeVarchar & 0xFF),
+						0, byte(primitive.DataTypeCodeInt & 0xFF),
 					},
 					nil,
 				},
@@ -39,20 +39,20 @@ func TestTupleTypeCodecEncode(t *testing.T) {
 					NewTupleType(NewTupleType(Varchar, Int), NewTupleType(Boolean, Float)),
 					[]byte{
 						0, 2, // field count
-						0, byte(primitives.DataTypeCodeTuple & 0xFF),
+						0, byte(primitive.DataTypeCodeTuple & 0xFF),
 						0, 2, // field count
-						0, byte(primitives.DataTypeCodeVarchar & 0xFF),
-						0, byte(primitives.DataTypeCodeInt & 0xFF),
-						0, byte(primitives.DataTypeCodeTuple & 0xFF),
+						0, byte(primitive.DataTypeCodeVarchar & 0xFF),
+						0, byte(primitive.DataTypeCodeInt & 0xFF),
+						0, byte(primitive.DataTypeCodeTuple & 0xFF),
 						0, 2, // field count
-						0, byte(primitives.DataTypeCodeBoolean & 0xFF),
-						0, byte(primitives.DataTypeCodeFloat & 0xFF),
+						0, byte(primitive.DataTypeCodeBoolean & 0xFF),
+						0, byte(primitive.DataTypeCodeFloat & 0xFF),
 					},
 					nil,
 				},
 				{"nil tuple", nil, nil, errors.New("expected TupleType, got <nil>")},
 			}
-			codec, _ := findCodec(primitives.DataTypeCodeTuple)
+			codec, _ := findCodec(primitive.DataTypeCodeTuple)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var dest = &bytes.Buffer{}
@@ -68,7 +68,7 @@ func TestTupleTypeCodecEncode(t *testing.T) {
 }
 
 func TestTupleTypeCodecEncodedLength(t *testing.T) {
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -79,18 +79,18 @@ func TestTupleTypeCodecEncodedLength(t *testing.T) {
 				{
 					"simple tuple",
 					NewTupleType(Varchar, Int),
-					primitives.LengthOfShort * 3,
+					primitive.LengthOfShort * 3,
 					nil,
 				},
 				{
 					"complex tuple",
 					NewTupleType(NewTupleType(Varchar, Int), NewTupleType(Boolean, Float)),
-					primitives.LengthOfShort * 9,
+					primitive.LengthOfShort * 9,
 					nil,
 				},
 				{"nil tuple", nil, -1, errors.New("expected TupleType, got <nil>")},
 			}
-			codec, _ := findCodec(primitives.DataTypeCodeTuple)
+			codec, _ := findCodec(primitive.DataTypeCodeTuple)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var actual int
@@ -105,7 +105,7 @@ func TestTupleTypeCodecEncodedLength(t *testing.T) {
 }
 
 func TestTupleTypeCodecDecode(t *testing.T) {
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -117,8 +117,8 @@ func TestTupleTypeCodecDecode(t *testing.T) {
 					"simple tuple",
 					[]byte{
 						0, 2, // field count
-						0, byte(primitives.DataTypeCodeVarchar & 0xFF),
-						0, byte(primitives.DataTypeCodeInt & 0xFF),
+						0, byte(primitive.DataTypeCodeVarchar & 0xFF),
+						0, byte(primitive.DataTypeCodeInt & 0xFF),
 					},
 					NewTupleType(Varchar, Int),
 					nil,
@@ -127,14 +127,14 @@ func TestTupleTypeCodecDecode(t *testing.T) {
 					"complex tuple",
 					[]byte{
 						0, 2, // field count
-						0, byte(primitives.DataTypeCodeTuple & 0xFF),
+						0, byte(primitive.DataTypeCodeTuple & 0xFF),
 						0, 2, // field count
-						0, byte(primitives.DataTypeCodeVarchar & 0xFF),
-						0, byte(primitives.DataTypeCodeInt & 0xFF),
-						0, byte(primitives.DataTypeCodeTuple & 0xFF),
+						0, byte(primitive.DataTypeCodeVarchar & 0xFF),
+						0, byte(primitive.DataTypeCodeInt & 0xFF),
+						0, byte(primitive.DataTypeCodeTuple & 0xFF),
 						0, 2, // field count
-						0, byte(primitives.DataTypeCodeBoolean & 0xFF),
-						0, byte(primitives.DataTypeCodeFloat & 0xFF),
+						0, byte(primitive.DataTypeCodeBoolean & 0xFF),
+						0, byte(primitive.DataTypeCodeFloat & 0xFF),
 					},
 					NewTupleType(NewTupleType(Varchar, Int), NewTupleType(Boolean, Float)),
 					nil,
@@ -148,7 +148,7 @@ func TestTupleTypeCodecDecode(t *testing.T) {
 							errors.New("EOF"))),
 				},
 			}
-			codec, _ := findCodec(primitives.DataTypeCodeTuple)
+			codec, _ := findCodec(primitive.DataTypeCodeTuple)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var source = bytes.NewBuffer(test.input)

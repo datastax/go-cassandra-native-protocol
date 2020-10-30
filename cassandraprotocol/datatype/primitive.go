@@ -3,31 +3,31 @@ package datatype
 import (
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"io"
 )
 
 var (
-	Ascii     PrimitiveType = &primitiveType{code: primitives.DataTypeCodeAscii}
-	Bigint    PrimitiveType = &primitiveType{code: primitives.DataTypeCodeBigint}
-	Blob      PrimitiveType = &primitiveType{code: primitives.DataTypeCodeBlob}
-	Boolean   PrimitiveType = &primitiveType{code: primitives.DataTypeCodeBoolean}
-	Counter   PrimitiveType = &primitiveType{code: primitives.DataTypeCodeCounter}
-	Decimal   PrimitiveType = &primitiveType{code: primitives.DataTypeCodeDecimal}
-	Double    PrimitiveType = &primitiveType{code: primitives.DataTypeCodeDouble}
-	Float     PrimitiveType = &primitiveType{code: primitives.DataTypeCodeFloat}
-	Int       PrimitiveType = &primitiveType{code: primitives.DataTypeCodeInt}
-	Timestamp PrimitiveType = &primitiveType{code: primitives.DataTypeCodeTimestamp}
-	Uuid      PrimitiveType = &primitiveType{code: primitives.DataTypeCodeUuid}
-	Varchar   PrimitiveType = &primitiveType{code: primitives.DataTypeCodeVarchar}
-	Varint    PrimitiveType = &primitiveType{code: primitives.DataTypeCodeVarint}
-	Timeuuid  PrimitiveType = &primitiveType{code: primitives.DataTypeCodeTimeuuid}
-	Inet      PrimitiveType = &primitiveType{code: primitives.DataTypeCodeInet}
-	Date      PrimitiveType = &primitiveType{code: primitives.DataTypeCodeDate}
-	Time      PrimitiveType = &primitiveType{code: primitives.DataTypeCodeTime}
-	Smallint  PrimitiveType = &primitiveType{code: primitives.DataTypeCodeSmallint}
-	Tinyint   PrimitiveType = &primitiveType{code: primitives.DataTypeCodeTinyint}
-	Duration  PrimitiveType = &primitiveType{code: primitives.DataTypeCodeDuration}
+	Ascii     PrimitiveType = &primitiveType{code: primitive.DataTypeCodeAscii}
+	Bigint    PrimitiveType = &primitiveType{code: primitive.DataTypeCodeBigint}
+	Blob      PrimitiveType = &primitiveType{code: primitive.DataTypeCodeBlob}
+	Boolean   PrimitiveType = &primitiveType{code: primitive.DataTypeCodeBoolean}
+	Counter   PrimitiveType = &primitiveType{code: primitive.DataTypeCodeCounter}
+	Decimal   PrimitiveType = &primitiveType{code: primitive.DataTypeCodeDecimal}
+	Double    PrimitiveType = &primitiveType{code: primitive.DataTypeCodeDouble}
+	Float     PrimitiveType = &primitiveType{code: primitive.DataTypeCodeFloat}
+	Int       PrimitiveType = &primitiveType{code: primitive.DataTypeCodeInt}
+	Timestamp PrimitiveType = &primitiveType{code: primitive.DataTypeCodeTimestamp}
+	Uuid      PrimitiveType = &primitiveType{code: primitive.DataTypeCodeUuid}
+	Varchar   PrimitiveType = &primitiveType{code: primitive.DataTypeCodeVarchar}
+	Varint    PrimitiveType = &primitiveType{code: primitive.DataTypeCodeVarint}
+	Timeuuid  PrimitiveType = &primitiveType{code: primitive.DataTypeCodeTimeuuid}
+	Inet      PrimitiveType = &primitiveType{code: primitive.DataTypeCodeInet}
+	Date      PrimitiveType = &primitiveType{code: primitive.DataTypeCodeDate}
+	Time      PrimitiveType = &primitiveType{code: primitive.DataTypeCodeTime}
+	Smallint  PrimitiveType = &primitiveType{code: primitive.DataTypeCodeSmallint}
+	Tinyint   PrimitiveType = &primitiveType{code: primitive.DataTypeCodeTinyint}
+	Duration  PrimitiveType = &primitiveType{code: primitive.DataTypeCodeDuration}
 )
 
 type PrimitiveType interface {
@@ -35,54 +35,54 @@ type PrimitiveType interface {
 }
 
 type primitiveType struct {
-	code primitives.DataTypeCode
+	code primitive.DataTypeCode
 }
 
-func (t *primitiveType) GetDataTypeCode() primitives.DataTypeCode {
+func (t *primitiveType) GetDataTypeCode() primitive.DataTypeCode {
 	return t.code
 }
 
 func (t *primitiveType) String() string {
 	switch t.GetDataTypeCode() {
-	case primitives.DataTypeCodeAscii:
+	case primitive.DataTypeCodeAscii:
 		return "ascii"
-	case primitives.DataTypeCodeBigint:
+	case primitive.DataTypeCodeBigint:
 		return "bigint"
-	case primitives.DataTypeCodeBlob:
+	case primitive.DataTypeCodeBlob:
 		return "blob"
-	case primitives.DataTypeCodeBoolean:
+	case primitive.DataTypeCodeBoolean:
 		return "boolean"
-	case primitives.DataTypeCodeCounter:
+	case primitive.DataTypeCodeCounter:
 		return "counter"
-	case primitives.DataTypeCodeDecimal:
+	case primitive.DataTypeCodeDecimal:
 		return "decimal"
-	case primitives.DataTypeCodeDouble:
+	case primitive.DataTypeCodeDouble:
 		return "double"
-	case primitives.DataTypeCodeFloat:
+	case primitive.DataTypeCodeFloat:
 		return "float"
-	case primitives.DataTypeCodeInt:
+	case primitive.DataTypeCodeInt:
 		return "int"
-	case primitives.DataTypeCodeTimestamp:
+	case primitive.DataTypeCodeTimestamp:
 		return "timestamp"
-	case primitives.DataTypeCodeUuid:
+	case primitive.DataTypeCodeUuid:
 		return "uuid"
-	case primitives.DataTypeCodeVarchar:
+	case primitive.DataTypeCodeVarchar:
 		return "varchar"
-	case primitives.DataTypeCodeVarint:
+	case primitive.DataTypeCodeVarint:
 		return "varint"
-	case primitives.DataTypeCodeTimeuuid:
+	case primitive.DataTypeCodeTimeuuid:
 		return "timeuuid"
-	case primitives.DataTypeCodeInet:
+	case primitive.DataTypeCodeInet:
 		return "inet"
-	case primitives.DataTypeCodeDate:
+	case primitive.DataTypeCodeDate:
 		return "date"
-	case primitives.DataTypeCodeTime:
+	case primitive.DataTypeCodeTime:
 		return "tune"
-	case primitives.DataTypeCodeSmallint:
+	case primitive.DataTypeCodeSmallint:
 		return "smallint"
-	case primitives.DataTypeCodeTinyint:
+	case primitive.DataTypeCodeTinyint:
 		return "tinyint"
-	case primitives.DataTypeCodeDuration:
+	case primitive.DataTypeCodeDuration:
 		return "duration"
 	}
 	return "?"
@@ -96,33 +96,33 @@ type primitiveTypeCodec struct {
 	primitiveType PrimitiveType
 }
 
-func (c *primitiveTypeCodec) encode(t DataType, _ io.Writer, version primitives.ProtocolVersion) (err error) {
+func (c *primitiveTypeCodec) encode(t DataType, _ io.Writer, version primitive.ProtocolVersion) (err error) {
 	_, ok := t.(PrimitiveType)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected PrimitiveType, got %T", t))
 	}
-	if err := primitives.CheckPrimitiveDataTypeCode(t.GetDataTypeCode()); err != nil {
+	if err := primitive.CheckPrimitiveDataTypeCode(t.GetDataTypeCode()); err != nil {
 		return err
 	}
-	if version < primitives.ProtocolVersion5 && c.primitiveType.GetDataTypeCode() == primitives.DataTypeCodeDuration {
+	if version < primitive.ProtocolVersion5 && c.primitiveType.GetDataTypeCode() == primitive.DataTypeCodeDuration {
 		return fmt.Errorf("cannot use duration type with protocol version %v", version)
 	}
 	return nil
 }
 
-func (c *primitiveTypeCodec) encodedLength(t DataType, _ primitives.ProtocolVersion) (int, error) {
+func (c *primitiveTypeCodec) encodedLength(t DataType, _ primitive.ProtocolVersion) (int, error) {
 	_, ok := t.(PrimitiveType)
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected PrimitiveType, got %T", t))
 	}
-	if err := primitives.CheckPrimitiveDataTypeCode(t.GetDataTypeCode()); err != nil {
+	if err := primitive.CheckPrimitiveDataTypeCode(t.GetDataTypeCode()); err != nil {
 		return -1, err
 	}
 	return 0, nil
 }
 
-func (c *primitiveTypeCodec) decode(_ io.Reader, version primitives.ProtocolVersion) (t DataType, err error) {
-	if version < primitives.ProtocolVersion5 && c.primitiveType.GetDataTypeCode() == primitives.DataTypeCodeDuration {
+func (c *primitiveTypeCodec) decode(_ io.Reader, version primitive.ProtocolVersion) (t DataType, err error) {
+	if version < primitive.ProtocolVersion5 && c.primitiveType.GetDataTypeCode() == primitive.DataTypeCodeDuration {
 		return nil, fmt.Errorf("cannot use duration type with protocol version %v", version)
 	}
 	return c.primitiveType, nil

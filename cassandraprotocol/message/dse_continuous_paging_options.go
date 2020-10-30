@@ -2,7 +2,7 @@ package message
 
 import (
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"io"
 )
 
@@ -21,44 +21,44 @@ type ContinuousPagingOptions struct {
 	NextPages int32
 }
 
-func EncodeContinuousPagingOptions(options *ContinuousPagingOptions, dest io.Writer, version primitives.ProtocolVersion) (err error) {
-	if err = primitives.CheckDseProtocolVersion(version); err != nil {
+func EncodeContinuousPagingOptions(options *ContinuousPagingOptions, dest io.Writer, version primitive.ProtocolVersion) (err error) {
+	if err = primitive.CheckDseProtocolVersion(version); err != nil {
 		return err
-	} else if err = primitives.WriteInt(options.MaxPages, dest); err != nil {
+	} else if err = primitive.WriteInt(options.MaxPages, dest); err != nil {
 		return fmt.Errorf("cannot write max num pages: %w", err)
-	} else if err = primitives.WriteInt(options.PagesPerSecond, dest); err != nil {
+	} else if err = primitive.WriteInt(options.PagesPerSecond, dest); err != nil {
 		return fmt.Errorf("cannot write pages per second: %w", err)
-	} else if version >= primitives.ProtocolVersionDse2 {
-		if err = primitives.WriteInt(options.NextPages, dest); err != nil {
+	} else if version >= primitive.ProtocolVersionDse2 {
+		if err = primitive.WriteInt(options.NextPages, dest); err != nil {
 			return fmt.Errorf("cannot write next pages: %w", err)
 		}
 	}
 	return nil
 }
 
-func LengthOfContinuousPagingOptions(_ *ContinuousPagingOptions, version primitives.ProtocolVersion) (length int, err error) {
-	if err = primitives.CheckDseProtocolVersion(version); err != nil {
+func LengthOfContinuousPagingOptions(_ *ContinuousPagingOptions, version primitive.ProtocolVersion) (length int, err error) {
+	if err = primitive.CheckDseProtocolVersion(version); err != nil {
 		return -1, err
 	}
-	length += primitives.LengthOfInt // max num pages
-	length += primitives.LengthOfInt // pages per second
-	if version >= primitives.ProtocolVersionDse2 {
-		length += primitives.LengthOfInt // next pages
+	length += primitive.LengthOfInt // max num pages
+	length += primitive.LengthOfInt // pages per second
+	if version >= primitive.ProtocolVersionDse2 {
+		length += primitive.LengthOfInt // next pages
 	}
 	return length, nil
 }
 
-func DecodeContinuousPagingOptions(source io.Reader, version primitives.ProtocolVersion) (options *ContinuousPagingOptions, err error) {
-	if err = primitives.CheckDseProtocolVersion(version); err != nil {
+func DecodeContinuousPagingOptions(source io.Reader, version primitive.ProtocolVersion) (options *ContinuousPagingOptions, err error) {
+	if err = primitive.CheckDseProtocolVersion(version); err != nil {
 		return nil, err
 	}
 	options = &ContinuousPagingOptions{}
-	if options.MaxPages, err = primitives.ReadInt(source); err != nil {
+	if options.MaxPages, err = primitive.ReadInt(source); err != nil {
 		return nil, fmt.Errorf("cannot read max num pages: %w", err)
-	} else if options.PagesPerSecond, err = primitives.ReadInt(source); err != nil {
+	} else if options.PagesPerSecond, err = primitive.ReadInt(source); err != nil {
 		return nil, fmt.Errorf("cannot read pages per second: %w", err)
-	} else if version >= primitives.ProtocolVersionDse2 {
-		if options.NextPages, err = primitives.ReadInt(source); err != nil {
+	} else if version >= primitive.ProtocolVersionDse2 {
+		if options.NextPages, err = primitive.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read next pages: %w", err)
 		}
 	}

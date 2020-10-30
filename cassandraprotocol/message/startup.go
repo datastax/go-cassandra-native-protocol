@@ -3,7 +3,7 @@ package message
 import (
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"io"
 )
 
@@ -50,8 +50,8 @@ func (m *Startup) IsResponse() bool {
 	return false
 }
 
-func (m *Startup) GetOpCode() primitives.OpCode {
-	return primitives.OpCodeStartup
+func (m *Startup) GetOpCode() primitive.OpCode {
+	return primitive.OpCodeStartup
 }
 
 func (m *Startup) String() string {
@@ -60,30 +60,30 @@ func (m *Startup) String() string {
 
 type StartupCodec struct{}
 
-func (c *StartupCodec) Encode(msg Message, dest io.Writer, _ primitives.ProtocolVersion) error {
+func (c *StartupCodec) Encode(msg Message, dest io.Writer, _ primitive.ProtocolVersion) error {
 	startup, ok := msg.(*Startup)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.Startup, got %T", msg))
 	}
-	return primitives.WriteStringMap(startup.Options, dest)
+	return primitive.WriteStringMap(startup.Options, dest)
 }
 
-func (c *StartupCodec) EncodedLength(msg Message, _ primitives.ProtocolVersion) (int, error) {
+func (c *StartupCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) (int, error) {
 	startup, ok := msg.(*Startup)
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected *message.Startup, got %T", msg))
 	}
-	return primitives.LengthOfStringMap(startup.Options), nil
+	return primitive.LengthOfStringMap(startup.Options), nil
 }
 
-func (c *StartupCodec) Decode(source io.Reader, _ primitives.ProtocolVersion) (Message, error) {
-	if options, err := primitives.ReadStringMap(source); err != nil {
+func (c *StartupCodec) Decode(source io.Reader, _ primitive.ProtocolVersion) (Message, error) {
+	if options, err := primitive.ReadStringMap(source); err != nil {
 		return nil, err
 	} else {
 		return &Startup{Options: options}, nil
 	}
 }
 
-func (c *StartupCodec) GetOpCode() primitives.OpCode {
-	return primitives.OpCodeStartup
+func (c *StartupCodec) GetOpCode() primitive.OpCode {
+	return primitive.OpCodeStartup
 }

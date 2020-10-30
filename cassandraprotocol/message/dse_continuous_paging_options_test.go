@@ -3,13 +3,13 @@ package message
 import (
 	"bytes"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestContinuousPagingOptions_Encode(t *testing.T) {
-	version := primitives.ProtocolVersionDse1
+	version := primitive.ProtocolVersionDse1
 	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 		tests := []struct {
 			name     string
@@ -48,7 +48,7 @@ func TestContinuousPagingOptions_Encode(t *testing.T) {
 			})
 		}
 	})
-	version = primitives.ProtocolVersionDse2
+	version = primitive.ProtocolVersionDse2
 	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 		tests := []struct {
 			name     string
@@ -93,7 +93,7 @@ func TestContinuousPagingOptions_Encode(t *testing.T) {
 }
 
 func TestContinuousPagingOptions_EncodedLength(t *testing.T) {
-	version := primitives.ProtocolVersionDse1
+	version := primitive.ProtocolVersionDse1
 	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 		tests := []struct {
 			name     string
@@ -104,7 +104,7 @@ func TestContinuousPagingOptions_EncodedLength(t *testing.T) {
 			{
 				"empty options",
 				&ContinuousPagingOptions{},
-				primitives.LengthOfInt * 2,
+				primitive.LengthOfInt * 2,
 				nil,
 			},
 			{
@@ -113,7 +113,7 @@ func TestContinuousPagingOptions_EncodedLength(t *testing.T) {
 					MaxPages:       200,
 					PagesPerSecond: 150,
 				},
-				primitives.LengthOfInt * 2,
+				primitive.LengthOfInt * 2,
 				nil,
 			},
 		}
@@ -125,7 +125,7 @@ func TestContinuousPagingOptions_EncodedLength(t *testing.T) {
 			})
 		}
 	})
-	version = primitives.ProtocolVersionDse2
+	version = primitive.ProtocolVersionDse2
 	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 		tests := []struct {
 			name     string
@@ -136,7 +136,7 @@ func TestContinuousPagingOptions_EncodedLength(t *testing.T) {
 			{
 				"empty options",
 				&ContinuousPagingOptions{},
-				primitives.LengthOfInt * 3,
+				primitive.LengthOfInt * 3,
 				nil,
 			},
 			{
@@ -146,7 +146,7 @@ func TestContinuousPagingOptions_EncodedLength(t *testing.T) {
 					PagesPerSecond: 150,
 					NextPages:      100,
 				},
-				primitives.LengthOfInt * 3,
+				primitive.LengthOfInt * 3,
 				nil,
 			},
 		}
@@ -161,7 +161,7 @@ func TestContinuousPagingOptions_EncodedLength(t *testing.T) {
 }
 
 func TestContinuousPagingOptions_Decode(t *testing.T) {
-	version := primitives.ProtocolVersionDse1
+	version := primitive.ProtocolVersionDse1
 	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 		tests := []struct {
 			name     string
@@ -200,7 +200,7 @@ func TestContinuousPagingOptions_Decode(t *testing.T) {
 			})
 		}
 	})
-	version = primitives.ProtocolVersionDse2
+	version = primitive.ProtocolVersionDse2
 	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 		tests := []struct {
 			name     string

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -12,7 +12,7 @@ import (
 func TestBatchCodec_Encode(t *testing.T) {
 	codec := &BatchCodec{}
 	// versions <= 4
-	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersion3, primitives.ProtocolVersion4} {
+	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion3, primitive.ProtocolVersion4} {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -23,24 +23,24 @@ func TestBatchCodec_Encode(t *testing.T) {
 				},
 				{
 					"invalid batch type",
-					&Batch{Type: primitives.BatchType(42)},
+					&Batch{Type: primitive.BatchType(42)},
 					nil,
 					errors.New("invalid BATCH type: 42"),
 				},
 				{
 					"empty batch",
 					NewBatch(),
-					[]byte{primitives.BatchTypeLogged},
+					[]byte{primitive.BatchTypeLogged},
 					errors.New("BATCH messages must contain at least one child query"),
 				},
 				{
 					"batch with 2 children",
 					NewBatch(WithBatchChildren(
-						NewQueryBatchChild("INSERT", primitives.NewValue([]byte{1, 2, 3, 4})),
-						NewPreparedBatchChild([]byte{0xca, 0xfe, 0xba, 0xbe}, primitives.NewValue([]byte{5, 6, 7, 8})),
+						NewQueryBatchChild("INSERT", primitive.NewValue([]byte{1, 2, 3, 4})),
+						NewPreparedBatchChild([]byte{0xca, 0xfe, 0xba, 0xbe}, primitive.NewValue([]byte{5, 6, 7, 8})),
 					)),
 					[]byte{
-						primitives.BatchTypeLogged,
+						primitive.BatchTypeLogged,
 						0, 2, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -58,14 +58,14 @@ func TestBatchCodec_Encode(t *testing.T) {
 				{
 					"batch with custom options",
 					NewBatch(
-						WithBatchType(primitives.BatchTypeUnlogged),
-						WithBatchChildren(NewQueryBatchChild("INSERT", primitives.NewValue([]byte{1, 2, 3, 4}))),
-						WithBatchConsistencyLevel(primitives.ConsistencyLevelLocalQuorum),
-						WithBatchSerialConsistencyLevel(primitives.ConsistencyLevelLocalSerial),
+						WithBatchType(primitive.BatchTypeUnlogged),
+						WithBatchChildren(NewQueryBatchChild("INSERT", primitive.NewValue([]byte{1, 2, 3, 4}))),
+						WithBatchConsistencyLevel(primitive.ConsistencyLevelLocalQuorum),
+						WithBatchSerialConsistencyLevel(primitive.ConsistencyLevelLocalSerial),
 						WithBatchDefaultTimestamp(123),
 					),
 					[]byte{
-						primitives.BatchTypeUnlogged,
+						primitive.BatchTypeUnlogged,
 						0, 1, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -90,7 +90,7 @@ func TestBatchCodec_Encode(t *testing.T) {
 		})
 	}
 	// versions = DSE v1
-	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersionDse1} {
+	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersionDse1} {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -101,24 +101,24 @@ func TestBatchCodec_Encode(t *testing.T) {
 				},
 				{
 					"invalid batch type",
-					&Batch{Type: primitives.BatchType(42)},
+					&Batch{Type: primitive.BatchType(42)},
 					nil,
 					errors.New("invalid BATCH type: 42"),
 				},
 				{
 					"empty batch",
 					NewBatch(),
-					[]byte{primitives.BatchTypeLogged},
+					[]byte{primitive.BatchTypeLogged},
 					errors.New("BATCH messages must contain at least one child query"),
 				},
 				{
 					"batch with 2 children",
 					NewBatch(WithBatchChildren(
-						NewQueryBatchChild("INSERT", primitives.NewValue([]byte{1, 2, 3, 4})),
-						NewPreparedBatchChild([]byte{0xca, 0xfe, 0xba, 0xbe}, primitives.NewValue([]byte{5, 6, 7, 8})),
+						NewQueryBatchChild("INSERT", primitive.NewValue([]byte{1, 2, 3, 4})),
+						NewPreparedBatchChild([]byte{0xca, 0xfe, 0xba, 0xbe}, primitive.NewValue([]byte{5, 6, 7, 8})),
 					)),
 					[]byte{
-						primitives.BatchTypeLogged,
+						primitive.BatchTypeLogged,
 						0, 2, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -136,14 +136,14 @@ func TestBatchCodec_Encode(t *testing.T) {
 				{
 					"batch with custom options",
 					NewBatch(
-						WithBatchType(primitives.BatchTypeUnlogged),
-						WithBatchChildren(NewQueryBatchChild("INSERT", primitives.NewValue([]byte{1, 2, 3, 4}))),
-						WithBatchConsistencyLevel(primitives.ConsistencyLevelLocalQuorum),
-						WithBatchSerialConsistencyLevel(primitives.ConsistencyLevelLocalSerial),
+						WithBatchType(primitive.BatchTypeUnlogged),
+						WithBatchChildren(NewQueryBatchChild("INSERT", primitive.NewValue([]byte{1, 2, 3, 4}))),
+						WithBatchConsistencyLevel(primitive.ConsistencyLevelLocalQuorum),
+						WithBatchSerialConsistencyLevel(primitive.ConsistencyLevelLocalSerial),
 						WithBatchDefaultTimestamp(123),
 					),
 					[]byte{
-						primitives.BatchTypeUnlogged,
+						primitive.BatchTypeUnlogged,
 						0, 1, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -168,7 +168,7 @@ func TestBatchCodec_Encode(t *testing.T) {
 		})
 	}
 	// versions 5, DSE v2
-	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersion5, primitives.ProtocolVersionDse2} {
+	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion5, primitive.ProtocolVersionDse2} {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -179,24 +179,24 @@ func TestBatchCodec_Encode(t *testing.T) {
 				},
 				{
 					"invalid batch type",
-					&Batch{Type: primitives.BatchType(42)},
+					&Batch{Type: primitive.BatchType(42)},
 					nil,
 					errors.New("invalid BATCH type: 42"),
 				},
 				{
 					"empty batch",
 					NewBatch(),
-					[]byte{primitives.BatchTypeLogged},
+					[]byte{primitive.BatchTypeLogged},
 					errors.New("BATCH messages must contain at least one child query"),
 				},
 				{
 					"batch with 2 children",
 					NewBatch(WithBatchChildren(
-						NewQueryBatchChild("INSERT", primitives.NewValue([]byte{1, 2, 3, 4})),
-						NewPreparedBatchChild([]byte{0xca, 0xfe, 0xba, 0xbe}, primitives.NewValue([]byte{5, 6, 7, 8})),
+						NewQueryBatchChild("INSERT", primitive.NewValue([]byte{1, 2, 3, 4})),
+						NewPreparedBatchChild([]byte{0xca, 0xfe, 0xba, 0xbe}, primitive.NewValue([]byte{5, 6, 7, 8})),
 					)),
 					[]byte{
-						primitives.BatchTypeLogged,
+						primitive.BatchTypeLogged,
 						0, 2, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -214,16 +214,16 @@ func TestBatchCodec_Encode(t *testing.T) {
 				{
 					"batch with custom options",
 					NewBatch(
-						WithBatchType(primitives.BatchTypeUnlogged),
-						WithBatchChildren(NewQueryBatchChild("INSERT", primitives.NewValue([]byte{1, 2, 3, 4}))),
-						WithBatchConsistencyLevel(primitives.ConsistencyLevelLocalQuorum),
-						WithBatchSerialConsistencyLevel(primitives.ConsistencyLevelLocalSerial),
+						WithBatchType(primitive.BatchTypeUnlogged),
+						WithBatchChildren(NewQueryBatchChild("INSERT", primitive.NewValue([]byte{1, 2, 3, 4}))),
+						WithBatchConsistencyLevel(primitive.ConsistencyLevelLocalQuorum),
+						WithBatchSerialConsistencyLevel(primitive.ConsistencyLevelLocalSerial),
 						WithBatchDefaultTimestamp(123),
 						WithBatchKeyspace("ks1"),
 						WithBatchNowInSeconds(234),
 					),
 					[]byte{
-						primitives.BatchTypeUnlogged,
+						primitive.BatchTypeUnlogged,
 						0, 1, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -257,7 +257,7 @@ func TestBatchCodec_Encode(t *testing.T) {
 func TestBatchCodec_EncodedLength(t *testing.T) {
 	codec := &BatchCodec{}
 	// versions <= 4
-	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersion3, primitives.ProtocolVersion4} {
+	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion3, primitive.ProtocolVersion4} {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -269,51 +269,51 @@ func TestBatchCodec_EncodedLength(t *testing.T) {
 				{
 					"empty batch",
 					NewBatch(),
-					primitives.LengthOfByte +
-						primitives.LengthOfShort + // children count
-						primitives.LengthOfShort + // consistency
-						primitives.LengthOfByte, // flags
+					primitive.LengthOfByte +
+						primitive.LengthOfShort + // children count
+						primitive.LengthOfShort + // consistency
+						primitive.LengthOfByte, // flags
 					nil,
 				},
 				{
 					"batch with 2 children",
 					NewBatch(WithBatchChildren(
-						NewQueryBatchChild("INSERT", primitives.NewValue([]byte{1, 2, 3, 4})),
-						NewPreparedBatchChild([]byte{0xca, 0xfe, 0xba, 0xbe}, primitives.NewValue([]byte{5, 6, 7, 8})),
+						NewQueryBatchChild("INSERT", primitive.NewValue([]byte{1, 2, 3, 4})),
+						NewPreparedBatchChild([]byte{0xca, 0xfe, 0xba, 0xbe}, primitive.NewValue([]byte{5, 6, 7, 8})),
 					)),
-					primitives.LengthOfByte +
-						primitives.LengthOfShort + // children count
-						primitives.LengthOfByte + // child 1 kind
-						primitives.LengthOfLongString("INSERT") + // child 1 query
-						primitives.LengthOfShort + // child values count
-						primitives.LengthOfInt + len([]byte{1, 2, 3, 4}) + // child 1 value 1
-						primitives.LengthOfByte + // child 2 kind
-						primitives.LengthOfShortBytes([]byte{0xca, 0xfe, 0xba, 0xbe}) + // child 1 query
-						primitives.LengthOfShort + // child values count
-						primitives.LengthOfInt + len([]byte{1, 2, 3, 4}) + // child 2 value 1
-						primitives.LengthOfShort + // consistency
-						primitives.LengthOfByte, // flags
+					primitive.LengthOfByte +
+						primitive.LengthOfShort + // children count
+						primitive.LengthOfByte + // child 1 kind
+						primitive.LengthOfLongString("INSERT") + // child 1 query
+						primitive.LengthOfShort + // child values count
+						primitive.LengthOfInt + len([]byte{1, 2, 3, 4}) + // child 1 value 1
+						primitive.LengthOfByte + // child 2 kind
+						primitive.LengthOfShortBytes([]byte{0xca, 0xfe, 0xba, 0xbe}) + // child 1 query
+						primitive.LengthOfShort + // child values count
+						primitive.LengthOfInt + len([]byte{1, 2, 3, 4}) + // child 2 value 1
+						primitive.LengthOfShort + // consistency
+						primitive.LengthOfByte, // flags
 					nil,
 				},
 				{
 					"batch with custom options",
 					NewBatch(
-						WithBatchType(primitives.BatchTypeUnlogged),
-						WithBatchChildren(NewQueryBatchChild("INSERT", primitives.NewValue([]byte{1, 2, 3, 4}))),
-						WithBatchConsistencyLevel(primitives.ConsistencyLevelLocalQuorum),
-						WithBatchSerialConsistencyLevel(primitives.ConsistencyLevelLocalSerial),
+						WithBatchType(primitive.BatchTypeUnlogged),
+						WithBatchChildren(NewQueryBatchChild("INSERT", primitive.NewValue([]byte{1, 2, 3, 4}))),
+						WithBatchConsistencyLevel(primitive.ConsistencyLevelLocalQuorum),
+						WithBatchSerialConsistencyLevel(primitive.ConsistencyLevelLocalSerial),
 						WithBatchDefaultTimestamp(123),
 					),
-					primitives.LengthOfByte +
-						primitives.LengthOfShort + // children count
-						primitives.LengthOfByte + // child 1 kind
-						primitives.LengthOfLongString("INSERT") + // child 1 query
-						primitives.LengthOfShort + // child values count
-						primitives.LengthOfInt + len([]byte{1, 2, 3, 4}) + // child 1 value 1
-						primitives.LengthOfShort + // consistency
-						primitives.LengthOfByte + // flags
-						primitives.LengthOfShort + // serial consistency
-						primitives.LengthOfLong, // default timestamp
+					primitive.LengthOfByte +
+						primitive.LengthOfShort + // children count
+						primitive.LengthOfByte + // child 1 kind
+						primitive.LengthOfLongString("INSERT") + // child 1 query
+						primitive.LengthOfShort + // child values count
+						primitive.LengthOfInt + len([]byte{1, 2, 3, 4}) + // child 1 value 1
+						primitive.LengthOfShort + // consistency
+						primitive.LengthOfByte + // flags
+						primitive.LengthOfShort + // serial consistency
+						primitive.LengthOfLong, // default timestamp
 					nil,
 				},
 			}
@@ -327,7 +327,7 @@ func TestBatchCodec_EncodedLength(t *testing.T) {
 		})
 	}
 	// versions = DSE v1
-	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersionDse1} {
+	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersionDse1} {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -339,51 +339,51 @@ func TestBatchCodec_EncodedLength(t *testing.T) {
 				{
 					"empty batch",
 					NewBatch(),
-					primitives.LengthOfByte +
-						primitives.LengthOfShort + // children count
-						primitives.LengthOfShort + // consistency
-						primitives.LengthOfInt, // flags
+					primitive.LengthOfByte +
+						primitive.LengthOfShort + // children count
+						primitive.LengthOfShort + // consistency
+						primitive.LengthOfInt, // flags
 					nil,
 				},
 				{
 					"batch with 2 children",
 					NewBatch(WithBatchChildren(
-						NewQueryBatchChild("INSERT", primitives.NewValue([]byte{1, 2, 3, 4})),
-						NewPreparedBatchChild([]byte{0xca, 0xfe, 0xba, 0xbe}, primitives.NewValue([]byte{5, 6, 7, 8})),
+						NewQueryBatchChild("INSERT", primitive.NewValue([]byte{1, 2, 3, 4})),
+						NewPreparedBatchChild([]byte{0xca, 0xfe, 0xba, 0xbe}, primitive.NewValue([]byte{5, 6, 7, 8})),
 					)),
-					primitives.LengthOfByte +
-						primitives.LengthOfShort + // children count
-						primitives.LengthOfByte + // child 1 kind
-						primitives.LengthOfLongString("INSERT") + // child 1 query
-						primitives.LengthOfShort + // child values count
-						primitives.LengthOfInt + len([]byte{1, 2, 3, 4}) + // child 1 value 1
-						primitives.LengthOfByte + // child 2 kind
-						primitives.LengthOfShortBytes([]byte{0xca, 0xfe, 0xba, 0xbe}) + // child 1 query
-						primitives.LengthOfShort + // child values count
-						primitives.LengthOfInt + len([]byte{1, 2, 3, 4}) + // child 2 value 1
-						primitives.LengthOfShort + // consistency
-						primitives.LengthOfInt, // flags
+					primitive.LengthOfByte +
+						primitive.LengthOfShort + // children count
+						primitive.LengthOfByte + // child 1 kind
+						primitive.LengthOfLongString("INSERT") + // child 1 query
+						primitive.LengthOfShort + // child values count
+						primitive.LengthOfInt + len([]byte{1, 2, 3, 4}) + // child 1 value 1
+						primitive.LengthOfByte + // child 2 kind
+						primitive.LengthOfShortBytes([]byte{0xca, 0xfe, 0xba, 0xbe}) + // child 1 query
+						primitive.LengthOfShort + // child values count
+						primitive.LengthOfInt + len([]byte{1, 2, 3, 4}) + // child 2 value 1
+						primitive.LengthOfShort + // consistency
+						primitive.LengthOfInt, // flags
 					nil,
 				},
 				{
 					"batch with custom options",
 					NewBatch(
-						WithBatchType(primitives.BatchTypeUnlogged),
-						WithBatchChildren(NewQueryBatchChild("INSERT", primitives.NewValue([]byte{1, 2, 3, 4}))),
-						WithBatchConsistencyLevel(primitives.ConsistencyLevelLocalQuorum),
-						WithBatchSerialConsistencyLevel(primitives.ConsistencyLevelLocalSerial),
+						WithBatchType(primitive.BatchTypeUnlogged),
+						WithBatchChildren(NewQueryBatchChild("INSERT", primitive.NewValue([]byte{1, 2, 3, 4}))),
+						WithBatchConsistencyLevel(primitive.ConsistencyLevelLocalQuorum),
+						WithBatchSerialConsistencyLevel(primitive.ConsistencyLevelLocalSerial),
 						WithBatchDefaultTimestamp(123),
 					),
-					primitives.LengthOfByte +
-						primitives.LengthOfShort + // children count
-						primitives.LengthOfByte + // child 1 kind
-						primitives.LengthOfLongString("INSERT") + // child 1 query
-						primitives.LengthOfShort + // child values count
-						primitives.LengthOfInt + len([]byte{1, 2, 3, 4}) + // child 1 value 1
-						primitives.LengthOfShort + // consistency
-						primitives.LengthOfInt + // flags
-						primitives.LengthOfShort + // serial consistency
-						primitives.LengthOfLong, // default timestamp
+					primitive.LengthOfByte +
+						primitive.LengthOfShort + // children count
+						primitive.LengthOfByte + // child 1 kind
+						primitive.LengthOfLongString("INSERT") + // child 1 query
+						primitive.LengthOfShort + // child values count
+						primitive.LengthOfInt + len([]byte{1, 2, 3, 4}) + // child 1 value 1
+						primitive.LengthOfShort + // consistency
+						primitive.LengthOfInt + // flags
+						primitive.LengthOfShort + // serial consistency
+						primitive.LengthOfLong, // default timestamp
 					nil,
 				},
 			}
@@ -397,7 +397,7 @@ func TestBatchCodec_EncodedLength(t *testing.T) {
 		})
 	}
 	// versions 5, DSE v2
-	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersion5, primitives.ProtocolVersionDse2} {
+	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion5, primitive.ProtocolVersionDse2} {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -409,55 +409,55 @@ func TestBatchCodec_EncodedLength(t *testing.T) {
 				{
 					"empty batch",
 					NewBatch(),
-					primitives.LengthOfByte +
-						primitives.LengthOfShort + // children count
-						primitives.LengthOfShort + // consistency
-						primitives.LengthOfInt, // flags
+					primitive.LengthOfByte +
+						primitive.LengthOfShort + // children count
+						primitive.LengthOfShort + // consistency
+						primitive.LengthOfInt, // flags
 					nil,
 				},
 				{
 					"batch with 2 children",
 					NewBatch(WithBatchChildren(
-						NewQueryBatchChild("INSERT", primitives.NewValue([]byte{1, 2, 3, 4})),
-						NewPreparedBatchChild([]byte{0xca, 0xfe, 0xba, 0xbe}, primitives.NewValue([]byte{5, 6, 7, 8})),
+						NewQueryBatchChild("INSERT", primitive.NewValue([]byte{1, 2, 3, 4})),
+						NewPreparedBatchChild([]byte{0xca, 0xfe, 0xba, 0xbe}, primitive.NewValue([]byte{5, 6, 7, 8})),
 					)),
-					primitives.LengthOfByte +
-						primitives.LengthOfShort + // children count
-						primitives.LengthOfByte + // child 1 kind
-						primitives.LengthOfLongString("INSERT") + // child 1 query
-						primitives.LengthOfShort + // child values count
-						primitives.LengthOfInt + len([]byte{1, 2, 3, 4}) + // child 1 value 1
-						primitives.LengthOfByte + // child 2 kind
-						primitives.LengthOfShortBytes([]byte{0xca, 0xfe, 0xba, 0xbe}) + // child 1 query
-						primitives.LengthOfShort + // child values count
-						primitives.LengthOfInt + len([]byte{1, 2, 3, 4}) + // child 2 value 1
-						primitives.LengthOfShort + // consistency
-						primitives.LengthOfInt, // flags
+					primitive.LengthOfByte +
+						primitive.LengthOfShort + // children count
+						primitive.LengthOfByte + // child 1 kind
+						primitive.LengthOfLongString("INSERT") + // child 1 query
+						primitive.LengthOfShort + // child values count
+						primitive.LengthOfInt + len([]byte{1, 2, 3, 4}) + // child 1 value 1
+						primitive.LengthOfByte + // child 2 kind
+						primitive.LengthOfShortBytes([]byte{0xca, 0xfe, 0xba, 0xbe}) + // child 1 query
+						primitive.LengthOfShort + // child values count
+						primitive.LengthOfInt + len([]byte{1, 2, 3, 4}) + // child 2 value 1
+						primitive.LengthOfShort + // consistency
+						primitive.LengthOfInt, // flags
 					nil,
 				},
 				{
 					"batch with custom options",
 					NewBatch(
-						WithBatchType(primitives.BatchTypeUnlogged),
-						WithBatchChildren(NewQueryBatchChild("INSERT", primitives.NewValue([]byte{1, 2, 3, 4}))),
-						WithBatchConsistencyLevel(primitives.ConsistencyLevelLocalQuorum),
-						WithBatchSerialConsistencyLevel(primitives.ConsistencyLevelLocalSerial),
+						WithBatchType(primitive.BatchTypeUnlogged),
+						WithBatchChildren(NewQueryBatchChild("INSERT", primitive.NewValue([]byte{1, 2, 3, 4}))),
+						WithBatchConsistencyLevel(primitive.ConsistencyLevelLocalQuorum),
+						WithBatchSerialConsistencyLevel(primitive.ConsistencyLevelLocalSerial),
 						WithBatchDefaultTimestamp(123),
 						WithBatchKeyspace("ks1"),
 						WithBatchNowInSeconds(234),
 					),
-					primitives.LengthOfByte +
-						primitives.LengthOfShort + // children count
-						primitives.LengthOfByte + // child 1 kind
-						primitives.LengthOfLongString("INSERT") + // child 1 query
-						primitives.LengthOfShort + // child values count
-						primitives.LengthOfInt + len([]byte{1, 2, 3, 4}) + // child 1 value 1
-						primitives.LengthOfShort + // consistency
-						primitives.LengthOfInt + // flags
-						primitives.LengthOfShort + // serial consistency
-						primitives.LengthOfLong + // default timestamp
-						primitives.LengthOfString("ks1") + // keyspace
-						primitives.LengthOfInt, // now in seconds
+					primitive.LengthOfByte +
+						primitive.LengthOfShort + // children count
+						primitive.LengthOfByte + // child 1 kind
+						primitive.LengthOfLongString("INSERT") + // child 1 query
+						primitive.LengthOfShort + // child values count
+						primitive.LengthOfInt + len([]byte{1, 2, 3, 4}) + // child 1 value 1
+						primitive.LengthOfShort + // consistency
+						primitive.LengthOfInt + // flags
+						primitive.LengthOfShort + // serial consistency
+						primitive.LengthOfLong + // default timestamp
+						primitive.LengthOfString("ks1") + // keyspace
+						primitive.LengthOfInt, // now in seconds
 					nil,
 				},
 			}
@@ -475,7 +475,7 @@ func TestBatchCodec_EncodedLength(t *testing.T) {
 func TestBatchCodec_Decode(t *testing.T) {
 	codec := &BatchCodec{}
 	// versions <= 4
-	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersion3, primitives.ProtocolVersion4} {
+	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion3, primitive.ProtocolVersion4} {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []decodeTestCase{
 				{
@@ -492,15 +492,15 @@ func TestBatchCodec_Decode(t *testing.T) {
 				{
 					"empty batch",
 					[]byte{
-						primitives.BatchTypeLogged,
+						primitive.BatchTypeLogged,
 						0, 0, // children count
 						0, 1, // consistency
 						0, // flags
 					},
 					&Batch{
 						Children:          []*BatchChild{},
-						Consistency:       primitives.ConsistencyLevelOne,
-						SerialConsistency: primitives.ConsistencyLevelSerial,
+						Consistency:       primitive.ConsistencyLevelOne,
+						SerialConsistency: primitive.ConsistencyLevelSerial,
 						DefaultTimestamp:  DefaultTimestampNone,
 						NowInSeconds:      NowInSecondsNone,
 					},
@@ -509,7 +509,7 @@ func TestBatchCodec_Decode(t *testing.T) {
 				{
 					"batch with 2 children",
 					[]byte{
-						primitives.BatchTypeLogged,
+						primitive.BatchTypeLogged,
 						0, 2, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -523,15 +523,15 @@ func TestBatchCodec_Decode(t *testing.T) {
 						0, // flags
 					},
 					NewBatch(WithBatchChildren(
-						NewQueryBatchChild("INSERT", primitives.NewValue([]byte{1, 2, 3, 4})),
-						NewPreparedBatchChild([]byte{0xca, 0xfe, 0xba, 0xbe}, primitives.NewValue([]byte{5, 6, 7, 8})),
+						NewQueryBatchChild("INSERT", primitive.NewValue([]byte{1, 2, 3, 4})),
+						NewPreparedBatchChild([]byte{0xca, 0xfe, 0xba, 0xbe}, primitive.NewValue([]byte{5, 6, 7, 8})),
 					)),
 					nil,
 				},
 				{
 					"batch with custom options",
 					[]byte{
-						primitives.BatchTypeUnlogged,
+						primitive.BatchTypeUnlogged,
 						0, 1, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -543,10 +543,10 @@ func TestBatchCodec_Decode(t *testing.T) {
 						0, 0, 0, 0, 0, 0, 0, 123, // default timestamp
 					},
 					NewBatch(
-						WithBatchType(primitives.BatchTypeUnlogged),
-						WithBatchChildren(NewQueryBatchChild("INSERT", primitives.NewValue([]byte{1, 2, 3, 4}))),
-						WithBatchConsistencyLevel(primitives.ConsistencyLevelLocalQuorum),
-						WithBatchSerialConsistencyLevel(primitives.ConsistencyLevelLocalSerial),
+						WithBatchType(primitive.BatchTypeUnlogged),
+						WithBatchChildren(NewQueryBatchChild("INSERT", primitive.NewValue([]byte{1, 2, 3, 4}))),
+						WithBatchConsistencyLevel(primitive.ConsistencyLevelLocalQuorum),
+						WithBatchSerialConsistencyLevel(primitive.ConsistencyLevelLocalSerial),
 						WithBatchDefaultTimestamp(123),
 					),
 					nil,
@@ -563,7 +563,7 @@ func TestBatchCodec_Decode(t *testing.T) {
 		})
 	}
 	// versions = DSE v1
-	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersionDse1} {
+	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersionDse1} {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []decodeTestCase{
 				{
@@ -580,15 +580,15 @@ func TestBatchCodec_Decode(t *testing.T) {
 				{
 					"empty batch",
 					[]byte{
-						primitives.BatchTypeLogged,
+						primitive.BatchTypeLogged,
 						0, 0, // children count
 						0, 1, // consistency
 						0, 0, 0, 0, // flags
 					},
 					&Batch{
 						Children:          []*BatchChild{},
-						Consistency:       primitives.ConsistencyLevelOne,
-						SerialConsistency: primitives.ConsistencyLevelSerial,
+						Consistency:       primitive.ConsistencyLevelOne,
+						SerialConsistency: primitive.ConsistencyLevelSerial,
 						DefaultTimestamp:  DefaultTimestampNone,
 						NowInSeconds:      NowInSecondsNone,
 					},
@@ -597,7 +597,7 @@ func TestBatchCodec_Decode(t *testing.T) {
 				{
 					"batch with 2 children",
 					[]byte{
-						primitives.BatchTypeLogged,
+						primitive.BatchTypeLogged,
 						0, 2, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -611,15 +611,15 @@ func TestBatchCodec_Decode(t *testing.T) {
 						0, 0, 0, 0, // flags
 					},
 					NewBatch(WithBatchChildren(
-						NewQueryBatchChild("INSERT", primitives.NewValue([]byte{1, 2, 3, 4})),
-						NewPreparedBatchChild([]byte{0xca, 0xfe, 0xba, 0xbe}, primitives.NewValue([]byte{5, 6, 7, 8})),
+						NewQueryBatchChild("INSERT", primitive.NewValue([]byte{1, 2, 3, 4})),
+						NewPreparedBatchChild([]byte{0xca, 0xfe, 0xba, 0xbe}, primitive.NewValue([]byte{5, 6, 7, 8})),
 					)),
 					nil,
 				},
 				{
 					"batch with custom options",
 					[]byte{
-						primitives.BatchTypeUnlogged,
+						primitive.BatchTypeUnlogged,
 						0, 1, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -631,10 +631,10 @@ func TestBatchCodec_Decode(t *testing.T) {
 						0, 0, 0, 0, 0, 0, 0, 123, // default timestamp
 					},
 					NewBatch(
-						WithBatchType(primitives.BatchTypeUnlogged),
-						WithBatchChildren(NewQueryBatchChild("INSERT", primitives.NewValue([]byte{1, 2, 3, 4}))),
-						WithBatchConsistencyLevel(primitives.ConsistencyLevelLocalQuorum),
-						WithBatchSerialConsistencyLevel(primitives.ConsistencyLevelLocalSerial),
+						WithBatchType(primitive.BatchTypeUnlogged),
+						WithBatchChildren(NewQueryBatchChild("INSERT", primitive.NewValue([]byte{1, 2, 3, 4}))),
+						WithBatchConsistencyLevel(primitive.ConsistencyLevelLocalQuorum),
+						WithBatchSerialConsistencyLevel(primitive.ConsistencyLevelLocalSerial),
 						WithBatchDefaultTimestamp(123),
 					),
 					nil,
@@ -651,7 +651,7 @@ func TestBatchCodec_Decode(t *testing.T) {
 		})
 	}
 	// versions 5, DSE v2
-	for _, version := range []primitives.ProtocolVersion{primitives.ProtocolVersion5, primitives.ProtocolVersionDse2} {
+	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion5, primitive.ProtocolVersionDse2} {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []decodeTestCase{
 				{
@@ -668,15 +668,15 @@ func TestBatchCodec_Decode(t *testing.T) {
 				{
 					"empty batch",
 					[]byte{
-						primitives.BatchTypeLogged,
+						primitive.BatchTypeLogged,
 						0, 0, // children count
 						0, 1, // consistency
 						0, 0, 0, 0, // flags
 					},
 					&Batch{
 						Children:          []*BatchChild{},
-						Consistency:       primitives.ConsistencyLevelOne,
-						SerialConsistency: primitives.ConsistencyLevelSerial,
+						Consistency:       primitive.ConsistencyLevelOne,
+						SerialConsistency: primitive.ConsistencyLevelSerial,
 						DefaultTimestamp:  DefaultTimestampNone,
 						NowInSeconds:      NowInSecondsNone,
 					},
@@ -685,7 +685,7 @@ func TestBatchCodec_Decode(t *testing.T) {
 				{
 					"batch with 2 children",
 					[]byte{
-						primitives.BatchTypeLogged,
+						primitive.BatchTypeLogged,
 						0, 2, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -699,15 +699,15 @@ func TestBatchCodec_Decode(t *testing.T) {
 						0, 0, 0, 0, // flags
 					},
 					NewBatch(WithBatchChildren(
-						NewQueryBatchChild("INSERT", primitives.NewValue([]byte{1, 2, 3, 4})),
-						NewPreparedBatchChild([]byte{0xca, 0xfe, 0xba, 0xbe}, primitives.NewValue([]byte{5, 6, 7, 8})),
+						NewQueryBatchChild("INSERT", primitive.NewValue([]byte{1, 2, 3, 4})),
+						NewPreparedBatchChild([]byte{0xca, 0xfe, 0xba, 0xbe}, primitive.NewValue([]byte{5, 6, 7, 8})),
 					)),
 					nil,
 				},
 				{
 					"batch with custom options",
 					[]byte{
-						primitives.BatchTypeUnlogged,
+						primitive.BatchTypeUnlogged,
 						0, 1, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -724,10 +724,10 @@ func TestBatchCodec_Decode(t *testing.T) {
 						0, 0, 0, 234, // now in seconds
 					},
 					NewBatch(
-						WithBatchType(primitives.BatchTypeUnlogged),
-						WithBatchChildren(NewQueryBatchChild("INSERT", primitives.NewValue([]byte{1, 2, 3, 4}))),
-						WithBatchConsistencyLevel(primitives.ConsistencyLevelLocalQuorum),
-						WithBatchSerialConsistencyLevel(primitives.ConsistencyLevelLocalSerial),
+						WithBatchType(primitive.BatchTypeUnlogged),
+						WithBatchChildren(NewQueryBatchChild("INSERT", primitive.NewValue([]byte{1, 2, 3, 4}))),
+						WithBatchConsistencyLevel(primitive.ConsistencyLevelLocalQuorum),
+						WithBatchSerialConsistencyLevel(primitive.ConsistencyLevelLocalSerial),
 						WithBatchDefaultTimestamp(123),
 						WithBatchKeyspace("ks1"),
 						WithBatchNowInSeconds(234),

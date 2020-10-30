@@ -5,20 +5,20 @@ import (
 	"errors"
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/message"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"io"
 )
 
 // EncodeFrame encodes the entire frame, compressing the body if needed.
 func (c *Codec) EncodeFrame(frame *Frame, dest io.Writer) error {
 	version := frame.Header.Version
-	if err := primitives.CheckProtocolVersion(version); err != nil {
+	if err := primitive.CheckProtocolVersion(version); err != nil {
 		return err
 	}
-	if version < primitives.ProtocolVersion4 && frame.Body.CustomPayload != nil {
+	if version < primitive.ProtocolVersion4 && frame.Body.CustomPayload != nil {
 		return fmt.Errorf("custom payloads are not supported in protocol version %v", version)
 	}
-	if version < primitives.ProtocolVersion4 && frame.Body.Warnings != nil {
+	if version < primitive.ProtocolVersion4 && frame.Body.Warnings != nil {
 		return fmt.Errorf("warnings are not supported in protocol version %v", version)
 	}
 	if c.compressor != nil && frame.IsCompressible() {
@@ -31,7 +31,7 @@ func (c *Codec) EncodeFrame(frame *Frame, dest io.Writer) error {
 // EncodeRawFrame encodes the header and writes the body as raw bytes.
 func (c *Codec) EncodeRawFrame(frame *RawFrame, dest io.Writer) error {
 	version := frame.RawHeader.Version
-	if err := primitives.CheckProtocolVersion(version); err != nil {
+	if err := primitive.CheckProtocolVersion(version); err != nil {
 		return err
 	}
 	if err := c.encodeRawHeader(frame.RawHeader, dest); err != nil {
@@ -145,17 +145,17 @@ func (c *Codec) encodeHeader(frame *Frame, bodyLength int, dest io.Writer) error
 	if frame.Body.Message.IsResponse() {
 		versionAndDirection |= 0b1000_0000
 	}
-	if err := primitives.WriteByte(versionAndDirection, dest); err != nil {
+	if err := primitive.WriteByte(versionAndDirection, dest); err != nil {
 		return fmt.Errorf("cannot encode header version and direction: %w", err)
 	}
 	flags := frame.Flags(c.compressor != nil)
-	if err := primitives.WriteByte(flags, dest); err != nil {
+	if err := primitive.WriteByte(flags, dest); err != nil {
 		return fmt.Errorf("cannot encode header flags: %w", err)
-	} else if err = primitives.WriteShort(uint16(frame.Header.StreamId), dest); err != nil {
+	} else if err = primitive.WriteShort(uint16(frame.Header.StreamId), dest); err != nil {
 		return fmt.Errorf("cannot encode header stream id: %w", err)
-	} else if err = primitives.WriteByte(frame.Body.Message.GetOpCode(), dest); err != nil {
+	} else if err = primitive.WriteByte(frame.Body.Message.GetOpCode(), dest); err != nil {
 		return fmt.Errorf("cannot encode header opcode: %w", err)
-	} else if err = primitives.WriteInt(int32(bodyLength), dest); err != nil {
+	} else if err = primitive.WriteInt(int32(bodyLength), dest); err != nil {
 		return fmt.Errorf("cannot encode header body length: %w", err)
 	}
 	return nil
@@ -166,17 +166,17 @@ func (c *Codec) encodeRawHeader(rawHeader *RawHeader, dest io.Writer) error {
 	if rawHeader.IsResponse {
 		versionAndDirection |= 0b1000_0000
 	}
-	if err := primitives.WriteByte(versionAndDirection, dest); err != nil {
+	if err := primitive.WriteByte(versionAndDirection, dest); err != nil {
 		return fmt.Errorf("cannot encode header version and direction: %w", err)
 	}
 	flags := rawHeader.Flags
-	if err := primitives.WriteByte(flags, dest); err != nil {
+	if err := primitive.WriteByte(flags, dest); err != nil {
 		return fmt.Errorf("cannot encode header flags: %w", err)
-	} else if err = primitives.WriteShort(uint16(rawHeader.StreamId), dest); err != nil {
+	} else if err = primitive.WriteShort(uint16(rawHeader.StreamId), dest); err != nil {
 		return fmt.Errorf("cannot encode header stream id: %w", err)
-	} else if err = primitives.WriteByte(rawHeader.OpCode, dest); err != nil {
+	} else if err = primitive.WriteByte(rawHeader.OpCode, dest); err != nil {
 		return fmt.Errorf("cannot encode header opcode: %w", err)
-	} else if err = primitives.WriteInt(rawHeader.BodyLength, dest); err != nil {
+	} else if err = primitive.WriteInt(rawHeader.BodyLength, dest); err != nil {
 		return fmt.Errorf("cannot encode header body length: %w", err)
 	}
 	return nil
@@ -189,13 +189,13 @@ func (c *Codec) uncompressedBodyLength(frame *Frame) (length int, err error) {
 		return -1, fmt.Errorf("cannot compute message length: %w", err)
 	}
 	if frame.Body.TracingId != nil {
-		length += primitives.LengthOfUuid
+		length += primitive.LengthOfUuid
 	}
 	if frame.Body.CustomPayload != nil {
-		length += primitives.LengthOfBytesMap(frame.Body.CustomPayload)
+		length += primitive.LengthOfBytesMap(frame.Body.CustomPayload)
 	}
 	if frame.Body.Warnings != nil {
-		length += primitives.LengthOfStringList(frame.Body.Warnings)
+		length += primitive.LengthOfStringList(frame.Body.Warnings)
 	}
 	return length, nil
 }
@@ -203,17 +203,17 @@ func (c *Codec) uncompressedBodyLength(frame *Frame) (length int, err error) {
 func (c *Codec) encodeBodyUncompressed(frame *Frame, dest io.Writer) error {
 	var err error
 	if frame.Body.Message.IsResponse() && frame.Body.TracingId != nil {
-		if err = primitives.WriteUuid(frame.Body.TracingId, dest); err != nil {
+		if err = primitive.WriteUuid(frame.Body.TracingId, dest); err != nil {
 			return fmt.Errorf("cannot encode body tracing id: %w", err)
 		}
 	}
 	if frame.Body.CustomPayload != nil {
-		if err = primitives.WriteBytesMap(frame.Body.CustomPayload, dest); err != nil {
+		if err = primitive.WriteBytesMap(frame.Body.CustomPayload, dest); err != nil {
 			return fmt.Errorf("cannot encode body custom payload: %w", err)
 		}
 	}
 	if frame.Body.Warnings != nil {
-		if err = primitives.WriteStringList(frame.Body.Warnings, dest); err != nil {
+		if err = primitive.WriteStringList(frame.Body.Warnings, dest); err != nil {
 			return fmt.Errorf("cannot encode body warnings: %w", err)
 		}
 	}

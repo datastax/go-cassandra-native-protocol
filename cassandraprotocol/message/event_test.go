@@ -3,7 +3,7 @@ package message
 import (
 	"bytes"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"github.com/stretchr/testify/assert"
 	"net"
 	"testing"
@@ -12,14 +12,14 @@ import (
 func TestEventCodec_Encode(test *testing.T) {
 	codec := &EventCodec{}
 	// versions < 4
-	for _, version := range primitives.AllProtocolVersionsLesserThan(primitives.ProtocolVersion4) {
+	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
 					"schema change event keyspace",
 					&SchemaChangeEvent{
-						ChangeType: primitives.SchemaChangeTypeCreated,
-						Target:     primitives.SchemaChangeTargetKeyspace,
+						ChangeType: primitive.SchemaChangeTypeCreated,
+						Target:     primitive.SchemaChangeTargetKeyspace,
 						Keyspace:   "ks1",
 					},
 					[]byte{
@@ -33,8 +33,8 @@ func TestEventCodec_Encode(test *testing.T) {
 				{
 					"schema change event table",
 					&SchemaChangeEvent{
-						ChangeType: primitives.SchemaChangeTypeCreated,
-						Target:     primitives.SchemaChangeTargetTable,
+						ChangeType: primitive.SchemaChangeTypeCreated,
+						Target:     primitive.SchemaChangeTargetTable,
 						Keyspace:   "ks1",
 						Object:     "table1",
 					},
@@ -50,8 +50,8 @@ func TestEventCodec_Encode(test *testing.T) {
 				{
 					"schema change event type",
 					&SchemaChangeEvent{
-						ChangeType: primitives.SchemaChangeTypeCreated,
-						Target:     primitives.SchemaChangeTargetType,
+						ChangeType: primitive.SchemaChangeTypeCreated,
+						Target:     primitive.SchemaChangeTargetType,
 						Keyspace:   "ks1",
 						Object:     "udt1",
 					},
@@ -67,8 +67,8 @@ func TestEventCodec_Encode(test *testing.T) {
 				{
 					"schema change event function",
 					&SchemaChangeEvent{
-						ChangeType: primitives.SchemaChangeTypeCreated,
-						Target:     primitives.SchemaChangeTargetFunction,
+						ChangeType: primitive.SchemaChangeTypeCreated,
+						Target:     primitive.SchemaChangeTargetFunction,
 						Keyspace:   "ks1",
 						Object:     "func1",
 						Arguments:  []string{"int", "varchar"},
@@ -84,8 +84,8 @@ func TestEventCodec_Encode(test *testing.T) {
 				{
 					"schema change event aggregate",
 					&SchemaChangeEvent{
-						ChangeType: primitives.SchemaChangeTypeCreated,
-						Target:     primitives.SchemaChangeTargetAggregate,
+						ChangeType: primitive.SchemaChangeTypeCreated,
+						Target:     primitive.SchemaChangeTargetAggregate,
 						Keyspace:   "ks1",
 						Object:     "agg1",
 						Arguments:  []string{"int", "varchar"},
@@ -101,8 +101,8 @@ func TestEventCodec_Encode(test *testing.T) {
 				{
 					"status change event",
 					&StatusChangeEvent{
-						ChangeType: primitives.StatusChangeTypeUp,
-						Address: &primitives.Inet{
+						ChangeType: primitive.StatusChangeTypeUp,
+						Address: &primitive.Inet{
 							Addr: net.IPv4(192, 168, 1, 1),
 							Port: 9042,
 						},
@@ -118,8 +118,8 @@ func TestEventCodec_Encode(test *testing.T) {
 				{
 					"topology change event",
 					&TopologyChangeEvent{
-						ChangeType: primitives.TopologyChangeTypeNewNode,
-						Address: &primitives.Inet{
+						ChangeType: primitive.TopologyChangeTypeNewNode,
+						Address: &primitive.Inet{
 							Addr: net.IPv4(192, 168, 1, 1),
 							Port: 9042,
 						},
@@ -144,14 +144,14 @@ func TestEventCodec_Encode(test *testing.T) {
 		})
 	}
 	// versions >= 4
-	for _, version := range primitives.AllProtocolVersionsGreaterThanOrEqualTo(primitives.ProtocolVersion4) {
+	for _, version := range primitive.AllProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion4) {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
 					"schema change event keyspace",
 					&SchemaChangeEvent{
-						ChangeType: primitives.SchemaChangeTypeCreated,
-						Target:     primitives.SchemaChangeTargetKeyspace,
+						ChangeType: primitive.SchemaChangeTypeCreated,
+						Target:     primitive.SchemaChangeTargetKeyspace,
 						Keyspace:   "ks1",
 					},
 					[]byte{
@@ -165,8 +165,8 @@ func TestEventCodec_Encode(test *testing.T) {
 				{
 					"schema change event table",
 					&SchemaChangeEvent{
-						ChangeType: primitives.SchemaChangeTypeCreated,
-						Target:     primitives.SchemaChangeTargetTable,
+						ChangeType: primitive.SchemaChangeTypeCreated,
+						Target:     primitive.SchemaChangeTargetTable,
 						Keyspace:   "ks1",
 						Object:     "table1",
 					},
@@ -182,8 +182,8 @@ func TestEventCodec_Encode(test *testing.T) {
 				{
 					"schema change event type",
 					&SchemaChangeEvent{
-						ChangeType: primitives.SchemaChangeTypeCreated,
-						Target:     primitives.SchemaChangeTargetType,
+						ChangeType: primitive.SchemaChangeTypeCreated,
+						Target:     primitive.SchemaChangeTargetType,
 						Keyspace:   "ks1",
 						Object:     "udt1",
 					},
@@ -199,8 +199,8 @@ func TestEventCodec_Encode(test *testing.T) {
 				{
 					"schema change event function",
 					&SchemaChangeEvent{
-						ChangeType: primitives.SchemaChangeTypeCreated,
-						Target:     primitives.SchemaChangeTargetFunction,
+						ChangeType: primitive.SchemaChangeTypeCreated,
+						Target:     primitive.SchemaChangeTargetFunction,
 						Keyspace:   "ks1",
 						Object:     "func1",
 						Arguments:  []string{"int", "varchar"},
@@ -220,8 +220,8 @@ func TestEventCodec_Encode(test *testing.T) {
 				{
 					"schema change event aggregate",
 					&SchemaChangeEvent{
-						ChangeType: primitives.SchemaChangeTypeCreated,
-						Target:     primitives.SchemaChangeTargetAggregate,
+						ChangeType: primitive.SchemaChangeTypeCreated,
+						Target:     primitive.SchemaChangeTargetAggregate,
 						Keyspace:   "ks1",
 						Object:     "agg1",
 						Arguments:  []string{"int", "varchar"},
@@ -241,8 +241,8 @@ func TestEventCodec_Encode(test *testing.T) {
 				{
 					"status change event",
 					&StatusChangeEvent{
-						ChangeType: primitives.StatusChangeTypeUp,
-						Address: &primitives.Inet{
+						ChangeType: primitive.StatusChangeTypeUp,
+						Address: &primitive.Inet{
 							Addr: net.IPv4(192, 168, 1, 1),
 							Port: 9042,
 						},
@@ -258,8 +258,8 @@ func TestEventCodec_Encode(test *testing.T) {
 				{
 					"topology change event",
 					&TopologyChangeEvent{
-						ChangeType: primitives.TopologyChangeTypeNewNode,
-						Address: &primitives.Inet{
+						ChangeType: primitive.TopologyChangeTypeNewNode,
+						Address: &primitive.Inet{
 							Addr: net.IPv4(192, 168, 1, 1),
 							Port: 9042,
 						},
@@ -287,114 +287,114 @@ func TestEventCodec_Encode(test *testing.T) {
 
 func TestEventCodec_EncodedLength(test *testing.T) {
 	codec := &EventCodec{}
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"schema change event keyspace",
 					&SchemaChangeEvent{
-						ChangeType: primitives.SchemaChangeTypeCreated,
-						Target:     primitives.SchemaChangeTargetKeyspace,
+						ChangeType: primitive.SchemaChangeTypeCreated,
+						Target:     primitive.SchemaChangeTargetKeyspace,
 						Keyspace:   "ks1",
 					},
-					primitives.LengthOfString(primitives.EventTypeSchemaChange) +
-						primitives.LengthOfString(primitives.SchemaChangeTypeCreated) +
-						primitives.LengthOfString(primitives.SchemaChangeTargetKeyspace) +
-						primitives.LengthOfString("ks1"),
+					primitive.LengthOfString(primitive.EventTypeSchemaChange) +
+						primitive.LengthOfString(primitive.SchemaChangeTypeCreated) +
+						primitive.LengthOfString(primitive.SchemaChangeTargetKeyspace) +
+						primitive.LengthOfString("ks1"),
 					nil,
 				},
 				{
 					"schema change event table",
 					&SchemaChangeEvent{
-						ChangeType: primitives.SchemaChangeTypeCreated,
-						Target:     primitives.SchemaChangeTargetTable,
+						ChangeType: primitive.SchemaChangeTypeCreated,
+						Target:     primitive.SchemaChangeTargetTable,
 						Keyspace:   "ks1",
 						Object:     "table1",
 					},
-					primitives.LengthOfString(primitives.EventTypeSchemaChange) +
-						primitives.LengthOfString(primitives.SchemaChangeTypeCreated) +
-						primitives.LengthOfString(primitives.SchemaChangeTargetTable) +
-						primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("table1"),
+					primitive.LengthOfString(primitive.EventTypeSchemaChange) +
+						primitive.LengthOfString(primitive.SchemaChangeTypeCreated) +
+						primitive.LengthOfString(primitive.SchemaChangeTargetTable) +
+						primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("table1"),
 					nil,
 				},
 				{
 					"schema change event type",
 					&SchemaChangeEvent{
-						ChangeType: primitives.SchemaChangeTypeCreated,
-						Target:     primitives.SchemaChangeTargetType,
+						ChangeType: primitive.SchemaChangeTypeCreated,
+						Target:     primitive.SchemaChangeTargetType,
 						Keyspace:   "ks1",
 						Object:     "udt1",
 					},
-					primitives.LengthOfString(primitives.EventTypeSchemaChange) +
-						primitives.LengthOfString(primitives.SchemaChangeTypeCreated) +
-						primitives.LengthOfString(primitives.SchemaChangeTargetType) +
-						primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("udt1"),
+					primitive.LengthOfString(primitive.EventTypeSchemaChange) +
+						primitive.LengthOfString(primitive.SchemaChangeTypeCreated) +
+						primitive.LengthOfString(primitive.SchemaChangeTargetType) +
+						primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("udt1"),
 					nil,
 				},
 				{
 					"schema change event function",
 					&SchemaChangeEvent{
-						ChangeType: primitives.SchemaChangeTypeCreated,
-						Target:     primitives.SchemaChangeTargetFunction,
+						ChangeType: primitive.SchemaChangeTypeCreated,
+						Target:     primitive.SchemaChangeTargetFunction,
 						Keyspace:   "ks1",
 						Object:     "func1",
 						Arguments:  []string{"int", "varchar"},
 					},
-					primitives.LengthOfString(primitives.EventTypeSchemaChange) +
-						primitives.LengthOfString(primitives.SchemaChangeTypeCreated) +
-						primitives.LengthOfString(primitives.SchemaChangeTargetFunction) +
-						primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("func1") +
-						primitives.LengthOfStringList([]string{"int", "varchar"}),
+					primitive.LengthOfString(primitive.EventTypeSchemaChange) +
+						primitive.LengthOfString(primitive.SchemaChangeTypeCreated) +
+						primitive.LengthOfString(primitive.SchemaChangeTargetFunction) +
+						primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("func1") +
+						primitive.LengthOfStringList([]string{"int", "varchar"}),
 					nil,
 				},
 				{
 					"schema change event aggregate",
 					&SchemaChangeEvent{
-						ChangeType: primitives.SchemaChangeTypeCreated,
-						Target:     primitives.SchemaChangeTargetAggregate,
+						ChangeType: primitive.SchemaChangeTypeCreated,
+						Target:     primitive.SchemaChangeTargetAggregate,
 						Keyspace:   "ks1",
 						Object:     "agg1",
 						Arguments:  []string{"int", "varchar"},
 					},
-					primitives.LengthOfString(primitives.EventTypeSchemaChange) +
-						primitives.LengthOfString(primitives.SchemaChangeTypeCreated) +
-						primitives.LengthOfString(primitives.SchemaChangeTargetAggregate) +
-						primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("agg1") +
-						primitives.LengthOfStringList([]string{"int", "varchar"}),
+					primitive.LengthOfString(primitive.EventTypeSchemaChange) +
+						primitive.LengthOfString(primitive.SchemaChangeTypeCreated) +
+						primitive.LengthOfString(primitive.SchemaChangeTargetAggregate) +
+						primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("agg1") +
+						primitive.LengthOfStringList([]string{"int", "varchar"}),
 					nil,
 				},
 				{
 					"status change event",
 					&StatusChangeEvent{
-						ChangeType: primitives.StatusChangeTypeUp,
-						Address: &primitives.Inet{
+						ChangeType: primitive.StatusChangeTypeUp,
+						Address: &primitive.Inet{
 							Addr: net.IPv4(192, 168, 1, 1),
 							Port: 9042,
 						},
 					},
-					primitives.LengthOfString(primitives.EventTypeStatusChange) +
-						primitives.LengthOfString(primitives.StatusChangeTypeUp) +
-						primitives.LengthOfByte + net.IPv4len +
-						primitives.LengthOfInt,
+					primitive.LengthOfString(primitive.EventTypeStatusChange) +
+						primitive.LengthOfString(primitive.StatusChangeTypeUp) +
+						primitive.LengthOfByte + net.IPv4len +
+						primitive.LengthOfInt,
 					nil,
 				},
 				{
 					"topology change event",
 					&TopologyChangeEvent{
-						ChangeType: primitives.TopologyChangeTypeNewNode,
-						Address: &primitives.Inet{
+						ChangeType: primitive.TopologyChangeTypeNewNode,
+						Address: &primitive.Inet{
 							Addr: net.IPv4(192, 168, 1, 1),
 							Port: 9042,
 						},
 					},
-					primitives.LengthOfString(primitives.EventTypeTopologyChange) +
-						primitives.LengthOfString(primitives.TopologyChangeTypeNewNode) +
-						primitives.LengthOfByte + net.IPv4len +
-						primitives.LengthOfInt,
+					primitive.LengthOfString(primitive.EventTypeTopologyChange) +
+						primitive.LengthOfString(primitive.TopologyChangeTypeNewNode) +
+						primitive.LengthOfByte + net.IPv4len +
+						primitive.LengthOfInt,
 					nil,
 				},
 			}
@@ -412,7 +412,7 @@ func TestEventCodec_EncodedLength(test *testing.T) {
 func TestEventCodec_Decode(test *testing.T) {
 	codec := &EventCodec{}
 	// versions < 4
-	for _, version := range primitives.AllProtocolVersionsLesserThan(primitives.ProtocolVersion4) {
+	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{
@@ -424,8 +424,8 @@ func TestEventCodec_Decode(test *testing.T) {
 						0, 3, k, s, _1,
 					},
 					&SchemaChangeEvent{
-						ChangeType: primitives.SchemaChangeTypeCreated,
-						Target:     primitives.SchemaChangeTargetKeyspace,
+						ChangeType: primitive.SchemaChangeTypeCreated,
+						Target:     primitive.SchemaChangeTargetKeyspace,
 						Keyspace:   "ks1",
 					},
 					nil,
@@ -440,8 +440,8 @@ func TestEventCodec_Decode(test *testing.T) {
 						0, 6, t, a, b, l, e, _1,
 					},
 					&SchemaChangeEvent{
-						ChangeType: primitives.SchemaChangeTypeCreated,
-						Target:     primitives.SchemaChangeTargetTable,
+						ChangeType: primitive.SchemaChangeTypeCreated,
+						Target:     primitive.SchemaChangeTargetTable,
 						Keyspace:   "ks1",
 						Object:     "table1",
 					},
@@ -457,8 +457,8 @@ func TestEventCodec_Decode(test *testing.T) {
 						0, 4, u, d, t, _1,
 					},
 					&SchemaChangeEvent{
-						ChangeType: primitives.SchemaChangeTypeCreated,
-						Target:     primitives.SchemaChangeTargetType,
+						ChangeType: primitive.SchemaChangeTypeCreated,
+						Target:     primitive.SchemaChangeTargetType,
 						Keyspace:   "ks1",
 						Object:     "udt1",
 					},
@@ -495,8 +495,8 @@ func TestEventCodec_Decode(test *testing.T) {
 						0, 0, 0x23, 0x52,
 					},
 					&StatusChangeEvent{
-						ChangeType: primitives.StatusChangeTypeUp,
-						Address: &primitives.Inet{
+						ChangeType: primitive.StatusChangeTypeUp,
+						Address: &primitive.Inet{
 							Addr: net.IPv4(192, 168, 1, 1),
 							Port: 9042,
 						},
@@ -512,8 +512,8 @@ func TestEventCodec_Decode(test *testing.T) {
 						0, 0, 0x23, 0x52,
 					},
 					&TopologyChangeEvent{
-						ChangeType: primitives.TopologyChangeTypeNewNode,
-						Address: &primitives.Inet{
+						ChangeType: primitive.TopologyChangeTypeNewNode,
+						Address: &primitive.Inet{
 							Addr: net.IPv4(192, 168, 1, 1),
 							Port: 9042,
 						},
@@ -532,7 +532,7 @@ func TestEventCodec_Decode(test *testing.T) {
 		})
 	}
 	// versions >= 4
-	for _, version := range primitives.AllProtocolVersionsGreaterThanOrEqualTo(primitives.ProtocolVersion4) {
+	for _, version := range primitive.AllProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion4) {
 		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{
@@ -544,8 +544,8 @@ func TestEventCodec_Decode(test *testing.T) {
 						0, 3, k, s, _1,
 					},
 					&SchemaChangeEvent{
-						ChangeType: primitives.SchemaChangeTypeCreated,
-						Target:     primitives.SchemaChangeTargetKeyspace,
+						ChangeType: primitive.SchemaChangeTypeCreated,
+						Target:     primitive.SchemaChangeTargetKeyspace,
 						Keyspace:   "ks1",
 					},
 					nil,
@@ -560,8 +560,8 @@ func TestEventCodec_Decode(test *testing.T) {
 						0, 6, t, a, b, l, e, _1,
 					},
 					&SchemaChangeEvent{
-						ChangeType: primitives.SchemaChangeTypeCreated,
-						Target:     primitives.SchemaChangeTargetTable,
+						ChangeType: primitive.SchemaChangeTypeCreated,
+						Target:     primitive.SchemaChangeTargetTable,
 						Keyspace:   "ks1",
 						Object:     "table1",
 					},
@@ -577,8 +577,8 @@ func TestEventCodec_Decode(test *testing.T) {
 						0, 4, u, d, t, _1,
 					},
 					&SchemaChangeEvent{
-						ChangeType: primitives.SchemaChangeTypeCreated,
-						Target:     primitives.SchemaChangeTargetType,
+						ChangeType: primitive.SchemaChangeTypeCreated,
+						Target:     primitive.SchemaChangeTargetType,
 						Keyspace:   "ks1",
 						Object:     "udt1",
 					},
@@ -597,8 +597,8 @@ func TestEventCodec_Decode(test *testing.T) {
 						0, 7, v, a, r, c, h, a, r,
 					},
 					&SchemaChangeEvent{
-						ChangeType: primitives.SchemaChangeTypeCreated,
-						Target:     primitives.SchemaChangeTargetFunction,
+						ChangeType: primitive.SchemaChangeTypeCreated,
+						Target:     primitive.SchemaChangeTargetFunction,
 						Keyspace:   "ks1",
 						Object:     "func1",
 						Arguments:  []string{"int", "varchar"},
@@ -618,8 +618,8 @@ func TestEventCodec_Decode(test *testing.T) {
 						0, 7, v, a, r, c, h, a, r,
 					},
 					&SchemaChangeEvent{
-						ChangeType: primitives.SchemaChangeTypeCreated,
-						Target:     primitives.SchemaChangeTargetAggregate,
+						ChangeType: primitive.SchemaChangeTypeCreated,
+						Target:     primitive.SchemaChangeTargetAggregate,
 						Keyspace:   "ks1",
 						Object:     "agg1",
 						Arguments:  []string{"int", "varchar"},
@@ -635,8 +635,8 @@ func TestEventCodec_Decode(test *testing.T) {
 						0, 0, 0x23, 0x52,
 					},
 					&StatusChangeEvent{
-						ChangeType: primitives.StatusChangeTypeUp,
-						Address: &primitives.Inet{
+						ChangeType: primitive.StatusChangeTypeUp,
+						Address: &primitive.Inet{
 							Addr: net.IPv4(192, 168, 1, 1),
 							Port: 9042,
 						},
@@ -652,8 +652,8 @@ func TestEventCodec_Decode(test *testing.T) {
 						0, 0, 0x23, 0x52,
 					},
 					&TopologyChangeEvent{
-						ChangeType: primitives.TopologyChangeTypeNewNode,
-						Address: &primitives.Inet{
+						ChangeType: primitive.TopologyChangeTypeNewNode,
+						Address: &primitive.Inet{
 							Addr: net.IPv4(192, 168, 1, 1),
 							Port: 9042,
 						},

@@ -2,7 +2,7 @@ package frame
 
 import (
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 )
 
 // A low-level representation of a frame, where the body is not decoded.
@@ -14,10 +14,10 @@ type RawFrame struct {
 // A low-level representation of a frame header, as it is parsed from an encoded frame.
 type RawHeader struct {
 	IsResponse bool
-	Version    primitives.ProtocolVersion
-	Flags      primitives.HeaderFlag
+	Version    primitive.ProtocolVersion
+	Flags      primitive.HeaderFlag
 	StreamId   int16
-	OpCode     primitives.OpCode
+	OpCode     primitive.OpCode
 	BodyLength int32
 }
 

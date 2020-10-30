@@ -4,19 +4,19 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestCustomType(t *testing.T) {
 	customType := NewCustomType("foo.bar.qix")
-	assert.Equal(t, primitives.DataTypeCodeCustom, customType.GetDataTypeCode())
+	assert.Equal(t, primitive.DataTypeCodeCustom, customType.GetDataTypeCode())
 	assert.Equal(t, "foo.bar.qix", customType.GetClassName())
 }
 
 func TestCustomTypeCodecEncode(t *testing.T) {
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -27,7 +27,7 @@ func TestCustomTypeCodecEncode(t *testing.T) {
 				{"simple custom", NewCustomType("hello"), []byte{0, 5, byte('h'), byte('e'), byte('l'), byte('l'), byte('o')}, nil},
 				{"nil custom", nil, nil, errors.New("expected CustomType, got <nil>")},
 			}
-			codec, _ := findCodec(primitives.DataTypeCodeCustom)
+			codec, _ := findCodec(primitive.DataTypeCodeCustom)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var dest = &bytes.Buffer{}
@@ -43,7 +43,7 @@ func TestCustomTypeCodecEncode(t *testing.T) {
 }
 
 func TestCustomTypeCodecEncodedLength(t *testing.T) {
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -51,10 +51,10 @@ func TestCustomTypeCodecEncodedLength(t *testing.T) {
 				expected int
 				err      error
 			}{
-				{"simple custom", NewCustomType("hello"), primitives.LengthOfString("hello"), nil},
+				{"simple custom", NewCustomType("hello"), primitive.LengthOfString("hello"), nil},
 				{"nil custom", nil, -1, errors.New("expected CustomType, got <nil>")},
 			}
-			codec, _ := findCodec(primitives.DataTypeCodeCustom)
+			codec, _ := findCodec(primitive.DataTypeCodeCustom)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var actual int
@@ -69,7 +69,7 @@ func TestCustomTypeCodecEncodedLength(t *testing.T) {
 }
 
 func TestCustomTypeCodecDecode(t *testing.T) {
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -88,7 +88,7 @@ func TestCustomTypeCodecDecode(t *testing.T) {
 								errors.New("EOF")))),
 				},
 			}
-			codec, _ := findCodec(primitives.DataTypeCodeCustom)
+			codec, _ := findCodec(primitive.DataTypeCodeCustom)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var source = bytes.NewBuffer(test.input)

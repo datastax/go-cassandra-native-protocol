@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -12,7 +12,7 @@ import (
 func TestAuthResponseCodec_Encode(t *testing.T) {
 	token := []byte{0xca, 0xfe, 0xba, 0xbe}
 	codec := &AuthResponseCodec{}
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -49,13 +49,13 @@ func TestAuthResponseCodec_Encode(t *testing.T) {
 func TestAuthResponseCodec_EncodedLength(t *testing.T) {
 	token := []byte{0xca, 0xfe, 0xba, 0xbe}
 	codec := &AuthResponseCodec{}
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"simple auth response",
 					&AuthResponse{token},
-					primitives.LengthOfBytes(token),
+					primitive.LengthOfBytes(token),
 					nil,
 				},
 				{
@@ -67,7 +67,7 @@ func TestAuthResponseCodec_EncodedLength(t *testing.T) {
 				{
 					"auth response nil token",
 					&AuthResponse{nil},
-					primitives.LengthOfBytes(nil),
+					primitive.LengthOfBytes(nil),
 					nil,
 				},
 			}
@@ -85,7 +85,7 @@ func TestAuthResponseCodec_EncodedLength(t *testing.T) {
 func TestAuthResponseCodec_Decode(t *testing.T) {
 	token := []byte{0xca, 0xfe, 0xba, 0xbe}
 	codec := &AuthResponseCodec{}
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []decodeTestCase{
 				{

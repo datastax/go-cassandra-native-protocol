@@ -3,7 +3,7 @@ package message
 import (
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"io"
 )
 
@@ -14,8 +14,8 @@ func (m *Ready) IsResponse() bool {
 	return true
 }
 
-func (m *Ready) GetOpCode() primitives.OpCode {
-	return primitives.OpCodeReady
+func (m *Ready) GetOpCode() primitive.OpCode {
+	return primitive.OpCodeReady
 }
 
 func (m *Ready) String() string {
@@ -24,7 +24,7 @@ func (m *Ready) String() string {
 
 type ReadyCodec struct{}
 
-func (c *ReadyCodec) Encode(msg Message, _ io.Writer, _ primitives.ProtocolVersion) error {
+func (c *ReadyCodec) Encode(msg Message, _ io.Writer, _ primitive.ProtocolVersion) error {
 	_, ok := msg.(*Ready)
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.Ready, got %T", msg))
@@ -32,7 +32,7 @@ func (c *ReadyCodec) Encode(msg Message, _ io.Writer, _ primitives.ProtocolVersi
 	return nil
 }
 
-func (c *ReadyCodec) EncodedLength(msg Message, _ primitives.ProtocolVersion) (int, error) {
+func (c *ReadyCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) (int, error) {
 	_, ok := msg.(*Ready)
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected *message.Ready, got %T", msg))
@@ -40,10 +40,10 @@ func (c *ReadyCodec) EncodedLength(msg Message, _ primitives.ProtocolVersion) (i
 	return 0, nil
 }
 
-func (c *ReadyCodec) Decode(_ io.Reader, _ primitives.ProtocolVersion) (Message, error) {
+func (c *ReadyCodec) Decode(_ io.Reader, _ primitive.ProtocolVersion) (Message, error) {
 	return &Ready{}, nil
 }
 
-func (c *ReadyCodec) GetOpCode() primitives.OpCode {
-	return primitives.OpCodeReady
+func (c *ReadyCodec) GetOpCode() primitive.OpCode {
+	return primitive.OpCodeReady
 }

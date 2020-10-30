@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -13,12 +13,12 @@ func TestUserDefinedType(t *testing.T) {
 	fieldNames := []string{"f1", "f2"}
 	fieldTypes := []DataType{Varchar, Int}
 	udtType := NewUserDefinedType("ks1", "udt1", fieldNames, fieldTypes)
-	assert.Equal(t, primitives.DataTypeCodeUdt, udtType.GetDataTypeCode())
+	assert.Equal(t, primitive.DataTypeCodeUdt, udtType.GetDataTypeCode())
 	assert.Equal(t, fieldTypes, udtType.GetFieldTypes())
 }
 
 func TestUserDefinedTypeCodecEncode(t *testing.T) {
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -34,9 +34,9 @@ func TestUserDefinedTypeCodecEncode(t *testing.T) {
 						0, 4, byte('u'), byte('d'), byte('t'), byte('1'),
 						0, 2, // field count
 						0, 2, byte('f'), byte('1'),
-						0, byte(primitives.DataTypeCodeVarchar & 0xFF),
+						0, byte(primitive.DataTypeCodeVarchar & 0xFF),
 						0, 2, byte('f'), byte('2'),
-						0, byte(primitives.DataTypeCodeInt & 0xFF),
+						0, byte(primitive.DataTypeCodeInt & 0xFF),
 					},
 					nil,
 				},
@@ -50,20 +50,20 @@ func TestUserDefinedTypeCodecEncode(t *testing.T) {
 						0, 4, byte('u'), byte('d'), byte('t'), byte('1'),
 						0, 1, // field count
 						0, 2, byte('f'), byte('1'),
-						0, byte(primitives.DataTypeCodeUdt & 0xFF),
+						0, byte(primitive.DataTypeCodeUdt & 0xFF),
 						0, 3, byte('k'), byte('s'), byte('1'),
 						0, 4, byte('u'), byte('d'), byte('t'), byte('2'),
 						0, 2, // field count
 						0, 2, byte('f'), byte('2'),
-						0, byte(primitives.DataTypeCodeVarchar & 0xFF),
+						0, byte(primitive.DataTypeCodeVarchar & 0xFF),
 						0, 2, byte('f'), byte('3'),
-						0, byte(primitives.DataTypeCodeInt & 0xFF),
+						0, byte(primitive.DataTypeCodeInt & 0xFF),
 					},
 					nil,
 				},
 				{"nil udt", nil, nil, errors.New("expected UserDefinedType, got <nil>")},
 			}
-			codec, _ := findCodec(primitives.DataTypeCodeUdt)
+			codec, _ := findCodec(primitive.DataTypeCodeUdt)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var dest = &bytes.Buffer{}
@@ -79,7 +79,7 @@ func TestUserDefinedTypeCodecEncode(t *testing.T) {
 }
 
 func TestUserDefinedTypeCodecEncodedLength(t *testing.T) {
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -90,13 +90,13 @@ func TestUserDefinedTypeCodecEncodedLength(t *testing.T) {
 				{
 					"simple udt",
 					NewUserDefinedType("ks1", "udt1", []string{"f1", "f2"}, []DataType{Varchar, Int}),
-					primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("udt1") +
-						primitives.LengthOfShort + // field count
-						primitives.LengthOfString("f1") +
-						primitives.LengthOfShort + // varchar
-						primitives.LengthOfString("f2") +
-						primitives.LengthOfShort, // int
+					primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("udt1") +
+						primitive.LengthOfShort + // field count
+						primitive.LengthOfString("f1") +
+						primitive.LengthOfShort + // varchar
+						primitive.LengthOfString("f2") +
+						primitive.LengthOfShort, // int
 					nil,
 				},
 				{
@@ -104,23 +104,23 @@ func TestUserDefinedTypeCodecEncodedLength(t *testing.T) {
 					NewUserDefinedType("ks1", "udt1", []string{"f1"}, []DataType{
 						NewUserDefinedType("ks1", "udt2", []string{"f2", "f3"}, []DataType{Varchar, Int}),
 					}),
-					primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("udt1") +
-						primitives.LengthOfShort + // field count
-						primitives.LengthOfString("f1") +
-						primitives.LengthOfShort + // UDT
-						primitives.LengthOfString("ks1") +
-						primitives.LengthOfString("udt2") +
-						primitives.LengthOfShort + // field count
-						primitives.LengthOfString("f2") +
-						primitives.LengthOfShort + // varchar
-						primitives.LengthOfString("f3") +
-						primitives.LengthOfShort, // int
+					primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("udt1") +
+						primitive.LengthOfShort + // field count
+						primitive.LengthOfString("f1") +
+						primitive.LengthOfShort + // UDT
+						primitive.LengthOfString("ks1") +
+						primitive.LengthOfString("udt2") +
+						primitive.LengthOfShort + // field count
+						primitive.LengthOfString("f2") +
+						primitive.LengthOfShort + // varchar
+						primitive.LengthOfString("f3") +
+						primitive.LengthOfShort, // int
 					nil,
 				},
 				{"nil udt", nil, -1, errors.New("expected UserDefinedType, got <nil>")},
 			}
-			codec, _ := findCodec(primitives.DataTypeCodeUdt)
+			codec, _ := findCodec(primitive.DataTypeCodeUdt)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var actual int
@@ -135,7 +135,7 @@ func TestUserDefinedTypeCodecEncodedLength(t *testing.T) {
 }
 
 func TestUserDefinedTypeCodecDecode(t *testing.T) {
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -150,9 +150,9 @@ func TestUserDefinedTypeCodecDecode(t *testing.T) {
 						0, 4, byte('u'), byte('d'), byte('t'), byte('1'),
 						0, 2, // field count
 						0, 2, byte('f'), byte('1'),
-						0, byte(primitives.DataTypeCodeVarchar & 0xFF),
+						0, byte(primitive.DataTypeCodeVarchar & 0xFF),
 						0, 2, byte('f'), byte('2'),
-						0, byte(primitives.DataTypeCodeInt & 0xFF),
+						0, byte(primitive.DataTypeCodeInt & 0xFF),
 					},
 					NewUserDefinedType("ks1", "udt1", []string{"f1", "f2"}, []DataType{Varchar, Int}),
 					nil,
@@ -164,14 +164,14 @@ func TestUserDefinedTypeCodecDecode(t *testing.T) {
 						0, 4, byte('u'), byte('d'), byte('t'), byte('1'),
 						0, 1, // field count
 						0, 2, byte('f'), byte('1'),
-						0, byte(primitives.DataTypeCodeUdt & 0xFF),
+						0, byte(primitive.DataTypeCodeUdt & 0xFF),
 						0, 3, byte('k'), byte('s'), byte('1'),
 						0, 4, byte('u'), byte('d'), byte('t'), byte('2'),
 						0, 2, // field count
 						0, 2, byte('f'), byte('2'),
-						0, byte(primitives.DataTypeCodeVarchar & 0xFF),
+						0, byte(primitive.DataTypeCodeVarchar & 0xFF),
 						0, 2, byte('f'), byte('3'),
-						0, byte(primitives.DataTypeCodeInt & 0xFF),
+						0, byte(primitive.DataTypeCodeInt & 0xFF),
 					},
 					NewUserDefinedType("ks1", "udt1", []string{"f1"}, []DataType{
 						NewUserDefinedType("ks1", "udt2", []string{"f2", "f3"}, []DataType{Varchar, Int}),
@@ -188,7 +188,7 @@ func TestUserDefinedTypeCodecDecode(t *testing.T) {
 								errors.New("EOF")))),
 				},
 			}
-			codec, _ := findCodec(primitives.DataTypeCodeUdt)
+			codec, _ := findCodec(primitive.DataTypeCodeUdt)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var source = bytes.NewBuffer(test.input)

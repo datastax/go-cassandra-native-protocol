@@ -3,13 +3,13 @@ package message
 import (
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"io"
 )
 
 type Result interface {
 	Message
-	GetResultType() primitives.ResultType
+	GetResultType() primitive.ResultType
 }
 
 // VOID
@@ -20,12 +20,12 @@ func (m *VoidResult) IsResponse() bool {
 	return true
 }
 
-func (m *VoidResult) GetOpCode() primitives.OpCode {
-	return primitives.OpCodeResult
+func (m *VoidResult) GetOpCode() primitive.OpCode {
+	return primitive.OpCodeResult
 }
 
-func (m *VoidResult) GetResultType() primitives.ResultType {
-	return primitives.ResultTypeVoid
+func (m *VoidResult) GetResultType() primitive.ResultType {
+	return primitive.ResultTypeVoid
 }
 
 func (m *VoidResult) String() string {
@@ -42,12 +42,12 @@ func (m *SetKeyspaceResult) IsResponse() bool {
 	return true
 }
 
-func (m *SetKeyspaceResult) GetOpCode() primitives.OpCode {
-	return primitives.OpCodeResult
+func (m *SetKeyspaceResult) GetOpCode() primitive.OpCode {
+	return primitive.OpCodeResult
 }
 
-func (m *SetKeyspaceResult) GetResultType() primitives.ResultType {
-	return primitives.ResultTypeSetKeyspace
+func (m *SetKeyspaceResult) GetResultType() primitive.ResultType {
+	return primitive.ResultTypeSetKeyspace
 }
 
 func (m *SetKeyspaceResult) String() string {
@@ -58,8 +58,8 @@ func (m *SetKeyspaceResult) String() string {
 
 // Note: this struct is identical to SchemaChangeEvent
 type SchemaChangeResult struct {
-	ChangeType primitives.SchemaChangeType
-	Target     primitives.SchemaChangeTarget
+	ChangeType primitive.SchemaChangeType
+	Target     primitive.SchemaChangeTarget
 	Keyspace   string
 	Object     string
 	Arguments  []string
@@ -69,12 +69,12 @@ func (m *SchemaChangeResult) IsResponse() bool {
 	return true
 }
 
-func (m *SchemaChangeResult) GetOpCode() primitives.OpCode {
-	return primitives.OpCodeResult
+func (m *SchemaChangeResult) GetOpCode() primitive.OpCode {
+	return primitive.OpCodeResult
 }
 
-func (m *SchemaChangeResult) GetResultType() primitives.ResultType {
-	return primitives.ResultTypeSchemaChange
+func (m *SchemaChangeResult) GetResultType() primitive.ResultType {
+	return primitive.ResultTypeSchemaChange
 }
 
 func (m *SchemaChangeResult) String() string {
@@ -141,12 +141,12 @@ func (m *PreparedResult) IsResponse() bool {
 	return true
 }
 
-func (m *PreparedResult) GetOpCode() primitives.OpCode {
-	return primitives.OpCodeResult
+func (m *PreparedResult) GetOpCode() primitive.OpCode {
+	return primitive.OpCodeResult
 }
 
-func (m *PreparedResult) GetResultType() primitives.ResultType {
-	return primitives.ResultTypePrepared
+func (m *PreparedResult) GetResultType() primitive.ResultType {
+	return primitive.ResultTypePrepared
 }
 
 func (m *PreparedResult) String() string {
@@ -188,12 +188,12 @@ func (m *RowsResult) IsResponse() bool {
 	return true
 }
 
-func (m *RowsResult) GetOpCode() primitives.OpCode {
-	return primitives.OpCodeResult
+func (m *RowsResult) GetOpCode() primitive.OpCode {
+	return primitive.OpCodeResult
 }
 
-func (m *RowsResult) GetResultType() primitives.ResultType {
-	return primitives.ResultTypeRows
+func (m *RowsResult) GetResultType() primitive.ResultType {
+	return primitive.ResultTypeRows
 }
 
 func (m *RowsResult) String() string {
@@ -204,90 +204,90 @@ func (m *RowsResult) String() string {
 
 type ResultCodec struct{}
 
-func (c *ResultCodec) Encode(msg Message, dest io.Writer, version primitives.ProtocolVersion) (err error) {
+func (c *ResultCodec) Encode(msg Message, dest io.Writer, version primitive.ProtocolVersion) (err error) {
 	result, ok := msg.(Result)
 	if !ok {
 		return fmt.Errorf("expected message.Result, got %T", msg)
 	}
-	if err = primitives.CheckResultType(result.GetResultType()); err != nil {
+	if err = primitive.CheckResultType(result.GetResultType()); err != nil {
 		return err
-	} else if err = primitives.WriteInt(result.GetResultType(), dest); err != nil {
+	} else if err = primitive.WriteInt(result.GetResultType(), dest); err != nil {
 		return fmt.Errorf("cannot write RESULT type: %w", err)
 	}
 	switch result.GetResultType() {
-	case primitives.ResultTypeVoid:
+	case primitive.ResultTypeVoid:
 		return nil
-	case primitives.ResultTypeSetKeyspace:
+	case primitive.ResultTypeSetKeyspace:
 		sk, ok := result.(*SetKeyspaceResult)
 		if !ok {
 			return fmt.Errorf("expected *message.SetKeyspaceResult, got %T", result)
 		}
 		if sk.Keyspace == "" {
 			return errors.New("RESULT SetKeyspace: cannot write empty keyspace")
-		} else if err = primitives.WriteString(sk.Keyspace, dest); err != nil {
+		} else if err = primitive.WriteString(sk.Keyspace, dest); err != nil {
 			return fmt.Errorf("cannot write RESULT SET KEYSPACE keyspace: %w", err)
 		}
-	case primitives.ResultTypeSchemaChange:
+	case primitive.ResultTypeSchemaChange:
 		sce, ok := msg.(*SchemaChangeResult)
 		if !ok {
 			return fmt.Errorf("expected *message.SchemaChangeResult, got %T", msg)
 		}
-		if err = primitives.CheckSchemaChangeType(sce.ChangeType); err != nil {
+		if err = primitive.CheckSchemaChangeType(sce.ChangeType); err != nil {
 			return err
-		} else if err = primitives.WriteString(sce.ChangeType, dest); err != nil {
+		} else if err = primitive.WriteString(sce.ChangeType, dest); err != nil {
 			return fmt.Errorf("cannot write SchemaChangeResult.ChangeType: %w", err)
 		}
-		if err = primitives.CheckSchemaChangeTarget(sce.Target); err != nil {
+		if err = primitive.CheckSchemaChangeTarget(sce.Target); err != nil {
 			return err
-		} else if err = primitives.WriteString(sce.Target, dest); err != nil {
+		} else if err = primitive.WriteString(sce.Target, dest); err != nil {
 			return fmt.Errorf("cannot write SchemaChangeResult.Target: %w", err)
 		}
 		if sce.Keyspace == "" {
 			return errors.New("RESULT SchemaChange: cannot write empty keyspace")
-		} else if err = primitives.WriteString(sce.Keyspace, dest); err != nil {
+		} else if err = primitive.WriteString(sce.Keyspace, dest); err != nil {
 			return fmt.Errorf("cannot write SchemaChangeResult.Keyspace: %w", err)
 		}
 		switch sce.Target {
-		case primitives.SchemaChangeTargetKeyspace:
-		case primitives.SchemaChangeTargetTable:
+		case primitive.SchemaChangeTargetKeyspace:
+		case primitive.SchemaChangeTargetTable:
 			fallthrough
-		case primitives.SchemaChangeTargetType:
+		case primitive.SchemaChangeTargetType:
 			if sce.Object == "" {
 				return errors.New("RESULT SchemaChange: cannot write empty object")
-			} else if err = primitives.WriteString(sce.Object, dest); err != nil {
+			} else if err = primitive.WriteString(sce.Object, dest); err != nil {
 				return fmt.Errorf("cannot write SchemaChangeResult.Object: %w", err)
 			}
-		case primitives.SchemaChangeTargetAggregate:
+		case primitive.SchemaChangeTargetAggregate:
 			fallthrough
-		case primitives.SchemaChangeTargetFunction:
-			if version < primitives.ProtocolVersion4 {
+		case primitive.SchemaChangeTargetFunction:
+			if version < primitive.ProtocolVersion4 {
 				return fmt.Errorf("%s schema change targets are not supported in protocol version %d", sce.Target, version)
 			}
 			if sce.Object == "" {
 				return errors.New("RESULT SchemaChange: cannot write empty object")
-			} else if err = primitives.WriteString(sce.Object, dest); err != nil {
+			} else if err = primitive.WriteString(sce.Object, dest); err != nil {
 				return fmt.Errorf("cannot write SchemaChangeResult.Object: %w", err)
 			}
-			if err = primitives.WriteStringList(sce.Arguments, dest); err != nil {
+			if err = primitive.WriteStringList(sce.Arguments, dest); err != nil {
 				return fmt.Errorf("cannot write SchemaChangeResult.Arguments: %w", err)
 			}
 		default:
 			return fmt.Errorf("unknown schema change target: %v", sce.Target)
 		}
-	case primitives.ResultTypePrepared:
+	case primitive.ResultTypePrepared:
 		p, ok := msg.(*PreparedResult)
 		if !ok {
 			return fmt.Errorf("expected *message.PreparedResult, got %T", msg)
 		}
 		if len(p.PreparedQueryId) == 0 {
 			return errors.New("cannot write empty RESULT Prepared query id")
-		} else if err = primitives.WriteShortBytes(p.PreparedQueryId, dest); err != nil {
+		} else if err = primitive.WriteShortBytes(p.PreparedQueryId, dest); err != nil {
 			return fmt.Errorf("cannot write RESULT Prepared prepared query id: %w", err)
 		}
 		if hasResultMetadataId(version) {
 			if len(p.ResultMetadataId) == 0 {
 				return errors.New("cannot write empty RESULT Prepared result metadata id")
-			} else if err = primitives.WriteShortBytes(p.ResultMetadataId, dest); err != nil {
+			} else if err = primitive.WriteShortBytes(p.ResultMetadataId, dest); err != nil {
 				return fmt.Errorf("cannot write RESULT Prepared result metadata id: %w", err)
 			}
 		}
@@ -301,7 +301,7 @@ func (c *ResultCodec) Encode(msg Message, dest io.Writer, version primitives.Pro
 		} else if err = encodeRowsMetadata(p.ResultMetadata, dest, version); err != nil {
 			return fmt.Errorf("cannot write RESULT Prepared result metadata: %w", err)
 		}
-	case primitives.ResultTypeRows:
+	case primitive.ResultTypeRows:
 		rows, ok := msg.(*RowsResult)
 		if !ok {
 			return fmt.Errorf("expected *message.RowsResult, got %T", msg)
@@ -311,12 +311,12 @@ func (c *ResultCodec) Encode(msg Message, dest io.Writer, version primitives.Pro
 		} else if err = encodeRowsMetadata(rows.Metadata, dest, version); err != nil {
 			return fmt.Errorf("cannot write RESULT Rows metadata: %w", err)
 		}
-		if err = primitives.WriteInt(int32(len(rows.Data)), dest); err != nil {
+		if err = primitive.WriteInt(int32(len(rows.Data)), dest); err != nil {
 			return fmt.Errorf("cannot write RESULT Rows data length: %w", err)
 		}
 		for i, row := range rows.Data {
 			for j, col := range row {
-				if err = primitives.WriteBytes(col, dest); err != nil {
+				if err = primitive.WriteBytes(col, dest); err != nil {
 					return fmt.Errorf("cannot write RESULT Rows data row %d col %d: %w", i, j, err)
 				}
 			}
@@ -327,51 +327,51 @@ func (c *ResultCodec) Encode(msg Message, dest io.Writer, version primitives.Pro
 	return nil
 }
 
-func (c *ResultCodec) EncodedLength(msg Message, version primitives.ProtocolVersion) (length int, err error) {
+func (c *ResultCodec) EncodedLength(msg Message, version primitive.ProtocolVersion) (length int, err error) {
 	result, ok := msg.(Result)
 	if !ok {
 		return -1, fmt.Errorf("expected interface Result, got %T", msg)
 	}
-	length += primitives.LengthOfInt
+	length += primitive.LengthOfInt
 	switch result.GetResultType() {
-	case primitives.ResultTypeVoid:
+	case primitive.ResultTypeVoid:
 		return length, nil
-	case primitives.ResultTypeSetKeyspace:
+	case primitive.ResultTypeSetKeyspace:
 		sk, ok := result.(*SetKeyspaceResult)
 		if !ok {
 			return -1, fmt.Errorf("expected *message.SetKeyspaceResult, got %T", result)
 		}
-		length += primitives.LengthOfString(sk.Keyspace)
-	case primitives.ResultTypeSchemaChange:
+		length += primitive.LengthOfString(sk.Keyspace)
+	case primitive.ResultTypeSchemaChange:
 		sc, ok := msg.(*SchemaChangeResult)
 		if !ok {
 			return -1, fmt.Errorf("expected *message.SchemaChangeResult, got %T", msg)
 		}
-		length += primitives.LengthOfString(sc.ChangeType)
-		length += primitives.LengthOfString(sc.Target)
-		length += primitives.LengthOfString(sc.Keyspace)
+		length += primitive.LengthOfString(sc.ChangeType)
+		length += primitive.LengthOfString(sc.Target)
+		length += primitive.LengthOfString(sc.Keyspace)
 		switch sc.Target {
-		case primitives.SchemaChangeTargetKeyspace:
-		case primitives.SchemaChangeTargetTable:
+		case primitive.SchemaChangeTargetKeyspace:
+		case primitive.SchemaChangeTargetTable:
 			fallthrough
-		case primitives.SchemaChangeTargetType:
-			length += primitives.LengthOfString(sc.Object)
-		case primitives.SchemaChangeTargetAggregate:
+		case primitive.SchemaChangeTargetType:
+			length += primitive.LengthOfString(sc.Object)
+		case primitive.SchemaChangeTargetAggregate:
 			fallthrough
-		case primitives.SchemaChangeTargetFunction:
-			length += primitives.LengthOfString(sc.Object)
-			length += primitives.LengthOfStringList(sc.Arguments)
+		case primitive.SchemaChangeTargetFunction:
+			length += primitive.LengthOfString(sc.Object)
+			length += primitive.LengthOfStringList(sc.Arguments)
 		default:
 			return -1, fmt.Errorf("unknown schema change target: %v", sc.Target)
 		}
-	case primitives.ResultTypePrepared:
+	case primitive.ResultTypePrepared:
 		p, ok := msg.(*PreparedResult)
 		if !ok {
 			return -1, fmt.Errorf("expected *message.PreparedResult, got %T", msg)
 		}
-		length += primitives.LengthOfShortBytes(p.PreparedQueryId)
+		length += primitive.LengthOfShortBytes(p.PreparedQueryId)
 		if hasResultMetadataId(version) {
-			length += primitives.LengthOfShortBytes(p.ResultMetadataId)
+			length += primitive.LengthOfShortBytes(p.ResultMetadataId)
 		}
 		if p.VariablesMetadata == nil {
 			return -1, errors.New("cannot compute length of nil RESULT Prepared variables metadata")
@@ -391,7 +391,7 @@ func (c *ResultCodec) EncodedLength(msg Message, version primitives.ProtocolVers
 			}
 			length += lengthOfMetadata
 		}
-	case primitives.ResultTypeRows:
+	case primitive.ResultTypeRows:
 		rows, ok := msg.(*RowsResult)
 		if !ok {
 			return -1, fmt.Errorf("expected *message.RowsResult, got %T", msg)
@@ -405,10 +405,10 @@ func (c *ResultCodec) EncodedLength(msg Message, version primitives.ProtocolVers
 			}
 			length += lengthOfMetadata
 		}
-		length += primitives.LengthOfInt // number of rows
+		length += primitive.LengthOfInt // number of rows
 		for _, row := range rows.Data {
 			for _, col := range row {
-				length += primitives.LengthOfBytes(col)
+				length += primitive.LengthOfBytes(col)
 			}
 		}
 	default:
@@ -417,62 +417,62 @@ func (c *ResultCodec) EncodedLength(msg Message, version primitives.ProtocolVers
 	return length, nil
 }
 
-func (c *ResultCodec) Decode(source io.Reader, version primitives.ProtocolVersion) (msg Message, err error) {
-	var resultType primitives.ResultType
-	if resultType, err = primitives.ReadInt(source); err != nil {
+func (c *ResultCodec) Decode(source io.Reader, version primitive.ProtocolVersion) (msg Message, err error) {
+	var resultType primitive.ResultType
+	if resultType, err = primitive.ReadInt(source); err != nil {
 		return nil, fmt.Errorf("cannot read RESULT type: %w", err)
 	}
 	switch resultType {
-	case primitives.ResultTypeVoid:
+	case primitive.ResultTypeVoid:
 		return &VoidResult{}, nil
-	case primitives.ResultTypeSetKeyspace:
+	case primitive.ResultTypeSetKeyspace:
 		setKeyspace := &SetKeyspaceResult{}
-		if setKeyspace.Keyspace, err = primitives.ReadString(source); err != nil {
+		if setKeyspace.Keyspace, err = primitive.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read RESULT SetKeyspaceResult.Keyspace: %w", err)
 		}
 		return setKeyspace, nil
-	case primitives.ResultTypeSchemaChange:
+	case primitive.ResultTypeSchemaChange:
 		sc := &SchemaChangeResult{}
-		if sc.ChangeType, err = primitives.ReadString(source); err != nil {
+		if sc.ChangeType, err = primitive.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read SchemaChangeResult.ChangeType: %w", err)
 		}
-		if sc.Target, err = primitives.ReadString(source); err != nil {
+		if sc.Target, err = primitive.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read SchemaChangeResult.Target: %w", err)
 		}
-		if sc.Keyspace, err = primitives.ReadString(source); err != nil {
+		if sc.Keyspace, err = primitive.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read SchemaChangeResult.Keyspace: %w", err)
 		}
 		switch sc.Target {
-		case primitives.SchemaChangeTargetKeyspace:
-		case primitives.SchemaChangeTargetTable:
+		case primitive.SchemaChangeTargetKeyspace:
+		case primitive.SchemaChangeTargetTable:
 			fallthrough
-		case primitives.SchemaChangeTargetType:
-			if sc.Object, err = primitives.ReadString(source); err != nil {
+		case primitive.SchemaChangeTargetType:
+			if sc.Object, err = primitive.ReadString(source); err != nil {
 				return nil, fmt.Errorf("cannot read SchemaChangeResult.Object: %w", err)
 			}
-		case primitives.SchemaChangeTargetAggregate:
+		case primitive.SchemaChangeTargetAggregate:
 			fallthrough
-		case primitives.SchemaChangeTargetFunction:
-			if version < primitives.ProtocolVersion4 {
+		case primitive.SchemaChangeTargetFunction:
+			if version < primitive.ProtocolVersion4 {
 				return nil, fmt.Errorf("%s schema change targets are not supported in protocol version %d", sc.Target, version)
 			}
-			if sc.Object, err = primitives.ReadString(source); err != nil {
+			if sc.Object, err = primitive.ReadString(source); err != nil {
 				return nil, fmt.Errorf("cannot read SchemaChangeResult.Object: %w", err)
 			}
-			if sc.Arguments, err = primitives.ReadStringList(source); err != nil {
+			if sc.Arguments, err = primitive.ReadStringList(source); err != nil {
 				return nil, fmt.Errorf("cannot read SchemaChangeResult.Arguments: %w", err)
 			}
 		default:
 			return nil, fmt.Errorf("unknown schema change target: %v", sc.Target)
 		}
 		return sc, nil
-	case primitives.ResultTypePrepared:
+	case primitive.ResultTypePrepared:
 		p := &PreparedResult{}
-		if p.PreparedQueryId, err = primitives.ReadShortBytes(source); err != nil {
+		if p.PreparedQueryId, err = primitive.ReadShortBytes(source); err != nil {
 			return nil, fmt.Errorf("cannot read RESULT Prepared prepared query id: %w", err)
 		}
 		if hasResultMetadataId(version) {
-			if p.ResultMetadataId, err = primitives.ReadShortBytes(source); err != nil {
+			if p.ResultMetadataId, err = primitive.ReadShortBytes(source); err != nil {
 				return nil, fmt.Errorf("cannot read RESULT Prepared result metadata id: %w", err)
 			}
 		}
@@ -483,20 +483,20 @@ func (c *ResultCodec) Decode(source io.Reader, version primitives.ProtocolVersio
 			return nil, fmt.Errorf("cannot read RESULT Prepared result metadata: %w", err)
 		}
 		return p, nil
-	case primitives.ResultTypeRows:
+	case primitive.ResultTypeRows:
 		rows := &RowsResult{}
 		if rows.Metadata, err = decodeRowsMetadata(source, version); err != nil {
 			return nil, fmt.Errorf("cannot read RESULT Rows metadata: %w", err)
 		}
 		var rowsCount int32
-		if rowsCount, err = primitives.ReadInt(source); err != nil {
+		if rowsCount, err = primitive.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read RESULT Rows data length: %w", err)
 		}
 		rows.Data = make([][][]byte, rowsCount)
 		for i := 0; i < int(rowsCount); i++ {
 			rows.Data[i] = make([][]byte, rows.Metadata.ColumnCount)
 			for j := 0; j < int(rows.Metadata.ColumnCount); j++ {
-				if rows.Data[i][j], err = primitives.ReadBytes(source); err != nil {
+				if rows.Data[i][j], err = primitive.ReadBytes(source); err != nil {
 					return nil, fmt.Errorf("cannot read RESULT Rows data row %d col %d: %w", i, j, err)
 				}
 			}
@@ -507,11 +507,11 @@ func (c *ResultCodec) Decode(source io.Reader, version primitives.ProtocolVersio
 	}
 }
 
-func (c *ResultCodec) GetOpCode() primitives.OpCode {
-	return primitives.OpCodeResult
+func (c *ResultCodec) GetOpCode() primitive.OpCode {
+	return primitive.OpCodeResult
 }
 
-func hasResultMetadataId(version primitives.ProtocolVersion) bool {
-	return version >= primitives.ProtocolVersion5 &&
-		version != primitives.ProtocolVersionDse1
+func hasResultMetadataId(version primitive.ProtocolVersion) bool {
+	return version >= primitive.ProtocolVersion5 &&
+		version != primitive.ProtocolVersionDse1
 }

@@ -4,19 +4,19 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestListType(t *testing.T) {
 	listType := NewListType(Varchar)
-	assert.Equal(t, primitives.DataTypeCodeList, listType.GetDataTypeCode())
+	assert.Equal(t, primitive.DataTypeCodeList, listType.GetDataTypeCode())
 	assert.Equal(t, Varchar, listType.GetElementType())
 }
 
 func TestListTypeCodecEncode(t *testing.T) {
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -27,20 +27,20 @@ func TestListTypeCodecEncode(t *testing.T) {
 				{
 					"simple list",
 					NewListType(Varchar),
-					[]byte{0, byte(primitives.DataTypeCodeVarchar & 0xFF)},
+					[]byte{0, byte(primitive.DataTypeCodeVarchar & 0xFF)},
 					nil,
 				},
 				{
 					"complex list",
 					NewListType(NewListType(Varchar)),
 					[]byte{
-						0, byte(primitives.DataTypeCodeList & 0xFF),
-						0, byte(primitives.DataTypeCodeVarchar & 0xFF)},
+						0, byte(primitive.DataTypeCodeList & 0xFF),
+						0, byte(primitive.DataTypeCodeVarchar & 0xFF)},
 					nil,
 				},
 				{"nil list", nil, nil, errors.New("expected ListType, got <nil>")},
 			}
-			codec, _ := findCodec(primitives.DataTypeCodeList)
+			codec, _ := findCodec(primitive.DataTypeCodeList)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var dest = &bytes.Buffer{}
@@ -56,7 +56,7 @@ func TestListTypeCodecEncode(t *testing.T) {
 }
 
 func TestListTypeCodecEncodedLength(t *testing.T) {
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -64,11 +64,11 @@ func TestListTypeCodecEncodedLength(t *testing.T) {
 				expected int
 				err      error
 			}{
-				{"simple list", NewListType(Varchar), primitives.LengthOfShort, nil},
-				{"complex list", NewListType(NewListType(Varchar)), primitives.LengthOfShort + primitives.LengthOfShort, nil},
+				{"simple list", NewListType(Varchar), primitive.LengthOfShort, nil},
+				{"complex list", NewListType(NewListType(Varchar)), primitive.LengthOfShort + primitive.LengthOfShort, nil},
 				{"nil list", nil, -1, errors.New("expected ListType, got <nil>")},
 			}
-			codec, _ := findCodec(primitives.DataTypeCodeList)
+			codec, _ := findCodec(primitive.DataTypeCodeList)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var actual int
@@ -83,7 +83,7 @@ func TestListTypeCodecEncodedLength(t *testing.T) {
 }
 
 func TestListTypeCodecDecode(t *testing.T) {
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -93,15 +93,15 @@ func TestListTypeCodecDecode(t *testing.T) {
 			}{
 				{
 					"simple list",
-					[]byte{0, byte(primitives.DataTypeCodeVarchar & 0xff)},
+					[]byte{0, byte(primitive.DataTypeCodeVarchar & 0xff)},
 					NewListType(Varchar),
 					nil,
 				},
 				{
 					"complex list",
 					[]byte{
-						0, byte(primitives.DataTypeCodeList & 0xff),
-						0, byte(primitives.DataTypeCodeVarchar & 0xff)},
+						0, byte(primitive.DataTypeCodeList & 0xff),
+						0, byte(primitive.DataTypeCodeVarchar & 0xff)},
 					NewListType(NewListType(Varchar)),
 					nil,
 				},
@@ -115,7 +115,7 @@ func TestListTypeCodecDecode(t *testing.T) {
 								errors.New("EOF")))),
 				},
 			}
-			codec, _ := findCodec(primitives.DataTypeCodeList)
+			codec, _ := findCodec(primitive.DataTypeCodeList)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var source = bytes.NewBuffer(test.input)

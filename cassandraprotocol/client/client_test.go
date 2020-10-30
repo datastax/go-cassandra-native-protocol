@@ -6,7 +6,7 @@ import (
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/compression"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/frame"
 	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/message"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -28,7 +28,7 @@ func TestRemoteServerNoAuth(t *testing.T) {
 	if !ccmAvailable {
 		t.Skip("No CCM cluster available")
 	}
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 
 			for compressor, frameCodec := range compressors {
@@ -68,7 +68,7 @@ func TestRemoteServerAuth(t *testing.T) {
 	if !ccmAvailable {
 		t.Skip("No CCM cluster available")
 	}
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 
 			for compressor, frameCodec := range compressors {
@@ -108,7 +108,7 @@ func TestRemoteDseServerAuthContinuousPaging(t *testing.T) {
 	if !ccmAvailable {
 		t.Skip("No CCM cluster available")
 	}
-	for _, version := range primitives.AllDseProtocolVersions() {
+	for _, version := range primitive.AllDseProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 
 			for compressor, frameCodec := range compressors {
@@ -165,7 +165,7 @@ func TestRemoteDseServerAuthContinuousPaging(t *testing.T) {
 					assert.Equal(t, rows.Metadata.LastContinuousPage, true)
 
 					cancel, _ := frame.NewRequestFrame(version, 2, false, nil, &message.Revise{
-						RevisionType:   primitives.DseRevisionTypeCancelContinuousPaging,
+						RevisionType:   primitive.DseRevisionTypeCancelContinuousPaging,
 						TargetStreamId: 1,
 					})
 					err = clientConn.Send(cancel)
@@ -187,7 +187,7 @@ func TestRemoteDseServerAuthContinuousPaging(t *testing.T) {
 
 func TestLocalServer(t *testing.T) {
 
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 
 			for compressor, frameCodec := range compressors {
@@ -266,7 +266,7 @@ func TestLocalServer(t *testing.T) {
 
 func TestLocalServerDiscardBody(t *testing.T) {
 
-	for _, version := range primitives.AllProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 
 			for compressor, frameCodec := range compressors {

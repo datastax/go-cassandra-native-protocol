@@ -4,20 +4,20 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitives"
+	"github.com/datastax/go-cassandra-native-protocol/cassandraprotocol/primitive"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestReviseCodec_Encode(t *testing.T) {
 	codec := &ReviseCodec{}
-	version := primitives.ProtocolVersionDse1
+	version := primitive.ProtocolVersionDse1
 	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 		tests := []encodeTestCase{
 			{
 				"simple revise",
 				&Revise{
-					RevisionType:   primitives.DseRevisionTypeCancelContinuousPaging,
+					RevisionType:   primitive.DseRevisionTypeCancelContinuousPaging,
 					TargetStreamId: 123,
 				},
 				[]byte{
@@ -42,13 +42,13 @@ func TestReviseCodec_Encode(t *testing.T) {
 			})
 		}
 	})
-	version = primitives.ProtocolVersionDse2
+	version = primitive.ProtocolVersionDse2
 	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 		tests := []encodeTestCase{
 			{
 				"revise cancel",
 				&Revise{
-					RevisionType:   primitives.DseRevisionTypeCancelContinuousPaging,
+					RevisionType:   primitive.DseRevisionTypeCancelContinuousPaging,
 					TargetStreamId: 123,
 				},
 				[]byte{
@@ -60,7 +60,7 @@ func TestReviseCodec_Encode(t *testing.T) {
 			{
 				"revise more",
 				&Revise{
-					RevisionType:   primitives.DseRevisionTypeMoreContinuousPages,
+					RevisionType:   primitive.DseRevisionTypeMoreContinuousPages,
 					TargetStreamId: 123,
 					NextPages:      4,
 				},
@@ -91,16 +91,16 @@ func TestReviseCodec_Encode(t *testing.T) {
 
 func TestReviseCodec_EncodedLength(t *testing.T) {
 	codec := &ReviseCodec{}
-	version := primitives.ProtocolVersionDse1
+	version := primitive.ProtocolVersionDse1
 	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 		tests := []encodedLengthTestCase{
 			{
 				"simple revise",
 				&Revise{
-					RevisionType:   primitives.DseRevisionTypeCancelContinuousPaging,
+					RevisionType:   primitive.DseRevisionTypeCancelContinuousPaging,
 					TargetStreamId: 123,
 				},
-				primitives.LengthOfInt * 2,
+				primitive.LengthOfInt * 2,
 				nil,
 			},
 			{
@@ -118,26 +118,26 @@ func TestReviseCodec_EncodedLength(t *testing.T) {
 			})
 		}
 	})
-	version = primitives.ProtocolVersionDse2
+	version = primitive.ProtocolVersionDse2
 	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 		tests := []encodedLengthTestCase{
 			{
 				"revise cancel",
 				&Revise{
-					RevisionType:   primitives.DseRevisionTypeCancelContinuousPaging,
+					RevisionType:   primitive.DseRevisionTypeCancelContinuousPaging,
 					TargetStreamId: 123,
 				},
-				primitives.LengthOfInt * 2,
+				primitive.LengthOfInt * 2,
 				nil,
 			},
 			{
 				"revise more",
 				&Revise{
-					RevisionType:   primitives.DseRevisionTypeMoreContinuousPages,
+					RevisionType:   primitive.DseRevisionTypeMoreContinuousPages,
 					TargetStreamId: 123,
 					NextPages:      4,
 				},
-				primitives.LengthOfInt * 3,
+				primitive.LengthOfInt * 3,
 				nil,
 			},
 			{
@@ -159,7 +159,7 @@ func TestReviseCodec_EncodedLength(t *testing.T) {
 
 func TestReviseCodec_Decode(t *testing.T) {
 	codec := &ReviseCodec{}
-	version := primitives.ProtocolVersionDse1
+	version := primitive.ProtocolVersionDse1
 	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 		tests := []decodeTestCase{
 			{
@@ -169,7 +169,7 @@ func TestReviseCodec_Decode(t *testing.T) {
 					0, 0, 0, 123, // stream id
 				},
 				&Revise{
-					RevisionType:   primitives.DseRevisionTypeCancelContinuousPaging,
+					RevisionType:   primitive.DseRevisionTypeCancelContinuousPaging,
 					TargetStreamId: 123,
 				},
 				nil,
@@ -184,7 +184,7 @@ func TestReviseCodec_Decode(t *testing.T) {
 			})
 		}
 	})
-	version = primitives.ProtocolVersionDse2
+	version = primitive.ProtocolVersionDse2
 	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 		tests := []decodeTestCase{
 			{
@@ -194,7 +194,7 @@ func TestReviseCodec_Decode(t *testing.T) {
 					0, 0, 0, 123, // stream id
 				},
 				&Revise{
-					RevisionType:   primitives.DseRevisionTypeCancelContinuousPaging,
+					RevisionType:   primitive.DseRevisionTypeCancelContinuousPaging,
 					TargetStreamId: 123,
 				},
 				nil,
@@ -207,7 +207,7 @@ func TestReviseCodec_Decode(t *testing.T) {
 					0, 0, 0, 4, // next pages
 				},
 				&Revise{
-					RevisionType:   primitives.DseRevisionTypeMoreContinuousPages,
+					RevisionType:   primitive.DseRevisionTypeMoreContinuousPages,
 					TargetStreamId: 123,
 					NextPages:      4,
 				},
