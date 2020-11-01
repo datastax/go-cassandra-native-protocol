@@ -7,21 +7,34 @@ import (
 	"io"
 )
 
+type ColumnMetadata struct {
+	Keyspace string
+	Table    string
+	Name     string
+	Index    int32
+	Type     datatype.DataType
+}
+
+// VariablesMetadata is used in PreparedResult to indicate metadata about the prepared statement's bound variables.
 type VariablesMetadata struct {
 	// The indices of variables belonging to the table's partition key, if any. Valid from protocol v4 onwards.
-	PkIndices   []uint16
-	ColumnSpecs []*ColumnMetadata
+	PkIndices []uint16
+	Columns   []*ColumnMetadata
 }
 
 func (rm *VariablesMetadata) Flags() (flag primitive.VariablesFlag) {
-	if len(rm.ColumnSpecs) > 0 && haveSameTable(rm.ColumnSpecs) {
+	if len(rm.Columns) > 0 && haveSameTable(rm.Columns) {
 		flag |= primitive.VariablesFlagGlobalTablesSpec
 	}
 	return flag
 }
 
+// RowsMetadata is used in RowsResult to indicate metadata about the result set present in the result response;
+// and in PreparedResult, to indicate metadata about the result set that the prepared statement will produce once
+// executed.
 type RowsMetadata struct {
-	// always present, even when ColumnSpecs is nil
+	// Must be always present, even when Columns is nil. If Columns is non-nil, the value of ColumnCount must match
+	// len(Columns), otherwise an error is returned when encoding.
 	ColumnCount int32
 	PagingState []byte
 	// Valid for protocol version 5 and DSE protocol version 2 only.
@@ -30,14 +43,14 @@ type RowsMetadata struct {
 	ContinuousPageNumber int32
 	// Valid for DSE protocol versions only.
 	LastContinuousPage bool
-	// If nil, the NO_METADATA flag is set. Should never be nil in a Prepared result.
-	ColumnSpecs []*ColumnMetadata
+	// If nil, the NO_METADATA flag is set. Should never be nil in a PreparedResult.
+	Columns []*ColumnMetadata
 }
 
 func (rm *RowsMetadata) Flags() (flag primitive.RowsFlag) {
-	if len(rm.ColumnSpecs) == 0 {
+	if len(rm.Columns) == 0 {
 		flag |= primitive.RowsFlagNoMetadata
-	} else if haveSameTable(rm.ColumnSpecs) {
+	} else if haveSameTable(rm.Columns) {
 		flag |= primitive.RowsFlagGlobalTablesSpec
 	}
 	if rm.PagingState != nil {
@@ -55,14 +68,6 @@ func (rm *RowsMetadata) Flags() (flag primitive.RowsFlag) {
 	return flag
 }
 
-type ColumnMetadata struct {
-	Keyspace string
-	Table    string
-	Name     string
-	Index    int32
-	Type     datatype.DataType
-}
-
 func encodeVariablesMetadata(metadata *VariablesMetadata, dest io.Writer, version primitive.ProtocolVersion) (err error) {
 	if metadata == nil {
 		metadata = &VariablesMetadata{}
@@ -71,7 +76,7 @@ func encodeVariablesMetadata(metadata *VariablesMetadata, dest io.Writer, versio
 	if err = primitive.WriteInt(int32(flags), dest); err != nil {
 		return fmt.Errorf("cannot write RESULT Prepared variables metadata flags: %w", err)
 	}
-	if err = primitive.WriteInt(int32(len(metadata.ColumnSpecs)), dest); err != nil {
+	if err = primitive.WriteInt(int32(len(metadata.Columns)), dest); err != nil {
 		return fmt.Errorf("cannot write RESULT Prepared variables metadata column count: %w", err)
 	}
 	if version >= primitive.ProtocolVersion4 {
@@ -84,10 +89,10 @@ func encodeVariablesMetadata(metadata *VariablesMetadata, dest io.Writer, versio
 			}
 		}
 	}
-	if len(metadata.ColumnSpecs) > 0 {
+	if len(metadata.Columns) > 0 {
 		globalTableSpec := flags&primitive.VariablesFlagGlobalTablesSpec > 0
-		if err = encodeColumnSpecs(globalTableSpec, metadata.ColumnSpecs, dest, version); err != nil {
-			return fmt.Errorf("cannot write RESULT Prepared variables metadata column specs: %w", err)
+		if err = encodeColumnsMetadata(globalTableSpec, metadata.Columns, dest, version); err != nil {
+			return fmt.Errorf("cannot write RESULT Prepared variables metadata column cols: %w", err)
 		}
 	}
 	return nil
@@ -103,11 +108,11 @@ func lengthOfVariablesMetadata(metadata *VariablesMetadata, version primitive.Pr
 		length += primitive.LengthOfInt // pk count
 		length += primitive.LengthOfShort * len(metadata.PkIndices)
 	}
-	if len(metadata.ColumnSpecs) > 0 {
+	if len(metadata.Columns) > 0 {
 		globalTableSpec := metadata.Flags()&primitive.VariablesFlagGlobalTablesSpec > 0
 		var lcs int
-		if lcs, err = lengthOfColumnSpecs(globalTableSpec, metadata.ColumnSpecs, version); err != nil {
-			return -1, fmt.Errorf("cannot compute length of RESULT Prepared variables metadata column specs: %w", err)
+		if lcs, err = lengthOfColumnsMetadata(globalTableSpec, metadata.Columns, version); err != nil {
+			return -1, fmt.Errorf("cannot compute length of RESULT Prepared variables metadata column cols: %w", err)
 		}
 		length += lcs
 	}
@@ -140,10 +145,9 @@ func decodeVariablesMetadata(source io.Reader, version primitive.ProtocolVersion
 		}
 	}
 	if columnCount > 0 {
-		metadata.ColumnSpecs = make([]*ColumnMetadata, columnCount)
 		globalTableSpec := flags&primitive.VariablesFlagGlobalTablesSpec > 0
-		if metadata.ColumnSpecs, err = decodeColumnSpecs(globalTableSpec, columnCount, source, version); err != nil {
-			return nil, fmt.Errorf("cannot read RESULT Prepared variables metadata column specs: %w", err)
+		if metadata.Columns, err = decodeColumnsMetadata(globalTableSpec, columnCount, source, version); err != nil {
+			return nil, fmt.Errorf("cannot read RESULT Prepared variables metadata column cols: %w", err)
 		}
 	}
 	return metadata, nil
@@ -157,7 +161,7 @@ func encodeRowsMetadata(metadata *RowsMetadata, dest io.Writer, version primitiv
 	if err = primitive.WriteInt(int32(flags), dest); err != nil {
 		return fmt.Errorf("cannot write RESULT Rows metadata flags: %w", err)
 	}
-	columnSpecsLength := len(metadata.ColumnSpecs)
+	columnSpecsLength := len(metadata.Columns)
 	if columnSpecsLength > 0 && int(metadata.ColumnCount) != columnSpecsLength {
 		return fmt.Errorf(
 			"invalid RESULT Rows metadata: metadata.ColumnCount %d != len(metadata.ColumnSpecs) %d",
@@ -185,7 +189,7 @@ func encodeRowsMetadata(metadata *RowsMetadata, dest io.Writer, version primitiv
 	}
 	if flags&primitive.RowsFlagNoMetadata == 0 && columnSpecsLength > 0 {
 		globalTableSpec := flags&primitive.RowsFlagGlobalTablesSpec > 0
-		if err = encodeColumnSpecs(globalTableSpec, metadata.ColumnSpecs, dest, version); err != nil {
+		if err = encodeColumnsMetadata(globalTableSpec, metadata.Columns, dest, version); err != nil {
 			return fmt.Errorf("cannot write RESULT Rows metadata column specs: %w", err)
 		}
 	}
@@ -208,13 +212,13 @@ func lengthOfRowsMetadata(metadata *RowsMetadata, version primitive.ProtocolVers
 	if flags&primitive.RowsFlagDseContinuousPaging > 0 {
 		length += primitive.LengthOfInt // continuous page number
 	}
-	if flags&primitive.RowsFlagNoMetadata == 0 && len(metadata.ColumnSpecs) > 0 {
+	if flags&primitive.RowsFlagNoMetadata == 0 && len(metadata.Columns) > 0 {
 		globalTableSpec := flags&primitive.RowsFlagGlobalTablesSpec > 0
-		var lengthOfSpecs int
-		if lengthOfSpecs, err = lengthOfColumnSpecs(globalTableSpec, metadata.ColumnSpecs, version); err != nil {
-			return -1, fmt.Errorf("cannot compute length of RESULT Rows metadata column specs: %w", err)
+		var lengthOfCols int
+		if lengthOfCols, err = lengthOfColumnsMetadata(globalTableSpec, metadata.Columns, version); err != nil {
+			return -1, fmt.Errorf("cannot compute length of RESULT Rows metadata column cols: %w", err)
 		}
-		length += lengthOfSpecs
+		length += lengthOfCols
 	}
 	return length, nil
 }
@@ -246,58 +250,57 @@ func decodeRowsMetadata(source io.Reader, version primitive.ProtocolVersion) (me
 		metadata.LastContinuousPage = flags&primitive.RowsFlagDseLastContinuousPage > 0
 	}
 	if flags&primitive.RowsFlagNoMetadata == 0 {
-		metadata.ColumnSpecs = make([]*ColumnMetadata, metadata.ColumnCount)
 		globalTableSpec := flags&primitive.RowsFlagGlobalTablesSpec > 0
-		if metadata.ColumnSpecs, err = decodeColumnSpecs(globalTableSpec, metadata.ColumnCount, source, version); err != nil {
-			return nil, fmt.Errorf("cannot read RESULT Rows metadata column specs: %w", err)
+		if metadata.Columns, err = decodeColumnsMetadata(globalTableSpec, metadata.ColumnCount, source, version); err != nil {
+			return nil, fmt.Errorf("cannot read RESULT Rows metadata column cols: %w", err)
 		}
 	}
 	return metadata, nil
 }
 
-func encodeColumnSpecs(globalTableSpec bool, specs []*ColumnMetadata, dest io.Writer, version primitive.ProtocolVersion) (err error) {
+func encodeColumnsMetadata(globalTableSpec bool, cols []*ColumnMetadata, dest io.Writer, version primitive.ProtocolVersion) (err error) {
 	if globalTableSpec {
-		firstSpec := specs[0]
-		if err = primitive.WriteString(firstSpec.Keyspace, dest); err != nil {
-			return fmt.Errorf("cannot write column spec global keyspace: %w", err)
+		firstCol := cols[0]
+		if err = primitive.WriteString(firstCol.Keyspace, dest); err != nil {
+			return fmt.Errorf("cannot write column col global keyspace: %w", err)
 		}
-		if err = primitive.WriteString(firstSpec.Table, dest); err != nil {
-			return fmt.Errorf("cannot write column spec global table: %w", err)
+		if err = primitive.WriteString(firstCol.Table, dest); err != nil {
+			return fmt.Errorf("cannot write column col global table: %w", err)
 		}
 	}
-	for i, spec := range specs {
+	for i, col := range cols {
 		if !globalTableSpec {
-			if err = primitive.WriteString(spec.Keyspace, dest); err != nil {
-				return fmt.Errorf("cannot write column spec %d keyspace: %w", i, err)
+			if err = primitive.WriteString(col.Keyspace, dest); err != nil {
+				return fmt.Errorf("cannot write column col %d keyspace: %w", i, err)
 			}
-			if err = primitive.WriteString(spec.Table, dest); err != nil {
-				return fmt.Errorf("cannot write column spec %d table: %w", i, err)
+			if err = primitive.WriteString(col.Table, dest); err != nil {
+				return fmt.Errorf("cannot write column col %d table: %w", i, err)
 			}
 		}
-		if err = primitive.WriteString(spec.Name, dest); err != nil {
-			return fmt.Errorf("cannot write column spec %d name: %w", i, err)
+		if err = primitive.WriteString(col.Name, dest); err != nil {
+			return fmt.Errorf("cannot write column col %d name: %w", i, err)
 		}
-		if err = datatype.WriteDataType(spec.Type, dest, version); err != nil {
-			return fmt.Errorf("cannot write column spec %d type: %w", i, err)
+		if err = datatype.WriteDataType(col.Type, dest, version); err != nil {
+			return fmt.Errorf("cannot write column col %d type: %w", i, err)
 		}
 	}
 	return nil
 }
 
-func lengthOfColumnSpecs(globalTableSpec bool, specs []*ColumnMetadata, version primitive.ProtocolVersion) (length int, err error) {
+func lengthOfColumnsMetadata(globalTableSpec bool, cols []*ColumnMetadata, version primitive.ProtocolVersion) (length int, err error) {
 	if globalTableSpec {
-		firstSpec := specs[0]
-		length += primitive.LengthOfString(firstSpec.Keyspace)
-		length += primitive.LengthOfString(firstSpec.Table)
+		firstCol := cols[0]
+		length += primitive.LengthOfString(firstCol.Keyspace)
+		length += primitive.LengthOfString(firstCol.Table)
 	}
-	for i, spec := range specs {
+	for i, col := range cols {
 		if !globalTableSpec {
-			length += primitive.LengthOfString(spec.Keyspace)
-			length += primitive.LengthOfString(spec.Table)
+			length += primitive.LengthOfString(col.Keyspace)
+			length += primitive.LengthOfString(col.Table)
 		}
-		length += primitive.LengthOfString(spec.Name)
-		if lengthOfDataType, err := datatype.LengthOfDataType(spec.Type, version); err != nil {
-			return -1, fmt.Errorf("cannot compute length column spec %d type: %w", i, err)
+		length += primitive.LengthOfString(col.Name)
+		if lengthOfDataType, err := datatype.LengthOfDataType(col.Type, version); err != nil {
+			return -1, fmt.Errorf("cannot compute length column col %d type: %w", i, err)
 		} else {
 			length += lengthOfDataType
 		}
@@ -305,57 +308,57 @@ func lengthOfColumnSpecs(globalTableSpec bool, specs []*ColumnMetadata, version 
 	return
 }
 
-func decodeColumnSpecs(globalTableSpec bool, columnCount int32, source io.Reader, version primitive.ProtocolVersion) (specs []*ColumnMetadata, err error) {
+func decodeColumnsMetadata(globalTableSpec bool, columnCount int32, source io.Reader, version primitive.ProtocolVersion) (cols []*ColumnMetadata, err error) {
 	var globalKsName string
 	var globalTableName string
 	if globalTableSpec {
 		if globalKsName, err = primitive.ReadString(source); err != nil {
-			return nil, fmt.Errorf("cannot read column spec global keyspace: %w", err)
+			return nil, fmt.Errorf("cannot read column col global keyspace: %w", err)
 		}
 		if globalTableName, err = primitive.ReadString(source); err != nil {
-			return nil, fmt.Errorf("cannot read column spec global table: %w", err)
+			return nil, fmt.Errorf("cannot read column col global table: %w", err)
 		}
 	}
-	specs = make([]*ColumnMetadata, columnCount)
+	cols = make([]*ColumnMetadata, columnCount)
 	for i := 0; i < int(columnCount); i++ {
-		specs[i] = &ColumnMetadata{}
+		cols[i] = &ColumnMetadata{}
 		if globalTableSpec {
-			specs[i].Keyspace = globalKsName
+			cols[i].Keyspace = globalKsName
 		} else {
-			if specs[i].Keyspace, err = primitive.ReadString(source); err != nil {
-				return nil, fmt.Errorf("cannot read column spec %d keyspace: %w", i, err)
+			if cols[i].Keyspace, err = primitive.ReadString(source); err != nil {
+				return nil, fmt.Errorf("cannot read column col %d keyspace: %w", i, err)
 			}
 		}
 		if globalTableSpec {
-			specs[i].Table = globalTableName
+			cols[i].Table = globalTableName
 		} else {
-			if specs[i].Table, err = primitive.ReadString(source); err != nil {
-				return nil, fmt.Errorf("cannot read column spec %d table: %w", i, err)
+			if cols[i].Table, err = primitive.ReadString(source); err != nil {
+				return nil, fmt.Errorf("cannot read column col %d table: %w", i, err)
 			}
 		}
-		if specs[i].Name, err = primitive.ReadString(source); err != nil {
-			return nil, fmt.Errorf("cannot read column spec %d name: %w", i, err)
+		if cols[i].Name, err = primitive.ReadString(source); err != nil {
+			return nil, fmt.Errorf("cannot read column col %d name: %w", i, err)
 		}
-		if specs[i].Type, err = datatype.ReadDataType(source, version); err != nil {
-			return nil, fmt.Errorf("cannot read column spec %d type: %w", i, err)
+		if cols[i].Type, err = datatype.ReadDataType(source, version); err != nil {
+			return nil, fmt.Errorf("cannot read column col %d type: %w", i, err)
 		}
 	}
-	return specs, nil
+	return cols, nil
 }
 
-func haveSameTable(specs []*ColumnMetadata) bool {
-	if specs == nil || len(specs) == 0 {
+func haveSameTable(cols []*ColumnMetadata) bool {
+	if cols == nil || len(cols) == 0 {
 		return false
 	}
 	first := true
 	var ksName string
 	var tableName string
-	for _, spec := range specs {
+	for _, col := range cols {
 		if first {
 			first = false
-			ksName = spec.Keyspace
-			tableName = spec.Table
-		} else if spec.Keyspace != ksName || spec.Table != tableName {
+			ksName = col.Keyspace
+			tableName = col.Table
+		} else if col.Keyspace != ksName || col.Table != tableName {
 			return false
 		}
 	}

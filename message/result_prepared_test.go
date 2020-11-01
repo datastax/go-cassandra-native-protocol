@@ -35,7 +35,7 @@ func TestResultCodec_Encode_Prepared(test *testing.T) {
 					&PreparedResult{
 						PreparedQueryId: []byte{1, 2, 3, 4},
 						VariablesMetadata: &VariablesMetadata{
-							ColumnSpecs: []*ColumnMetadata{
+							Columns: []*ColumnMetadata{
 								{
 									Keyspace: "ks1",
 									Table:    "table1",
@@ -67,7 +67,7 @@ func TestResultCodec_Encode_Prepared(test *testing.T) {
 					&PreparedResult{
 						PreparedQueryId: []byte{1, 2, 3, 4},
 						VariablesMetadata: &VariablesMetadata{
-							ColumnSpecs: []*ColumnMetadata{
+							Columns: []*ColumnMetadata{
 								{
 									Keyspace: "ks1",
 									Table:    "table1",
@@ -79,7 +79,7 @@ func TestResultCodec_Encode_Prepared(test *testing.T) {
 						},
 						ResultMetadata: &RowsMetadata{
 							ColumnCount: 1,
-							ColumnSpecs: []*ColumnMetadata{
+							Columns: []*ColumnMetadata{
 								{
 									Keyspace: "ks1",
 									Table:    "table1",
@@ -147,7 +147,7 @@ func TestResultCodec_Encode_Prepared(test *testing.T) {
 						PreparedQueryId: []byte{1, 2, 3, 4},
 						VariablesMetadata: &VariablesMetadata{
 							PkIndices: []uint16{0},
-							ColumnSpecs: []*ColumnMetadata{
+							Columns: []*ColumnMetadata{
 								{
 									Keyspace: "ks1",
 									Table:    "table1",
@@ -182,7 +182,7 @@ func TestResultCodec_Encode_Prepared(test *testing.T) {
 						PreparedQueryId: []byte{1, 2, 3, 4},
 						VariablesMetadata: &VariablesMetadata{
 							PkIndices: []uint16{0},
-							ColumnSpecs: []*ColumnMetadata{
+							Columns: []*ColumnMetadata{
 								{
 									Keyspace: "ks1",
 									Table:    "table1",
@@ -194,7 +194,7 @@ func TestResultCodec_Encode_Prepared(test *testing.T) {
 						},
 						ResultMetadata: &RowsMetadata{
 							ColumnCount: 1,
-							ColumnSpecs: []*ColumnMetadata{
+							Columns: []*ColumnMetadata{
 								{
 									Keyspace: "ks1",
 									Table:    "table1",
@@ -269,7 +269,7 @@ func TestResultCodec_Encode_Prepared(test *testing.T) {
 						ResultMetadataId: []byte{5, 6, 7, 8},
 						VariablesMetadata: &VariablesMetadata{
 							PkIndices: []uint16{0},
-							ColumnSpecs: []*ColumnMetadata{
+							Columns: []*ColumnMetadata{
 								{
 									Keyspace: "ks1",
 									Table:    "table1",
@@ -306,7 +306,7 @@ func TestResultCodec_Encode_Prepared(test *testing.T) {
 						ResultMetadataId: []byte{5, 6, 7, 8},
 						VariablesMetadata: &VariablesMetadata{
 							PkIndices: []uint16{0},
-							ColumnSpecs: []*ColumnMetadata{
+							Columns: []*ColumnMetadata{
 								{
 									Keyspace: "ks1",
 									Table:    "table1",
@@ -318,7 +318,7 @@ func TestResultCodec_Encode_Prepared(test *testing.T) {
 						},
 						ResultMetadata: &RowsMetadata{
 							ColumnCount: 1,
-							ColumnSpecs: []*ColumnMetadata{
+							Columns: []*ColumnMetadata{
 								{
 									Keyspace: "ks1",
 									Table:    "table1",
@@ -387,7 +387,7 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 					&PreparedResult{
 						PreparedQueryId: []byte{1, 2, 3, 4},
 						VariablesMetadata: &VariablesMetadata{
-							ColumnSpecs: []*ColumnMetadata{
+							Columns: []*ColumnMetadata{
 								{
 									Keyspace: "ks1",
 									Table:    "table1",
@@ -415,7 +415,7 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 					&PreparedResult{
 						PreparedQueryId: []byte{1, 2, 3, 4},
 						VariablesMetadata: &VariablesMetadata{
-							ColumnSpecs: []*ColumnMetadata{
+							Columns: []*ColumnMetadata{
 								{
 									Keyspace: "ks1",
 									Table:    "table1",
@@ -427,7 +427,7 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 						},
 						ResultMetadata: &RowsMetadata{
 							ColumnCount: 1,
-							ColumnSpecs: []*ColumnMetadata{
+							Columns: []*ColumnMetadata{
 								{
 									Keyspace: "ks1",
 									Table:    "table1",
@@ -486,7 +486,7 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 						PreparedQueryId: []byte{1, 2, 3, 4},
 						VariablesMetadata: &VariablesMetadata{
 							PkIndices: []uint16{0},
-							ColumnSpecs: []*ColumnMetadata{
+							Columns: []*ColumnMetadata{
 								{
 									Keyspace: "ks1",
 									Table:    "table1",
@@ -517,7 +517,7 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 						PreparedQueryId: []byte{1, 2, 3, 4},
 						VariablesMetadata: &VariablesMetadata{
 							PkIndices: []uint16{0},
-							ColumnSpecs: []*ColumnMetadata{
+							Columns: []*ColumnMetadata{
 								{
 									Keyspace: "ks1",
 									Table:    "table1",
@@ -529,7 +529,7 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 						},
 						ResultMetadata: &RowsMetadata{
 							ColumnCount: 1,
-							ColumnSpecs: []*ColumnMetadata{
+							Columns: []*ColumnMetadata{
 								{
 									Keyspace: "ks1",
 									Table:    "table1",
@@ -595,7 +595,7 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 						ResultMetadataId: []byte{5, 6, 7, 8},
 						VariablesMetadata: &VariablesMetadata{
 							PkIndices: []uint16{0},
-							ColumnSpecs: []*ColumnMetadata{
+							Columns: []*ColumnMetadata{
 								{
 									Keyspace: "ks1",
 									Table:    "table1",
@@ -628,7 +628,7 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 						ResultMetadataId: []byte{5, 6, 7, 8},
 						VariablesMetadata: &VariablesMetadata{
 							PkIndices: []uint16{0},
-							ColumnSpecs: []*ColumnMetadata{
+							Columns: []*ColumnMetadata{
 								{
 									Keyspace: "ks1",
 									Table:    "table1",
@@ -640,7 +640,7 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 						},
 						ResultMetadata: &RowsMetadata{
 							ColumnCount: 1,
-							ColumnSpecs: []*ColumnMetadata{
+							Columns: []*ColumnMetadata{
 								{
 									Keyspace: "ks1",
 									Table:    "table1",
@@ -725,7 +725,7 @@ func TestResultCodec_Decode_Prepared(test *testing.T) {
 					&PreparedResult{
 						PreparedQueryId: []byte{1, 2, 3, 4},
 						VariablesMetadata: &VariablesMetadata{
-							ColumnSpecs: []*ColumnMetadata{
+							Columns: []*ColumnMetadata{
 								{
 									Keyspace: "ks1",
 									Table:    "table1",
@@ -762,7 +762,7 @@ func TestResultCodec_Decode_Prepared(test *testing.T) {
 					&PreparedResult{
 						PreparedQueryId: []byte{1, 2, 3, 4},
 						VariablesMetadata: &VariablesMetadata{
-							ColumnSpecs: []*ColumnMetadata{
+							Columns: []*ColumnMetadata{
 								{
 									Keyspace: "ks1",
 									Table:    "table1",
@@ -774,7 +774,7 @@ func TestResultCodec_Decode_Prepared(test *testing.T) {
 						},
 						ResultMetadata: &RowsMetadata{
 							ColumnCount: 1,
-							ColumnSpecs: []*ColumnMetadata{
+							Columns: []*ColumnMetadata{
 								{
 									Keyspace: "ks1",
 									Table:    "table1",
@@ -844,7 +844,7 @@ func TestResultCodec_Decode_Prepared(test *testing.T) {
 						PreparedQueryId: []byte{1, 2, 3, 4},
 						VariablesMetadata: &VariablesMetadata{
 							PkIndices: []uint16{0},
-							ColumnSpecs: []*ColumnMetadata{
+							Columns: []*ColumnMetadata{
 								{
 									Keyspace: "ks1",
 									Table:    "table1",
@@ -884,7 +884,7 @@ func TestResultCodec_Decode_Prepared(test *testing.T) {
 						PreparedQueryId: []byte{1, 2, 3, 4},
 						VariablesMetadata: &VariablesMetadata{
 							PkIndices: []uint16{0},
-							ColumnSpecs: []*ColumnMetadata{
+							Columns: []*ColumnMetadata{
 								{
 									Keyspace: "ks1",
 									Table:    "table1",
@@ -896,7 +896,7 @@ func TestResultCodec_Decode_Prepared(test *testing.T) {
 						},
 						ResultMetadata: &RowsMetadata{
 							ColumnCount: 1,
-							ColumnSpecs: []*ColumnMetadata{
+							Columns: []*ColumnMetadata{
 								{
 									Keyspace: "ks1",
 									Table:    "table1",
@@ -970,7 +970,7 @@ func TestResultCodec_Decode_Prepared(test *testing.T) {
 						ResultMetadataId: []byte{5, 6, 7, 8},
 						VariablesMetadata: &VariablesMetadata{
 							PkIndices: []uint16{0},
-							ColumnSpecs: []*ColumnMetadata{
+							Columns: []*ColumnMetadata{
 								{
 									Keyspace: "ks1",
 									Table:    "table1",
@@ -1012,7 +1012,7 @@ func TestResultCodec_Decode_Prepared(test *testing.T) {
 						ResultMetadataId: []byte{5, 6, 7, 8},
 						VariablesMetadata: &VariablesMetadata{
 							PkIndices: []uint16{0},
-							ColumnSpecs: []*ColumnMetadata{
+							Columns: []*ColumnMetadata{
 								{
 									Keyspace: "ks1",
 									Table:    "table1",
@@ -1024,7 +1024,7 @@ func TestResultCodec_Decode_Prepared(test *testing.T) {
 						},
 						ResultMetadata: &RowsMetadata{
 							ColumnCount: 1,
-							ColumnSpecs: []*ColumnMetadata{
+							Columns: []*ColumnMetadata{
 								{
 									Keyspace: "ks1",
 									Table:    "table1",
