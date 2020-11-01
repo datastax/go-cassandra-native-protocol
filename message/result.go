@@ -120,9 +120,11 @@ type Column = []byte
 
 type Row = []Column
 
+type RowSet = []Row
+
 type RowsResult struct {
 	Metadata *RowsMetadata
-	Data     []Row
+	Data     RowSet
 }
 
 func (m *RowsResult) IsResponse() bool {
@@ -419,9 +421,9 @@ func (c *resultCodec) Decode(source io.Reader, version primitive.ProtocolVersion
 		if rowsCount, err = primitive.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read RESULT Rows data length: %w", err)
 		}
-		rows.Data = make([][][]byte, rowsCount)
+		rows.Data = make(RowSet, rowsCount)
 		for i := 0; i < int(rowsCount); i++ {
-			rows.Data[i] = make([][]byte, rows.Metadata.ColumnCount)
+			rows.Data[i] = make(Row, rows.Metadata.ColumnCount)
 			for j := 0; j < int(rows.Metadata.ColumnCount); j++ {
 				if rows.Data[i][j], err = primitive.ReadBytes(source); err != nil {
 					return nil, fmt.Errorf("cannot read RESULT Rows data row %d col %d: %w", i, j, err)

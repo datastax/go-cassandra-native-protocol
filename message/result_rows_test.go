@@ -10,13 +10,13 @@ import (
 )
 
 func TestResultCodec_Encode_Rows(test *testing.T) {
-	row1 := []Column{
-		{0, 0, 0, 1},    // int = 1
-		{h, e, l, l, o}, // varchar = "hello"
+	row1 := Row{
+		Column{0, 0, 0, 1},    // int = 1
+		Column{h, e, l, l, o}, // varchar = "hello"
 	}
-	row2 := []Column{
-		{0, 0, 0, 2},    // int = 2
-		{w, o, r, l, d}, // varchar = "world"
+	row2 := Row{
+		Column{0, 0, 0, 2},    // int = 2
+		Column{w, o, r, l, d}, // varchar = "world"
 	}
 	spec1 := &ColumnMetadata{
 		Keyspace: "ks1",
@@ -51,7 +51,7 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 							ColumnCount: 2,
 							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					[]byte{
 						0, 0, 0, 2, // result type
@@ -74,7 +74,7 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 							ColumnSpecs: []*ColumnMetadata{spec1, spec2},
 							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					[]byte{
 						0, 0, 0, 2, // result type
@@ -102,7 +102,7 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 							ColumnCount: 2,
 							ColumnSpecs: []*ColumnMetadata{spec1, spec3},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					[]byte{
 						0, 0, 0, 2, // result type
@@ -146,7 +146,7 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 							ColumnCount: 2,
 							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					[]byte{
 						0, 0, 0, 2, // result type
@@ -169,7 +169,7 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 							ColumnSpecs: []*ColumnMetadata{spec1, spec2},
 							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					[]byte{
 						0, 0, 0, 2, // result type
@@ -197,7 +197,7 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 							ColumnCount: 2,
 							ColumnSpecs: []*ColumnMetadata{spec1, spec3},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					[]byte{
 						0, 0, 0, 2, // result type
@@ -228,7 +228,7 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 							NewResultMetadataId: []byte{1, 2, 3, 4},
 							PagingState:         []byte{0xca, 0xfe, 0xba, 0xbe},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					[]byte{
 						0, 0, 0, 2, // result type
@@ -272,7 +272,7 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 							ColumnCount: 2,
 							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					[]byte{
 						0, 0, 0, 2, // result type
@@ -295,7 +295,7 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 							ColumnSpecs: []*ColumnMetadata{spec1, spec2},
 							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					[]byte{
 						0, 0, 0, 2, // result type
@@ -323,7 +323,7 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 							ColumnCount: 2,
 							ColumnSpecs: []*ColumnMetadata{spec1, spec3},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					[]byte{
 						0, 0, 0, 2, // result type
@@ -354,7 +354,7 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 							LastContinuousPage:   true,
 							ContinuousPageNumber: 42,
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					[]byte{
 						0, 0, 0, 2, // result type
@@ -397,7 +397,7 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 							ColumnCount: 2,
 							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					[]byte{
 						0, 0, 0, 2, // result type
@@ -420,7 +420,7 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 							ColumnSpecs: []*ColumnMetadata{spec1, spec2},
 							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					[]byte{
 						0, 0, 0, 2, // result type
@@ -448,7 +448,7 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 							ColumnCount: 2,
 							ColumnSpecs: []*ColumnMetadata{spec1, spec3},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					[]byte{
 						0, 0, 0, 2, // result type
@@ -479,7 +479,7 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 							ColumnSpecs:         []*ColumnMetadata{spec1, spec2},
 							PagingState:         []byte{0xca, 0xfe, 0xba, 0xbe},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					[]byte{
 						0, 0, 0, 2, // result type
@@ -510,7 +510,7 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 							LastContinuousPage:   true,
 							ContinuousPageNumber: 42,
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					[]byte{
 						0, 0, 0, 2, // result type
@@ -586,7 +586,7 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							ColumnCount: 2,
 							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -604,7 +604,7 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							ColumnSpecs: []*ColumnMetadata{spec1, spec2},
 							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -627,7 +627,7 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							ColumnCount: 2,
 							ColumnSpecs: []*ColumnMetadata{spec1, spec3},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -665,7 +665,7 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							ColumnCount: 2,
 							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -683,7 +683,7 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							ColumnSpecs: []*ColumnMetadata{spec1, spec2},
 							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -706,7 +706,7 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							ColumnCount: 2,
 							ColumnSpecs: []*ColumnMetadata{spec1, spec3},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -732,7 +732,7 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							ColumnSpecs:         []*ColumnMetadata{spec1, spec2},
 							PagingState:         []byte{0xca, 0xfe, 0xba, 0xbe},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -770,7 +770,7 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							ColumnCount: 2,
 							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -788,7 +788,7 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							ColumnSpecs: []*ColumnMetadata{spec1, spec2},
 							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -811,7 +811,7 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							ColumnCount: 2,
 							ColumnSpecs: []*ColumnMetadata{spec1, spec3},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -837,7 +837,7 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							LastContinuousPage:   true,
 							ContinuousPageNumber: 42,
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -874,7 +874,7 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							ColumnCount: 2,
 							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -892,7 +892,7 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							ColumnSpecs: []*ColumnMetadata{spec1, spec2},
 							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -915,7 +915,7 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							ColumnCount: 2,
 							ColumnSpecs: []*ColumnMetadata{spec1, spec3},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -941,7 +941,7 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							ColumnSpecs:         []*ColumnMetadata{spec1, spec2},
 							PagingState:         []byte{0xca, 0xfe, 0xba, 0xbe},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -967,7 +967,7 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 							LastContinuousPage:   true,
 							ContinuousPageNumber: 42,
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					primitive.LengthOfInt +
 						primitive.LengthOfInt +
@@ -1048,7 +1048,7 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 							ColumnCount: 2,
 							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					nil,
 				},
@@ -1077,7 +1077,7 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 							ColumnSpecs: []*ColumnMetadata{spec1, spec2},
 							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					nil,
 				},
@@ -1106,7 +1106,7 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 							ColumnCount: 2,
 							ColumnSpecs: []*ColumnMetadata{spec1, spec3},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					nil,
 				},
@@ -1143,7 +1143,7 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 							ColumnCount: 2,
 							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					nil,
 				},
@@ -1172,7 +1172,7 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 							ColumnSpecs: []*ColumnMetadata{spec1, spec2},
 							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					nil,
 				},
@@ -1201,7 +1201,7 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 							ColumnCount: 2,
 							ColumnSpecs: []*ColumnMetadata{spec1, spec3},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					nil,
 				},
@@ -1238,7 +1238,7 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 							ColumnCount: 2,
 							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					nil,
 				},
@@ -1267,7 +1267,7 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 							ColumnSpecs: []*ColumnMetadata{spec1, spec2},
 							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					nil,
 				},
@@ -1296,7 +1296,7 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 							ColumnCount: 2,
 							ColumnSpecs: []*ColumnMetadata{spec1, spec3},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					nil,
 				},
@@ -1326,7 +1326,7 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 							LastContinuousPage:   true,
 							ContinuousPageNumber: 42,
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					nil,
 				},
@@ -1363,7 +1363,7 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 							ColumnCount: 2,
 							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					nil,
 				},
@@ -1392,7 +1392,7 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 							ColumnSpecs: []*ColumnMetadata{spec1, spec2},
 							PagingState: []byte{0xca, 0xfe, 0xba, 0xbe},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					nil,
 				},
@@ -1421,7 +1421,7 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 							ColumnCount: 2,
 							ColumnSpecs: []*ColumnMetadata{spec1, spec3},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					nil,
 				},
@@ -1452,7 +1452,7 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 							ColumnSpecs:         []*ColumnMetadata{spec1, spec2},
 							PagingState:         []byte{0xca, 0xfe, 0xba, 0xbe},
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					nil,
 				},
@@ -1482,7 +1482,7 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 							LastContinuousPage:   true,
 							ContinuousPageNumber: 42,
 						},
-						Data: []Row{row1, row2},
+						Data: RowSet{row1, row2},
 					},
 					nil,
 				},
