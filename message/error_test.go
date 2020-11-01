@@ -260,7 +260,7 @@ func TestErrorCodec_Encode(test *testing.T) {
 						0,
 						2,
 						0,
-						map[string]primitive.ReasonMapFailureCode{"192.168.1.1": primitive.ReasonMapFailureCodeTooManyTombstonesRead},
+						[]*primitive.FailureReason{{net.IPv4(192, 168, 1, 1), primitive.FailureCodeTooManyTombstonesRead}},
 						false,
 					},
 					[]byte{
@@ -284,7 +284,7 @@ func TestErrorCodec_Encode(test *testing.T) {
 						0,
 						2,
 						0,
-						map[string]primitive.ReasonMapFailureCode{"192.168.1.1": primitive.ReasonMapFailureCodeTooManyTombstonesRead},
+						[]*primitive.FailureReason{{net.IPv4(192, 168, 1, 1), primitive.FailureCodeTooManyTombstonesRead}},
 						primitive.WriteTypeBatchLog,
 					},
 					[]byte{
@@ -514,7 +514,7 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 						0,
 						2,
 						0,
-						map[string]primitive.ReasonMapFailureCode{"192.168.1.1": primitive.ReasonMapFailureCodeTooManyTombstonesRead},
+						[]*primitive.FailureReason{{net.IPv4(192, 168, 1, 1), primitive.FailureCodeTooManyTombstonesRead}},
 						false,
 					},
 					primitive.LengthOfInt +
@@ -536,7 +536,7 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 						0,
 						2,
 						0,
-						map[string]primitive.ReasonMapFailureCode{"192.168.1.1": primitive.ReasonMapFailureCodeTooManyTombstonesRead},
+						[]*primitive.FailureReason{{net.IPv4(192, 168, 1, 1), primitive.FailureCodeTooManyTombstonesRead}},
 						primitive.WriteTypeBatchLog,
 					},
 					primitive.LengthOfInt +
@@ -824,7 +824,7 @@ func TestErrorCodec_Decode(test *testing.T) {
 						0,
 						2,
 						0,
-						map[string]primitive.ReasonMapFailureCode{"192.168.1.1": primitive.ReasonMapFailureCodeTooManyTombstonesRead},
+						[]*primitive.FailureReason{{net.IPv4(192, 168, 1, 1), primitive.FailureCodeTooManyTombstonesRead}},
 						false,
 					},
 					nil,
@@ -848,7 +848,7 @@ func TestErrorCodec_Decode(test *testing.T) {
 						0,
 						2,
 						0,
-						map[string]primitive.ReasonMapFailureCode{"192.168.1.1": primitive.ReasonMapFailureCodeTooManyTombstonesRead},
+						[]*primitive.FailureReason{{net.IPv4(192, 168, 1, 1), primitive.FailureCodeTooManyTombstonesRead}},
 						primitive.WriteTypeBatchLog,
 					},
 					nil,

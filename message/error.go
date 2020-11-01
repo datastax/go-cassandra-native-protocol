@@ -412,10 +412,9 @@ type ReadFailure struct {
 	// The number of nodes that experienced a failure while executing the request.
 	// Only filled when the protocol versions is < 5.
 	NumFailures int32
-	// A map of endpoint to failure reason codes. This maps the endpoints of the replica nodes that
-	// failed when executing the request to a code representing the reason for the failure.
-	// Only filled when the protocol versions is >= 5.
-	ReasonMap map[string]primitive.ReasonMapFailureCode
+	// A collection of endpoints with failure reason codes. Only filled when the protocol versions is >= 5, including
+	// DSE versions v1 and v2.
+	FailureReasons []*primitive.FailureReason
 	// Whether the replica that was asked for data responded.
 	DataPresent bool
 }
@@ -461,10 +460,9 @@ type WriteFailure struct {
 	// The number of nodes that experienced a failure while executing the request.
 	// Only filled when the protocol versions is < 5.
 	NumFailures int32
-	// A map of endpoint to failure reason codes. This maps the endpoints of the replica nodes that
-	// failed when executing the request to a code representing the reason for the failure.
-	// Only filled when the protocol versions is >= 5.
-	ReasonMap map[string]uint16
+	// A collection of endpoints with failure reason codes. Only filled when the protocol versions is >= 5, including
+	// DSE versions v1 and v2.
+	FailureReasons []*primitive.FailureReason
 	// The type of the write that failed.
 	WriteType primitive.WriteType
 }
@@ -688,7 +686,7 @@ func (c *errorCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 			return fmt.Errorf("cannot write ERROR READ FAILURE block for: %w", err)
 		}
 		if version >= primitive.ProtocolVersion5 {
-			if err = primitive.WriteReasonMap(readFailure.ReasonMap, dest); err != nil {
+			if err = primitive.WriteReasonMap(readFailure.FailureReasons, dest); err != nil {
 				return fmt.Errorf("cannot write ERROR READ FAILURE reason map: %w", err)
 			}
 		} else {
@@ -718,7 +716,7 @@ func (c *errorCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 			return fmt.Errorf("cannot write ERROR WRITE FAILURE block for: %w", err)
 		}
 		if version >= primitive.ProtocolVersion5 {
-			if err = primitive.WriteReasonMap(writeFailure.ReasonMap, dest); err != nil {
+			if err = primitive.WriteReasonMap(writeFailure.FailureReasons, dest); err != nil {
 				return fmt.Errorf("cannot write ERROR WRITE FAILURE reason map: %w", err)
 			}
 		} else {
@@ -816,7 +814,7 @@ func (c *errorCodec) EncodedLength(msg Message, version primitive.ProtocolVersio
 			if !ok {
 				return -1, fmt.Errorf("expected *message.ReadFailure, got %T", msg)
 			}
-			if reasonMapLength, err := primitive.LengthOfReasonMap(readFailure.ReasonMap); err != nil {
+			if reasonMapLength, err := primitive.LengthOfReasonMap(readFailure.FailureReasons); err != nil {
 				return -1, fmt.Errorf("cannot compute length of ERROR READ FAILURE rason map: %w", err)
 			} else {
 				return length + reasonMapLength, nil
@@ -835,7 +833,7 @@ func (c *errorCodec) EncodedLength(msg Message, version primitive.ProtocolVersio
 		length += primitive.LengthOfInt                            // block for
 		length += primitive.LengthOfString(writeFailure.WriteType) // write type
 		if version >= primitive.ProtocolVersion5 {
-			if reasonMapLength, err := primitive.LengthOfReasonMap(writeFailure.ReasonMap); err != nil {
+			if reasonMapLength, err := primitive.LengthOfReasonMap(writeFailure.FailureReasons); err != nil {
 				return -1, fmt.Errorf("cannot compute length of ERROR WRITE FAILURE rason map: %w", err)
 			} else {
 				return length + reasonMapLength, nil
@@ -960,7 +958,7 @@ func (c *errorCodec) Decode(source io.Reader, version primitive.ProtocolVersion)
 			return nil, fmt.Errorf("cannot read ERROR READ FAILURE block for: %w", err)
 		}
 		if version >= primitive.ProtocolVersion5 {
-			if msg.ReasonMap, err = primitive.ReadReasonMap(source); err != nil {
+			if msg.FailureReasons, err = primitive.ReadReasonMap(source); err != nil {
 				return nil, fmt.Errorf("cannot read ERROR READ FAILURE reason map: %w", err)
 			}
 		} else {
@@ -991,7 +989,7 @@ func (c *errorCodec) Decode(source io.Reader, version primitive.ProtocolVersion)
 			return nil, fmt.Errorf("cannot read ERROR WRITE FAILURE block for: %w", err)
 		}
 		if version >= primitive.ProtocolVersion5 {
-			if msg.ReasonMap, err = primitive.ReadReasonMap(source); err != nil {
+			if msg.FailureReasons, err = primitive.ReadReasonMap(source); err != nil {
 				return nil, fmt.Errorf("cannot read ERROR WRITE FAILURE reason map: %w", err)
 			}
 		} else {

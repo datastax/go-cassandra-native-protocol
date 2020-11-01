@@ -246,14 +246,14 @@ const (
 	DseRevisionTypeMoreContinuousPages    = DseRevisionType(0x00000002) // DSE v2+
 )
 
-type ReasonMapFailureCode = uint16
+type FailureCode = uint16
 
 const (
-	ReasonMapFailureCodeUnknown               = ReasonMapFailureCode(0x0000)
-	ReasonMapFailureCodeTooManyTombstonesRead = ReasonMapFailureCode(0x0001)
-	ReasonMapFailureCodeIndexNotAvailable     = ReasonMapFailureCode(0x0002)
-	ReasonMapFailureCodeCdcSpaceFull          = ReasonMapFailureCode(0x0003)
-	ReasonMapFailureCodeCounterWrite          = ReasonMapFailureCode(0x0004)
-	ReasonMapFailureCodeTableNotFound         = ReasonMapFailureCode(0x0005)
-	ReasonMapFailureCodeKeyspaceNotFound      = ReasonMapFailureCode(0x0006)
+	FailureCodeUnknown               = FailureCode(0x0000)
+	FailureCodeTooManyTombstonesRead = FailureCode(0x0001)
+	FailureCodeIndexNotAvailable     = FailureCode(0x0002)
+	FailureCodeCdcSpaceFull          = FailureCode(0x0003)
+	FailureCodeCounterWrite          = FailureCode(0x0004)
+	FailureCodeTableNotFound         = FailureCode(0x0005)
+	FailureCodeKeyspaceNotFound      = FailureCode(0x0006)
 )

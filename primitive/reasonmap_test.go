@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"net"
 	"testing"
 )
 
@@ -12,7 +13,7 @@ func TestReadReasonMap(t *testing.T) {
 	tests := []struct {
 		name     string
 		source   []byte
-		expected map[string]uint16
+		expected []*FailureReason
 		err      error
 	}{
 		{
@@ -20,7 +21,7 @@ func TestReadReasonMap(t *testing.T) {
 			[]byte{
 				0, 0, 0, 0, // length
 			},
-			map[string]uint16{},
+			[]*FailureReason{},
 			nil,
 		},
 		{
@@ -30,7 +31,7 @@ func TestReadReasonMap(t *testing.T) {
 				4, 192, 168, 1, 1, // key
 				0, 42, // value
 			},
-			map[string]uint16{"192.168.1.1": 42},
+			[]*FailureReason{{net.IPv4(192, 168, 1, 1), 42}},
 			nil,
 		},
 		{
@@ -48,7 +49,7 @@ func TestReadReasonMap(t *testing.T) {
 				4, 192, 168, 1,
 			},
 			nil,
-			fmt.Errorf("cannot read reason map key: %w", fmt.Errorf("not enough bytes to read [inetaddr] IPv4 content")),
+			fmt.Errorf("cannot read reason map key for element 0: %w", fmt.Errorf("not enough bytes to read [inetaddr] IPv4 content")),
 		},
 		{
 			"cannot read reason map value",
@@ -58,7 +59,7 @@ func TestReadReasonMap(t *testing.T) {
 				0, // incomplete value
 			},
 			nil,
-			fmt.Errorf("cannot read reason map value: %w", fmt.Errorf("cannot read [short]: %w", errors.New("unexpected EOF"))),
+			fmt.Errorf("cannot read reason map value for element 0: %w", fmt.Errorf("cannot read [short]: %w", errors.New("unexpected EOF"))),
 		},
 	}
 	for _, tt := range tests {
@@ -74,13 +75,13 @@ func TestReadReasonMap(t *testing.T) {
 func TestWriteReasonMap(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    map[string]uint16
+		input    []*FailureReason
 		expected []byte
 		err      error
 	}{
 		{
 			"empty string map",
-			map[string]uint16{},
+			[]*FailureReason{},
 			[]byte{0, 0, 0, 0},
 			nil,
 		},
@@ -93,7 +94,7 @@ func TestWriteReasonMap(t *testing.T) {
 		},
 		{
 			"map 1 key",
-			map[string]uint16{"192.168.1.1": 42},
+			[]*FailureReason{{net.IPv4(192, 168, 1, 1), 42}},
 			[]byte{
 				0, 0, 0, 1, // length
 				4, 192, 168, 1, 1, // key
@@ -116,13 +117,13 @@ func TestLengthOfReasonMap(t *testing.T) {
 	var inetAddr4Length, _ = LengthOfInetAddr(inetAddr4)
 	tests := []struct {
 		name     string
-		input    map[string]uint16
+		input    []*FailureReason
 		expected int
 		err      error
 	}{
 		{
 			"empty string map",
-			map[string]uint16{},
+			[]*FailureReason{},
 			LengthOfInt,
 			nil,
 		},
@@ -135,7 +136,7 @@ func TestLengthOfReasonMap(t *testing.T) {
 		},
 		{
 			"map 1 key",
-			map[string]uint16{"192.168.1.1": 42},
+			[]*FailureReason{{net.IPv4(192, 168, 1, 1), 42}},
 			LengthOfInt + inetAddr4Length + LengthOfShort,
 			nil,
 		},
