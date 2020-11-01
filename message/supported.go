@@ -8,6 +8,8 @@ import (
 )
 
 type Supported struct {
+	// This multimap gives for each of the supported Startup options, the list of supported values.
+	// See Startup.Options for details about supported option keys.
 	Options map[string][]string
 }
 
