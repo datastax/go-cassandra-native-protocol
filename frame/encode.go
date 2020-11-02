@@ -95,11 +95,9 @@ func (c *codec) EncodeBody(header *Header, body *Body, dest io.Writer) error {
 		} else {
 			uncompressedBody := bytes.NewBuffer(make([]byte, 0, uncompressedBodyLength))
 			if err = c.encodeBodyUncompressed(header, body, uncompressedBody); err != nil {
-				return fmt.Errorf("cannot encode frame body: %w", err)
-			} else if compressedBody, err := c.compressor.Compress(uncompressedBody); err != nil {
-				return fmt.Errorf("cannot compress frame body: %w", err)
-			} else if _, err := compressedBody.WriteTo(dest); err != nil {
-				return fmt.Errorf("cannot write compressed frame body: %w", err)
+				return fmt.Errorf("cannot encode body: %w", err)
+			} else if err := c.compressor.Compress(uncompressedBody, dest); err != nil {
+				return fmt.Errorf("cannot compress body: %w", err)
 			}
 			return nil
 		}
