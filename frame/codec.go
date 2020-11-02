@@ -2,7 +2,6 @@ package frame
 
 import (
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/compression"
 	"github.com/datastax/go-cassandra-native-protocol/message"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
@@ -80,17 +79,17 @@ type RawCodec interface {
 }
 
 type codec struct {
-	compressor    compression.MessageCompressor
+	compressor    BodyCompressor
 	messageCodecs map[primitive.OpCode]message.Codec
 }
 
 type CodecCustomizer func(*codec)
 
-func NewCodec(compressor compression.MessageCompressor, messageCodecs ...message.Codec) Codec {
+func NewCodec(compressor BodyCompressor, messageCodecs ...message.Codec) Codec {
 	return NewRawCodec(compressor, messageCodecs...)
 }
 
-func NewRawCodec(compressor compression.MessageCompressor, messageCodecs ...message.Codec) RawCodec {
+func NewRawCodec(compressor BodyCompressor, messageCodecs ...message.Codec) RawCodec {
 	frameCodec := &codec{
 		messageCodecs: make(map[primitive.OpCode]message.Codec, len(message.DefaultMessageCodecs)),
 		compressor:    compressor,

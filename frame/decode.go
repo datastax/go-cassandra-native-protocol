@@ -62,8 +62,13 @@ func (c *codec) DecodeBody(header *Header, source io.Reader) (body *Body, err er
 	if compressed := header.Flags&primitive.HeaderFlagCompressed > 0; compressed {
 		if c.compressor == nil {
 			return nil, errors.New("cannot decompress body: no compressor available")
-		} else if source, err = c.decompressBody(header.BodyLength, source); err != nil {
-			return nil, fmt.Errorf("cannot decompress body: %w", err)
+		} else {
+			decompressedBody := &bytes.Buffer{}
+			if err := c.compressor.Decompress(io.LimitReader(source, int64(header.BodyLength)), decompressedBody); err != nil {
+				return nil, fmt.Errorf("cannot decompress body: %w", err)
+			} else {
+				source = decompressedBody
+			}
 		}
 	}
 	body = &Body{}
@@ -118,18 +123,4 @@ func (c *codec) DiscardBody(header *Header, source io.Reader) (err error) {
 		_, err = io.CopyN(ioutil.Discard, r, count)
 	}
 	return err
-}
-
-// decompressBody decompresses a compressed frame body and returns a new bytes.Buffer containing the decompressed body.
-// The original io.Reader will be fully consumed and should be discarded after calling this method.
-func (c *codec) decompressBody(compressedBodyLength int32, source io.Reader) (*bytes.Buffer, error) {
-	compressedBody := bytes.Buffer{}
-	count := int64(compressedBodyLength)
-	if actualBodyLength, err := io.CopyN(&compressedBody, source, count); err != nil {
-		return nil, fmt.Errorf("cannot copy source reader: %w, body length in header: %d, bytes read: %d", err, count, actualBodyLength)
-	} else if decompressedBody, err := c.compressor.Decompress(&compressedBody); err != nil {
-		return nil, fmt.Errorf("cannot decompress frame body: %w", err)
-	} else {
-		return decompressedBody, nil
-	}
 }
