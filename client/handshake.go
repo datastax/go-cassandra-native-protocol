@@ -13,7 +13,7 @@ func NewStartupRequest(c *CqlConnection, version primitive.ProtocolVersion, stre
 	if c.codec.CompressionAlgorithm() != "NONE" {
 		startup.SetCompression(c.codec.CompressionAlgorithm())
 	}
-	request, _ := frame.NewRequestFrame(version, streamId, false, nil, startup)
+	request, _ := frame.NewRequestFrame(version, streamId, false, nil, startup, false)
 	return request
 }
 
@@ -42,7 +42,7 @@ func HandshakeAuth(client *CqlConnection, version primitive.ProtocolVersion, str
 		return fmt.Errorf("expected AUTHENTICATE, got %v", response.Body.Message)
 	} else if initialResponse, err := authenticator.InitialResponse(authenticate.Authenticator); err != nil {
 		return err
-	} else if authResponse, err := frame.NewRequestFrame(version, streamId, false, nil, &message.AuthResponse{Token: initialResponse}); err != nil {
+	} else if authResponse, err := frame.NewRequestFrame(version, streamId, false, nil, &message.AuthResponse{Token: initialResponse}, false); err != nil {
 		return err
 	} else if err := client.Send(authResponse); err != nil {
 		return err
@@ -54,7 +54,7 @@ func HandshakeAuth(client *CqlConnection, version primitive.ProtocolVersion, str
 		return fmt.Errorf("expected AUTH_CHALLENGE or AUTH_SUCCESS, got %v", response.Body.Message)
 	} else if challenge, err := authenticator.EvaluateChallenge(authChallenge.Token); err != nil {
 		return err
-	} else if authResponse, err := frame.NewRequestFrame(version, streamId, false, nil, &message.AuthResponse{Token: challenge}); err != nil {
+	} else if authResponse, err := frame.NewRequestFrame(version, streamId, false, nil, &message.AuthResponse{Token: challenge}, false); err != nil {
 		return err
 	} else if err := client.Send(authResponse); err != nil {
 		return err

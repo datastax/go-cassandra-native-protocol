@@ -7,7 +7,7 @@ import (
 
 type CqlConnection struct {
 	conn  net.Conn
-	codec *frame.Codec
+	codec frame.RawCodec
 }
 
 func (c *CqlConnection) Send(f *frame.Frame) error {
@@ -18,10 +18,10 @@ func (c *CqlConnection) Receive() (*frame.Frame, error) {
 	return c.codec.DecodeFrame(c.conn)
 }
 
-func (c *CqlConnection) ReceiveHeader() (header *frame.RawHeader, err error) {
-	if header, err = c.codec.DecodeRawHeader(c.conn); err != nil {
+func (c *CqlConnection) ReceiveHeader() (header *frame.Header, err error) {
+	if header, err = c.codec.DecodeHeader(c.conn); err != nil {
 		return nil, err
-	} else if err = c.codec.DiscardBody(header.BodyLength, c.conn); err != nil {
+	} else if err = c.codec.DiscardBody(header, c.conn); err != nil {
 		return nil, err
 	}
 	return header, nil

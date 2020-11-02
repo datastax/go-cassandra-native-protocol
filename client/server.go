@@ -9,11 +9,11 @@ import (
 
 type CqlServer struct {
 	address  string
-	codec    *frame.Codec
+	codec    frame.RawCodec
 	listener net.Listener
 }
 
-func NewCqlServer(address string, codec *frame.Codec) *CqlServer {
+func NewCqlServer(address string, codec frame.RawCodec) *CqlServer {
 	return &CqlServer{
 		address: address,
 		codec:   codec,

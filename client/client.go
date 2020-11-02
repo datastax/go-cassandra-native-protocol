@@ -7,10 +7,10 @@ import (
 
 type CqlClient struct {
 	address string
-	codec   *frame.Codec
+	codec   frame.RawCodec
 }
 
-func NewCqlClient(address string, codec *frame.Codec) *CqlClient {
+func NewCqlClient(address string, codec frame.RawCodec) *CqlClient {
 	return &CqlClient{
 		address: address,
 		codec:   codec,
