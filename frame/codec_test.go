@@ -176,7 +176,7 @@ func TestRawFrameEncodeDecodeWithCompression(t *testing.T) {
 		[]string{"I'm warning you!!"},
 		&message.RowsResult{
 			Metadata: &message.RowsMetadata{ColumnCount: 1},
-			Data:     [][][]byte{},
+			Data:     message.RowSet{},
 		},
 		true,
 	)
@@ -231,7 +231,7 @@ func TestConvertToRawFrame(t *testing.T) {
 		[]string{"I'm warning you!!"},
 		&message.RowsResult{
 			Metadata: &message.RowsMetadata{ColumnCount: 1},
-			Data:     [][][]byte{},
+			Data:     message.RowSet{},
 		},
 		false,
 	)
