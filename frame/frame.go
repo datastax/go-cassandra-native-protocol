@@ -148,13 +148,14 @@ func (h *Header) String() string {
 }
 
 func (b *Body) String() string {
-	return fmt.Sprintf("{tracing id: %v, payload: %v, warnings: %v, message: %v}", b.TracingId, b.CustomPayload, b.Warnings, b.Message)
+	return fmt.Sprintf("{tracing id: %v, payload: %v, warnings: %v, message: %v}",
+		b.TracingId, b.CustomPayload, b.Warnings, b.Message)
 }
 
 // Dump encodes and dumps the contents of this frame, for debugging purposes.
 func (f *Frame) Dump() (string, error) {
 	buffer := bytes.Buffer{}
-	if err := NewCodec(nil).EncodeFrame(f, &buffer); err != nil {
+	if err := NewCodec().EncodeFrame(f, &buffer); err != nil {
 		return "", err
 	} else {
 		return hex.Dump(buffer.Bytes()), nil
@@ -164,7 +165,7 @@ func (f *Frame) Dump() (string, error) {
 // Dump encodes and dumps the contents of this frame, for debugging purposes.
 func (f *RawFrame) Dump() (string, error) {
 	buffer := bytes.Buffer{}
-	if err := NewRawCodec(nil).EncodeRawFrame(f, &buffer); err != nil {
+	if err := NewRawCodec().EncodeRawFrame(f, &buffer); err != nil {
 		return "", err
 	} else {
 		return hex.Dump(buffer.Bytes()), nil
