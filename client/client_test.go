@@ -12,10 +12,10 @@ import (
 	"testing"
 )
 
-var compressors = map[string]*frame.Codec{
-	"LZ4":    frame.NewCodec(frame.WithCompressor(&lz4.Compressor{})),
-	"SNAPPY": frame.NewCodec(frame.WithCompressor(&snappy.Compressor{})),
-	"NONE":   frame.NewCodec(),
+var compressors = map[string]frame.RawCodec{
+	"LZ4":    frame.NewRawCodec(&lz4.Compressor{}),
+	"SNAPPY": frame.NewRawCodec(&snappy.Compressor{}),
+	"NONE":   frame.NewRawCodec(nil),
 }
 
 var ccmAvailable bool
@@ -45,10 +45,17 @@ func TestRemoteServerNoAuth(t *testing.T) {
 					err = Handshake(clientConn, version, 1)
 					assert.Nil(t, err)
 
-					request, _ := frame.NewRequestFrame(version, 1, false, nil, &message.Query{
-						Query:   "SELECT * FROM system.local",
-						Options: &message.QueryOptions{},
-					})
+					request, _ := frame.NewRequestFrame(
+						version,
+						1,
+						false,
+						nil,
+						&message.Query{
+							Query:   "SELECT * FROM system.local",
+							Options: &message.QueryOptions{Consistency: primitive.ConsistencyLevelOne},
+						},
+						compressor != "NONE",
+					)
 					err = clientConn.Send(request)
 					assert.Nil(t, err)
 					fmt.Printf("CLIENT sent:     %v\n", request)
@@ -85,10 +92,17 @@ func TestRemoteServerAuth(t *testing.T) {
 					err = HandshakeAuth(clientConn, version, 1, "cassandra", "cassandra")
 					assert.Nil(t, err)
 
-					query, _ := frame.NewRequestFrame(version, 1, false, nil, &message.Query{
-						Query:   "SELECT * FROM system.local",
-						Options: &message.QueryOptions{},
-					})
+					query, _ := frame.NewRequestFrame(
+						version,
+						1,
+						false,
+						nil,
+						&message.Query{
+							Query:   "SELECT * FROM system.local",
+							Options: &message.QueryOptions{Consistency: primitive.ConsistencyLevelOne},
+						},
+						compressor != "NONE",
+					)
 					err = clientConn.Send(query)
 					assert.Nil(t, err)
 					fmt.Printf("CLIENT sent:     %v\n", query)
@@ -125,13 +139,21 @@ func TestRemoteDseServerAuthContinuousPaging(t *testing.T) {
 					err = HandshakeAuth(clientConn, version, 1, "cassandra", "cassandra")
 					assert.Nil(t, err)
 
-					query, _ := frame.NewRequestFrame(version, 1, false, nil, &message.Query{
-						Query: "SELECT * FROM system_schema.columns",
-						Options: &message.QueryOptions{
-							PageSize:                1,
-							ContinuousPagingOptions: &message.ContinuousPagingOptions{MaxPages: 3},
+					query, _ := frame.NewRequestFrame(
+						version,
+						1,
+						false,
+						nil,
+						&message.Query{
+							Query: "SELECT * FROM system_schema.columns",
+							Options: &message.QueryOptions{
+								Consistency:             primitive.ConsistencyLevelOne,
+								PageSize:                1,
+								ContinuousPagingOptions: &message.ContinuousPagingOptions{MaxPages: 3},
+							},
 						},
-					})
+						compressor != "NONE",
+					)
 					err = clientConn.Send(query)
 					assert.Nil(t, err)
 					fmt.Printf("CLIENT sent:     %v\n", query)
@@ -166,10 +188,17 @@ func TestRemoteDseServerAuthContinuousPaging(t *testing.T) {
 					assert.Equal(t, rows.Metadata.ContinuousPageNumber, int32(3))
 					assert.Equal(t, rows.Metadata.LastContinuousPage, true)
 
-					cancel, _ := frame.NewRequestFrame(version, 2, false, nil, &message.Revise{
-						RevisionType:   primitive.DseRevisionTypeCancelContinuousPaging,
-						TargetStreamId: 1,
-					})
+					cancel, _ := frame.NewRequestFrame(
+						version,
+						2,
+						false,
+						nil,
+						&message.Revise{
+							RevisionType:   primitive.DseRevisionTypeCancelContinuousPaging,
+							TargetStreamId: 1,
+						},
+						compressor != "NONE",
+					)
 					err = clientConn.Send(cancel)
 					assert.Nil(t, err)
 					fmt.Printf("CLIENT sent:     %v\n", cancel)
@@ -214,7 +243,15 @@ func TestLocalServer(t *testing.T) {
 					assert.IsType(t, &message.Startup{}, msg.Body.Message)
 					fmt.Printf("SERVER received: %v\n", msg)
 
-					msg, _ = frame.NewResponseFrame(version, 1, nil, nil, nil, &message.Ready{})
+					msg, _ = frame.NewResponseFrame(
+						version,
+						1,
+						nil,
+						nil,
+						nil,
+						&message.Ready{},
+						compressor != "NONE",
+					)
 					_ = serverConn.Send(msg)
 					fmt.Printf("SERVER sent:     %v\n", msg)
 
@@ -226,7 +263,9 @@ func TestLocalServer(t *testing.T) {
 					msg, _ = frame.NewRequestFrame(version, 1, false, nil, &message.Query{
 						Query:   "SELECT * FROM system.local",
 						Options: &message.QueryOptions{},
-					})
+					},
+						compressor != "NONE",
+					)
 					err = clientConn.Send(msg)
 					fmt.Printf("CLIENT sent:     %v\n", msg)
 
@@ -252,6 +291,7 @@ func TestLocalServer(t *testing.T) {
 								},
 							},
 						},
+						compressor != "NONE",
 					)
 					_ = serverConn.Send(msg)
 					fmt.Printf("SERVER sent:     %v\n", msg)
@@ -292,7 +332,15 @@ func TestLocalServerDiscardBody(t *testing.T) {
 					assert.NotNil(t, header)
 					fmt.Printf("SERVER received: %v\n", header)
 
-					msg, _ = frame.NewResponseFrame(version, 1, nil, nil, nil, &message.Ready{})
+					msg, _ = frame.NewResponseFrame(
+						version,
+						1,
+						nil,
+						nil,
+						nil,
+						&message.Ready{},
+						compressor != "NONE",
+					)
 					_ = serverConn.Send(msg)
 					fmt.Printf("SERVER sent:     %v\n", msg)
 
@@ -300,10 +348,17 @@ func TestLocalServerDiscardBody(t *testing.T) {
 					assert.NotNil(t, header)
 					fmt.Printf("CLIENT received: %v\n", header)
 
-					msg, _ = frame.NewRequestFrame(version, 1, false, nil, &message.Query{
-						Query:   "SELECT * FROM system.local",
-						Options: &message.QueryOptions{},
-					})
+					msg, _ = frame.NewRequestFrame(
+						version,
+						1,
+						false,
+						nil,
+						&message.Query{
+							Query:   "SELECT * FROM system.local",
+							Options: &message.QueryOptions{},
+						},
+						compressor != "NONE",
+					)
 					err = clientConn.Send(msg)
 					fmt.Printf("CLIENT sent:     %v\n", msg)
 
@@ -328,6 +383,7 @@ func TestLocalServerDiscardBody(t *testing.T) {
 								},
 							},
 						},
+						compressor != "NONE",
 					)
 					_ = serverConn.Send(msg)
 					fmt.Printf("SERVER sent:     %v\n", msg)

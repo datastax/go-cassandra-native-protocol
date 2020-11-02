@@ -3,67 +3,35 @@ package frame
 import (
 	"bytes"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/message"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
+// A high-level representation of a frame, where the body is fully decoded.
 type Frame struct {
 	Header *Header
 	Body   *Body
 }
 
-// Flags return the header flags for this frame. Flags are dynamically computed from the frame's internal state.
-// It is a method declared at frame level even if the flags are encoded in the header, because some flags also
-// affect how the body is encoded.
-func (f *Frame) Flags(compress bool) primitive.HeaderFlag {
-	var flags primitive.HeaderFlag = 0
-	if compress && f.IsCompressible() {
-		flags |= primitive.HeaderFlagCompressed
-	}
-	if f.Body.TracingId != nil || f.Header.TracingRequested {
-		flags |= primitive.HeaderFlagTracing
-	}
-	if f.Body.CustomPayload != nil {
-		flags |= primitive.HeaderFlagCustomPayload
-	}
-	if f.Body.Warnings != nil {
-		flags |= primitive.HeaderFlagWarning
-	}
-	if primitive.IsProtocolVersionBeta(f.Header.Version) {
-		flags |= primitive.HeaderFlagUseBeta
-	}
-	return flags
-}
-
-// IsCompressible returns true if the frame contains a body that can be compressed. Bodies containing STARTUP
-// should never be compressed. Empty messages like OPTIONS and READY also should not be compressed,
-// even if compression is in use.
-func (f *Frame) IsCompressible() bool {
-	return isCompressible(f.Body.Message.GetOpCode())
-}
-
-// Dump encodes and dumps the contents of this frame, for debugging purposes.
-func (f *Frame) Dump() (string, error) {
-	buffer := bytes.Buffer{}
-	if err := NewCodec().EncodeFrame(f, &buffer); err != nil {
-		return "", err
-	} else {
-		return hex.Dump(buffer.Bytes()), nil
-	}
+// A low-level representation of a frame, where the body is not decoded.
+type RawFrame struct {
+	Header *Header
+	Body   RawBody
 }
 
 type Header struct {
-	Version primitive.ProtocolVersion
+	IsResponse bool
+	Version    primitive.ProtocolVersion
+	Flags      primitive.HeaderFlag
 	// The stream id. The protocol spec states that the stream id is a [short], but this is wrong: the stream id
 	// is signed and can be negative, which is why it has type int16.
 	StreamId int16
-	// For request frames, indicates that tracing should be activated for this request.
-	// For response frames, this will be set to true if the frame body contains a tracing id.
-	// Note that only QUERY, PREPARE and EXECUTE messages support tracing.
-	// Cassandra will simply ignore the tracing flag if set for other message types.
-	TracingRequested bool
+	OpCode   primitive.OpCode
+	// The encoded body length. When encoding a frame, this field is not read but is rather dynamically computed from
+	// the actual body length. When decoding a frame, this field is always correctly set to the exact decoded body
+	// length.
+	BodyLength int32
 }
 
 type Body struct {
@@ -78,21 +46,40 @@ type Body struct {
 	Message message.Message
 }
 
+type RawBody = []byte
+
 func NewRequestFrame(
 	version primitive.ProtocolVersion,
 	streamId int16,
 	tracing bool,
 	customPayload map[string][]byte,
 	message message.Message,
+	compress bool,
 ) (*Frame, error) {
 	if message.IsResponse() {
-		return nil, errors.New("message is not a request: opcode " + string(message.GetOpCode()))
+		return nil, fmt.Errorf("message is not a request: opcode %d", message.GetOpCode())
+	}
+	var flags primitive.HeaderFlag = 0
+	if tracing {
+		flags |= primitive.HeaderFlagTracing
+	}
+	if customPayload != nil {
+		flags |= primitive.HeaderFlagCustomPayload
+	}
+	if primitive.IsProtocolVersionBeta(version) {
+		flags |= primitive.HeaderFlagUseBeta
+	}
+	if compress && isCompressible(message.GetOpCode()) {
+		flags |= primitive.HeaderFlagCompressed
 	}
 	return &Frame{
 		Header: &Header{
-			Version:          version,
-			StreamId:         streamId,
-			TracingRequested: tracing,
+			IsResponse: false,
+			Version:    version,
+			Flags:      flags,
+			StreamId:   streamId,
+			OpCode:     message.GetOpCode(),
+			BodyLength: 0, // will be set later when encoding
 		},
 		Body: &Body{
 			CustomPayload: customPayload,
@@ -108,15 +95,35 @@ func NewResponseFrame(
 	customPayload map[string][]byte,
 	warnings []string,
 	message message.Message,
+	compress bool,
 ) (*Frame, error) {
 	if !message.IsResponse() {
-		return nil, errors.New("message is not a response: opcode " + string(message.GetOpCode()))
+		return nil, fmt.Errorf("message is not a response: opcode %d", message.GetOpCode())
+	}
+	var flags primitive.HeaderFlag = 0
+	if tracingId != nil {
+		flags |= primitive.HeaderFlagTracing
+	}
+	if customPayload != nil {
+		flags |= primitive.HeaderFlagCustomPayload
+	}
+	if warnings != nil {
+		flags |= primitive.HeaderFlagWarning
+	}
+	if primitive.IsProtocolVersionBeta(version) {
+		flags |= primitive.HeaderFlagUseBeta
+	}
+	if compress && isCompressible(message.GetOpCode()) {
+		flags |= primitive.HeaderFlagCompressed
 	}
 	return &Frame{
 		Header: &Header{
-			Version:          version,
-			StreamId:         streamId,
-			TracingRequested: tracingId != nil,
+			IsResponse: true,
+			Version:    version,
+			Flags:      flags,
+			StreamId:   streamId,
+			OpCode:     message.GetOpCode(),
+			BodyLength: 0, // will be set later when encoding
 		},
 		Body: &Body{
 			TracingId:     tracingId,
@@ -131,12 +138,37 @@ func (f *Frame) String() string {
 	return fmt.Sprintf("{header: %v, body: %v}", f.Header, f.Body)
 }
 
+func (f *RawFrame) String() string {
+	return fmt.Sprintf("{header: %v, body: %v}", f.Header, f.Body)
+}
+
 func (h *Header) String() string {
-	return fmt.Sprintf("{version: %v, stream id: %v, tracing: %v}", h.Version, h.StreamId, h.TracingRequested)
+	return fmt.Sprintf("{response: %v, version: %v, flags: %08b, stream id: %v, opcode: %v, body length: %v}",
+		h.IsResponse, h.Version, h.Flags, h.StreamId, h.OpCode, h.BodyLength)
 }
 
 func (b *Body) String() string {
 	return fmt.Sprintf("{tracing id: %v, payload: %v, warnings: %v, message: %v}", b.TracingId, b.CustomPayload, b.Warnings, b.Message)
+}
+
+// Dump encodes and dumps the contents of this frame, for debugging purposes.
+func (f *Frame) Dump() (string, error) {
+	buffer := bytes.Buffer{}
+	if err := NewCodec(nil).EncodeFrame(f, &buffer); err != nil {
+		return "", err
+	} else {
+		return hex.Dump(buffer.Bytes()), nil
+	}
+}
+
+// Dump encodes and dumps the contents of this frame, for debugging purposes.
+func (f *RawFrame) Dump() (string, error) {
+	buffer := bytes.Buffer{}
+	if err := NewRawCodec(nil).EncodeRawFrame(f, &buffer); err != nil {
+		return "", err
+	} else {
+		return hex.Dump(buffer.Bytes()), nil
+	}
 }
 
 func isCompressible(opCode primitive.OpCode) bool {
