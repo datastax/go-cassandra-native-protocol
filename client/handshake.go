@@ -8,10 +8,9 @@ import (
 )
 
 func NewStartupRequest(c *CqlConnection, version primitive.ProtocolVersion, streamId int16) *frame.Frame {
-	var startup *message.Startup
-	startup = message.NewStartup()
-	if c.codec.CompressionAlgorithm() != "NONE" {
-		startup.SetCompression(c.codec.CompressionAlgorithm())
+	startup := message.NewStartup()
+	if c.codec.GetBodyCompressor() != nil {
+		startup.SetCompression(c.codec.GetBodyCompressor().Algorithm())
 	}
 	request, _ := frame.NewRequestFrame(version, streamId, false, nil, startup, false)
 	return request

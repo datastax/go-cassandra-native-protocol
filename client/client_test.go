@@ -12,16 +12,21 @@ import (
 	"testing"
 )
 
-var compressors = map[string]frame.RawCodec{
-	"LZ4":    frame.NewRawCodec(&lz4.Compressor{}),
-	"SNAPPY": frame.NewRawCodec(&snappy.Compressor{}),
-	"NONE":   frame.NewRawCodec(nil),
-}
+var codecs map[string]frame.RawCodec
 
 var ccmAvailable bool
 
 func init() {
 	flag.BoolVar(&ccmAvailable, "ccm", false, "whether a CCM cluster is available on localhost:9042")
+	lz4Codec := frame.NewRawCodec()
+	lz4Codec.SetBodyCompressor(&lz4.Compressor{})
+	snappyCodec := frame.NewRawCodec()
+	snappyCodec.SetBodyCompressor(&snappy.Compressor{})
+	codecs = map[string]frame.RawCodec{
+		"LZ4":    lz4Codec,
+		"SNAPPY": snappyCodec,
+		"NONE":   frame.NewRawCodec(),
+	}
 }
 
 // This test requires a remote server listening on localhost:9042 without authentication.
@@ -32,7 +37,7 @@ func TestRemoteServerNoAuth(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 
-			for compressor, frameCodec := range compressors {
+			for compressor, frameCodec := range codecs {
 				t.Run(fmt.Sprintf("compression %v", compressor), func(t *testing.T) {
 
 					client := NewCqlClient("127.0.0.1:9042", frameCodec)
@@ -79,7 +84,7 @@ func TestRemoteServerAuth(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 
-			for compressor, frameCodec := range compressors {
+			for compressor, frameCodec := range codecs {
 				t.Run(fmt.Sprintf("compression %v", compressor), func(t *testing.T) {
 
 					client := NewCqlClient("127.0.0.1:9042", frameCodec)
@@ -126,7 +131,7 @@ func TestRemoteDseServerAuthContinuousPaging(t *testing.T) {
 	for _, version := range primitive.AllDseProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 
-			for compressor, frameCodec := range compressors {
+			for compressor, frameCodec := range codecs {
 				t.Run(fmt.Sprintf("compression %v", compressor), func(t *testing.T) {
 
 					client := NewCqlClient("127.0.0.1:9042", frameCodec)
@@ -221,7 +226,7 @@ func TestLocalServer(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 
-			for compressor, frameCodec := range compressors {
+			for compressor, frameCodec := range codecs {
 				t.Run(fmt.Sprintf("compression %v", compressor), func(t *testing.T) {
 
 					server := NewCqlServer("127.0.0.1:9043", frameCodec)
@@ -311,7 +316,7 @@ func TestLocalServerDiscardBody(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 
-			for compressor, frameCodec := range compressors {
+			for compressor, frameCodec := range codecs {
 				t.Run(fmt.Sprintf("compression %v", compressor), func(t *testing.T) {
 
 					server := NewCqlServer("127.0.0.1:9043", frameCodec)
