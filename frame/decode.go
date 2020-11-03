@@ -102,9 +102,9 @@ func (c *codec) DecodeRawBody(header *Header, source io.Reader) (body []byte, er
 		return []byte{}, nil
 	}
 	count := int64(header.BodyLength)
-	buf := &bytes.Buffer{}
-	if bytesRead, err := io.CopyN(buf, source, count); err != nil {
-		return nil, fmt.Errorf("cannot copy source reader: %w, body length: %d, bytes read: %d", err, count, bytesRead)
+	buf := bytes.NewBuffer(make([]byte, 0, count))
+	if _, err := io.CopyN(buf, source, count); err != nil {
+		return nil, fmt.Errorf("cannot decode raw body: %w", err)
 	}
 	return buf.Bytes(), nil
 }
@@ -116,11 +116,14 @@ func (c *codec) DiscardBody(header *Header, source io.Reader) (err error) {
 		return nil
 	}
 	count := int64(header.BodyLength)
-	switch r := source.(type) {
+	switch s := source.(type) {
 	case io.Seeker:
-		_, err = r.Seek(count, io.SeekCurrent)
+		_, err = s.Seek(count, io.SeekCurrent)
 	default:
-		_, err = io.CopyN(ioutil.Discard, r, count)
+		_, err = io.CopyN(ioutil.Discard, s, count)
+	}
+	if err != nil {
+		err = fmt.Errorf("cannot discard body; %w", err)
 	}
 	return err
 }
