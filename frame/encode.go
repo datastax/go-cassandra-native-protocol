@@ -45,7 +45,6 @@ func (c *codec) encodeFrameCompressed(frame *Frame, dest io.Writer) error {
 	return nil
 }
 
-// EncodeRawFrame encodes the header and writes the body as raw bytes.
 func (c *codec) EncodeRawFrame(frame *RawFrame, dest io.Writer) error {
 	if err := primitive.CheckProtocolVersion(frame.Header.Version); err != nil {
 		return err
