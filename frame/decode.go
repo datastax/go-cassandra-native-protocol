@@ -95,7 +95,7 @@ func (c *codec) DecodeBody(header *Header, source io.Reader) (body *Body, err er
 	return body, err
 }
 
-func (c *codec) DecodeRawBody(header *Header, source io.Reader) (body RawBody, err error) {
+func (c *codec) DecodeRawBody(header *Header, source io.Reader) (body []byte, err error) {
 	if header.BodyLength < 0 {
 		return nil, fmt.Errorf("invalid body length: %d", header.BodyLength)
 	} else if header.BodyLength == 0 {

@@ -17,7 +17,7 @@ type Frame struct {
 // A low-level representation of a frame, where the body is not decoded.
 type RawFrame struct {
 	Header *Header
-	Body   RawBody
+	Body   []byte
 }
 
 type Header struct {
@@ -45,8 +45,6 @@ type Body struct {
 	// The body message.
 	Message message.Message
 }
-
-type RawBody = []byte
 
 func NewRequestFrame(
 	version primitive.ProtocolVersion,
