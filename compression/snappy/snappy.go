@@ -7,13 +7,14 @@ import (
 	"io"
 )
 
-type Compressor struct{}
+// BodyCompressor satisfies frame.BodyCompressor for the SNAPPY algorithm.
+type BodyCompressor struct{}
 
-func (l Compressor) Algorithm() string {
+func (l BodyCompressor) Algorithm() string {
 	return "SNAPPY"
 }
 
-func (l Compressor) Compress(source io.Reader, dest io.Writer) error {
+func (l BodyCompressor) Compress(source io.Reader, dest io.Writer) error {
 	var uncompressedMessage *bytes.Buffer
 	switch s := source.(type) {
 	case *bytes.Buffer:
@@ -31,7 +32,7 @@ func (l Compressor) Compress(source io.Reader, dest io.Writer) error {
 	return nil
 }
 
-func (l Compressor) Decompress(source io.Reader, dest io.Writer) error {
+func (l BodyCompressor) Decompress(source io.Reader, dest io.Writer) error {
 	var compressedMessage *bytes.Buffer
 	switch s := source.(type) {
 	case *bytes.Buffer:
