@@ -8,17 +8,17 @@ import (
 	"io"
 )
 
-// Lz4Compressor satisfies BodyCompressor for the LZ4 algorithm.
+// BodyCompressor satisfies frame.BodyCompressor for the LZ4 algorithm.
 // Note: Cassandra expects lz4-compressed bodies to start with a 4-byte integer holding the decompressed message length.
 // The Go implementation of lz4 used here does not include that, so we need to do it manually when encoding and
 // decoding.
-type Compressor struct{}
+type BodyCompressor struct{}
 
-func (l Compressor) Algorithm() string {
+func (l BodyCompressor) Algorithm() string {
 	return "LZ4"
 }
 
-func (l Compressor) Compress(source io.Reader, dest io.Writer) error {
+func (l BodyCompressor) Compress(source io.Reader, dest io.Writer) error {
 	var uncompressedMessage *bytes.Buffer
 	switch s := source.(type) {
 	case *bytes.Buffer:
@@ -46,7 +46,7 @@ func (l Compressor) Compress(source io.Reader, dest io.Writer) error {
 	return nil
 }
 
-func (l Compressor) Decompress(source io.Reader, dest io.Writer) error {
+func (l BodyCompressor) Decompress(source io.Reader, dest io.Writer) error {
 	// read the decompressed length first
 	var decompressedLength uint32
 	if err := binary.Read(source, binary.BigEndian, &decompressedLength); err != nil {

@@ -131,8 +131,8 @@ func TestFrameEncodeDecodeWithCompression(t *testing.T) {
 		"lz4":    NewCodec(),
 		"snappy": NewCodec(),
 	}
-	codecs["lz4"].SetBodyCompressor(lz4.Compressor{})
-	codecs["snappy"].SetBodyCompressor(snappy.Compressor{})
+	codecs["lz4"].SetBodyCompressor(lz4.BodyCompressor{})
+	codecs["snappy"].SetBodyCompressor(snappy.BodyCompressor{})
 	tests := []struct {
 		name  string
 		frame *Frame
@@ -184,8 +184,8 @@ func TestRawFrameEncodeDecodeWithCompression(t *testing.T) {
 		"lz4":    NewRawCodec(),
 		"snappy": NewRawCodec(),
 	}
-	codecs["lz4"].SetBodyCompressor(lz4.Compressor{})
-	codecs["snappy"].SetBodyCompressor(snappy.Compressor{})
+	codecs["lz4"].SetBodyCompressor(lz4.BodyCompressor{})
+	codecs["snappy"].SetBodyCompressor(snappy.BodyCompressor{})
 	tests := []struct {
 		name  string
 		frame *Frame

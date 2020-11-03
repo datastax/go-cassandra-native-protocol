@@ -19,9 +19,9 @@ var ccmAvailable bool
 func init() {
 	flag.BoolVar(&ccmAvailable, "ccm", false, "whether a CCM cluster is available on localhost:9042")
 	lz4Codec := frame.NewRawCodec()
-	lz4Codec.SetBodyCompressor(&lz4.Compressor{})
+	lz4Codec.SetBodyCompressor(&lz4.BodyCompressor{})
 	snappyCodec := frame.NewRawCodec()
-	snappyCodec.SetBodyCompressor(&snappy.Compressor{})
+	snappyCodec.SetBodyCompressor(&snappy.BodyCompressor{})
 	codecs = map[string]frame.RawCodec{
 		"LZ4":    lz4Codec,
 		"SNAPPY": snappyCodec,
