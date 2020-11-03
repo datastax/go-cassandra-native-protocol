@@ -50,7 +50,7 @@ type RawDecoder interface {
 
 	// DecodeRawBody decodes a frame RawBody from the given source. This is a partial operation; it is illegal to call
 	// this method before calling DecodeHeader.
-	DecodeRawBody(header *Header, source io.Reader) (RawBody, error)
+	DecodeRawBody(header *Header, source io.Reader) ([]byte, error)
 
 	// DiscardBody discards the contents of a frame body read from the given source. This is a partial operation; it is
 	// illegal to call this method before calling DecodeHeader.
