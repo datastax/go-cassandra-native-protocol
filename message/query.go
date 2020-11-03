@@ -36,11 +36,7 @@ func (c *queryCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 	} else if err := primitive.WriteLongString(query.Query, dest); err != nil {
 		return fmt.Errorf("cannot write QUERY query string: %w", err)
 	}
-	options := query.Options
-	if options == nil {
-		options = &QueryOptions{} // use defaults if nil provided
-	}
-	if err := EncodeQueryOptions(options, dest, version); err != nil {
+	if err := EncodeQueryOptions(query.Options, dest, version); err != nil {
 		return fmt.Errorf("cannot write QUERY options: %w", err)
 	}
 	return nil
