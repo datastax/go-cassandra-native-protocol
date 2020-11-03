@@ -37,12 +37,12 @@ func (a *PlainTextAuthenticator) EvaluateChallenge(challenge []byte) ([]byte, er
 	if challenge == nil || bytes.Compare(challenge, initialServerChallenge) != 0 {
 		return nil, errors.New("incorrect SASL challenge from server")
 	}
-	buffer := make([]byte, len(a.username)+len(a.password)+2)
-	buffer[0] = 0
-	buffer = append(buffer[0:1], []byte(a.username)...)
-	buffer = append(buffer, 0)
-	buffer = append(buffer, []byte(a.password)...)
-	return buffer, nil
+	token := bytes.NewBuffer(make([]byte, 0, len(a.username)+len(a.password)+2))
+	token.WriteByte(0)
+	token.WriteString(a.username)
+	token.WriteByte(0)
+	token.WriteString(a.password)
+	return token.Bytes(), nil
 }
 
 func (a *PlainTextAuthenticator) GetInitialServerChallenge() []byte {
