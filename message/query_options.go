@@ -79,6 +79,9 @@ func (o *QueryOptions) Flags() primitive.QueryFlag {
 }
 
 func EncodeQueryOptions(options *QueryOptions, dest io.Writer, version primitive.ProtocolVersion) (err error) {
+	if options == nil {
+		options = &QueryOptions{} // use defaults if nil provided
+	}
 	if err := primitive.CheckNonSerialConsistencyLevel(options.Consistency); err != nil {
 		return err
 	} else if err = primitive.WriteShort(options.Consistency, dest); err != nil {
@@ -148,6 +151,9 @@ func EncodeQueryOptions(options *QueryOptions, dest io.Writer, version primitive
 }
 
 func LengthOfQueryOptions(options *QueryOptions, version primitive.ProtocolVersion) (length int, err error) {
+	if options == nil {
+		options = &QueryOptions{} // use defaults if nil provided
+	}
 	length += primitive.LengthOfShort // consistency level
 	if version >= primitive.ProtocolVersion5 {
 		length += primitive.LengthOfInt
