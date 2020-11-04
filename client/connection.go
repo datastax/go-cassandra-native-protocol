@@ -1,35 +1,131 @@
 package client
 
 import (
-	"github.com/datastax/go-cassandra-native-protocol/frame"
+	"fmt"
+	"github.com/rs/zerolog/log"
 	"net"
+	"sync"
+	"sync/atomic"
 )
 
-type CqlConnection struct {
-	conn  net.Conn
-	codec frame.RawCodec
+type connectionHolder struct {
+	ch   chan *CqlServerConnection
+	conn *CqlServerConnection
 }
 
-func (c *CqlConnection) Send(f *frame.Frame) error {
-	return c.codec.EncodeFrame(f, c.conn)
+type clientConnectionHandler struct {
+	serverId        string
+	maxConnections  int
+	connections     map[string]*connectionHolder
+	connectionsLock *sync.Mutex
+	closed          int32
 }
 
-func (c *CqlConnection) Receive() (*frame.Frame, error) {
-	return c.codec.DecodeFrame(c.conn)
+func (h *clientConnectionHandler) String() string {
+	return fmt.Sprintf("%v: [conn. handler]", h.serverId)
 }
 
-func (c *CqlConnection) ReceiveHeader() (header *frame.Header, err error) {
-	if header, err = c.codec.DecodeHeader(c.conn); err != nil {
-		return nil, err
-	} else if err = c.codec.DiscardBody(header, c.conn); err != nil {
-		return nil, err
+func newClientConnectionHandler(serverId string, maxClientConnections int) (*clientConnectionHandler, error) {
+	if maxClientConnections < 1 {
+		return nil, fmt.Errorf("max connections: expecting positive, got: %v", maxClientConnections)
 	}
-	return header, nil
+	return &clientConnectionHandler{
+		serverId:        serverId,
+		maxConnections:  maxClientConnections,
+		connections:     make(map[string]*connectionHolder, maxClientConnections),
+		connectionsLock: &sync.Mutex{},
+	}, nil
 }
 
-func (c *CqlConnection) Close() error {
-	if c.conn != nil {
-		return c.conn.Close()
+func (h *clientConnectionHandler) onConnectionAcceptRequested(connection *CqlClientConnection) (<-chan *CqlServerConnection, error) {
+	if h.isClosed() {
+		return nil, fmt.Errorf("%v: handler closed", h)
 	}
+	clientAddr := h.asMapKey(connection.conn.LocalAddr())
+	log.Trace().Msgf("%v: client accept requested: %v", h, connection.conn.LocalAddr())
+	h.connectionsLock.Lock()
+	defer h.connectionsLock.Unlock()
+	holder, found := h.connections[clientAddr]
+	if !found {
+		log.Trace().Msgf("%v: client address unknown, registering new channel: %v", h, connection.conn.LocalAddr())
+		if len(h.connections) == h.maxConnections {
+			return nil, fmt.Errorf("%v: too many connections: %v", h, h.maxConnections)
+		}
+		holder = &connectionHolder{
+			ch: make(chan *CqlServerConnection, 1),
+		}
+		h.connections[clientAddr] = holder
+	}
+	return holder.ch, nil
+}
+
+func (h *clientConnectionHandler) onConnectionAccepted(connection *CqlServerConnection) error {
+	if h.isClosed() {
+		return fmt.Errorf("%v: handler closed", h)
+	}
+	clientAddr := h.asMapKey(connection.conn.RemoteAddr())
+	log.Trace().Msgf("%v: client accepted: %v", h, connection.conn.RemoteAddr())
+	h.connectionsLock.Lock()
+	defer h.connectionsLock.Unlock()
+	holder, found := h.connections[clientAddr]
+	if found {
+		holder.conn = connection
+	} else {
+		log.Trace().Msgf("%v: client address unknown, registering new channel: %v", h, connection.conn.RemoteAddr())
+		if len(h.connections) == h.maxConnections {
+			return fmt.Errorf("%v: too many connections: %v", h, h.maxConnections)
+		}
+		holder = &connectionHolder{
+			ch:   make(chan *CqlServerConnection, 1),
+			conn: connection,
+		}
+		h.connections[clientAddr] = holder
+	}
+	holder.ch <- connection
 	return nil
+}
+
+func (h *clientConnectionHandler) onConnectionClosed(connection *CqlServerConnection) {
+	if !h.isClosed() {
+		clientAddr := h.asMapKey(connection.conn.RemoteAddr())
+		log.Trace().Msgf("%v: client address closed, removing: %v", h, connection.conn.RemoteAddr())
+		h.connectionsLock.Lock()
+		defer h.connectionsLock.Unlock()
+		if holder, found := h.connections[clientAddr]; found {
+			log.Trace().Msgf("%v: client address removed: %v", h, connection.conn.RemoteAddr())
+			delete(h.connections, clientAddr)
+			close(holder.ch)
+		} else {
+			log.Trace().Msgf("%v: client address not found, ignoring: %v", h, connection.conn.RemoteAddr())
+		}
+	}
+}
+
+func (h *clientConnectionHandler) isClosed() bool {
+	return atomic.LoadInt32(&h.closed) == 1
+}
+
+func (h *clientConnectionHandler) setClosed() bool {
+	return atomic.CompareAndSwapInt32(&h.closed, 0, 1)
+}
+
+func (h *clientConnectionHandler) close() {
+	if h.setClosed() {
+		log.Trace().Msgf("%v: closing", h)
+		h.connectionsLock.Lock()
+		for clientAddr, holder := range h.connections {
+			delete(h.connections, clientAddr)
+			if err := holder.conn.Close(); err != nil {
+				log.Error().Err(err).Msg(err.Error())
+			}
+			close(holder.ch)
+		}
+		h.connectionsLock.Unlock()
+		log.Trace().Msgf("%v: successfully closed", h)
+	}
+}
+
+func (h *clientConnectionHandler) asMapKey(clientAddr net.Addr) string {
+	tcpAddr := clientAddr.(*net.TCPAddr)
+	return fmt.Sprintf("%v__%v__%v", string(tcpAddr.IP), tcpAddr.Port, tcpAddr.Zone)
 }

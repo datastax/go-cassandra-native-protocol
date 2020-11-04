@@ -2,53 +2,71 @@ package client
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 )
 
-type Authenticator interface {
-	InitialResponse(name string) ([]byte, error)
-	EvaluateChallenge(challenge []byte) ([]byte, error)
-	GetInitialServerChallenge() []byte
-	GetMechanism() []byte
+// AuthCredentials encpasulates a username and a password to use with plain-text authenticators.
+type AuthCredentials struct {
+	Username string
+	Password string
 }
 
+func (c *AuthCredentials) String() string {
+	return fmt.Sprintf("AuthCredentials{username: %v}", c.Username)
+}
+
+// Marshal serializes the current credentials to an authentication token with the expected format for
+// PasswordAuthenticator.
+func (c *AuthCredentials) Marshal() []byte {
+	token := bytes.NewBuffer(make([]byte, 0, len(c.Username)+len(c.Password)+2))
+	token.WriteByte(0)
+	token.WriteString(c.Username)
+	token.WriteByte(0)
+	token.WriteString(c.Password)
+	return token.Bytes()
+}
+
+// Unmarshal deserializes an authentication token with the expected format for PasswordAuthenticator into the current
+// AuthCredentials.
+func (c *AuthCredentials) Unmarshal(token []byte) error {
+	token = append(token, 0)
+	source := bytes.NewBuffer(token)
+	if _, err := source.ReadByte(); err != nil {
+		return err
+	} else if username, err := source.ReadString(0); err != nil {
+		return err
+	} else if password, err := source.ReadString(0); err != nil {
+		return err
+	} else {
+		c.Username = username[:len(username)-1]
+		c.Password = password[:len(password)-1]
+		return nil
+	}
+}
+
+// A simple authenticator to perform plain-text authentications for CQL clients.
 type PlainTextAuthenticator struct {
-	username string
-	password string
+	Credentials *AuthCredentials
 }
 
 var (
-	initialServerChallenge = []byte("PLAIN-START")
-	mechanism              = []byte("PLAIN")
+	expectedChallenge = []byte("PLAIN-START")
+	mechanism         = []byte("PLAIN")
 )
 
 func (a *PlainTextAuthenticator) InitialResponse(authenticator string) ([]byte, error) {
 	switch authenticator {
 	case "com.datastax.bdp.cassandra.auth.DseAuthenticator":
-		return a.GetMechanism(), nil
+		return mechanism, nil
 	case "org.apache.cassandra.auth.PasswordAuthenticator":
-		return a.EvaluateChallenge(a.GetInitialServerChallenge())
+		return a.Credentials.Marshal(), nil
 	}
 	return nil, fmt.Errorf("unknown authenticator: %v", authenticator)
 }
 
 func (a *PlainTextAuthenticator) EvaluateChallenge(challenge []byte) ([]byte, error) {
-	if challenge == nil || bytes.Compare(challenge, initialServerChallenge) != 0 {
-		return nil, errors.New("incorrect SASL challenge from server")
+	if challenge == nil || bytes.Compare(challenge, expectedChallenge) != 0 {
+		return nil, fmt.Errorf("incorrect SASL challenge from server, expecting PLAIN-START, got: %v", string(challenge))
 	}
-	token := bytes.NewBuffer(make([]byte, 0, len(a.username)+len(a.password)+2))
-	token.WriteByte(0)
-	token.WriteString(a.username)
-	token.WriteByte(0)
-	token.WriteString(a.password)
-	return token.Bytes(), nil
-}
-
-func (a *PlainTextAuthenticator) GetInitialServerChallenge() []byte {
-	return initialServerChallenge
-}
-
-func (a *PlainTextAuthenticator) GetMechanism() []byte {
-	return mechanism
+	return a.Credentials.Marshal(), nil
 }
