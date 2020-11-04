@@ -10,6 +10,13 @@ type CqlConnection struct {
 	codec frame.RawCodec
 }
 
+func NewCqlConnection(conn net.Conn, codec frame.RawCodec) *CqlConnection {
+	return &CqlConnection{
+		conn:  conn,
+		codec: codec,
+	}
+}
+
 func (c *CqlConnection) Send(f *frame.Frame) error {
 	return c.codec.EncodeFrame(f, c.conn)
 }

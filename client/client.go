@@ -22,8 +22,5 @@ func (client *CqlClient) Connect() (*CqlConnection, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &CqlConnection{
-		conn:  c,
-		codec: client.codec,
-	}, nil
+	return NewCqlConnection(c, client.codec), nil
 }
