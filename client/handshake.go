@@ -28,18 +28,41 @@ func Handshake(client *CqlConnection, version primitive.ProtocolVersion, streamI
 	}
 }
 
-func HandshakeAuth(client *CqlConnection, version primitive.ProtocolVersion, streamId int16, username string, password string) error {
+func HandshakeAuth(
+	client *CqlConnection,
+	version primitive.ProtocolVersion,
+	streamId int16,
+	username string,
+	password string,
+	optionalAuth bool) error {
 	authenticator := &PlainTextAuthenticator{
 		username: username,
 		password: password,
 	}
 	if err := client.Send(NewStartupRequest(client, version, streamId)); err != nil {
 		return err
-	} else if response, err := client.Receive(); err != nil {
+	}
+
+	response, err := client.Receive()
+	if err != nil {
 		return err
-	} else if authenticate, ok := response.Body.Message.(*message.Authenticate); !ok {
-		return fmt.Errorf("expected AUTHENTICATE, got %v", response.Body.Message)
-	} else if initialResponse, err := authenticator.InitialResponse(authenticate.Authenticator); err != nil {
+	}
+
+	var authenticate *message.Authenticate
+	switch responseMsg := response.Body.Message.(type) {
+	case *message.Authenticate:
+		authenticate = responseMsg
+	case *message.Ready:
+		if optionalAuth {
+			return nil
+		} else {
+			return fmt.Errorf("got READY but optionalAuth is false")
+		}
+	default:
+		return fmt.Errorf("expected AUTHENTICATE or READY, got %v", responseMsg)
+	}
+
+	if initialResponse, err := authenticator.InitialResponse(authenticate.Authenticator); err != nil {
 		return err
 	} else if authResponse, err := frame.NewRequestFrame(version, streamId, false, nil, &message.AuthResponse{Token: initialResponse}, false); err != nil {
 		return err

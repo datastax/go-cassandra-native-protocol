@@ -9,6 +9,7 @@ import (
 	"github.com/datastax/go-cassandra-native-protocol/message"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 
@@ -94,7 +95,7 @@ func TestRemoteServerAuth(t *testing.T) {
 					}
 					defer func() { _ = clientConn.Close() }()
 
-					err = HandshakeAuth(clientConn, version, 1, "cassandra", "cassandra")
+					err = HandshakeAuth(clientConn, version, 1, "cassandra", "cassandra", false)
 					assert.Nil(t, err)
 
 					query, _ := frame.NewRequestFrame(
@@ -141,7 +142,7 @@ func TestRemoteDseServerAuthContinuousPaging(t *testing.T) {
 					}
 					defer func() { _ = clientConn.Close() }()
 
-					err = HandshakeAuth(clientConn, version, 1, "cassandra", "cassandra")
+					err = HandshakeAuth(clientConn, version, 1, "cassandra", "cassandra", false)
 					assert.Nil(t, err)
 
 					query, _ := frame.NewRequestFrame(
@@ -218,6 +219,122 @@ func TestRemoteDseServerAuthContinuousPaging(t *testing.T) {
 				})
 			}
 		})
+	}
+}
+
+// This test requires a remote server listening on localhost:9042 with authentication.
+func TestHandshakeWithAuthEnabled(t *testing.T) {
+	if !ccmAvailable {
+		t.Skip("No CCM cluster available")
+	}
+
+	tests := map[string]func(connection *CqlConnection, version primitive.ProtocolVersion) {
+		"optional auth": func(connection *CqlConnection, version primitive.ProtocolVersion) {
+			err := HandshakeAuth(connection, version, 1, "cassandra", "cassandra", true)
+			require.Nil(t, err)
+		},
+		"optional auth, wrong creds": func(connection *CqlConnection, version primitive.ProtocolVersion) {
+			err := HandshakeAuth(connection, version, 1, "c", "c", true)
+			require.NotNil(t, err)
+		},
+		"optional auth, empty creds": func(connection *CqlConnection, version primitive.ProtocolVersion) {
+			err := HandshakeAuth(connection, version, 1, "", "", true)
+			require.NotNil(t, err)
+		},
+		"required auth": func(connection *CqlConnection, version primitive.ProtocolVersion) {
+			err := HandshakeAuth(connection, version, 1, "cassandra", "cassandra", false)
+			require.Nil(t, err)
+		},
+		"required auth, wrong creds": func(connection *CqlConnection, version primitive.ProtocolVersion) {
+			err := HandshakeAuth(connection, version, 1, "c", "c", false)
+			require.NotNil(t, err)
+		},
+		"required auth, empty creds": func(connection *CqlConnection, version primitive.ProtocolVersion) {
+			err := HandshakeAuth(connection, version, 1, "", "", false)
+			require.NotNil(t, err)
+		},
+		"no auth":
+		func(connection *CqlConnection, version primitive.ProtocolVersion) {
+			err := Handshake(connection, version, 1)
+			require.NotNil(t, err)
+		},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			for _, version := range primitive.AllOssProtocolVersions() {
+				t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+
+					for compressor, frameCodec := range codecs {
+						t.Run(fmt.Sprintf("compression %v", compressor), func(t *testing.T) {
+							client := NewCqlClient("127.0.0.1:9042", frameCodec)
+							clientConn, err := client.Connect()
+							require.Nil(t, err, "server unavailable")
+							defer func() { _ = clientConn.Close() }()
+							test(clientConn, version)
+						})
+					}
+				})
+			}
+		})
+
+	}
+}
+
+// This test requires a remote server listening on localhost:9042 with authentication.
+func TestHandshakeWithAuthDisabled(t *testing.T) {
+	if !ccmAvailable {
+		t.Skip("No CCM cluster available")
+	}
+
+	tests := map[string]func(connection *CqlConnection, version primitive.ProtocolVersion) {
+		"optional auth": func(connection *CqlConnection, version primitive.ProtocolVersion) {
+			err := HandshakeAuth(connection, version, 1, "cassandra", "cassandra", true)
+			require.Nil(t, err)
+		},
+		"optional auth, wrong creds": func(connection *CqlConnection, version primitive.ProtocolVersion) {
+			err := HandshakeAuth(connection, version, 1, "c", "c", true)
+			require.Nil(t, err)
+		},
+		"optional auth, empty creds": func(connection *CqlConnection, version primitive.ProtocolVersion) {
+			err := HandshakeAuth(connection, version, 1, "", "", true)
+			require.Nil(t, err)
+		},
+		"required auth": func(connection *CqlConnection, version primitive.ProtocolVersion) {
+			err := HandshakeAuth(connection, version, 1, "cassandra", "cassandra", false)
+			require.NotNil(t, err)
+		},
+		"required auth, wrong creds": func(connection *CqlConnection, version primitive.ProtocolVersion) {
+			err := HandshakeAuth(connection, version, 1, "c", "c", false)
+			require.NotNil(t, err)
+		},
+		"required auth, empty creds": func(connection *CqlConnection, version primitive.ProtocolVersion) {
+			err := HandshakeAuth(connection, version, 1, "", "", false)
+			require.NotNil(t, err)
+		},
+		"no auth":
+		func(connection *CqlConnection, version primitive.ProtocolVersion) {
+			err := Handshake(connection, version, 1)
+			require.Nil(t, err)
+		},
+	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			for _, version := range primitive.AllOssProtocolVersions() {
+				t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+
+					for compressor, frameCodec := range codecs {
+						t.Run(fmt.Sprintf("compression %v", compressor), func(t *testing.T) {
+							client := NewCqlClient("127.0.0.1:9042", frameCodec)
+							clientConn, err := client.Connect()
+							require.Nil(t, err, "server unavailable")
+							defer func() { _ = clientConn.Close() }()
+							test(clientConn, version)
+						})
+					}
+				})
+			}
+		})
+
 	}
 }
 
