@@ -30,9 +30,7 @@ func (c *authSuccessCodec) Encode(msg Message, dest io.Writer, _ primitive.Proto
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.AuthSuccess, got %T", msg))
 	}
-	if authSuccess.Token == nil {
-		return errors.New("AUTH_SUCCESS token cannot be nil")
-	}
+	// protocol specs allow the token to be null on AUTH SUCCESS
 	return primitive.WriteBytes(authSuccess.Token, dest)
 }
 

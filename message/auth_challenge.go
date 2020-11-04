@@ -30,9 +30,6 @@ func (c *authChallengeCodec) Encode(msg Message, dest io.Writer, _ primitive.Pro
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.AuthChallenge, got %T", msg))
 	}
-	if authChallenge.Token == nil {
-		return errors.New("AUTH_CHALLENGE token cannot be nil")
-	}
 	return primitive.WriteBytes(authChallenge.Token, dest)
 }
 

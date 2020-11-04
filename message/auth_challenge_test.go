@@ -28,10 +28,16 @@ func TestAuthChallengeCodec_Encode(t *testing.T) {
 					errors.New("expected *message.AuthChallenge, got *message.AuthResponse"),
 				},
 				{
+					"auth challenge empty token",
+					&AuthChallenge{[]byte{}},
+					[]byte{0, 0, 0, 0},
+					nil,
+				},
+				{
 					"auth challenge nil token",
 					&AuthChallenge{nil},
+					[]byte{0xff, 0xff, 0xff, 0xff},
 					nil,
-					errors.New("AUTH_CHALLENGE token cannot be nil"),
 				},
 			}
 			for _, tt := range tests {

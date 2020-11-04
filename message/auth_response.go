@@ -30,9 +30,6 @@ func (c *authResponseCodec) Encode(msg Message, dest io.Writer, _ primitive.Prot
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.AuthResponse, got %T", msg))
 	}
-	if authResponse.Token == nil {
-		return errors.New("AUTH_RESPONSE token cannot be nil")
-	}
 	return primitive.WriteBytes(authResponse.Token, dest)
 }
 
