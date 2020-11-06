@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/pierrec/lz4/v4"
 	"io"
+	"io/ioutil"
 )
 
 // BodyCompressor satisfies frame.BodyCompressor for the LZ4 algorithm.
@@ -54,6 +55,9 @@ func (l BodyCompressor) Decompress(source io.Reader, dest io.Writer) error {
 	} else {
 		// if decompressed length is zero, the remaining buffer will contain a single byte that should be discarded
 		if decompressedLength == 0 {
+			if _, err = io.CopyN(ioutil.Discard, source, 1); err != nil {
+				return fmt.Errorf("cannot read empty body: %w", err)
+			}
 			return nil
 		}
 		// decompress the message
