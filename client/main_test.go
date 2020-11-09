@@ -11,37 +11,38 @@ import (
 	"testing"
 )
 
+var remoteAvailable bool
+var logLevel int
+
 func TestMain(m *testing.M) {
+	parseFlags()
 	setLogLevel()
-	setRemoteAvailable()
 	createCodecs()
 	os.Exit(m.Run())
 }
 
-func setLogLevel() {
-	var logLevel int
+func parseFlags() {
 	flag.IntVar(
 		&logLevel,
 		"logLevel",
 		int(zerolog.InfoLevel),
 		"the log level to use (default: info)",
 	)
-	zerolog.SetGlobalLevel(zerolog.Level(logLevel))
-	log.Logger = log.Output(zerolog.ConsoleWriter{
-		Out:        os.Stderr,
-		TimeFormat: zerolog.TimeFormatUnix,
-	})
-}
-
-var remoteAvailable bool
-
-func setRemoteAvailable() {
 	flag.BoolVar(
 		&remoteAvailable,
 		"remote",
 		false,
 		"whether a remote cluster is available on localhost:9042",
 	)
+	flag.Parse()
+}
+
+func setLogLevel() {
+	zerolog.SetGlobalLevel(zerolog.Level(logLevel))
+	log.Logger = log.Output(zerolog.ConsoleWriter{
+		Out:        os.Stderr,
+		TimeFormat: zerolog.TimeFormatUnix,
+	})
 }
 
 var codecs map[string]frame.Codec
