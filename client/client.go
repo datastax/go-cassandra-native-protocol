@@ -73,7 +73,7 @@ func (client *CqlClient) Connect() (*CqlClientConnection, error) {
 	if conn, err := net.DialTimeout("tcp", client.RemoteAddress, client.ConnectTimeout); err != nil {
 		return nil, fmt.Errorf("%v: cannot establish TCP connection: %w", client, err)
 	} else {
-		connection, err := newCqlClientConnection(
+		connection, err := NewCqlClientConnection(
 			conn,
 			client.Credentials,
 			client.Codec,
@@ -97,7 +97,8 @@ func (client *CqlClient) ConnectAndInit(version primitive.ProtocolVersion) (*Cql
 }
 
 // CqlClientConnection encapsulates a TCP client connection to a remote Cassandra-compatible backend.
-// CqlClientConnection instances should be created by calling CqlClient.Connect or CqlClient.ConnectAndInit.
+// CqlClientConnection instances should be created by calling CqlClient.Connect or CqlClient.ConnectAndInit,
+// but it is also possible to create one from an existing TCP connection using NewCqlClientConnection.
 type CqlClientConnection struct {
 	conn            net.Conn
 	codec           frame.Codec
@@ -110,7 +111,8 @@ type CqlClientConnection struct {
 	closed          int32
 }
 
-func newCqlClientConnection(
+// Creates a new CqlClientConnection from the given TCP net.Conn.
+func NewCqlClientConnection(
 	conn net.Conn,
 	credentials *AuthCredentials,
 	codec frame.Codec,
@@ -118,6 +120,9 @@ func newCqlClientConnection(
 	maxPending int,
 	readTimeout time.Duration,
 ) (*CqlClientConnection, error) {
+	if conn == nil {
+		return nil, fmt.Errorf("TCP connection cannot be nil")
+	}
 	if maxInFlight < 1 {
 		return nil, fmt.Errorf("max in-flight: expecting positive, got: %v", maxInFlight)
 	} else if maxInFlight > math.MaxInt16 {

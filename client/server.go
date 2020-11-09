@@ -144,7 +144,7 @@ func (server *CqlServer) acceptLoop() {
 				}
 				break
 			} else {
-				if connection, err := newCqlServerConnection(
+				if connection, err := NewCqlServerConnection(
 					conn,
 					server.Credentials,
 					server.Codec,
@@ -214,7 +214,8 @@ func (server *CqlServer) BindAndInit(client *CqlClient, version primitive.Protoc
 }
 
 // CqlServerConnection encapsulates a TCP server connection to a remote CQL client.
-// CqlServerConnection instances should be created by calling CqlServer.Accept or CqlServer.Bind.
+// CqlServerConnection instances should be created by calling CqlServer.Accept or CqlServer.Bind,
+// but it is also possible to create one from an existing TCP connection using NewCqlServerConnection..
 type CqlServerConnection struct {
 	conn        net.Conn
 	codec       frame.Codec
@@ -227,7 +228,8 @@ type CqlServerConnection struct {
 	onClose     func(*CqlServerConnection)
 }
 
-func newCqlServerConnection(
+// Creates a new CqlServerConnection from the given TCP net.Conn.
+func NewCqlServerConnection(
 	conn net.Conn,
 	credentials *AuthCredentials,
 	codec frame.Codec,
@@ -235,6 +237,9 @@ func newCqlServerConnection(
 	idleTimeout time.Duration,
 	onClose func(*CqlServerConnection),
 ) (*CqlServerConnection, error) {
+	if conn == nil {
+		return nil, fmt.Errorf("TCP connection cannot be nil")
+	}
 	if maxInFlight < 1 {
 		return nil, fmt.Errorf("max in-flight: expecting positive, got: %v", maxInFlight)
 	} else if maxInFlight > math.MaxInt16 {
