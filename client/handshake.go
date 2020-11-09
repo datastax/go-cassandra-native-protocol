@@ -57,7 +57,7 @@ func (c *CqlClientConnection) InitiateHandshake(version primitive.ProtocolVersio
 				authenticator := &PlainTextAuthenticator{c.credentials}
 				var initialResponse []byte
 				if initialResponse, err = authenticator.InitialResponse(msg.Authenticator); err == nil {
-					authResponse, _ := frame.NewRequestFrame(version, 1, false, nil, &message.AuthResponse{Token: initialResponse}, false)
+					authResponse, _ := frame.NewRequestFrame(version, streamId, false, nil, &message.AuthResponse{Token: initialResponse}, false)
 					if response, err = c.SendAndReceive(authResponse); err != nil {
 						err = fmt.Errorf("could not send AUTH RESPONSE: %w", err)
 					} else {
@@ -67,7 +67,7 @@ func (c *CqlClientConnection) InitiateHandshake(version primitive.ProtocolVersio
 						case *message.AuthChallenge:
 							var challenge []byte
 							if challenge, err = authenticator.EvaluateChallenge(msg.Token); err == nil {
-								authResponse, _ := frame.NewRequestFrame(version, 1, false, nil, &message.AuthResponse{Token: challenge}, false)
+								authResponse, _ := frame.NewRequestFrame(version, streamId, false, nil, &message.AuthResponse{Token: challenge}, false)
 								if response, err = c.SendAndReceive(authResponse); err != nil {
 									err = fmt.Errorf("could not send AUTH RESPONSE: %w", err)
 								} else if _, authSuccess := response.Body.Message.(*message.AuthSuccess); !authSuccess {
