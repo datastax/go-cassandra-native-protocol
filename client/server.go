@@ -289,7 +289,7 @@ func (c *CqlServerConnection) incomingLoop() {
 				case c.incoming <- incoming:
 					log.Debug().Msgf("%v: incoming frame successfully delivered: %v", c, incoming)
 				default:
-					log.Warn().Msgf("%v: incoming frame delivery failed: %v", c, incoming)
+					log.Error().Msgf("%v: incoming frames queue is full, discarding frame: %v", c, incoming)
 				}
 			}
 		}

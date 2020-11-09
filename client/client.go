@@ -171,7 +171,7 @@ func (c *CqlClientConnection) incomingLoop() {
 					case c.events <- incoming:
 						log.Debug().Msgf("%v: incoming event frame successfully delivered: %v", c, incoming)
 					default:
-						log.Error().Msgf("%v: incoming event frame delivery failed: %v", c, incoming)
+						log.Error().Msgf("%v: events queue is full, discarding event frame: %v", c, incoming)
 					}
 				} else {
 					err := c.inFlightHandler.onIncomingFrameReceived(incoming)
