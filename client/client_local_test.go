@@ -42,7 +42,7 @@ func TestLocalServer(t *testing.T) {
 						_ = server.Close()
 					}()
 
-					clientConn, serverConn, err := server.BindAndInit(clt, version)
+					clientConn, serverConn, err := server.BindAndInit(clt, version, client.ManagedStreamId)
 					require.Nil(t, err)
 
 					defer func() {
