@@ -49,8 +49,8 @@ func (h *inFlightRequestsHandler) onOutgoingFrameEnqueued(f *frame.Frame) (InFli
 	}
 	var err error
 	streamId := f.Header.StreamId
-	borrowStreamId := streamId == ManagedStreamId
-	if borrowStreamId {
+	managedStreamId := streamId == ManagedStreamId
+	if managedStreamId {
 		if streamId, err = h.borrowStreamId(); err != nil {
 			return nil, err
 		} else {
@@ -66,7 +66,7 @@ func (h *inFlightRequestsHandler) onOutgoingFrameEnqueued(f *frame.Frame) (InFli
 	h.inFlightLock.RUnlock()
 	if err == nil {
 		var inFlight *inFlightRequest
-		inFlight, err = h.addInFlight(streamId, borrowStreamId)
+		inFlight, err = h.addInFlight(streamId, managedStreamId)
 		if err == nil {
 			inFlight.startTimeout()
 			return inFlight, nil
@@ -89,21 +89,21 @@ func (h *inFlightRequestsHandler) onIncomingFrameReceived(f *frame.Frame) error 
 	}
 	h.inFlightLock.RUnlock()
 	if err == nil {
+		if isLastFrame(f) {
+			h.removeInFlight(streamId)
+			if inFlight.managedStreamId {
+				if err := h.releaseStreamId(streamId); err != nil {
+					return err
+				}
+			}
+		}
 		err = inFlight.onFrameReceived(f)
 	}
 	return err
 }
 
-func (h *inFlightRequestsHandler) addInFlight(streamId int16, releaseOnClose bool) (*inFlightRequest, error) {
-	inFlight := newInFlightRequest(h.String(), streamId, h.maxPending, h.timeout, func(err error) {
-		h.removeInFlight(streamId, err)
-		if releaseOnClose {
-			if err := h.releaseStreamId(streamId); err != nil {
-				log.Err(err).Msgf("%v: stream id release failed, closing", h)
-				h.close()
-			}
-		}
-	})
+func (h *inFlightRequestsHandler) addInFlight(streamId int16, managedStreamId bool) (*inFlightRequest, error) {
+	inFlight := newInFlightRequest(h.String(), streamId, managedStreamId, h.maxPending, h.timeout)
 	h.inFlightLock.Lock()
 	defer h.inFlightLock.Unlock()
 	if h.isClosed() {
@@ -113,14 +113,11 @@ func (h *inFlightRequestsHandler) addInFlight(streamId int16, releaseOnClose boo
 	return inFlight, nil
 }
 
-func (h *inFlightRequestsHandler) removeInFlight(streamId int16, err error) {
+func (h *inFlightRequestsHandler) removeInFlight(streamId int16) {
 	h.inFlightLock.Lock()
 	defer h.inFlightLock.Unlock()
-	if !h.isClosed() {
-		if inFlight, found := h.inFlight[streamId]; found {
-			delete(h.inFlight, streamId)
-			inFlight.close(err)
-		}
+	if _, found := h.inFlight[streamId]; found {
+		delete(h.inFlight, streamId)
 	}
 }
 
@@ -178,17 +175,18 @@ func (h *inFlightRequestsHandler) close() {
 }
 
 type inFlightRequest struct {
-	handlerId     string
-	streamId      int16
-	_incoming     chan *frame.Frame // used internally; will be set to nil on close
-	incoming      chan *frame.Frame // exposed externally; never nil
-	err           error
-	timeout       time.Duration
-	onDone        func(error)
-	ctx           context.Context
-	cancel        context.CancelFunc
-	timeoutCtx    context.Context
-	timeoutCancel context.CancelFunc
+	handlerId       string
+	streamId        int16
+	managedStreamId bool
+	_incoming       chan *frame.Frame // used internally; will be set to nil on close
+	incoming        chan *frame.Frame // exposed externally; never nil
+	err             error
+	closed          int32
+	timeout         time.Duration
+	ctx             context.Context
+	cancel          context.CancelFunc
+	timeoutCtx      context.Context
+	timeoutCancel   context.CancelFunc
 
 	// lock guards the closing of incoming chan and the assignment of err;
 	// required to fulfill the interface contract:
@@ -212,25 +210,19 @@ func (r *inFlightRequest) Err() error {
 	return r.err
 }
 
-func newInFlightRequest(
-	handlerId string,
-	streamId int16,
-	maxPending int,
-	timeout time.Duration,
-	onDone func(error),
-) *inFlightRequest {
+func newInFlightRequest(handlerId string, streamId int16, managedStreamId bool, maxPending int, timeout time.Duration) *inFlightRequest {
 	ctx, cancel := context.WithCancel(context.Background())
 	incoming := make(chan *frame.Frame, maxPending)
 	return &inFlightRequest{
-		handlerId: handlerId,
-		streamId:  streamId,
-		_incoming: incoming,
-		incoming:  incoming,
-		timeout:   timeout,
-		onDone:    onDone,
-		ctx:       ctx,
-		cancel:    cancel,
-		lock:      &sync.RWMutex{},
+		handlerId:       handlerId,
+		streamId:        streamId,
+		managedStreamId: managedStreamId,
+		_incoming:       incoming,
+		incoming:        incoming,
+		timeout:         timeout,
+		ctx:             ctx,
+		cancel:          cancel,
+		lock:            &sync.RWMutex{},
 	}
 }
 
@@ -241,20 +233,18 @@ func (r *inFlightRequest) String() string {
 func (r *inFlightRequest) onFrameReceived(f *frame.Frame) error {
 	select {
 	case r._incoming <- f:
-		done := isLastFrame(f)
-		if done {
+		if isLastFrame(f) {
 			r.stopTimeout()
-			defer r.onDone(nil)
+			r.close(nil)
 		} else {
 			r.resetTimeout()
 		}
-		log.Trace().Msgf("%v: received frame, done: %v", r, done)
 		return nil
 	case <-r.ctx.Done():
 		return fmt.Errorf("%v: request closed", r)
 	default:
 		err := fmt.Errorf("%v: too many pending incoming frames: %d", r, len(r.incoming))
-		r.onDone(err)
+		r.close(err)
 		return err
 	}
 }
@@ -268,7 +258,7 @@ func (r *inFlightRequest) startTimeout() {
 			switch r.timeoutCtx.Err() {
 			case context.DeadlineExceeded:
 				err := fmt.Errorf("%v: timed out waiting for incoming frames", r)
-				r.onDone(err)
+				r.close(err)
 			case context.Canceled:
 				log.Trace().Msgf("%v: timeout canceled", r)
 			}
@@ -287,16 +277,26 @@ func (r inFlightRequest) resetTimeout() {
 	r.startTimeout()
 }
 
+func (r *inFlightRequest) isClosed() bool {
+	return atomic.LoadInt32(&r.closed) == 1
+}
+
+func (r *inFlightRequest) setClosed() bool {
+	return atomic.CompareAndSwapInt32(&r.closed, 0, 1)
+}
+
 func (r *inFlightRequest) close(err error) {
-	log.Trace().Msgf("%v: closing", r)
-	r.cancel()
-	r.lock.Lock()
-	// set _incoming to nil first to avoid potential panic in onFrameReceived
-	r._incoming = nil
-	close(r.incoming)
-	r.err = err
-	r.lock.Unlock()
-	log.Trace().Msgf("%v: successfully closed", r)
+	if r.setClosed() {
+		log.Trace().Msgf("%v: closing", r)
+		r.cancel()
+		r.lock.Lock()
+		// set _incoming to nil first to avoid potential panic in onFrameReceived
+		r._incoming = nil
+		close(r.incoming)
+		r.err = err
+		r.lock.Unlock()
+		log.Trace().Msgf("%v: successfully closed", r)
+	}
 }
 
 func isLastFrame(f *frame.Frame) bool {

@@ -7,7 +7,6 @@ import (
 	"github.com/datastax/go-cassandra-native-protocol/frame"
 	"github.com/datastax/go-cassandra-native-protocol/message"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"sync"
 	"testing"
@@ -22,14 +21,19 @@ func TestRemoteServerNoAuth(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 
-			for compressor, frameCodec := range codecs {
-				t.Run(fmt.Sprintf("compression %v", compressor), func(t *testing.T) {
+			for genName, generator := range streamIdGenerators {
+				t.Run(fmt.Sprintf("generator %v", genName), func(t *testing.T) {
 
-					clt := client.NewCqlClient("127.0.0.1:9042", nil)
-					clt.Codec = frameCodec
+					for compressor, frameCodec := range codecs {
+						t.Run(fmt.Sprintf("compression %v", compressor), func(t *testing.T) {
 
-					clientTest(t, clt, version, compressor != "NONE", false)
+							clt := client.NewCqlClient("127.0.0.1:9042", nil)
+							clt.Codec = frameCodec
 
+							clientTest(t, clt, version, generator, compressor != "NONE", false)
+
+						})
+					}
 				})
 			}
 		})
@@ -44,16 +48,21 @@ func TestRemoteServerAuth(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 
-			for compressor, frameCodec := range codecs {
-				t.Run(fmt.Sprintf("compression %v", compressor), func(t *testing.T) {
+			for genName, generator := range streamIdGenerators {
+				t.Run(fmt.Sprintf("generator %v", genName), func(t *testing.T) {
 
-					clt := client.NewCqlClient(
-						"127.0.0.1:9042",
-						&client.AuthCredentials{Username: "cassandra", Password: "cassandra"},
-					)
-					clt.Codec = frameCodec
+					for compressor, frameCodec := range codecs {
+						t.Run(fmt.Sprintf("compression %v", compressor), func(t *testing.T) {
 
-					clientTest(t, clt, version, compressor != "NONE", false)
+							clt := client.NewCqlClient(
+								"127.0.0.1:9042",
+								&client.AuthCredentials{Username: "cassandra", Password: "cassandra"},
+							)
+							clt.Codec = frameCodec
+
+							clientTest(t, clt, version, generator, compressor != "NONE", false)
+						})
+					}
 				})
 			}
 		})
@@ -68,47 +77,67 @@ func TestRemoteDseServerAuthContinuousPaging(t *testing.T) {
 	for _, version := range primitive.AllDseProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 
-			for compressor, frameCodec := range codecs {
-				t.Run(fmt.Sprintf("compression %v", compressor), func(t *testing.T) {
+			for genName, generator := range streamIdGenerators {
+				t.Run(fmt.Sprintf("generator %v", genName), func(t *testing.T) {
 
-					clt := client.NewCqlClient(
-						"127.0.0.1:9042",
-						&client.AuthCredentials{Username: "cassandra", Password: "cassandra"},
-					)
-					clt.Codec = frameCodec
+					for compressor, frameCodec := range codecs {
+						t.Run(fmt.Sprintf("compression %v", compressor), func(t *testing.T) {
 
-					clientTest(t, clt, version, compressor != "NONE", true)
+							clt := client.NewCqlClient(
+								"127.0.0.1:9042",
+								&client.AuthCredentials{Username: "cassandra", Password: "cassandra"},
+							)
+							clt.Codec = frameCodec
 
+							clientTest(t, clt, version, generator, compressor != "NONE", true)
+
+						})
+					}
 				})
 			}
 		})
 	}
 }
 
-func clientTest(t *testing.T, clt *client.CqlClient, version primitive.ProtocolVersion, compress bool, continuousPaging bool) {
+func clientTest(
+	t *testing.T,
+	clt *client.CqlClient,
+	version primitive.ProtocolVersion,
+	generator func(int) int16,
+	compress bool,
+	continuousPaging bool,
+) {
 	ks := fmt.Sprintf("ks_%d", time.Now().UnixNano())
 	table := fmt.Sprintf("t_%d", time.Now().UnixNano())
 
-	clientConn, err := clt.ConnectAndInit(version, client.ManagedStreamId)
+	clientConn, err := clt.ConnectAndInit(version, generator(1))
 	require.Nil(t, err)
 
-	createSchema(t, clientConn, ks, table, version, compress)
-	insertData(t, clientConn, ks, table, version, compress)
+	createSchema(t, clientConn, ks, table, version, generator, compress)
+	insertData(t, clientConn, ks, table, version, generator, compress)
 	if continuousPaging {
-		retrieveDataContinuousPaging(t, clientConn, ks, table, version, compress)
+		retrieveDataContinuousPaging(t, clientConn, ks, table, version, generator, compress)
 	} else {
-		retrieveData(t, clientConn, ks, table, version, compress)
+		retrieveData(t, clientConn, ks, table, version, generator, compress)
 	}
-	dropSchema(t, clientConn, ks, version, compress)
+	dropSchema(t, clientConn, ks, version, generator, compress)
 
 	err = clientConn.Close()
 	require.Nil(t, err)
 }
 
-func createSchema(t *testing.T, clientConn *client.CqlClientConnection, ks string, table string, version primitive.ProtocolVersion, compress bool) {
+func createSchema(
+	t *testing.T,
+	clientConn *client.CqlClientConnection,
+	ks string,
+	table string,
+	version primitive.ProtocolVersion,
+	generator func(int) int16,
+	compress bool,
+) {
 	request, _ := frame.NewRequestFrame(
 		version,
-		1,
+		generator(1),
 		false,
 		nil,
 		&message.Query{
@@ -128,7 +157,7 @@ func createSchema(t *testing.T, clientConn *client.CqlClientConnection, ks strin
 	require.Equal(t, result.Object, "")
 	request, _ = frame.NewRequestFrame(
 		version,
-		1,
+		generator(1),
 		false,
 		nil,
 		&message.Query{
@@ -147,10 +176,17 @@ func createSchema(t *testing.T, clientConn *client.CqlClientConnection, ks strin
 	require.Equal(t, result.Object, table)
 }
 
-func dropSchema(t *testing.T, clientConn *client.CqlClientConnection, ks string, version primitive.ProtocolVersion, compress bool) {
+func dropSchema(
+	t *testing.T,
+	clientConn *client.CqlClientConnection,
+	ks string,
+	version primitive.ProtocolVersion,
+	generator func(int) int16,
+	compress bool,
+) {
 	request, _ := frame.NewRequestFrame(
 		version,
-		1,
+		generator(1),
 		false,
 		nil,
 		&message.Query{
@@ -168,13 +204,21 @@ func dropSchema(t *testing.T, clientConn *client.CqlClientConnection, ks string,
 	require.Equal(t, result.Object, "")
 }
 
-func insertData(t *testing.T, clientConn *client.CqlClientConnection, ks string, table string, version primitive.ProtocolVersion, compress bool) {
+func insertData(
+	t *testing.T,
+	clientConn *client.CqlClientConnection,
+	ks string,
+	table string,
+	version primitive.ProtocolVersion,
+	generator func(int) int16,
+	compress bool,
+) {
 	wg := &sync.WaitGroup{}
-	for i := 0; i < 100; i++ {
+	for i := 1; i <= 100; i++ {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
-			for j := 0; j < 10; j++ {
+			for j := 1; j <= 10; j++ {
 				pk := make([]byte, 4)
 				cc := make([]byte, 4)
 				v := make([]byte, 4)
@@ -183,7 +227,7 @@ func insertData(t *testing.T, clientConn *client.CqlClientConnection, ks string,
 				binary.BigEndian.PutUint32(v, uint32(i)*uint32(j))
 				request, _ := frame.NewRequestFrame(
 					version,
-					0,
+					generator(i),
 					false,
 					nil,
 					&message.Query{
@@ -208,20 +252,28 @@ func insertData(t *testing.T, clientConn *client.CqlClientConnection, ks string,
 	wg.Wait()
 }
 
-func retrieveData(t *testing.T, clientConn *client.CqlClientConnection, ks string, table string, version primitive.ProtocolVersion, compress bool) {
+func retrieveData(
+	t *testing.T,
+	clientConn *client.CqlClientConnection,
+	ks string,
+	table string,
+	version primitive.ProtocolVersion,
+	generator func(int) int16,
+	compress bool,
+) {
 	wg := &sync.WaitGroup{}
-	for i := 0; i < 100; i++ {
+	for i := 1; i <= 100; i++ {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
-			for j := 0; j < 10; j++ {
+			for j := 1; j <= 10; j++ {
 				pk := make([]byte, 4)
 				cc := make([]byte, 4)
 				binary.BigEndian.PutUint32(pk, uint32(i))
 				binary.BigEndian.PutUint32(cc, uint32(j))
 				request, _ := frame.NewRequestFrame(
 					version,
-					0,
+					generator(i),
 					false,
 					nil,
 					&message.Query{
@@ -240,23 +292,23 @@ func retrieveData(t *testing.T, clientConn *client.CqlClientConnection, ks strin
 				require.Nil(t, err)
 				require.IsType(t, &message.RowsResult{}, response.Body.Message)
 				result := response.Body.Message.(*message.RowsResult)
-				assert.Len(t, result.Data, 1)
+				require.Len(t, result.Data, 1)
 				row := result.Data[0]
-				assert.Len(t, row, 1)
+				require.Len(t, row, 1)
 				column := row[0]
-				assert.Len(t, column, 4)
+				require.Len(t, column, 4)
 				v := binary.BigEndian.Uint32(column)
-				assert.Equal(t, uint32(i*j), v)
+				require.Equal(t, uint32(i*j), v)
 			}
 		}(i)
 	}
 	wg.Wait()
 }
 
-func retrieveDataContinuousPaging(t *testing.T, clientConn *client.CqlClientConnection, ks string, table string, version primitive.ProtocolVersion, compress bool) {
+func retrieveDataContinuousPaging(t *testing.T, clientConn *client.CqlClientConnection, ks string, table string, version primitive.ProtocolVersion, generator func(int) int16, compress bool) {
 	request, _ := frame.NewRequestFrame(
 		version,
-		0,
+		generator(1),
 		false,
 		nil,
 		&message.Query{
@@ -286,7 +338,7 @@ func retrieveDataContinuousPaging(t *testing.T, clientConn *client.CqlClientConn
 
 	request, _ = frame.NewRequestFrame(
 		version,
-		0,
+		generator(1),
 		false,
 		nil,
 		&message.Revise{
@@ -300,9 +352,9 @@ func retrieveDataContinuousPaging(t *testing.T, clientConn *client.CqlClientConn
 	require.Nil(t, err)
 	require.IsType(t, &message.RowsResult{}, response.Body.Message)
 	result := response.Body.Message.(*message.RowsResult)
-	assert.Len(t, result.Data, 1)
+	require.Len(t, result.Data, 1)
 	row := result.Data[0]
-	assert.Len(t, row, 1)
+	require.Len(t, row, 1)
 	column := row[0]
-	assert.Len(t, column, 1) // boolean
+	require.Len(t, column, 1) // boolean
 }

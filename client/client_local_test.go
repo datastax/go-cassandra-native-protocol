@@ -7,7 +7,6 @@ import (
 	"github.com/datastax/go-cassandra-native-protocol/frame"
 	"github.com/datastax/go-cassandra-native-protocol/message"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"sync"
 	"testing"
@@ -18,222 +17,128 @@ func TestLocalServer(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
 
-			for compressor, frameCodec := range codecs {
-				t.Run(fmt.Sprintf("compression %v", compressor), func(t *testing.T) {
+			for genName, generator := range streamIdGenerators {
+				t.Run(fmt.Sprintf("generator %v", genName), func(t *testing.T) {
 
-					server := client.NewCqlServer(
-						"127.0.0.1:9043",
-						&client.AuthCredentials{
-							Username: "cassandra",
-							Password: "cassandra",
-						},
-					)
-					server.Codec = frameCodec
+					for compressor, frameCodec := range codecs {
+						t.Run(fmt.Sprintf("compression %v", compressor), func(t *testing.T) {
 
-					clt := client.NewCqlClient(
-						"127.0.0.1:9043",
-						&client.AuthCredentials{
-							Username: "cassandra",
-							Password: "cassandra",
-						},
-					)
-					clt.Codec = frameCodec
-
-					err := server.Start()
-					require.Nil(t, err)
-					defer func() {
-						_ = server.Close()
-					}()
-
-					clientConn, serverConn, err := server.BindAndInit(clt, version, client.ManagedStreamId)
-					require.Nil(t, err)
-
-					defer func() {
-						_ = clientConn.Close()
-						_ = serverConn.Close()
-					}()
-
-					// client -> server
-					outgoing, _ := frame.NewRequestFrame(
-						version,
-						0,
-						false,
-						nil,
-						&message.Query{
-							Query:   "SELECT * FROM system.local",
-							Options: &message.QueryOptions{},
-						},
-						compressor != "NONE",
-					)
-					ch, err := clientConn.Send(outgoing)
-					require.Nil(t, err)
-
-					incoming, err := serverConn.Receive()
-					require.Nil(t, err)
-					require.NotNil(t, incoming)
-					require.Equal(t, outgoing, incoming)
-
-					// server -> client
-					outgoing, _ = frame.NewResponseFrame(
-						version,
-						incoming.Header.StreamId,
-						nil,
-						nil,
-						nil,
-						&message.RowsResult{
-							Metadata: &message.RowsMetadata{ColumnCount: 1},
-							Data: message.RowSet{
-								message.Row{
-									message.Column{0, 0, 0, 4, 1, 2, 3, 4},
+							server := client.NewCqlServer(
+								"127.0.0.1:9043",
+								&client.AuthCredentials{
+									Username: "cassandra",
+									Password: "cassandra",
 								},
-								message.Row{
-									message.Column{0, 0, 0, 4, 5, 6, 7, 8},
-								},
-							},
-						},
-						compressor != "NONE",
-					)
-					err = serverConn.Send(outgoing)
-					require.Nil(t, err)
+							)
+							server.Codec = frameCodec
 
-					incoming, err = clientConn.Receive(ch)
-					require.Nil(t, err)
-					require.NotNil(t, incoming)
-					require.Equal(t, outgoing, incoming)
+							clt := client.NewCqlClient(
+								"127.0.0.1:9043",
+								&client.AuthCredentials{
+									Username: "cassandra",
+									Password: "cassandra",
+								},
+							)
+							clt.Codec = frameCodec
+
+							err := server.Start()
+							require.Nil(t, err)
+							defer func() {
+								_ = server.Close()
+							}()
+
+							clientConn, serverConn, err := server.BindAndInit(clt, version, client.ManagedStreamId)
+							require.Nil(t, err)
+
+							wg := &sync.WaitGroup{}
+							ctx, cancelFn := context.WithCancel(context.Background())
+
+							defer func() {
+								cancelFn()
+								_ = clientConn.Close()
+								_ = serverConn.Close()
+								wg.Wait()
+							}()
+
+							playServer(serverConn, version, compressor, ctx, wg)
+							playClient(t, clientConn, version, compressor, generator)
+
+						})
+					}
 				})
 			}
 		})
 	}
 }
 
-
-func TestLocalServerManualStreamIds(t *testing.T) {
-
-	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
-
-			for compressor, frameCodec := range codecs {
-				t.Run(fmt.Sprintf("compression %v", compressor), func(t *testing.T) {
-
-					server := client.NewCqlServer(
-						"127.0.0.1:9043",
-						&client.AuthCredentials{
-							Username: "cassandra",
-							Password: "cassandra",
-						},
-					)
-					server.Codec = frameCodec
-
-					clt := client.NewCqlClient(
-						"127.0.0.1:9043",
-						&client.AuthCredentials{
-							Username: "cassandra",
-							Password: "cassandra",
-						},
-					)
-					clt.Codec = frameCodec
-
-					err := server.Start()
-					require.Nil(t, err)
-					defer func() {
-						_ = server.Close()
-					}()
-
-					clientConn, serverConn, err := server.BindAndInit(clt, version, 1)
-					require.Nil(t, err)
-
-					defer func() {
-						_ = clientConn.Close()
-						_ = serverConn.Close()
-					}()
-
-					wg := &sync.WaitGroup{}
-					ctx, cancelFn := context.WithCancel(context.Background())
-					defer func() {
-						cancelFn()
-						clientConn.Close()
-						serverConn.Close()
-						server.Close()
-						wg.Wait()
-					}()
-
-					isClosedFunc := func() bool {
-						select {
-						case <-ctx.Done():
-							return true
-						default:
-							return false
-						}
-					}
-
-					wg.Add(1)
-					go func() {
-						defer wg.Done()
-						for {
-							if isClosedFunc() {
-								return
-							}
-							incoming, err := serverConn.Receive()
-
-							if isClosedFunc() {
-								return
-							}
-							assert.Nil(t, err)
-							if err != nil {
-								return
-							}
-
-							// server -> client
-							outgoing, _ := frame.NewResponseFrame(
-								version,
-								incoming.Header.StreamId,
-								nil,
-								nil,
-								nil,
-								&message.RowsResult{
-									Metadata: &message.RowsMetadata{ColumnCount: 1},
-									Data: message.RowSet{
-										message.Row{
-											message.Column{0, 0, 0, 4, 1, 2, 3, 4},
-										},
-										message.Row{
-											message.Column{0, 0, 0, 4, 5, 6, 7, 8},
-										},
-									},
-								},
-								compressor != "NONE",
-							)
-							err = serverConn.Send(outgoing)
-
-							if isClosedFunc() {
-								return
-							}
-							assert.Nil(t, err)
-							if err != nil {
-								return
-							}
-						}
-					}()
-
-					for i := 0; i < 100; i++ {
-						// client -> server
-						outgoing, _ := frame.NewRequestFrame(
-							version,
-							1,
-							false,
-							nil,
-							&message.Query{
-								Query:   "SELECT * FROM system.local",
-								Options: &message.QueryOptions{},
+func playServer(
+	serverConn *client.CqlServerConnection,
+	version primitive.ProtocolVersion,
+	compressor string,
+	ctx context.Context,
+	wg *sync.WaitGroup,
+) {
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				incoming, err := serverConn.Receive()
+				if err != nil {
+					return
+				}
+				outgoing, _ := frame.NewResponseFrame(
+					version,
+					incoming.Header.StreamId,
+					nil,
+					nil,
+					nil,
+					&message.RowsResult{
+						Metadata: &message.RowsMetadata{ColumnCount: 1},
+						Data: message.RowSet{
+							message.Row{
+								message.Column{0, 0, 0, 4, 1, 2, 3, 4},
 							},
-							compressor != "NONE",
-						)
-						incoming, err := clientConn.SendAndReceive(outgoing)
-						require.Nil(t, err)
-						require.NotNil(t, incoming)
-					}
-				})
+							message.Row{
+								message.Column{0, 0, 0, 4, 5, 6, 7, 8},
+							},
+						},
+					},
+					compressor != "NONE",
+				)
+				err = serverConn.Send(outgoing)
+				if err != nil {
+					return
+				}
 			}
-		})
+		}
+	}()
+}
+
+func playClient(
+	t *testing.T,
+	clientConn *client.CqlClientConnection,
+	version primitive.ProtocolVersion,
+	compressor string,
+	generateStreamId func(int) int16,
+) {
+	for i := 0; i < 100; i++ {
+		outgoing, _ := frame.NewRequestFrame(
+			version,
+			generateStreamId(1),
+			false,
+			nil,
+			&message.Query{
+				Query:   "SELECT * FROM system.local",
+				Options: &message.QueryOptions{},
+			},
+			compressor != "NONE",
+		)
+		incoming, err := clientConn.SendAndReceive(outgoing)
+		require.Nil(t, err)
+		require.NotNil(t, incoming)
 	}
 }
