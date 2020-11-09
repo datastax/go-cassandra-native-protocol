@@ -236,9 +236,9 @@ func (c *CqlClientConnection) NewStartupRequest(version primitive.ProtocolVersio
 	startup := message.NewStartup()
 	if c.codec.GetBodyCompressor() != nil {
 		startup.SetCompression(c.codec.GetBodyCompressor().Algorithm())
-		startup.SetDriverName("DataStax Go client")
 	}
-	request, _ := frame.NewRequestFrame(version, ManagedStreamId, false, nil, startup, false)
+	startup.SetDriverName("DataStax Go client")
+	request, _ := frame.NewRequestFrame(version, streamId, false, nil, startup, false)
 	return request
 }
 
