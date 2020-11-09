@@ -14,6 +14,7 @@ import (
 
 type inFlightRequestsHandler struct {
 	connectionId string
+	ctx          context.Context
 	maxInFlight  int
 	maxPending   int
 	timeout      time.Duration
@@ -27,9 +28,16 @@ func (h *inFlightRequestsHandler) String() string {
 	return fmt.Sprintf("%v: [in-flight handler]", h.connectionId)
 }
 
-func newInFlightRequestsHandler(connectionId string, maxInFlight int, maxPending int, timeout time.Duration) *inFlightRequestsHandler {
+func newInFlightRequestsHandler(
+	connectionId string,
+	ctx context.Context,
+	maxInFlight int,
+	maxPending int,
+	timeout time.Duration,
+) *inFlightRequestsHandler {
 	handler := &inFlightRequestsHandler{
 		connectionId: connectionId,
+		ctx:          ctx,
 		maxInFlight:  maxInFlight,
 		maxPending:   maxPending,
 		timeout:      timeout,
@@ -103,7 +111,7 @@ func (h *inFlightRequestsHandler) onIncomingFrameReceived(f *frame.Frame) error 
 }
 
 func (h *inFlightRequestsHandler) addInFlight(streamId int16, managedStreamId bool) (*inFlightRequest, error) {
-	inFlight := newInFlightRequest(h.String(), streamId, managedStreamId, h.maxPending, h.timeout)
+	inFlight := newInFlightRequest(h.String(), streamId, managedStreamId, h.ctx, h.maxPending, h.timeout)
 	h.inFlightLock.Lock()
 	defer h.inFlightLock.Unlock()
 	if h.isClosed() {
@@ -210,8 +218,15 @@ func (r *inFlightRequest) Err() error {
 	return r.err
 }
 
-func newInFlightRequest(handlerId string, streamId int16, managedStreamId bool, maxPending int, timeout time.Duration) *inFlightRequest {
-	ctx, cancel := context.WithCancel(context.Background())
+func newInFlightRequest(
+	handlerId string,
+	streamId int16,
+	managedStreamId bool,
+	ctx context.Context,
+	maxPending int,
+	timeout time.Duration,
+) *inFlightRequest {
+	ctx, cancel := context.WithCancel(ctx)
 	incoming := make(chan *frame.Frame, maxPending)
 	return &inFlightRequest{
 		handlerId:       handlerId,
@@ -267,7 +282,7 @@ func (r *inFlightRequest) startTimeout() {
 }
 
 func (r *inFlightRequest) stopTimeout() {
-	if r.timeoutCtx != nil {
+	if r.timeoutCancel != nil {
 		r.timeoutCancel()
 	}
 }

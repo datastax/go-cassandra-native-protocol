@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/frame"
@@ -22,9 +23,9 @@ const (
 const DefaultMaxConnections = 128
 
 const (
-	serverStateNotStarted = iota
-	serverStateRunning    = iota
-	serverStateClosed     = iota
+	ServerStateNotStarted = int32(iota)
+	ServerStateRunning    = int32(iota)
+	ServerStateClosed     = int32(iota)
 )
 
 // CqlServer is a minimalistic server stub that can be used to mimic CQL-compatible backends. It is preferable to
@@ -48,6 +49,8 @@ type CqlServer struct {
 	// The timeout to apply for closing idle connections.
 	IdleTimeout time.Duration
 
+	ctx                context.Context
+	cancel             context.CancelFunc
 	listener           net.Listener
 	connectionsHandler *clientConnectionHandler
 	waitGroup          *sync.WaitGroup
@@ -74,26 +77,40 @@ func (server *CqlServer) getState() int32 {
 	return atomic.LoadInt32(&server.state)
 }
 
+func (server *CqlServer) IsNotStarted() bool {
+	return server.getState() == ServerStateNotStarted
+}
+
+func (server *CqlServer) IsRunning() bool {
+	return server.getState() == ServerStateRunning
+}
+
+func (server *CqlServer) IsClosed() bool {
+	return server.getState() == ServerStateClosed
+}
+
 func (server *CqlServer) transitionState(old int32, new int32) bool {
 	return atomic.CompareAndSwapInt32(&server.state, old, new)
 }
 
 // Starts the server and binds to its listen address. This method must be called before calling Accept.
-func (server *CqlServer) Start() (err error) {
-	if server.transitionState(serverStateNotStarted, serverStateRunning) {
+// Set ctx to context.Background if no parent context exists.
+func (server *CqlServer) Start(ctx context.Context) (err error) {
+	if ctx == nil {
+		return fmt.Errorf("context cannot be nil")
+	}
+	if server.transitionState(ServerStateNotStarted, ServerStateRunning) {
 		log.Debug().Msgf("%v: server is starting", server)
-		if server.listener, err = net.Listen("tcp", server.ListenAddress); err != nil {
-			log.Debug().Err(err).Msgf("%v: start failed", server)
-			err = fmt.Errorf("%v: start failed: %w", server, err)
-			server.abort()
-		} else {
-			if server.connectionsHandler, err = newClientConnectionHandler(server.String(), server.MaxConnections); err != nil {
-				return err
-			}
-			server.waitGroup = &sync.WaitGroup{}
-			server.acceptLoop()
-			log.Info().Msgf("%v: successfully started", server)
+		if server.connectionsHandler, err = newClientConnectionHandler(server.String(), server.MaxConnections); err != nil {
+			return fmt.Errorf("%v: start failed: %w", server, err)
+		} else if server.listener, err = net.Listen("tcp", server.ListenAddress); err != nil {
+			return fmt.Errorf("%v: start failed: %w", server, err)
 		}
+		server.ctx, server.cancel = context.WithCancel(ctx)
+		server.waitGroup = &sync.WaitGroup{}
+		server.acceptLoop()
+		server.awaitDone()
+		log.Info().Msgf("%v: successfully started", server)
 	} else {
 		log.Debug().Msgf("%v: already started or closed", server)
 	}
@@ -101,18 +118,12 @@ func (server *CqlServer) Start() (err error) {
 }
 
 func (server *CqlServer) Close() (err error) {
-	if server.transitionState(serverStateRunning, serverStateClosed) {
+	if server.transitionState(ServerStateRunning, ServerStateClosed) {
 		log.Debug().Msgf("%v: closing", server)
-		if server.listener != nil {
-			err = server.listener.Close()
-		}
-		connectionsHandler := server.connectionsHandler
-		if connectionsHandler != nil {
-			connectionsHandler.close()
-		}
-		if server.waitGroup != nil {
-			server.waitGroup.Wait()
-		}
+		err = server.listener.Close()
+		server.connectionsHandler.close()
+		server.cancel()
+		server.waitGroup.Wait()
 		if err != nil {
 			log.Debug().Err(err).Msgf("%v: could not close server", server)
 			err = fmt.Errorf("%v: could not close server: %w", server, err)
@@ -126,7 +137,7 @@ func (server *CqlServer) Close() (err error) {
 }
 
 func (server *CqlServer) abort() {
-	log.Warn().Msgf("%v: forcefully closing", server)
+	log.Debug().Msgf("%v: forcefully closing", server)
 	if err := server.Close(); err != nil {
 		log.Error().Err(err).Msgf("%v: error closing", server)
 	}
@@ -136,9 +147,9 @@ func (server *CqlServer) acceptLoop() {
 	server.waitGroup.Add(1)
 	go func() {
 		defer server.waitGroup.Done()
-		for server.getState() == serverStateRunning {
+		for server.IsRunning() {
 			if conn, err := server.listener.Accept(); err != nil {
-				if server.getState() != serverStateClosed {
+				if !server.IsClosed() {
 					log.Error().Err(err).Msgf("%v: error accepting client connections, closing server", server)
 					server.abort()
 				}
@@ -163,10 +174,20 @@ func (server *CqlServer) acceptLoop() {
 	}()
 }
 
+func (server *CqlServer) awaitDone() {
+	server.waitGroup.Add(1)
+	go func() {
+		defer server.waitGroup.Done()
+		<-server.ctx.Done()
+		log.Debug().Err(server.ctx.Err()).Msgf("%v: context was closed", server)
+		server.abort()
+	}()
+}
+
 // Waits until a new client connection is accepted, the configured timeout is triggered, or the server is closed,
 // whichever happens first.
 func (server *CqlServer) Accept(clientConnection *CqlClientConnection) (*CqlServerConnection, error) {
-	if server.getState() == serverStateClosed {
+	if server.IsClosed() {
 		return nil, fmt.Errorf("%v: server closed", server)
 	}
 	log.Debug().Msgf("%v: waiting for incoming client connection to be accepted: %v", server, clientConnection)
@@ -188,12 +209,12 @@ func (server *CqlServer) Accept(clientConnection *CqlClientConnection) (*CqlServ
 
 // Convenience method to connect a CqlClient to this CqlServer. The returned connections will be open, but not
 // initialized (i.e., no handshake performed). The server must be started prior to calling this method.
-func (server *CqlServer) Bind(client *CqlClient) (*CqlClientConnection, *CqlServerConnection, error) {
-	if server.getState() == serverStateNotStarted {
+func (server *CqlServer) Bind(client *CqlClient, ctx context.Context) (*CqlClientConnection, *CqlServerConnection, error) {
+	if server.IsNotStarted() {
 		return nil, nil, fmt.Errorf("%v: server not started", server)
-	} else if server.getState() == serverStateClosed {
+	} else if server.IsClosed() {
 		return nil, nil, fmt.Errorf("%v: server closed", server)
-	} else if clientConn, err := client.Connect(); err != nil {
+	} else if clientConn, err := client.Connect(ctx); err != nil {
 		return nil, nil, fmt.Errorf("%v: bind failed, client %v could not connect: %w", server, client, err)
 	} else if serverConn, err := server.Accept(clientConn); err != nil {
 		return nil, nil, fmt.Errorf("%v: bind failed, client %v wasn't accepted: %w", server, client, err)
@@ -208,10 +229,11 @@ func (server *CqlServer) Bind(client *CqlClient) (*CqlClientConnection, *CqlServ
 // Use stream id zero to activate automatic stream id management.
 func (server *CqlServer) BindAndInit(
 	client *CqlClient,
+	ctx context.Context,
 	version primitive.ProtocolVersion,
 	streamId int16,
 ) (*CqlClientConnection, *CqlServerConnection, error) {
-	if clientConn, serverConn, err := server.Bind(client); err != nil {
+	if clientConn, serverConn, err := server.Bind(client, ctx); err != nil {
 		return nil, nil, err
 	} else {
 		return clientConn, serverConn, PerformHandshake(clientConn, serverConn, version, streamId)
@@ -277,14 +299,14 @@ func (c *CqlServerConnection) incomingLoop() {
 	c.waitGroup.Add(1)
 	go func() {
 		defer c.waitGroup.Done()
-		for !c.isClosed() {
+		for !c.IsClosed() {
 			if err := c.conn.SetReadDeadline(time.Now().Add(c.idleTimeout)); err != nil {
-				if !c.isClosed() {
+				if !c.IsClosed() {
 					log.Error().Err(err).Msgf("%v: error setting idle timeout, closing connection", c)
 					c.abort()
 				}
 			} else if incoming, err := c.codec.DecodeFrame(c.conn); err != nil {
-				if !c.isClosed() {
+				if !c.IsClosed() {
 					if errors.Is(err, io.EOF) {
 						log.Info().Msgf("%v: connection reset by peer, closing", c)
 					} else {
@@ -311,9 +333,9 @@ func (c *CqlServerConnection) outgoingLoop() {
 	c.waitGroup.Add(1)
 	go func() {
 		defer c.waitGroup.Done()
-		for !c.isClosed() {
+		for !c.IsClosed() {
 			if outgoing, ok := <-c.outgoing; !ok {
-				if !c.isClosed() {
+				if !c.IsClosed() {
 					log.Error().Msgf("%v: outgoing frame channel was closed unexpectedly, closing connection", c)
 					c.abort()
 				}
@@ -321,7 +343,7 @@ func (c *CqlServerConnection) outgoingLoop() {
 			} else {
 				log.Debug().Msgf("%v: sending outgoing frame: %v", c, outgoing)
 				if err := c.codec.EncodeFrame(outgoing, c.conn); err != nil {
-					if !c.isClosed() {
+					if !c.IsClosed() {
 						if errors.Is(err, io.EOF) {
 							log.Info().Msgf("%v: connection reset by peer, closing", c)
 						} else {
@@ -340,7 +362,7 @@ func (c *CqlServerConnection) outgoingLoop() {
 
 // Sends the given response frame.
 func (c *CqlServerConnection) Send(f *frame.Frame) error {
-	if c.isClosed() {
+	if c.IsClosed() {
 		return fmt.Errorf("%v: connection closed", c)
 	}
 	log.Debug().Msgf("%v: enqueuing outgoing frame: %v", c, f)
@@ -356,12 +378,12 @@ func (c *CqlServerConnection) Send(f *frame.Frame) error {
 // Waits  until the next request frame is received, or the configured idle timeout is triggered, or the connection
 // itself is closed, whichever happens first.
 func (c *CqlServerConnection) Receive() (*frame.Frame, error) {
-	if c.isClosed() {
+	if c.IsClosed() {
 		return nil, fmt.Errorf("%v: connection closed", c)
 	}
 	log.Debug().Msgf("%v: waiting for incoming frame", c)
 	if incoming, ok := <-c.incoming; !ok {
-		if c.isClosed() {
+		if c.IsClosed() {
 			return nil, fmt.Errorf("%v: connection closed", c)
 		} else {
 			return nil, fmt.Errorf("%v: incoming frame channel closed unexpectedly", c)
@@ -372,7 +394,7 @@ func (c *CqlServerConnection) Receive() (*frame.Frame, error) {
 	}
 }
 
-func (c *CqlServerConnection) isClosed() bool {
+func (c *CqlServerConnection) IsClosed() bool {
 	return atomic.LoadInt32(&c.closed) == 1
 }
 

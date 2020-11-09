@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/frame"
@@ -65,16 +66,20 @@ func (client *CqlClient) String() string {
 	return fmt.Sprintf("CQL client [%v]", client.RemoteAddress)
 }
 
-// Connect establishes a new TCP connection to the client's remote address. The returned CqlClientConnection is ready
-// to use, but one must initialize it manually, for example by calling CqlClientConnection.InitiateHandshake.
-// Alternatively, use ConnectAndInit to get a fully-initialized connection.
-func (client *CqlClient) Connect() (*CqlClientConnection, error) {
+// Connect establishes a new TCP connection to the client's remote address.
+// Set ctx to context.Background if no parent context exists.
+// The returned CqlClientConnection is ready to use, but one must initialize it manually, for example by calling
+// CqlClientConnection.InitiateHandshake. Alternatively, use ConnectAndInit to get a fully-initialized connection.
+func (client *CqlClient) Connect(ctx context.Context) (*CqlClientConnection, error) {
 	log.Debug().Msgf("%v: connecting", client)
-	if conn, err := net.DialTimeout("tcp", client.RemoteAddress, client.ConnectTimeout); err != nil {
+	dialer := net.Dialer{}
+	connectCtx, _ := context.WithTimeout(ctx, client.ConnectTimeout)
+	if conn, err := dialer.DialContext(connectCtx, "tcp", client.RemoteAddress); err != nil {
 		return nil, fmt.Errorf("%v: cannot establish TCP connection: %w", client, err)
 	} else {
 		connection, err := NewCqlClientConnection(
 			conn,
+			ctx,
 			client.Credentials,
 			client.Codec,
 			client.MaxInFlight,
@@ -89,8 +94,13 @@ func (client *CqlClient) Connect() (*CqlClientConnection, error) {
 // ConnectAndInit establishes a new TCP connection to the server, then initiates a handshake procedure using the
 // specified protocol version. The CqlClientConnection connection will be fully initialized when this method returns.
 // Use stream id zero to activate automatic stream id management.
-func (client *CqlClient) ConnectAndInit(version primitive.ProtocolVersion, streamId int16) (*CqlClientConnection, error) {
-	if connection, err := client.Connect(); err != nil {
+// Set ctx to context.Background if no parent context exists.
+func (client *CqlClient) ConnectAndInit(
+	ctx context.Context,
+	version primitive.ProtocolVersion,
+	streamId int16,
+) (*CqlClientConnection, error) {
+	if connection, err := client.Connect(ctx); err != nil {
 		return nil, err
 	} else {
 		return connection, connection.InitiateHandshake(version, streamId)
@@ -110,11 +120,14 @@ type CqlClientConnection struct {
 	events          chan *frame.Frame
 	waitGroup       *sync.WaitGroup
 	closed          int32
+	ctx             context.Context
+	cancel          context.CancelFunc
 }
 
 // Creates a new CqlClientConnection from the given TCP net.Conn.
 func NewCqlClientConnection(
 	conn net.Conn,
+	ctx context.Context,
 	credentials *AuthCredentials,
 	codec frame.Codec,
 	maxInFlight int,
@@ -123,6 +136,9 @@ func NewCqlClientConnection(
 ) (*CqlClientConnection, error) {
 	if conn == nil {
 		return nil, fmt.Errorf("TCP connection cannot be nil")
+	}
+	if ctx == nil {
+		return nil, fmt.Errorf("context cannot be nil")
 	}
 	if maxInFlight < 1 {
 		return nil, fmt.Errorf("max in-flight: expecting positive, got: %v", maxInFlight)
@@ -144,9 +160,11 @@ func NewCqlClientConnection(
 		events:      make(chan *frame.Frame, maxInFlight),
 		waitGroup:   &sync.WaitGroup{},
 	}
-	connection.inFlightHandler = newInFlightRequestsHandler(connection.String(), maxInFlight, maxPending, readTimeout)
+	connection.ctx, connection.cancel = context.WithCancel(ctx)
+	connection.inFlightHandler = newInFlightRequestsHandler(connection.String(), connection.ctx, maxInFlight, maxPending, readTimeout)
 	connection.incomingLoop()
 	connection.outgoingLoop()
+	connection.awaitDone()
 	return connection, nil
 }
 
@@ -159,9 +177,9 @@ func (c *CqlClientConnection) incomingLoop() {
 	c.waitGroup.Add(1)
 	go func() {
 		defer c.waitGroup.Done()
-		for !c.isClosed() {
+		for !c.IsClosed() {
 			if incoming, err := c.codec.DecodeFrame(c.conn); err != nil {
-				if !c.isClosed() {
+				if !c.IsClosed() {
 					if errors.Is(err, io.EOF) {
 						log.Info().Msgf("%v: connection reset by peer, closing", c)
 					} else {
@@ -202,9 +220,9 @@ func (c *CqlClientConnection) outgoingLoop() {
 	c.waitGroup.Add(1)
 	go func() {
 		defer c.waitGroup.Done()
-		for !c.isClosed() {
+		for !c.IsClosed() {
 			if outgoing, ok := <-c.outgoing; !ok {
-				if !c.isClosed() {
+				if !c.IsClosed() {
 					log.Error().Msgf("%v: outgoing frame channel was closed unexpectedly, closing connection", c)
 					c.abort()
 				}
@@ -212,7 +230,7 @@ func (c *CqlClientConnection) outgoingLoop() {
 			} else {
 				log.Debug().Msgf("%v: sending outgoing frame: %v", c, outgoing)
 				if err := c.codec.EncodeFrame(outgoing, c.conn); err != nil {
-					if !c.isClosed() {
+					if !c.IsClosed() {
 						if errors.Is(err, io.EOF) {
 							log.Info().Msgf("%v: connection reset by peer, closing", c)
 						} else {
@@ -226,6 +244,16 @@ func (c *CqlClientConnection) outgoingLoop() {
 				}
 			}
 		}
+	}()
+}
+
+func (c *CqlClientConnection) awaitDone() {
+	c.waitGroup.Add(1)
+	go func() {
+		defer c.waitGroup.Done()
+		<-c.ctx.Done()
+		log.Debug().Err(c.ctx.Err()).Msgf("%v: context was closed", c)
+		c.abort()
 	}()
 }
 
@@ -274,7 +302,7 @@ func (c *CqlClientConnection) Send(f *frame.Frame) (InFlightRequest, error) {
 	if f == nil {
 		return nil, fmt.Errorf("%v: frame cannot be nil", c)
 	}
-	if c.isClosed() {
+	if c.IsClosed() {
 		return nil, fmt.Errorf("%v: connection closed", c)
 	}
 	log.Debug().Msgf("%v: enqueuing outgoing frame: %v", c, f)
@@ -335,7 +363,7 @@ func (c *CqlClientConnection) EventChannel() EventChannel {
 // Waits until an event frame is received, or the configured read timeout is triggered, or the connection is closed,
 // whichever happens first. Returns the event frame, if any.
 func (c *CqlClientConnection) ReceiveEvent() (*frame.Frame, error) {
-	if c.isClosed() {
+	if c.IsClosed() {
 		return nil, fmt.Errorf("%v: connection closed", c)
 	}
 	select {
@@ -368,7 +396,7 @@ func (c *CqlClientConnection) isFatalError(incoming *frame.Frame) (bool, primiti
 	return false, -1
 }
 
-func (c *CqlClientConnection) isClosed() bool {
+func (c *CqlClientConnection) IsClosed() bool {
 	return atomic.LoadInt32(&c.closed) == 1
 }
 
@@ -387,6 +415,7 @@ func (c *CqlClientConnection) Close() (err error) {
 		close(outgoing)
 		close(events)
 		c.inFlightHandler.close()
+		c.cancel()
 		c.waitGroup.Wait()
 		if err != nil {
 			err = fmt.Errorf("%v: error closing: %w", c, err)

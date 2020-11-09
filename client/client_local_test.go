@@ -7,9 +7,11 @@ import (
 	"github.com/datastax/go-cassandra-native-protocol/frame"
 	"github.com/datastax/go-cassandra-native-protocol/message"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"sync"
 	"testing"
+	"time"
 )
 
 func TestLocalServer(t *testing.T) {
@@ -41,27 +43,22 @@ func TestLocalServer(t *testing.T) {
 							)
 							clt.Codec = frameCodec
 
-							err := server.Start()
-							require.Nil(t, err)
-							defer func() {
-								_ = server.Close()
-							}()
-
-							clientConn, serverConn, err := server.BindAndInit(clt, version, client.ManagedStreamId)
-							require.Nil(t, err)
-
-							wg := &sync.WaitGroup{}
 							ctx, cancelFn := context.WithCancel(context.Background())
 
-							defer func() {
-								cancelFn()
-								_ = clientConn.Close()
-								_ = serverConn.Close()
-								wg.Wait()
-							}()
+							err := server.Start(ctx)
+							require.Nil(t, err)
 
-							playServer(serverConn, version, compressor, ctx, wg)
+							clientConn, serverConn, err := server.BindAndInit(clt, ctx, version, client.ManagedStreamId)
+							require.Nil(t, err)
+
+							playServer(serverConn, version, compressor, ctx)
 							playClient(t, clientConn, version, compressor, generator)
+
+							cancelFn()
+
+							assert.Eventually(t, clientConn.IsClosed, time.Second*10, time.Millisecond*10)
+							assert.Eventually(t, serverConn.IsClosed, time.Second*10, time.Millisecond*10)
+							assert.Eventually(t, server.IsClosed, time.Second*10, time.Millisecond*10)
 
 						})
 					}
@@ -76,11 +73,8 @@ func playServer(
 	version primitive.ProtocolVersion,
 	compressor string,
 	ctx context.Context,
-	wg *sync.WaitGroup,
 ) {
-	wg.Add(1)
 	go func() {
-		defer wg.Done()
 		for {
 			select {
 			case <-ctx.Done():
@@ -125,20 +119,29 @@ func playClient(
 	compressor string,
 	generateStreamId func(int) int16,
 ) {
-	for i := 0; i < 100; i++ {
-		outgoing, _ := frame.NewRequestFrame(
-			version,
-			generateStreamId(1),
-			false,
-			nil,
-			&message.Query{
-				Query:   "SELECT * FROM system.local",
-				Options: &message.QueryOptions{},
-			},
-			compressor != "NONE",
-		)
-		incoming, err := clientConn.SendAndReceive(outgoing)
-		require.Nil(t, err)
-		require.NotNil(t, incoming)
+	wg := &sync.WaitGroup{}
+	for i := 1; i <= 10; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			for j := 1; j <= 10; j++ {
+				outgoing, _ := frame.NewRequestFrame(
+					version,
+					generateStreamId(i),
+					false,
+					nil,
+					&message.Query{
+						Query:   "SELECT * FROM system.local",
+						Options: &message.QueryOptions{},
+					},
+					compressor != "NONE",
+				)
+				incoming, err := clientConn.SendAndReceive(outgoing)
+				require.Nil(t, err)
+				require.NotNil(t, incoming)
+			}
+
+		}(i)
 	}
+	wg.Wait()
 }

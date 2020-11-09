@@ -1,12 +1,14 @@
 package client_test
 
 import (
+	"context"
 	"encoding/binary"
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/client"
 	"github.com/datastax/go-cassandra-native-protocol/frame"
 	"github.com/datastax/go-cassandra-native-protocol/message"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"sync"
 	"testing"
@@ -110,7 +112,9 @@ func clientTest(
 	ks := fmt.Sprintf("ks_%d", time.Now().UnixNano())
 	table := fmt.Sprintf("t_%d", time.Now().UnixNano())
 
-	clientConn, err := clt.ConnectAndInit(version, generator(1))
+	ctx, cancel := context.WithCancel(context.Background())
+
+	clientConn, err := clt.ConnectAndInit(ctx, version, generator(1))
 	require.Nil(t, err)
 
 	createSchema(t, clientConn, ks, table, version, generator, compress)
@@ -122,8 +126,9 @@ func clientTest(
 	}
 	dropSchema(t, clientConn, ks, version, generator, compress)
 
-	err = clientConn.Close()
-	require.Nil(t, err)
+	cancel()
+	assert.Eventually(t, clientConn.IsClosed, time.Second*10, time.Millisecond*10)
+
 }
 
 func createSchema(
