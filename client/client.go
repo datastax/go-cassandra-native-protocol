@@ -278,7 +278,7 @@ func (c *CqlClientConnection) Send(f *frame.Frame) (InFlightRequest, error) {
 	}
 	log.Debug().Msgf("%v: enqueuing outgoing frame: %v", c, f)
 	if inFlight, err := c.inFlightHandler.onOutgoingFrameEnqueued(f); err != nil {
-		return nil, fmt.Errorf("%v: failed to register in-flight handler for frame: %v", c, f)
+		return nil, fmt.Errorf("%v: failed to register in-flight handler for frame: %v: %w", c, f, err)
 	} else {
 		select {
 		case c.outgoing <- f:
