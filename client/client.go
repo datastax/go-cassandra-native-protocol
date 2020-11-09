@@ -88,11 +88,12 @@ func (client *CqlClient) Connect() (*CqlClientConnection, error) {
 
 // ConnectAndInit establishes a new TCP connection to the server, then initiates a handshake procedure using the
 // specified protocol version. The CqlClientConnection connection will be fully initialized when this method returns.
-func (client *CqlClient) ConnectAndInit(version primitive.ProtocolVersion) (*CqlClientConnection, error) {
+// Use stream id zero to activate automatic stream id management.
+func (client *CqlClient) ConnectAndInit(version primitive.ProtocolVersion, streamId int16) (*CqlClientConnection, error) {
 	if connection, err := client.Connect(); err != nil {
 		return nil, err
 	} else {
-		return connection, connection.InitiateHandshake(version)
+		return connection, connection.InitiateHandshake(version, streamId)
 	}
 }
 
@@ -229,9 +230,9 @@ func (c *CqlClientConnection) outgoingLoop() {
 }
 
 // Convenience method to create a new STARTUP request frame. The compression option will be automatically set to the
-// appropriate compression algorithm, depending on whether the frame codec has a body compressor or not. The stream id
-// will be set to 0; this should be modified afterwards if not appropriate.
-func (c *CqlClientConnection) NewStartupRequest(version primitive.ProtocolVersion) *frame.Frame {
+// appropriate compression algorithm, depending on whether the frame codec has a body compressor or not. Use stream id
+// zero to activate automatic stream id management.
+func (c *CqlClientConnection) NewStartupRequest(version primitive.ProtocolVersion, streamId int16) *frame.Frame {
 	startup := message.NewStartup()
 	if c.codec.GetBodyCompressor() != nil {
 		startup.SetCompression(c.codec.GetBodyCompressor().Algorithm())

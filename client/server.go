@@ -205,11 +205,16 @@ func (server *CqlServer) Bind(client *CqlClient) (*CqlClientConnection, *CqlServ
 
 // Convenience method to connect a CqlClient to this CqlServer. The returned connections will be open and
 // initialized (i.e., handshake is already performed). The server must be started prior to calling this method.
-func (server *CqlServer) BindAndInit(client *CqlClient, version primitive.ProtocolVersion) (*CqlClientConnection, *CqlServerConnection, error) {
+// Use stream id zero to activate automatic stream id management.
+func (server *CqlServer) BindAndInit(
+	client *CqlClient,
+	version primitive.ProtocolVersion,
+	streamId int16,
+) (*CqlClientConnection, *CqlServerConnection, error) {
 	if clientConn, serverConn, err := server.Bind(client); err != nil {
 		return nil, nil, err
 	} else {
-		return clientConn, serverConn, PerformHandshake(clientConn, serverConn, version)
+		return clientConn, serverConn, PerformHandshake(clientConn, serverConn, version, streamId)
 	}
 }
 

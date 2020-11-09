@@ -89,7 +89,7 @@ func clientTest(t *testing.T, clt *client.CqlClient, version primitive.ProtocolV
 	ks := fmt.Sprintf("ks_%d", time.Now().UnixNano())
 	table := fmt.Sprintf("t_%d", time.Now().UnixNano())
 
-	clientConn, err := clt.ConnectAndInit(version)
+	clientConn, err := clt.ConnectAndInit(version, client.ManagedStreamId)
 	require.Nil(t, err)
 
 	createSchema(t, clientConn, ks, table, version, compress)

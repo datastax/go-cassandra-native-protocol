@@ -10,11 +10,11 @@ import (
 
 // Performs a handshake between the given client and server connections, using the provided protocol version. The
 // handshake will use stream id 1, unless the client connection is in managed mode.
-func PerformHandshake(clientConn *CqlClientConnection, serverConn *CqlServerConnection, version primitive.ProtocolVersion) error {
+func PerformHandshake(clientConn *CqlClientConnection, serverConn *CqlServerConnection, version primitive.ProtocolVersion, streamId int16) error {
 	clientChan := make(chan error)
 	serverChan := make(chan error)
 	go func() {
-		clientChan <- clientConn.InitiateHandshake(version)
+		clientChan <- clientConn.InitiateHandshake(version, streamId)
 	}()
 	go func() {
 		serverChan <- serverConn.AcceptHandshake()
@@ -38,10 +38,10 @@ func PerformHandshake(clientConn *CqlClientConnection, serverConn *CqlServerConn
 
 // Initiates the handshake procedure to initialize the client connection, using the given protocol version.
 // The handshake will use authentication if the connection was created with auth credentials; otherwise it will
-// proceed without authentication. The handshake will use stream id 1, unless the connection is in managed mode.
-func (c *CqlClientConnection) InitiateHandshake(version primitive.ProtocolVersion) (err error) {
+// proceed without authentication. Use stream id zero to activate automatic stream id management.
+func (c *CqlClientConnection) InitiateHandshake(version primitive.ProtocolVersion, streamId int16) (err error) {
 	log.Debug().Msgf("%v: performing handshake", c)
-	startup := c.NewStartupRequest(version)
+	startup := c.NewStartupRequest(version, streamId)
 	var response *frame.Frame
 	if response, err = c.SendAndReceive(startup); err == nil {
 		if c.credentials == nil {
