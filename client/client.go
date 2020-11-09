@@ -201,10 +201,12 @@ func (c *CqlClientConnection) incomingLoop() {
 					} else {
 						log.Debug().Msgf("%v: incoming frame successfully delivered: %v", c, incoming)
 					}
-					if fatalError, errorCode := c.isFatalError(incoming); fatalError {
-						log.Error().Msgf("%v: server replied with fatal error code %v, closing connection", c, errorCode)
-						abort = true
-						break
+					if incoming.Header.OpCode == primitive.OpCodeError {
+						e := incoming.Body.Message.(message.Error)
+						if e.GetErrorCode().IsFatalError() {
+							log.Error().Msgf("%v: server replied with fatal error code %v, closing connection", c, e.GetErrorCode())
+							abort = true
+						}
 					}
 				}
 			}
@@ -275,7 +277,7 @@ func (c *CqlClientConnection) NewStartupRequest(version primitive.ProtocolVersio
 	return request
 }
 
-// A in-flight request sent through CqlClientConnection.Send.
+// An in-flight request sent through CqlClientConnection.Send.
 type InFlightRequest interface {
 
 	// The in-flight request stream id.
@@ -383,25 +385,6 @@ func (c *CqlClientConnection) ReceiveEvent() (*frame.Frame, error) {
 	case <-time.After(c.readTimeout):
 		return nil, fmt.Errorf("%v: timed out waiting for incoming events", c)
 	}
-}
-
-func (c *CqlClientConnection) isFatalError(incoming *frame.Frame) (bool, primitive.ErrorCode) {
-	if incoming.Header.OpCode == primitive.OpCodeError {
-		e := incoming.Body.Message.(message.Error)
-		switch e.GetErrorCode() {
-		case primitive.ErrorCodeServerError:
-			fallthrough
-		case primitive.ErrorCodeProtocolError:
-			fallthrough
-		case primitive.ErrorCodeAuthenticationError:
-			fallthrough
-		case primitive.ErrorCodeOverloaded:
-			fallthrough
-		case primitive.ErrorCodeIsBootstrapping:
-			return true, e.GetErrorCode()
-		}
-	}
-	return false, -1
 }
 
 func (c *CqlClientConnection) IsClosed() bool {

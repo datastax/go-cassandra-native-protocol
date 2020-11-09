@@ -408,7 +408,7 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 						primitive.LengthOfShort + // consistency
 						primitive.LengthOfInt + // received
 						primitive.LengthOfInt + // block for
-						primitive.LengthOfString(primitive.WriteTypeBatchLog), // write type
+						primitive.LengthOfString(string(primitive.WriteTypeBatchLog)), // write type
 					nil,
 				},
 				{
@@ -489,7 +489,7 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 						primitive.LengthOfInt + // received
 						primitive.LengthOfInt + // block for
 						primitive.LengthOfInt + // num failures
-						primitive.LengthOfString(primitive.WriteTypeBatchLog), // write type
+						primitive.LengthOfString(string(primitive.WriteTypeBatchLog)), // write type
 					nil,
 				},
 			}
@@ -547,7 +547,7 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 						primitive.LengthOfInt + // map length
 						primitive.LengthOfByte + net.IPv4len + // map key length
 						primitive.LengthOfShort + // map value length (reason code)
-						primitive.LengthOfString(primitive.WriteTypeBatchLog), // write type
+						primitive.LengthOfString(string(primitive.WriteTypeBatchLog)), // write type
 					nil,
 				},
 			}

@@ -1,6 +1,8 @@
 package primitive
 
-type ProtocolVersion = uint8
+import "fmt"
+
+type ProtocolVersion uint8
 
 const (
 
@@ -15,7 +17,53 @@ const (
 	ProtocolVersionDse2 = ProtocolVersion(0b_1_000010) // 2 + DSE bit = 66
 )
 
-type OpCode = uint8
+func (v ProtocolVersion) IsOss() bool {
+	switch v {
+	case ProtocolVersion3:
+	case ProtocolVersion4:
+	case ProtocolVersion5:
+	default:
+		return false
+	}
+	return true
+}
+
+func (v ProtocolVersion) IsDse() bool {
+	switch v {
+	case ProtocolVersionDse1:
+	case ProtocolVersionDse2:
+	default:
+		return false
+	}
+	return true
+}
+
+func (v ProtocolVersion) IsBeta() bool {
+	switch v {
+	case ProtocolVersion5:
+	default:
+		return false
+	}
+	return true
+}
+
+func (v ProtocolVersion) String() string {
+	switch v {
+	case ProtocolVersion3:
+		return "ProtocolVersion OSS 3"
+	case ProtocolVersion4:
+		return "ProtocolVersion OSS 4"
+	case ProtocolVersion5:
+		return "ProtocolVersion OSS 5 (beta)"
+	case ProtocolVersionDse1:
+		return "ProtocolVersion DSE 1"
+	case ProtocolVersionDse2:
+		return "ProtocolVersion DSE 2"
+	}
+	return fmt.Sprintf("ProtocolVersion ? [%#.2X]", v)
+}
+
+type OpCode uint8
 
 const (
 	// requests
@@ -39,41 +87,211 @@ const (
 	OpCodeAuthSuccess   = OpCode(0x10)
 )
 
-type ResultType = int32
+func (c OpCode) IsRequest() bool {
+	switch c {
+	case OpCodeStartup:
+	case OpCodeOptions:
+	case OpCodeQuery:
+	case OpCodePrepare:
+	case OpCodeExecute:
+	case OpCodeRegister:
+	case OpCodeBatch:
+	case OpCodeAuthResponse:
+	case OpCodeDseRevise:
+	default:
+		return false
+	}
+	return true
+}
+
+func (c OpCode) IsDse() bool {
+	switch c {
+	case OpCodeDseRevise:
+	default:
+		return false
+	}
+	return true
+}
+
+func (c OpCode) String() string {
+	switch c {
+	case OpCodeStartup:
+		return "OpCode STARTUP [0x01]"
+	case OpCodeOptions:
+		return "OpCode OPTIONS [0x05]"
+	case OpCodeQuery:
+		return "OpCode QUERY [0x07]"
+	case OpCodePrepare:
+		return "OpCode PREPARE [0x09]"
+	case OpCodeExecute:
+		return "OpCode EXECUTE [0x0A]"
+	case OpCodeRegister:
+		return "OpCode REGISTER [0x0B]"
+	case OpCodeBatch:
+		return "OpCode BATCH [0x0D]"
+	case OpCodeAuthResponse:
+		return "OpCode AUTH RESPONSE [0x0F]"
+	case OpCodeDseRevise:
+		return "OpCode REVISE [0xFF]"
+	// responses
+	case OpCodeError:
+		return "OpCode ERROR [0x00]"
+	case OpCodeReady:
+		return "OpCode READY [0x02]"
+	case OpCodeAuthenticate:
+		return "OpCode AUTHENTICATE [0x03]"
+	case OpCodeSupported:
+		return "OpCode SUPPORTED [0x06]"
+	case OpCodeResult:
+		return "OpCode RESULT [0x08]"
+	case OpCodeEvent:
+		return "OpCode EVENT [0x0C]"
+	case OpCodeAuthChallenge:
+		return "OpCode AUTH CHALLENGE [0x0E]"
+	case OpCodeAuthSuccess:
+		return "OpCode AUTH SUCCESS [0x10]"
+	}
+	return fmt.Sprintf("OpCode ? [%#.2X]", uint8(c))
+}
+
+type ResultType uint32
 
 const (
-	ResultTypeVoid         = ResultType(0x0001)
-	ResultTypeRows         = ResultType(0x0002)
-	ResultTypeSetKeyspace  = ResultType(0x0003)
-	ResultTypePrepared     = ResultType(0x0004)
-	ResultTypeSchemaChange = ResultType(0x0005)
+	ResultTypeVoid         = ResultType(0x00000001)
+	ResultTypeRows         = ResultType(0x00000002)
+	ResultTypeSetKeyspace  = ResultType(0x00000003)
+	ResultTypePrepared     = ResultType(0x00000004)
+	ResultTypeSchemaChange = ResultType(0x00000005)
 )
 
-type ErrorCode = int32
+func (r ResultType) String() string {
+	switch r {
+	case ResultTypeVoid:
+		return "ResultType Void [0x00000001]"
+	case ResultTypeRows:
+		return "ResultType Rows [0x00000002]"
+	case ResultTypeSetKeyspace:
+		return "ResultType SetKeyspace [0x00000003]"
+	case ResultTypePrepared:
+		return "ResultType Prepared [0x00000004]"
+	case ResultTypeSchemaChange:
+		return "ResultType SchemaChange [0x00000005]"
+	}
+	return fmt.Sprintf("ResultType ? [%#.8X]", uint32(r))
+}
+
+type ErrorCode uint32
 
 const (
-	ErrorCodeServerError         = ErrorCode(0x0000)
-	ErrorCodeProtocolError       = ErrorCode(0x000A)
-	ErrorCodeAuthenticationError = ErrorCode(0x0100)
-	ErrorCodeUnavailable         = ErrorCode(0x1000)
-	ErrorCodeOverloaded          = ErrorCode(0x1001)
-	ErrorCodeIsBootstrapping     = ErrorCode(0x1002)
-	ErrorCodeTruncateError       = ErrorCode(0x1003)
-	ErrorCodeWriteTimeout        = ErrorCode(0x1100)
-	ErrorCodeReadTimeout         = ErrorCode(0x1200)
-	ErrorCodeReadFailure         = ErrorCode(0x1300)
-	ErrorCodeFunctionFailure     = ErrorCode(0x1400)
-	ErrorCodeWriteFailure        = ErrorCode(0x1500)
-	ErrorCodeSyntaxError         = ErrorCode(0x2000)
-	ErrorCodeUnauthorized        = ErrorCode(0x2100)
-	ErrorCodeInvalid             = ErrorCode(0x2200)
-	ErrorCodeConfigError         = ErrorCode(0x2300)
-	ErrorCodeAlreadyExists       = ErrorCode(0x2400)
-	ErrorCodeUnprepared          = ErrorCode(0x2500)
+	// 0xx: fatal errors
+	ErrorCodeServerError         = ErrorCode(0x00000000)
+	ErrorCodeProtocolError       = ErrorCode(0x0000000A)
+	ErrorCodeAuthenticationError = ErrorCode(0x00000100)
+	// 1xx: request execution
+	ErrorCodeUnavailable     = ErrorCode(0x00001000)
+	ErrorCodeOverloaded      = ErrorCode(0x00001001)
+	ErrorCodeIsBootstrapping = ErrorCode(0x00001002)
+	ErrorCodeTruncateError   = ErrorCode(0x00001003)
+	ErrorCodeWriteTimeout    = ErrorCode(0x00001100)
+	ErrorCodeReadTimeout     = ErrorCode(0x00001200)
+	ErrorCodeReadFailure     = ErrorCode(0x00001300)
+	ErrorCodeFunctionFailure = ErrorCode(0x00001400)
+	ErrorCodeWriteFailure    = ErrorCode(0x00001500)
+	// 2xx: query validation
+	ErrorCodeSyntaxError   = ErrorCode(0x00002000)
+	ErrorCodeUnauthorized  = ErrorCode(0x00002100)
+	ErrorCodeInvalid       = ErrorCode(0x00002200)
+	ErrorCodeConfigError   = ErrorCode(0x00002300)
+	ErrorCodeAlreadyExists = ErrorCode(0x00002400)
+	ErrorCodeUnprepared    = ErrorCode(0x00002500)
 )
+
+func (c ErrorCode) IsFatalError() bool {
+	switch c {
+	case ErrorCodeServerError:
+	case ErrorCodeProtocolError:
+	case ErrorCodeAuthenticationError:
+	default:
+		return false
+	}
+	return true
+}
+
+func (c ErrorCode) IsRequestExecutionError() bool {
+	switch c {
+	case ErrorCodeUnavailable:
+	case ErrorCodeOverloaded:
+	case ErrorCodeIsBootstrapping:
+	case ErrorCodeTruncateError:
+	case ErrorCodeWriteTimeout:
+	case ErrorCodeReadTimeout:
+	case ErrorCodeReadFailure:
+	case ErrorCodeFunctionFailure:
+	case ErrorCodeWriteFailure:
+	default:
+		return false
+	}
+	return true
+}
+
+func (c ErrorCode) IsQueryValidationError() bool {
+	switch c {
+	case ErrorCodeSyntaxError:
+	case ErrorCodeUnauthorized:
+	case ErrorCodeInvalid:
+	case ErrorCodeConfigError:
+	case ErrorCodeAlreadyExists:
+	case ErrorCodeUnprepared:
+	default:
+		return false
+	}
+	return true
+}
+
+func (c ErrorCode) String() string {
+	switch c {
+	case ErrorCodeServerError:
+		return "ErrorCode ServerError [0x00000000]"
+	case ErrorCodeProtocolError:
+		return "ErrorCode ProtocolError [0x0000000A]"
+	case ErrorCodeAuthenticationError:
+		return "ErrorCode AuthenticationError [0x00000100]"
+	case ErrorCodeUnavailable:
+		return "ErrorCode Unavailable [0x00001000]"
+	case ErrorCodeOverloaded:
+		return "ErrorCode Overloaded [0x00001001]"
+	case ErrorCodeIsBootstrapping:
+		return "ErrorCode IsBootstrapping [0x00001002]"
+	case ErrorCodeTruncateError:
+		return "ErrorCode TruncateError [0x00001003]"
+	case ErrorCodeWriteTimeout:
+		return "ErrorCode WriteTimeout [0x00001100]"
+	case ErrorCodeReadTimeout:
+		return "ErrorCode ReadTimeout [0x00001200]"
+	case ErrorCodeReadFailure:
+		return "ErrorCode ReadFailure [0x00001300]"
+	case ErrorCodeFunctionFailure:
+		return "ErrorCode FunctionFailure [0x00001400]"
+	case ErrorCodeWriteFailure:
+		return "ErrorCode WriteFailure [0x00001500]"
+	case ErrorCodeSyntaxError:
+		return "ErrorCode SyntaxError [0x00002000]"
+	case ErrorCodeUnauthorized:
+		return "ErrorCode Unauthorized [0x00002100]"
+	case ErrorCodeInvalid:
+		return "ErrorCode Invalid [0x00002200]"
+	case ErrorCodeConfigError:
+		return "ErrorCode ConfigError [0x00002300]"
+	case ErrorCodeAlreadyExists:
+		return "ErrorCode AlreadyExists [0x00002400]"
+	case ErrorCodeUnprepared:
+		return "ErrorCode Unprepared [0x00002500]"
+	}
+	return fmt.Sprintf("ErrorCode ? [%#.8X]", uint32(c))
+}
 
 // Corresponds to protocol section 3 [consistency]
-type ConsistencyLevel = uint16
+type ConsistencyLevel uint16
 
 const (
 	ConsistencyLevelAny         = ConsistencyLevel(0x0000)
@@ -89,7 +307,55 @@ const (
 	ConsistencyLevelLocalOne    = ConsistencyLevel(0x000A)
 )
 
-type WriteType = string
+func (c ConsistencyLevel) IsSerial() bool {
+	switch c {
+	case ConsistencyLevelSerial:
+	case ConsistencyLevelLocalSerial:
+	default:
+		return false
+	}
+	return true
+}
+
+func (c ConsistencyLevel) IsLocal() bool {
+	switch c {
+	case ConsistencyLevelLocalSerial:
+	case ConsistencyLevelLocalOne:
+	default:
+		return false
+	}
+	return true
+}
+
+func (c ConsistencyLevel) String() string {
+	switch c {
+	case ConsistencyLevelAny:
+		return "ConsistencyLevel ANY [0x0000]"
+	case ConsistencyLevelOne:
+		return "ConsistencyLevel ONE [0x0001]"
+	case ConsistencyLevelTwo:
+		return "ConsistencyLevel TWO [0x0002]"
+	case ConsistencyLevelThree:
+		return "ConsistencyLevel THREE [0x0003]"
+	case ConsistencyLevelQuorum:
+		return "ConsistencyLevel QUORUM [0x0004]"
+	case ConsistencyLevelAll:
+		return "ConsistencyLevel ALL [0x0005]"
+	case ConsistencyLevelLocalQuorum:
+		return "ConsistencyLevel LOCAL_QUORUM [0x0006]"
+	case ConsistencyLevelEachQuorum:
+		return "ConsistencyLevel EACH_QUORUM [0x0007]"
+	case ConsistencyLevelSerial:
+		return "ConsistencyLevel SERIAL [0x0008]"
+	case ConsistencyLevelLocalSerial:
+		return "ConsistencyLevel LOCAL_SERIAL [0x0009]"
+	case ConsistencyLevelLocalOne:
+		return "ConsistencyLevel LOCAL_ONE [0x000A]"
+	}
+	return fmt.Sprintf("ConsistencyLevel ? [%#.4X]", uint16(c))
+}
+
+type WriteType string
 
 const (
 	WriteTypeSimple        = WriteType("SIMPLE")
@@ -101,7 +367,7 @@ const (
 	WriteTypeCdc           = WriteType("CDC")
 )
 
-type DataTypeCode = uint16
+type DataTypeCode uint16
 
 const (
 	DataTypeCodeCustom    = DataTypeCode(0x0000)
@@ -132,7 +398,65 @@ const (
 	DataTypeCodeTuple     = DataTypeCode(0x0031)
 )
 
-type EventType = string
+func (c DataTypeCode) String() string {
+	switch c {
+	case DataTypeCodeCustom:
+		return "DataTypeCode Custom [0x0000]"
+	case DataTypeCodeAscii:
+		return "DataTypeCode Ascii [0x0001]"
+	case DataTypeCodeBigint:
+		return "DataTypeCode Bigint [0x0002]"
+	case DataTypeCodeBlob:
+		return "DataTypeCode Blob [0x0003]"
+	case DataTypeCodeBoolean:
+		return "DataTypeCode Boolean [0x0004]"
+	case DataTypeCodeCounter:
+		return "DataTypeCode Counter [0x0005]"
+	case DataTypeCodeDecimal:
+		return "DataTypeCode Decimal [0x0006]"
+	case DataTypeCodeDouble:
+		return "DataTypeCode Double [0x0007]"
+	case DataTypeCodeFloat:
+		return "DataTypeCode Float [0x0008]"
+	case DataTypeCodeInt:
+		return "DataTypeCode Int [0x0009]"
+	case DataTypeCodeTimestamp:
+		return "DataTypeCode Timestamp [0x000B]"
+	case DataTypeCodeUuid:
+		return "DataTypeCode Uuid [0x000C]"
+	case DataTypeCodeVarchar:
+		return "DataTypeCode Varchar [0x000D]"
+	case DataTypeCodeVarint:
+		return "DataTypeCode Varint [0x000E]"
+	case DataTypeCodeTimeuuid:
+		return "DataTypeCode Timeuuid [0x000F]"
+	case DataTypeCodeInet:
+		return "DataTypeCode Inet [0x0010]"
+	case DataTypeCodeDate:
+		return "DataTypeCode Date [0x0011]"
+	case DataTypeCodeTime:
+		return "DataTypeCode Time [0x0012]"
+	case DataTypeCodeSmallint:
+		return "DataTypeCode Smallint [0x0013]"
+	case DataTypeCodeTinyint:
+		return "DataTypeCode Tinyint [0x0014]"
+	case DataTypeCodeDuration:
+		return "DataTypeCode Duration [0x0015]"
+	case DataTypeCodeList:
+		return "DataTypeCode List [0x0020]"
+	case DataTypeCodeMap:
+		return "DataTypeCode Map [0x0021]"
+	case DataTypeCodeSet:
+		return "DataTypeCode Set [0x0022]"
+	case DataTypeCodeUdt:
+		return "DataTypeCode Udt [0x0030]"
+	case DataTypeCodeTuple:
+		return "DataTypeCode Tuple [0x0031]"
+	}
+	return fmt.Sprintf("DataType ? [%#.4X]", uint16(c))
+}
+
+type EventType string
 
 const (
 	EventTypeTopologyChange = EventType("TOPOLOGY_CHANGE")
@@ -140,7 +464,7 @@ const (
 	EventTypeSchemaChange   = EventType("SCHEMA_CHANGE")
 )
 
-type SchemaChangeType = string
+type SchemaChangeType string
 
 const (
 	SchemaChangeTypeCreated = SchemaChangeType("CREATED")
@@ -148,7 +472,7 @@ const (
 	SchemaChangeTypeDropped = SchemaChangeType("DROPPED")
 )
 
-type SchemaChangeTarget = string
+type SchemaChangeTarget string
 
 const (
 	SchemaChangeTargetKeyspace  = SchemaChangeTarget("KEYSPACE")
@@ -158,21 +482,21 @@ const (
 	SchemaChangeTargetAggregate = SchemaChangeTarget("AGGREGATE")
 )
 
-type TopologyChangeType = string
+type TopologyChangeType string
 
 const (
 	TopologyChangeTypeNewNode     = TopologyChangeType("NEW_NODE")
 	TopologyChangeTypeRemovedNode = TopologyChangeType("REMOVED_NODE")
 )
 
-type StatusChangeType = string
+type StatusChangeType string
 
 const (
 	StatusChangeTypeUp   = StatusChangeType("UP")
 	StatusChangeTypeDown = StatusChangeType("DOWN")
 )
 
-type BatchType = uint8
+type BatchType uint8
 
 const (
 	BatchTypeLogged   = BatchType(0x00)
@@ -180,14 +504,36 @@ const (
 	BatchTypeCounter  = BatchType(0x02)
 )
 
-type BatchChildStatementType = uint8
+func (t BatchType) String() string {
+	switch t {
+	case BatchTypeLogged:
+		return "BatchType LOGGED [0x00]"
+	case BatchTypeUnlogged:
+		return "BatchType UNLOGGED [0x01]"
+	case BatchTypeCounter:
+		return "BatchType COUNTER [0x02]"
+	}
+	return fmt.Sprintf("BatchType ? [%#.2X]", uint8(t))
+}
+
+type BatchChildType uint8
 
 const (
-	BatchChildTypeQueryString = BatchChildStatementType(0x00)
-	BatchChildTypePreparedId  = BatchChildStatementType(0x01)
+	BatchChildTypeQueryString = BatchChildType(0x00)
+	BatchChildTypePreparedId  = BatchChildType(0x01)
 )
 
-type HeaderFlag = uint8
+func (t BatchChildType) String() string {
+	switch t {
+	case BatchChildTypeQueryString:
+		return "BatchChildType QueryString [0x00]"
+	case BatchChildTypePreparedId:
+		return "BatchChildType PreparedId [0x01]"
+	}
+	return fmt.Sprintf("BatchChildType ? [%#.2X]", uint8(t))
+}
+
+type HeaderFlag uint8
 
 const (
 	HeaderFlagCompressed    = HeaderFlag(0x01)
@@ -197,8 +543,32 @@ const (
 	HeaderFlagUseBeta       = HeaderFlag(0x10)
 )
 
+func (f HeaderFlag) Add(other HeaderFlag) HeaderFlag {
+	return f | other
+}
+
+func (f HeaderFlag) Contains(other HeaderFlag) bool {
+	return f&other != 0
+}
+
+func (f HeaderFlag) String() string {
+	switch f {
+	case HeaderFlagCompressed:
+		return fmt.Sprintf("HeaderFlag Compressed [0x01 %#.8b]", f)
+	case HeaderFlagTracing:
+		return fmt.Sprintf("HeaderFlag Tracing [0x02 %#.8b]", f)
+	case HeaderFlagCustomPayload:
+		return fmt.Sprintf("HeaderFlag CustomPayload [0x04 %#.8b]", f)
+	case HeaderFlagWarning:
+		return fmt.Sprintf("HeaderFlag Warning [0x08 %#.8b]", f)
+	case HeaderFlagUseBeta:
+		return fmt.Sprintf("HeaderFlag UseBeta [0x10 %#.8b]", f)
+	}
+	return fmt.Sprintf("HeaderFlag ? [%#.2X %#.8b]", uint8(f), uint8(f))
+}
+
 // Note: QueryFlag was encoded as [byte] in v3 and v4, but changed to [int] in v5
-type QueryFlag = uint32
+type QueryFlag uint32
 
 const (
 	QueryFlagValues            = QueryFlag(0x00000001)
@@ -215,7 +585,43 @@ const (
 	QueryFlagDseWithContinuousPagingOptions = QueryFlag(0x80000000) // DSE v1+
 )
 
-type RowsFlag = uint32
+func (f QueryFlag) Add(other QueryFlag) QueryFlag {
+	return f | other
+}
+
+func (f QueryFlag) Contains(other QueryFlag) bool {
+	return f&other != 0
+}
+
+func (f QueryFlag) String() string {
+	switch f {
+	case QueryFlagValues:
+		return fmt.Sprintf("QueryFlag Values [0x00000001 %#.32b]", f)
+	case QueryFlagSkipMetadata:
+		return fmt.Sprintf("QueryFlag SkipMetadata [0x00000002 %#.32b]", f)
+	case QueryFlagPageSize:
+		return fmt.Sprintf("QueryFlag PageSize [0x00000004 %#.32b]", f)
+	case QueryFlagPagingState:
+		return fmt.Sprintf("QueryFlag PagingState [0x00000008 %#.32b]", f)
+	case QueryFlagSerialConsistency:
+		return fmt.Sprintf("QueryFlag SerialConsistency [0x00000010 %#.32b]", f)
+	case QueryFlagDefaultTimestamp:
+		return fmt.Sprintf("QueryFlag DefaultTimestamp [0x00000020 %#.32b]", f)
+	case QueryFlagValueNames:
+		return fmt.Sprintf("QueryFlag ValueNames [0x00000040 %#.32b]", f)
+	case QueryFlagWithKeyspace:
+		return fmt.Sprintf("QueryFlag WithKeyspace [0x00000080 %#.32b]", f)
+	case QueryFlagNowInSeconds:
+		return fmt.Sprintf("QueryFlag NowInSeconds [0x00000100 %#.32b]", f)
+	case QueryFlagDsePageSizeBytes:
+		return fmt.Sprintf("QueryFlag DsePageSizeBytes [0x40000000 %#.32b]", f)
+	case QueryFlagDseWithContinuousPagingOptions:
+		return fmt.Sprintf("QueryFlag DseWithContinuousPagingOptions [0x80000000 %#.32b]", f)
+	}
+	return fmt.Sprintf("QueryFlag ? [%#.8X %#.32b]", uint32(f), uint32(f))
+}
+
+type RowsFlag uint32
 
 const (
 	RowsFlagGlobalTablesSpec = RowsFlag(0x00000001)
@@ -227,26 +633,95 @@ const (
 	RowsFlagDseLastContinuousPage = RowsFlag(0x80000000) // DSE v1+
 )
 
-type VariablesFlag = uint32
+func (f RowsFlag) Add(other RowsFlag) RowsFlag {
+	return f | other
+}
+
+func (f RowsFlag) Contains(other RowsFlag) bool {
+	return f&other != 0
+}
+
+func (f RowsFlag) String() string {
+	switch f {
+	case RowsFlagGlobalTablesSpec:
+		return fmt.Sprintf("RowsFlag GlobalTablesSpec [0x00000001 %#.32b]", f)
+	case RowsFlagHasMorePages:
+		return fmt.Sprintf("RowsFlag HasMorePages [0x00000002 %#.32b]", f)
+	case RowsFlagNoMetadata:
+		return fmt.Sprintf("RowsFlag NoMetadata [0x00000004 %#.32b]", f)
+	case RowsFlagMetadataChanged:
+		return fmt.Sprintf("RowsFlag MetadataChanged [0x00000008 %#.32b]", f)
+	// DSE-specific flags
+	case RowsFlagDseContinuousPaging:
+		return fmt.Sprintf("RowsFlag ContinuousPaging [0x40000000 %#.32b]", f)
+	case RowsFlagDseLastContinuousPage:
+		return fmt.Sprintf("RowsFlag LastContinuousPage [0x80000000 %#.32b]", f)
+	}
+	return fmt.Sprintf("RowsFlag ? [%#.8X %#.32b]", uint32(f), uint32(f))
+}
+
+type VariablesFlag uint32
 
 const (
 	VariablesFlagGlobalTablesSpec = VariablesFlag(0x00000001)
 )
 
-type PrepareFlag = uint32
+func (f VariablesFlag) Add(other VariablesFlag) VariablesFlag {
+	return f | other
+}
+
+func (f VariablesFlag) Contains(other VariablesFlag) bool {
+	return f&other != 0
+}
+
+func (f VariablesFlag) String() string {
+	switch f {
+	case VariablesFlagGlobalTablesSpec:
+		return fmt.Sprintf("VariablesFlag GlobalTablesSpec [0x00000001 %#.32b]", f)
+	}
+	return fmt.Sprintf("VariablesFlag ? [%#.8X %#.32b]", uint32(f), uint32(f))
+}
+
+type PrepareFlag uint32
 
 const (
 	PrepareFlagWithKeyspace = PrepareFlag(0x00000001) // v5 and DSE v2
 )
 
-type DseRevisionType = int32
+func (f PrepareFlag) Add(other PrepareFlag) PrepareFlag {
+	return f | other
+}
+
+func (f PrepareFlag) Contains(other PrepareFlag) bool {
+	return f&other != 0
+}
+
+func (f PrepareFlag) String() string {
+	switch f {
+	case PrepareFlagWithKeyspace:
+		return fmt.Sprintf("PrepareFlag WithKeyspace [0x00000001 %#.32b]", f)
+	}
+	return fmt.Sprintf("PrepareFlag ? [%#.8X %#.32b]", uint32(f), uint32(f))
+}
+
+type DseRevisionType uint32
 
 const (
 	DseRevisionTypeCancelContinuousPaging = DseRevisionType(0x00000001)
 	DseRevisionTypeMoreContinuousPages    = DseRevisionType(0x00000002) // DSE v2+
 )
 
-type FailureCode = uint16
+func (t DseRevisionType) String() string {
+	switch t {
+	case DseRevisionTypeCancelContinuousPaging:
+		return "DseRevisionType CancelContinuousPaging [0x00000001]"
+	case DseRevisionTypeMoreContinuousPages:
+		return "DseRevisionType MoreContinuousPages [0x00000002]"
+	}
+	return fmt.Sprintf("DseRevisionType ? [%#.8X]", uint32(t))
+}
+
+type FailureCode uint16
 
 const (
 	FailureCodeUnknown               = FailureCode(0x0000)
@@ -257,3 +732,23 @@ const (
 	FailureCodeTableNotFound         = FailureCode(0x0005)
 	FailureCodeKeyspaceNotFound      = FailureCode(0x0006)
 )
+
+func (c FailureCode) String() string {
+	switch c {
+	case FailureCodeUnknown:
+		return "FailureCode Unknown [0x0000]"
+	case FailureCodeTooManyTombstonesRead:
+		return "FailureCode TooManyTombstonesRead [0x0001]"
+	case FailureCodeIndexNotAvailable:
+		return "FailureCode IndexNotAvailable [0x0002]"
+	case FailureCodeCdcSpaceFull:
+		return "FailureCode CdcSpaceFull [0x0003]"
+	case FailureCodeCounterWrite:
+		return "FailureCode CounterWrite [0x0004]"
+	case FailureCodeTableNotFound:
+		return "FailureCode TableNotFound [0x0005]"
+	case FailureCodeKeyspaceNotFound:
+		return "FailureCode KeyspaceNotFound [0x0006]"
+	}
+	return fmt.Sprintf("FailureCode ? [%#.4X]", uint16(c))
+}

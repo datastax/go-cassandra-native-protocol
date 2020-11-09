@@ -297,9 +297,9 @@ func TestEventCodec_EncodedLength(test *testing.T) {
 						Target:     primitive.SchemaChangeTargetKeyspace,
 						Keyspace:   "ks1",
 					},
-					primitive.LengthOfString(primitive.EventTypeSchemaChange) +
-						primitive.LengthOfString(primitive.SchemaChangeTypeCreated) +
-						primitive.LengthOfString(primitive.SchemaChangeTargetKeyspace) +
+					primitive.LengthOfString(string(primitive.EventTypeSchemaChange)) +
+						primitive.LengthOfString(string(primitive.SchemaChangeTypeCreated)) +
+						primitive.LengthOfString(string(primitive.SchemaChangeTargetKeyspace)) +
 						primitive.LengthOfString("ks1"),
 					nil,
 				},
@@ -311,9 +311,9 @@ func TestEventCodec_EncodedLength(test *testing.T) {
 						Keyspace:   "ks1",
 						Object:     "table1",
 					},
-					primitive.LengthOfString(primitive.EventTypeSchemaChange) +
-						primitive.LengthOfString(primitive.SchemaChangeTypeCreated) +
-						primitive.LengthOfString(primitive.SchemaChangeTargetTable) +
+					primitive.LengthOfString(string(primitive.EventTypeSchemaChange)) +
+						primitive.LengthOfString(string(primitive.SchemaChangeTypeCreated)) +
+						primitive.LengthOfString(string(primitive.SchemaChangeTargetTable)) +
 						primitive.LengthOfString("ks1") +
 						primitive.LengthOfString("table1"),
 					nil,
@@ -326,9 +326,9 @@ func TestEventCodec_EncodedLength(test *testing.T) {
 						Keyspace:   "ks1",
 						Object:     "udt1",
 					},
-					primitive.LengthOfString(primitive.EventTypeSchemaChange) +
-						primitive.LengthOfString(primitive.SchemaChangeTypeCreated) +
-						primitive.LengthOfString(primitive.SchemaChangeTargetType) +
+					primitive.LengthOfString(string(primitive.EventTypeSchemaChange)) +
+						primitive.LengthOfString(string(primitive.SchemaChangeTypeCreated)) +
+						primitive.LengthOfString(string(primitive.SchemaChangeTargetType)) +
 						primitive.LengthOfString("ks1") +
 						primitive.LengthOfString("udt1"),
 					nil,
@@ -342,9 +342,9 @@ func TestEventCodec_EncodedLength(test *testing.T) {
 						Object:     "func1",
 						Arguments:  []string{"int", "varchar"},
 					},
-					primitive.LengthOfString(primitive.EventTypeSchemaChange) +
-						primitive.LengthOfString(primitive.SchemaChangeTypeCreated) +
-						primitive.LengthOfString(primitive.SchemaChangeTargetFunction) +
+					primitive.LengthOfString(string(primitive.EventTypeSchemaChange)) +
+						primitive.LengthOfString(string(primitive.SchemaChangeTypeCreated)) +
+						primitive.LengthOfString(string(primitive.SchemaChangeTargetFunction)) +
 						primitive.LengthOfString("ks1") +
 						primitive.LengthOfString("func1") +
 						primitive.LengthOfStringList([]string{"int", "varchar"}),
@@ -359,9 +359,9 @@ func TestEventCodec_EncodedLength(test *testing.T) {
 						Object:     "agg1",
 						Arguments:  []string{"int", "varchar"},
 					},
-					primitive.LengthOfString(primitive.EventTypeSchemaChange) +
-						primitive.LengthOfString(primitive.SchemaChangeTypeCreated) +
-						primitive.LengthOfString(primitive.SchemaChangeTargetAggregate) +
+					primitive.LengthOfString(string(primitive.EventTypeSchemaChange)) +
+						primitive.LengthOfString(string(primitive.SchemaChangeTypeCreated)) +
+						primitive.LengthOfString(string(primitive.SchemaChangeTargetAggregate)) +
 						primitive.LengthOfString("ks1") +
 						primitive.LengthOfString("agg1") +
 						primitive.LengthOfStringList([]string{"int", "varchar"}),
@@ -376,8 +376,8 @@ func TestEventCodec_EncodedLength(test *testing.T) {
 							Port: 9042,
 						},
 					},
-					primitive.LengthOfString(primitive.EventTypeStatusChange) +
-						primitive.LengthOfString(primitive.StatusChangeTypeUp) +
+					primitive.LengthOfString(string(primitive.EventTypeStatusChange)) +
+						primitive.LengthOfString(string(primitive.StatusChangeTypeUp)) +
 						primitive.LengthOfByte + net.IPv4len +
 						primitive.LengthOfInt,
 					nil,
@@ -391,8 +391,8 @@ func TestEventCodec_EncodedLength(test *testing.T) {
 							Port: 9042,
 						},
 					},
-					primitive.LengthOfString(primitive.EventTypeTopologyChange) +
-						primitive.LengthOfString(primitive.TopologyChangeTypeNewNode) +
+					primitive.LengthOfString(string(primitive.EventTypeTopologyChange)) +
+						primitive.LengthOfString(string(primitive.TopologyChangeTypeNewNode)) +
 						primitive.LengthOfByte + net.IPv4len +
 						primitive.LengthOfInt,
 					nil,

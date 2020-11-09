@@ -34,32 +34,36 @@ func (c *codec) DecodeHeader(source io.Reader) (*Header, error) {
 		return nil, fmt.Errorf("cannot decode header version and direction: %w", err)
 	} else {
 		isResponse := (versionAndDirection & 0b1000_0000) > 0
-		version := versionAndDirection & 0b0111_1111
+		version := primitive.ProtocolVersion(versionAndDirection & 0b0111_1111)
 		header := &Header{
 			IsResponse: isResponse,
 			Version:    version,
 		}
 		var streamId uint16
-		if err := primitive.CheckProtocolVersion(version); err != nil {
+		var flags uint8
+		var opCode uint8
+		if err := primitive.CheckValidProtocolVersion(version); err != nil {
 			return nil, err
-		} else if header.Flags, err = primitive.ReadByte(source); err != nil {
+		} else if flags, err = primitive.ReadByte(source); err != nil {
 			return nil, fmt.Errorf("cannot decode header flags: %w", err)
-		} else if primitive.IsProtocolVersionBeta(version) && header.Flags&primitive.HeaderFlagUseBeta == 0 {
+		} else if version.IsBeta() && !primitive.HeaderFlag(flags).Contains(primitive.HeaderFlagUseBeta) {
 			return nil, fmt.Errorf("expected USE_BETA flag to be set for protocol version %v", version)
 		} else if streamId, err = primitive.ReadShort(source); err != nil {
 			return nil, fmt.Errorf("cannot decode header stream id: %w", err)
-		} else if header.OpCode, err = primitive.ReadByte(source); err != nil {
+		} else if opCode, err = primitive.ReadByte(source); err != nil {
 			return nil, fmt.Errorf("cannot decode header opcode: %w", err)
 		} else if header.BodyLength, err = primitive.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot decode header body length: %w", err)
 		}
 		header.StreamId = int16(streamId)
+		header.Flags = primitive.HeaderFlag(flags)
+		header.OpCode = primitive.OpCode(opCode)
 		return header, err
 	}
 }
 
 func (c *codec) DecodeBody(header *Header, source io.Reader) (body *Body, err error) {
-	if compressed := header.Flags&primitive.HeaderFlagCompressed > 0; compressed {
+	if compressed := header.Flags.Contains(primitive.HeaderFlagCompressed); compressed {
 		if c.compressor == nil {
 			return nil, errors.New("cannot decompress body: no compressor available")
 		} else {
@@ -72,17 +76,17 @@ func (c *codec) DecodeBody(header *Header, source io.Reader) (body *Body, err er
 		}
 	}
 	body = &Body{}
-	if header.IsResponse && header.Flags&primitive.HeaderFlagTracing > 0 {
+	if header.IsResponse && header.Flags.Contains(primitive.HeaderFlagTracing) {
 		if body.TracingId, err = primitive.ReadUuid(source); err != nil {
 			return nil, fmt.Errorf("cannot decode body tracing id: %w", err)
 		}
 	}
-	if header.Flags&primitive.HeaderFlagCustomPayload > 0 {
+	if header.Flags.Contains(primitive.HeaderFlagCustomPayload) {
 		if body.CustomPayload, err = primitive.ReadBytesMap(source); err != nil {
 			return nil, fmt.Errorf("cannot decode body custom payload: %w", err)
 		}
 	}
-	if header.IsResponse && header.Flags&primitive.HeaderFlagWarning > 0 {
+	if header.IsResponse && header.Flags.Contains(primitive.HeaderFlagWarning) {
 		if body.Warnings, err = primitive.ReadStringList(source); err != nil {
 			return nil, fmt.Errorf("cannot decode body warnings: %w", err)
 		}

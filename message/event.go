@@ -99,9 +99,9 @@ func (c *eventCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 	if !ok {
 		return fmt.Errorf("expected message.Event, got %T", msg)
 	}
-	if err = primitive.CheckEventType(event.GetEventType()); err != nil {
+	if err = primitive.CheckValidEventType(event.GetEventType()); err != nil {
 		return err
-	} else if err = primitive.WriteString(event.GetEventType(), dest); err != nil {
+	} else if err = primitive.WriteString(string(event.GetEventType()), dest); err != nil {
 		return fmt.Errorf("cannot write EVENT type: %v", err)
 	}
 	switch event.GetEventType() {
@@ -110,14 +110,14 @@ func (c *eventCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 		if !ok {
 			return fmt.Errorf("expected *message.SchemaChangeEvent, got %T", msg)
 		}
-		if err = primitive.CheckSchemaChangeType(sce.ChangeType); err != nil {
+		if err = primitive.CheckValidSchemaChangeType(sce.ChangeType); err != nil {
 			return err
-		} else if err = primitive.WriteString(sce.ChangeType, dest); err != nil {
+		} else if err = primitive.WriteString(string(sce.ChangeType), dest); err != nil {
 			return fmt.Errorf("cannot write SchemaChangeEvent.ChangeType: %w", err)
 		}
-		if err = primitive.CheckSchemaChangeTarget(sce.Target); err != nil {
+		if err = primitive.CheckValidSchemaChangeTarget(sce.Target); err != nil {
 			return err
-		} else if err = primitive.WriteString(sce.Target, dest); err != nil {
+		} else if err = primitive.WriteString(string(sce.Target), dest); err != nil {
 			return fmt.Errorf("cannot write SchemaChangeEvent.Target: %w", err)
 		}
 		if sce.Keyspace == "" {
@@ -158,9 +158,9 @@ func (c *eventCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 		if !ok {
 			return fmt.Errorf("expected *message.StatusChangeEvent, got %T", msg)
 		}
-		if err = primitive.CheckStatusChangeType(sce.ChangeType); err != nil {
+		if err = primitive.CheckValidStatusChangeType(sce.ChangeType); err != nil {
 			return err
-		} else if err = primitive.WriteString(sce.ChangeType, dest); err != nil {
+		} else if err = primitive.WriteString(string(sce.ChangeType), dest); err != nil {
 			return fmt.Errorf("cannot write StatusChangeEvent.ChangeType: %w", err)
 		}
 		if err = primitive.WriteInet(sce.Address, dest); err != nil {
@@ -172,9 +172,9 @@ func (c *eventCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 		if !ok {
 			return fmt.Errorf("expected *message.TopologyChangeEvent, got %T", msg)
 		}
-		if err = primitive.CheckTopologyChangeType(tce.ChangeType); err != nil {
+		if err = primitive.CheckValidTopologyChangeType(tce.ChangeType); err != nil {
 			return err
-		} else if err = primitive.WriteString(tce.ChangeType, dest); err != nil {
+		} else if err = primitive.WriteString(string(tce.ChangeType), dest); err != nil {
 			return fmt.Errorf("cannot write TopologyChangeEvent.ChangeType: %w", err)
 		}
 		if err = primitive.WriteInet(tce.Address, dest); err != nil {
@@ -182,7 +182,7 @@ func (c *eventCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 		}
 		return nil
 	}
-	return errors.New("unknown EVENT type: " + event.GetEventType())
+	return fmt.Errorf("unknown EVENT type: %v", event.GetEventType())
 }
 
 func (c *eventCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) (length int, err error) {
@@ -190,15 +190,15 @@ func (c *eventCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) (le
 	if !ok {
 		return -1, fmt.Errorf("expected message.Event, got %T", msg)
 	}
-	length = primitive.LengthOfString(event.GetEventType())
+	length = primitive.LengthOfString(string(event.GetEventType()))
 	switch event.GetEventType() {
 	case primitive.EventTypeSchemaChange:
 		sce, ok := msg.(*SchemaChangeEvent)
 		if !ok {
 			return -1, fmt.Errorf("expected *message.SchemaChangeEvent, got %T", msg)
 		}
-		length += primitive.LengthOfString(sce.ChangeType)
-		length += primitive.LengthOfString(sce.Target)
+		length += primitive.LengthOfString(string(sce.ChangeType))
+		length += primitive.LengthOfString(string(sce.Target))
 		length += primitive.LengthOfString(sce.Keyspace)
 		switch sce.Target {
 		case primitive.SchemaChangeTargetKeyspace:
@@ -220,7 +220,7 @@ func (c *eventCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) (le
 		if !ok {
 			return -1, fmt.Errorf("expected *message.StatusChangeEvent, got %T", msg)
 		}
-		length += primitive.LengthOfString(sce.ChangeType)
+		length += primitive.LengthOfString(string(sce.ChangeType))
 		inetLength, err := primitive.LengthOfInet(sce.Address)
 		if err != nil {
 			return -1, fmt.Errorf("cannot compute length of StatusChangeEvent.Address: %w", err)
@@ -232,7 +232,7 @@ func (c *eventCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) (le
 		if !ok {
 			return -1, fmt.Errorf("expected *message.TopologyChangeEvent, got %T", msg)
 		}
-		length += primitive.LengthOfString(tce.ChangeType)
+		length += primitive.LengthOfString(string(tce.ChangeType))
 		inetLength, err := primitive.LengthOfInet(tce.Address)
 		if err != nil {
 			return -1, fmt.Errorf("cannot compute length of TopologyChangeEvent.Address: %w", err)
@@ -240,7 +240,7 @@ func (c *eventCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) (le
 		length += inetLength
 		return length, nil
 	}
-	return -1, errors.New("unknown EVENT type: " + event.GetEventType())
+	return -1, fmt.Errorf("unknown EVENT type: %v", event.GetEventType())
 }
 
 func (c *eventCodec) Decode(source io.Reader, version primitive.ProtocolVersion) (Message, error) {
@@ -248,15 +248,19 @@ func (c *eventCodec) Decode(source io.Reader, version primitive.ProtocolVersion)
 	if err != nil {
 		return nil, err
 	}
-	switch eventType {
+	switch primitive.EventType(eventType) {
 	case primitive.EventTypeSchemaChange:
 		sce := &SchemaChangeEvent{}
-		if sce.ChangeType, err = primitive.ReadString(source); err != nil {
+		var changeType string
+		if changeType, err = primitive.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read SchemaChangeEvent.ChangeType: %w", err)
 		}
-		if sce.Target, err = primitive.ReadString(source); err != nil {
+		sce.ChangeType = primitive.SchemaChangeType(changeType)
+		var target string
+		if target, err = primitive.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read SchemaChangeEvent.Target: %w", err)
 		}
+		sce.Target = primitive.SchemaChangeTarget(target)
 		if sce.Keyspace, err = primitive.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read SchemaChangeEvent.Keyspace: %w", err)
 		}
@@ -286,18 +290,22 @@ func (c *eventCodec) Decode(source io.Reader, version primitive.ProtocolVersion)
 		return sce, nil
 	case primitive.EventTypeStatusChange:
 		sce := &StatusChangeEvent{}
-		if sce.ChangeType, err = primitive.ReadString(source); err != nil {
+		var changeType string
+		if changeType, err = primitive.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read StatusChangeEvent.ChangeType: %w", err)
 		}
+		sce.ChangeType = primitive.StatusChangeType(changeType)
 		if sce.Address, err = primitive.ReadInet(source); err != nil {
 			return nil, fmt.Errorf("cannot read StatusChangeEvent.Address: %w", err)
 		}
 		return sce, nil
 	case primitive.EventTypeTopologyChange:
 		tce := &TopologyChangeEvent{}
-		if tce.ChangeType, err = primitive.ReadString(source); err != nil {
+		var changeType string
+		if changeType, err = primitive.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read TopologyChangeEvent.ChangeType: %w", err)
 		}
+		tce.ChangeType = primitive.TopologyChangeType(changeType)
 		if tce.Address, err = primitive.ReadInet(source); err != nil {
 			return nil, fmt.Errorf("cannot read TopologyChangeEvent.Address: %w", err)
 		}

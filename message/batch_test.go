@@ -25,12 +25,12 @@ func TestBatchCodec_Encode(t *testing.T) {
 					"invalid batch type",
 					&Batch{Type: primitive.BatchType(42)},
 					nil,
-					errors.New("invalid BATCH type: 42"),
+					errors.New("invalid BATCH type: BatchType ? [0X2A]"),
 				},
 				{
 					"empty batch",
 					&Batch{},
-					[]byte{primitive.BatchTypeLogged},
+					[]byte{byte(primitive.BatchTypeLogged)},
 					errors.New("BATCH messages must contain at least one child query"),
 				},
 				{
@@ -48,7 +48,7 @@ func TestBatchCodec_Encode(t *testing.T) {
 						},
 					},
 					[]byte{
-						primitive.BatchTypeLogged,
+						byte(primitive.BatchTypeLogged),
 						0, 2, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -78,7 +78,7 @@ func TestBatchCodec_Encode(t *testing.T) {
 						DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
 					},
 					[]byte{
-						primitive.BatchTypeUnlogged,
+						byte(primitive.BatchTypeUnlogged),
 						0, 1, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -116,12 +116,12 @@ func TestBatchCodec_Encode(t *testing.T) {
 					"invalid batch type",
 					&Batch{Type: primitive.BatchType(42)},
 					nil,
-					errors.New("invalid BATCH type: 42"),
+					errors.New("invalid BATCH type: BatchType ? [0X2A]"),
 				},
 				{
 					"empty batch",
 					&Batch{},
-					[]byte{primitive.BatchTypeLogged},
+					[]byte{byte(primitive.BatchTypeLogged)},
 					errors.New("BATCH messages must contain at least one child query"),
 				},
 				{
@@ -139,7 +139,7 @@ func TestBatchCodec_Encode(t *testing.T) {
 						},
 					},
 					[]byte{
-						primitive.BatchTypeLogged,
+						byte(primitive.BatchTypeLogged),
 						0, 2, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -169,7 +169,7 @@ func TestBatchCodec_Encode(t *testing.T) {
 						DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
 					},
 					[]byte{
-						primitive.BatchTypeUnlogged,
+						byte(primitive.BatchTypeUnlogged),
 						0, 1, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -207,12 +207,12 @@ func TestBatchCodec_Encode(t *testing.T) {
 					"invalid batch type",
 					&Batch{Type: primitive.BatchType(42)},
 					nil,
-					errors.New("invalid BATCH type: 42"),
+					errors.New("invalid BATCH type: BatchType ? [0X2A]"),
 				},
 				{
 					"empty batch",
 					&Batch{},
-					[]byte{primitive.BatchTypeLogged},
+					[]byte{byte(primitive.BatchTypeLogged)},
 					errors.New("BATCH messages must contain at least one child query"),
 				},
 				{
@@ -230,7 +230,7 @@ func TestBatchCodec_Encode(t *testing.T) {
 						},
 					},
 					[]byte{
-						primitive.BatchTypeLogged,
+						byte(primitive.BatchTypeLogged),
 						0, 2, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -261,7 +261,7 @@ func TestBatchCodec_Encode(t *testing.T) {
 						Keyspace:          "ks1",
 					},
 					[]byte{
-						primitive.BatchTypeUnlogged,
+						byte(primitive.BatchTypeUnlogged),
 						0, 1, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -563,12 +563,12 @@ func TestBatchCodec_Decode(t *testing.T) {
 						0, // flags
 					},
 					nil,
-					errors.New("invalid BATCH type: 42"),
+					errors.New("invalid BATCH type: BatchType ? [0X2A]"),
 				},
 				{
 					"empty batch",
 					[]byte{
-						primitive.BatchTypeLogged,
+						byte(primitive.BatchTypeLogged),
 						0, 0, // children count
 						0, 0, // consistency level
 						0, // flags
@@ -579,7 +579,7 @@ func TestBatchCodec_Decode(t *testing.T) {
 				{
 					"batch with 2 children",
 					[]byte{
-						primitive.BatchTypeLogged,
+						byte(primitive.BatchTypeLogged),
 						0, 2, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -609,7 +609,7 @@ func TestBatchCodec_Decode(t *testing.T) {
 				{
 					"batch with custom options",
 					[]byte{
-						primitive.BatchTypeUnlogged,
+						byte(primitive.BatchTypeUnlogged),
 						0, 1, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -658,12 +658,12 @@ func TestBatchCodec_Decode(t *testing.T) {
 						0, 0, 0, 0, // flags
 					},
 					nil,
-					errors.New("invalid BATCH type: 42"),
+					errors.New("invalid BATCH type: BatchType ? [0X2A]"),
 				},
 				{
 					"empty batch",
 					[]byte{
-						primitive.BatchTypeLogged,
+						byte(primitive.BatchTypeLogged),
 						0, 0, // children count
 						0, 0, // consistency level
 						0, 0, 0, 0, // flags
@@ -674,7 +674,7 @@ func TestBatchCodec_Decode(t *testing.T) {
 				{
 					"batch with 2 children",
 					[]byte{
-						primitive.BatchTypeLogged,
+						byte(primitive.BatchTypeLogged),
 						0, 2, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -704,7 +704,7 @@ func TestBatchCodec_Decode(t *testing.T) {
 				{
 					"batch with custom options",
 					[]byte{
-						primitive.BatchTypeUnlogged,
+						byte(primitive.BatchTypeUnlogged),
 						0, 1, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -753,12 +753,12 @@ func TestBatchCodec_Decode(t *testing.T) {
 						0, 0, 0, 0, // flags
 					},
 					nil,
-					errors.New("invalid BATCH type: 42"),
+					errors.New("invalid BATCH type: BatchType ? [0X2A]"),
 				},
 				{
 					"empty batch",
 					[]byte{
-						primitive.BatchTypeLogged,
+						byte(primitive.BatchTypeLogged),
 						0, 0, // children count
 						0, 0, // consistency level
 						0, 0, 0, 0, // flags
@@ -769,7 +769,7 @@ func TestBatchCodec_Decode(t *testing.T) {
 				{
 					"batch with 2 children",
 					[]byte{
-						primitive.BatchTypeLogged,
+						byte(primitive.BatchTypeLogged),
 						0, 2, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query
@@ -799,7 +799,7 @@ func TestBatchCodec_Decode(t *testing.T) {
 				{
 					"batch with custom options",
 					[]byte{
-						primitive.BatchTypeUnlogged,
+						byte(primitive.BatchTypeUnlogged),
 						0, 1, // children count
 						0,                            // child 1 kind
 						0, 0, 0, 6, I, N, S, E, R, T, // child 1 query

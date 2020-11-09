@@ -34,11 +34,11 @@ func (c *registerCodec) Encode(msg Message, dest io.Writer, _ primitive.Protocol
 		return errors.New("REGISTER messages must have at least one event type")
 	}
 	for _, eventType := range register.EventTypes {
-		if err := primitive.CheckEventType(eventType); err != nil {
+		if err := primitive.CheckValidEventType(eventType); err != nil {
 			return err
 		}
 	}
-	return primitive.WriteStringList(register.EventTypes, dest)
+	return primitive.WriteStringList(asStringList(register.EventTypes), dest)
 }
 
 func (c *registerCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) (int, error) {
@@ -46,7 +46,7 @@ func (c *registerCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) 
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected *message.Register, got %T", msg))
 	}
-	return primitive.LengthOfStringList(register.EventTypes), nil
+	return primitive.LengthOfStringList(asStringList(register.EventTypes)), nil
 }
 
 func (c *registerCodec) Decode(source io.Reader, _ primitive.ProtocolVersion) (Message, error) {
@@ -54,14 +54,30 @@ func (c *registerCodec) Decode(source io.Reader, _ primitive.ProtocolVersion) (M
 		return nil, err
 	} else {
 		for _, eventType := range eventTypes {
-			if err := primitive.CheckEventType(eventType); err != nil {
+			if err := primitive.CheckValidEventType(primitive.EventType(eventType)); err != nil {
 				return nil, err
 			}
 		}
-		return &Register{EventTypes: eventTypes}, nil
+		return &Register{EventTypes: fromStringList(eventTypes)}, nil
 	}
 }
 
 func (c *registerCodec) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeRegister
+}
+
+func asStringList(eventTypes []primitive.EventType) []string {
+	strings := make([]string, len(eventTypes))
+	for i, eventType := range eventTypes {
+		strings[i] = string(eventType)
+	}
+	return strings
+}
+
+func fromStringList(strings []string) []primitive.EventType {
+	eventTypes := make([]primitive.EventType, len(strings))
+	for i, eventType := range strings {
+		eventTypes[i] = primitive.EventType(eventType)
+	}
+	return eventTypes
 }

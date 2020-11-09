@@ -152,9 +152,9 @@ func (c *resultCodec) Encode(msg Message, dest io.Writer, version primitive.Prot
 	if !ok {
 		return fmt.Errorf("expected message.Result, got %T", msg)
 	}
-	if err = primitive.CheckResultType(result.GetResultType()); err != nil {
+	if err = primitive.CheckValidResultType(result.GetResultType()); err != nil {
 		return err
-	} else if err = primitive.WriteInt(result.GetResultType(), dest); err != nil {
+	} else if err = primitive.WriteInt(int32(result.GetResultType()), dest); err != nil {
 		return fmt.Errorf("cannot write RESULT type: %w", err)
 	}
 	switch result.GetResultType() {
@@ -175,14 +175,14 @@ func (c *resultCodec) Encode(msg Message, dest io.Writer, version primitive.Prot
 		if !ok {
 			return fmt.Errorf("expected *message.SchemaChangeResult, got %T", msg)
 		}
-		if err = primitive.CheckSchemaChangeType(sce.ChangeType); err != nil {
+		if err = primitive.CheckValidSchemaChangeType(sce.ChangeType); err != nil {
 			return err
-		} else if err = primitive.WriteString(sce.ChangeType, dest); err != nil {
+		} else if err = primitive.WriteString(string(sce.ChangeType), dest); err != nil {
 			return fmt.Errorf("cannot write SchemaChangeResult.ChangeType: %w", err)
 		}
-		if err = primitive.CheckSchemaChangeTarget(sce.Target); err != nil {
+		if err = primitive.CheckValidSchemaChangeTarget(sce.Target); err != nil {
 			return err
-		} else if err = primitive.WriteString(sce.Target, dest); err != nil {
+		} else if err = primitive.WriteString(string(sce.Target), dest); err != nil {
 			return fmt.Errorf("cannot write SchemaChangeResult.Target: %w", err)
 		}
 		if sce.Keyspace == "" {
@@ -284,8 +284,8 @@ func (c *resultCodec) EncodedLength(msg Message, version primitive.ProtocolVersi
 		if !ok {
 			return -1, fmt.Errorf("expected *message.SchemaChangeResult, got %T", msg)
 		}
-		length += primitive.LengthOfString(sc.ChangeType)
-		length += primitive.LengthOfString(sc.Target)
+		length += primitive.LengthOfString(string(sc.ChangeType))
+		length += primitive.LengthOfString(string(sc.Target))
 		length += primitive.LengthOfString(sc.Keyspace)
 		switch sc.Target {
 		case primitive.SchemaChangeTargetKeyspace:
@@ -347,11 +347,11 @@ func (c *resultCodec) EncodedLength(msg Message, version primitive.ProtocolVersi
 }
 
 func (c *resultCodec) Decode(source io.Reader, version primitive.ProtocolVersion) (msg Message, err error) {
-	var resultType primitive.ResultType
+	var resultType int32
 	if resultType, err = primitive.ReadInt(source); err != nil {
 		return nil, fmt.Errorf("cannot read RESULT type: %w", err)
 	}
-	switch resultType {
+	switch primitive.ResultType(resultType) {
 	case primitive.ResultTypeVoid:
 		return &VoidResult{}, nil
 	case primitive.ResultTypeSetKeyspace:
@@ -362,12 +362,16 @@ func (c *resultCodec) Decode(source io.Reader, version primitive.ProtocolVersion
 		return setKeyspace, nil
 	case primitive.ResultTypeSchemaChange:
 		sc := &SchemaChangeResult{}
-		if sc.ChangeType, err = primitive.ReadString(source); err != nil {
+		var changeType string
+		if changeType, err = primitive.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read SchemaChangeResult.ChangeType: %w", err)
 		}
-		if sc.Target, err = primitive.ReadString(source); err != nil {
+		sc.ChangeType = primitive.SchemaChangeType(changeType)
+		var target string
+		if target, err = primitive.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read SchemaChangeResult.Target: %w", err)
 		}
+		sc.Target = primitive.SchemaChangeTarget(target)
 		if sc.Keyspace, err = primitive.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read SchemaChangeResult.Keyspace: %w", err)
 		}

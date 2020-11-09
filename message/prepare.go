@@ -28,7 +28,7 @@ func (m *Prepare) String() string {
 func (m *Prepare) Flags() primitive.PrepareFlag {
 	var flags primitive.PrepareFlag
 	if m.Keyspace != "" {
-		flags |= primitive.PrepareFlagWithKeyspace
+		flags = flags.Add(primitive.PrepareFlagWithKeyspace)
 	}
 	return flags
 }
@@ -50,7 +50,7 @@ func (c *prepareCodec) Encode(msg Message, dest io.Writer, version primitive.Pro
 		if err = primitive.WriteInt(int32(flags), dest); err != nil {
 			return fmt.Errorf("cannot write PREPARE flags: %w", err)
 		}
-		if flags&primitive.PrepareFlagWithKeyspace > 0 {
+		if flags.Contains(primitive.PrepareFlagWithKeyspace) {
 			if prepare.Keyspace == "" {
 				return errors.New("cannot write empty keyspace")
 			} else if err = primitive.WriteString(prepare.Keyspace, dest); err != nil {
@@ -88,7 +88,7 @@ func (c *prepareCodec) Decode(source io.Reader, version primitive.ProtocolVersio
 			return nil, fmt.Errorf("cannot read PREPARE flags: %w", err)
 		}
 		flags = primitive.PrepareFlag(f)
-		if flags&primitive.PrepareFlagWithKeyspace > 0 {
+		if flags.Contains(primitive.PrepareFlagWithKeyspace) {
 			if prepare.Keyspace, err = primitive.ReadString(source); err != nil {
 				return nil, fmt.Errorf("cannot read PREPARE keyspace: %w", err)
 			}

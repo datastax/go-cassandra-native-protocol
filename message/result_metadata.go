@@ -90,7 +90,7 @@ func encodeVariablesMetadata(metadata *VariablesMetadata, dest io.Writer, versio
 		}
 	}
 	if len(metadata.Columns) > 0 {
-		globalTableSpec := flags&primitive.VariablesFlagGlobalTablesSpec > 0
+		globalTableSpec := flags.Contains(primitive.VariablesFlagGlobalTablesSpec)
 		if err = encodeColumnsMetadata(globalTableSpec, metadata.Columns, dest, version); err != nil {
 			return fmt.Errorf("cannot write RESULT Prepared variables metadata column cols: %w", err)
 		}
@@ -145,7 +145,7 @@ func decodeVariablesMetadata(source io.Reader, version primitive.ProtocolVersion
 		}
 	}
 	if columnCount > 0 {
-		globalTableSpec := flags&primitive.VariablesFlagGlobalTablesSpec > 0
+		globalTableSpec := flags.Contains(primitive.VariablesFlagGlobalTablesSpec)
 		if metadata.Columns, err = decodeColumnsMetadata(globalTableSpec, columnCount, source, version); err != nil {
 			return nil, fmt.Errorf("cannot read RESULT Prepared variables metadata column cols: %w", err)
 		}
@@ -172,23 +172,23 @@ func encodeRowsMetadata(metadata *RowsMetadata, dest io.Writer, version primitiv
 	if err = primitive.WriteInt(metadata.ColumnCount, dest); err != nil {
 		return fmt.Errorf("cannot write RESULT Rows metadata column count: %w", err)
 	}
-	if flags&primitive.RowsFlagHasMorePages > 0 {
+	if flags.Contains(primitive.RowsFlagHasMorePages) {
 		if err = primitive.WriteBytes(metadata.PagingState, dest); err != nil {
 			return fmt.Errorf("cannot write RESULT Rows metadata paging state: %w", err)
 		}
 	}
-	if flags&primitive.RowsFlagMetadataChanged > 0 {
+	if flags.Contains(primitive.RowsFlagMetadataChanged) {
 		if err = primitive.WriteShortBytes(metadata.NewResultMetadataId, dest); err != nil {
 			return fmt.Errorf("cannot write RESULT Rows metadata new result metadata id: %w", err)
 		}
 	}
-	if flags&primitive.RowsFlagDseContinuousPaging > 0 {
+	if flags.Contains(primitive.RowsFlagDseContinuousPaging) {
 		if err = primitive.WriteInt(metadata.ContinuousPageNumber, dest); err != nil {
 			return fmt.Errorf("cannot write RESULT Rows metadata continuous page number: %w", err)
 		}
 	}
 	if flags&primitive.RowsFlagNoMetadata == 0 && columnSpecsLength > 0 {
-		globalTableSpec := flags&primitive.RowsFlagGlobalTablesSpec > 0
+		globalTableSpec := flags.Contains(primitive.RowsFlagGlobalTablesSpec)
 		if err = encodeColumnsMetadata(globalTableSpec, metadata.Columns, dest, version); err != nil {
 			return fmt.Errorf("cannot write RESULT Rows metadata column specs: %w", err)
 		}
@@ -203,17 +203,17 @@ func lengthOfRowsMetadata(metadata *RowsMetadata, version primitive.ProtocolVers
 	length += primitive.LengthOfInt // flags
 	length += primitive.LengthOfInt // column count
 	flags := metadata.Flags()
-	if flags&primitive.RowsFlagHasMorePages > 0 {
+	if flags.Contains(primitive.RowsFlagHasMorePages) {
 		length += primitive.LengthOfBytes(metadata.PagingState)
 	}
-	if flags&primitive.RowsFlagMetadataChanged > 0 {
+	if flags.Contains(primitive.RowsFlagMetadataChanged) {
 		length += primitive.LengthOfShortBytes(metadata.NewResultMetadataId)
 	}
-	if flags&primitive.RowsFlagDseContinuousPaging > 0 {
+	if flags.Contains(primitive.RowsFlagDseContinuousPaging) {
 		length += primitive.LengthOfInt // continuous page number
 	}
 	if flags&primitive.RowsFlagNoMetadata == 0 && len(metadata.Columns) > 0 {
-		globalTableSpec := flags&primitive.RowsFlagGlobalTablesSpec > 0
+		globalTableSpec := flags.Contains(primitive.RowsFlagGlobalTablesSpec)
 		var lengthOfCols int
 		if lengthOfCols, err = lengthOfColumnsMetadata(globalTableSpec, metadata.Columns, version); err != nil {
 			return -1, fmt.Errorf("cannot compute length of RESULT Rows metadata column cols: %w", err)
@@ -233,24 +233,24 @@ func decodeRowsMetadata(source io.Reader, version primitive.ProtocolVersion) (me
 	if metadata.ColumnCount, err = primitive.ReadInt(source); err != nil {
 		return nil, fmt.Errorf("cannot read RESULT Rows metadata column count: %w", err)
 	}
-	if flags&primitive.RowsFlagHasMorePages > 0 {
+	if flags.Contains(primitive.RowsFlagHasMorePages) {
 		if metadata.PagingState, err = primitive.ReadBytes(source); err != nil {
 			return nil, fmt.Errorf("cannot read RESULT Rows metadata paging state: %w", err)
 		}
 	}
-	if flags&primitive.RowsFlagMetadataChanged > 0 {
+	if flags.Contains(primitive.RowsFlagMetadataChanged) {
 		if metadata.NewResultMetadataId, err = primitive.ReadShortBytes(source); err != nil {
 			return nil, fmt.Errorf("cannot read RESULT Rows metadata new result metadata id: %w", err)
 		}
 	}
-	if flags&primitive.RowsFlagDseContinuousPaging > 0 {
+	if flags.Contains(primitive.RowsFlagDseContinuousPaging) {
 		if metadata.ContinuousPageNumber, err = primitive.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read RESULT Rows metadata continuous paging number: %w", err)
 		}
-		metadata.LastContinuousPage = flags&primitive.RowsFlagDseLastContinuousPage > 0
+		metadata.LastContinuousPage = flags.Contains(primitive.RowsFlagDseLastContinuousPage)
 	}
 	if flags&primitive.RowsFlagNoMetadata == 0 {
-		globalTableSpec := flags&primitive.RowsFlagGlobalTablesSpec > 0
+		globalTableSpec := flags.Contains(primitive.RowsFlagGlobalTablesSpec)
 		if metadata.Columns, err = decodeColumnsMetadata(globalTableSpec, metadata.ColumnCount, source, version); err != nil {
 			return nil, fmt.Errorf("cannot read RESULT Rows metadata column cols: %w", err)
 		}

@@ -46,7 +46,7 @@ func (c *codec) encodeFrameCompressed(frame *Frame, dest io.Writer) error {
 }
 
 func (c *codec) EncodeRawFrame(frame *RawFrame, dest io.Writer) error {
-	if err := primitive.CheckProtocolVersion(frame.Header.Version); err != nil {
+	if err := primitive.CheckValidProtocolVersion(frame.Header.Version); err != nil {
 		return err
 	} else {
 		frame.Header.BodyLength = int32(len(frame.Body))
@@ -60,20 +60,20 @@ func (c *codec) EncodeRawFrame(frame *RawFrame, dest io.Writer) error {
 }
 
 func (c *codec) EncodeHeader(header *Header, dest io.Writer) error {
-	if err := primitive.CheckProtocolVersion(header.Version); err != nil {
+	if err := primitive.CheckValidProtocolVersion(header.Version); err != nil {
 		return err
 	}
-	versionAndDirection := header.Version
+	versionAndDirection := uint8(header.Version)
 	if header.IsResponse {
 		versionAndDirection |= 0b1000_0000
 	}
 	if err := primitive.WriteByte(versionAndDirection, dest); err != nil {
 		return fmt.Errorf("cannot encode header version and direction: %w", err)
-	} else if err := primitive.WriteByte(header.Flags, dest); err != nil {
+	} else if err := primitive.WriteByte(uint8(header.Flags), dest); err != nil {
 		return fmt.Errorf("cannot encode header flags: %w", err)
 	} else if err = primitive.WriteShort(uint16(header.StreamId), dest); err != nil {
 		return fmt.Errorf("cannot encode header stream id: %w", err)
-	} else if err = primitive.WriteByte(header.OpCode, dest); err != nil {
+	} else if err = primitive.WriteByte(uint8(header.OpCode), dest); err != nil {
 		return fmt.Errorf("cannot encode header opcode: %w", err)
 	} else if err = primitive.WriteInt(header.BodyLength, dest); err != nil {
 		return fmt.Errorf("cannot encode header body length: %w", err)
@@ -104,19 +104,19 @@ func (c *codec) EncodeBody(header *Header, body *Body, dest io.Writer) error {
 }
 
 func (c *codec) encodeBodyUncompressed(header *Header, body *Body, dest io.Writer) (err error) {
-	if header.Flags&primitive.HeaderFlagTracing != 0 && body.Message.IsResponse() {
+	if header.Flags.Contains(primitive.HeaderFlagTracing) && body.Message.IsResponse() {
 		if err = primitive.WriteUuid(body.TracingId, dest); err != nil {
 			return fmt.Errorf("cannot encode body tracing id: %w", err)
 		}
 	}
-	if header.Flags&primitive.HeaderFlagCustomPayload != 0 {
+	if header.Flags.Contains(primitive.HeaderFlagCustomPayload) {
 		if header.Version < primitive.ProtocolVersion4 {
 			return fmt.Errorf("custom payloads are not supported in protocol version %v", header.Version)
 		} else if err = primitive.WriteBytesMap(body.CustomPayload, dest); err != nil {
 			return fmt.Errorf("cannot encode body custom payload: %w", err)
 		}
 	}
-	if header.Flags&primitive.HeaderFlagWarning != 0 {
+	if header.Flags.Contains(primitive.HeaderFlagWarning) {
 		if header.Version < primitive.ProtocolVersion4 && body.Warnings != nil {
 			return fmt.Errorf("warnings are not supported in protocol version %v", header.Version)
 		} else if err = primitive.WriteStringList(body.Warnings, dest); err != nil {
@@ -137,13 +137,13 @@ func (c *codec) uncompressedBodyLength(header *Header, body *Body) (length int, 
 	} else if length, err = encoder.EncodedLength(body.Message, header.Version); err != nil {
 		return -1, fmt.Errorf("cannot compute message length: %w", err)
 	}
-	if header.Flags&primitive.HeaderFlagTracing != 0 {
+	if header.Flags.Contains(primitive.HeaderFlagTracing) {
 		length += primitive.LengthOfUuid
 	}
-	if header.Flags&primitive.HeaderFlagCustomPayload != 0 {
+	if header.Flags.Contains(primitive.HeaderFlagCustomPayload) {
 		length += primitive.LengthOfBytesMap(body.CustomPayload)
 	}
-	if header.Flags&primitive.HeaderFlagWarning != 0 {
+	if header.Flags.Contains(primitive.HeaderFlagWarning) {
 		length += primitive.LengthOfStringList(body.Warnings)
 	}
 	return length, nil

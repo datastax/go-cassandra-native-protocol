@@ -606,7 +606,7 @@ func (c *errorCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 	if !ok {
 		return fmt.Errorf("expected Error, got %T", msg)
 	}
-	if err = primitive.WriteInt(errMsg.GetErrorCode(), dest); err != nil {
+	if err = primitive.WriteInt(int32(errMsg.GetErrorCode()), dest); err != nil {
 		return fmt.Errorf("cannot write ERROR code: %w", err)
 	}
 	if err = primitive.WriteString(errMsg.GetErrorMessage(), dest); err != nil {
@@ -629,7 +629,7 @@ func (c *errorCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 		if !ok {
 			return fmt.Errorf("expected *message.Unavailable, got %T", msg)
 		}
-		if err = primitive.WriteShort(unavailable.Consistency, dest); err != nil {
+		if err = primitive.WriteShort(uint16(unavailable.Consistency), dest); err != nil {
 			return fmt.Errorf("cannot write ERROR UNAVAILABLE consistency: %w", err)
 		} else if err = primitive.WriteInt(unavailable.Required, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR UNAVAILABLE required: %w", err)
@@ -642,7 +642,7 @@ func (c *errorCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 		if !ok {
 			return fmt.Errorf("expected *message.ReadTimeout, got %T", msg)
 		}
-		if err = primitive.WriteShort(readTimeout.Consistency, dest); err != nil {
+		if err = primitive.WriteShort(uint16(readTimeout.Consistency), dest); err != nil {
 			return fmt.Errorf("cannot write ERROR READ TIMEOUT consistency: %w", err)
 		} else if err = primitive.WriteInt(readTimeout.Received, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR READ TIMEOUT received: %w", err)
@@ -663,13 +663,13 @@ func (c *errorCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 		if !ok {
 			return fmt.Errorf("expected *message.WriteTimeout, got %T", msg)
 		}
-		if err = primitive.WriteShort(writeTimeout.Consistency, dest); err != nil {
+		if err = primitive.WriteShort(uint16(writeTimeout.Consistency), dest); err != nil {
 			return fmt.Errorf("cannot write ERROR WRITE TIMEOUT consistency: %w", err)
 		} else if err = primitive.WriteInt(writeTimeout.Received, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR WRITE TIMEOUT received: %w", err)
 		} else if err = primitive.WriteInt(writeTimeout.BlockFor, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR WRITE TIMEOUT block for: %w", err)
-		} else if err = primitive.WriteString(writeTimeout.WriteType, dest); err != nil {
+		} else if err = primitive.WriteString(string(writeTimeout.WriteType), dest); err != nil {
 			return fmt.Errorf("cannot write ERROR WRITE TIMEOUT write type: %w", err)
 		}
 
@@ -678,7 +678,7 @@ func (c *errorCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 		if !ok {
 			return fmt.Errorf("expected *message.ReadFailure, got %T", msg)
 		}
-		if err = primitive.WriteShort(readFailure.Consistency, dest); err != nil {
+		if err = primitive.WriteShort(uint16(readFailure.Consistency), dest); err != nil {
 			return fmt.Errorf("cannot write ERROR READ FAILURE consistency: %w", err)
 		} else if err = primitive.WriteInt(readFailure.Received, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR READ FAILURE received: %w", err)
@@ -708,7 +708,7 @@ func (c *errorCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 		if !ok {
 			return fmt.Errorf("expected *message.WriteFailure, got %T", msg)
 		}
-		if err = primitive.WriteShort(writeFailure.Consistency, dest); err != nil {
+		if err = primitive.WriteShort(uint16(writeFailure.Consistency), dest); err != nil {
 			return fmt.Errorf("cannot write ERROR WRITE FAILURE consistency: %w", err)
 		} else if err = primitive.WriteInt(writeFailure.Received, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR WRITE FAILURE received: %w", err)
@@ -724,7 +724,7 @@ func (c *errorCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 				return fmt.Errorf("cannot write ERROR WRITE FAILURE num failures: %w", err)
 			}
 		}
-		if err = primitive.WriteString(writeFailure.WriteType, dest); err != nil {
+		if err = primitive.WriteString(string(writeFailure.WriteType), dest); err != nil {
 			return fmt.Errorf("cannot write ERROR WRITE FAILURE write type: %w", err)
 		}
 
@@ -799,10 +799,10 @@ func (c *errorCodec) EncodedLength(msg Message, version primitive.ProtocolVersio
 		if !ok {
 			return -1, fmt.Errorf("expected *message.WriteTimeout, got %T", msg)
 		}
-		length += primitive.LengthOfShort                          // consistency
-		length += primitive.LengthOfInt                            // received
-		length += primitive.LengthOfInt                            // block for
-		length += primitive.LengthOfString(writeTimeout.WriteType) // write type
+		length += primitive.LengthOfShort                                  // consistency
+		length += primitive.LengthOfInt                                    // received
+		length += primitive.LengthOfInt                                    // block for
+		length += primitive.LengthOfString(string(writeTimeout.WriteType)) // write type
 
 	case primitive.ErrorCodeReadFailure:
 		length += primitive.LengthOfShort // consistency
@@ -828,10 +828,10 @@ func (c *errorCodec) EncodedLength(msg Message, version primitive.ProtocolVersio
 		if !ok {
 			return -1, fmt.Errorf("expected *message.WriteFailure, got %T", msg)
 		}
-		length += primitive.LengthOfShort                          // consistency
-		length += primitive.LengthOfInt                            // received
-		length += primitive.LengthOfInt                            // block for
-		length += primitive.LengthOfString(writeFailure.WriteType) // write type
+		length += primitive.LengthOfShort                                  // consistency
+		length += primitive.LengthOfInt                                    // received
+		length += primitive.LengthOfInt                                    // block for
+		length += primitive.LengthOfString(string(writeFailure.WriteType)) // write type
 		if version >= primitive.ProtocolVersion5 {
 			if reasonMapLength, err := primitive.LengthOfReasonMap(writeFailure.FailureReasons); err != nil {
 				return -1, fmt.Errorf("cannot compute length of ERROR WRITE FAILURE rason map: %w", err)
@@ -865,7 +865,7 @@ func (c *errorCodec) EncodedLength(msg Message, version primitive.ProtocolVersio
 }
 
 func (c *errorCodec) Decode(source io.Reader, version primitive.ProtocolVersion) (msg Message, err error) {
-	var code primitive.ErrorCode
+	var code int32
 	if code, err = primitive.ReadInt(source); err != nil {
 		return nil, fmt.Errorf("cannot read ERROR code: %w", err)
 	}
@@ -873,7 +873,7 @@ func (c *errorCodec) Decode(source io.Reader, version primitive.ProtocolVersion)
 	if errorMsg, err = primitive.ReadString(source); err != nil {
 		return nil, fmt.Errorf("cannot read ERROR message: %w", err)
 	}
-	switch code {
+	switch primitive.ErrorCode(code) {
 	case primitive.ErrorCodeServerError:
 		return &ServerError{errorMsg}, nil
 	case primitive.ErrorCodeProtocolError:
@@ -897,9 +897,11 @@ func (c *errorCodec) Decode(source io.Reader, version primitive.ProtocolVersion)
 
 	case primitive.ErrorCodeUnavailable:
 		var msg = &Unavailable{ErrorMessage: errorMsg}
-		if msg.Consistency, err = primitive.ReadShort(source); err != nil {
+		var consistency uint16
+		if consistency, err = primitive.ReadShort(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR UNAVAILABLE consistency: %w", err)
 		}
+		msg.Consistency = primitive.ConsistencyLevel(consistency)
 		if msg.Required, err = primitive.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR UNAVAILABLE required: %w", err)
 		}
@@ -910,9 +912,11 @@ func (c *errorCodec) Decode(source io.Reader, version primitive.ProtocolVersion)
 
 	case primitive.ErrorCodeReadTimeout:
 		var msg = &ReadTimeout{ErrorMessage: errorMsg}
-		if msg.Consistency, err = primitive.ReadShort(source); err != nil {
+		var consistency uint16
+		if consistency, err = primitive.ReadShort(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR READ TIMEOUT consistency: %w", err)
 		}
+		msg.Consistency = primitive.ConsistencyLevel(consistency)
 		if msg.Received, err = primitive.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR READ TIMEOUT received: %w", err)
 		}
@@ -932,25 +936,31 @@ func (c *errorCodec) Decode(source io.Reader, version primitive.ProtocolVersion)
 
 	case primitive.ErrorCodeWriteTimeout:
 		var msg = &WriteTimeout{ErrorMessage: errorMsg}
-		if msg.Consistency, err = primitive.ReadShort(source); err != nil {
+		var consistency uint16
+		if consistency, err = primitive.ReadShort(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR WRITE TIMEOUT consistency: %w", err)
 		}
+		msg.Consistency = primitive.ConsistencyLevel(consistency)
 		if msg.Received, err = primitive.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR WRITE TIMEOUT received: %w", err)
 		}
 		if msg.BlockFor, err = primitive.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR WRITE TIMEOUT block for: %w", err)
 		}
-		if msg.WriteType, err = primitive.ReadString(source); err != nil {
+		var writeType string
+		if writeType, err = primitive.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR WRITE TIMEOUT write type: %w", err)
 		}
+		msg.WriteType = primitive.WriteType(writeType)
 		return msg, nil
 
 	case primitive.ErrorCodeReadFailure:
 		var msg = &ReadFailure{ErrorMessage: errorMsg}
-		if msg.Consistency, err = primitive.ReadShort(source); err != nil {
+		var consistency uint16
+		if consistency, err = primitive.ReadShort(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR READ FAILURE consistency: %w", err)
 		}
+		msg.Consistency = primitive.ConsistencyLevel(consistency)
 		if msg.Received, err = primitive.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR READ FAILURE received: %w", err)
 		}
@@ -979,9 +989,11 @@ func (c *errorCodec) Decode(source io.Reader, version primitive.ProtocolVersion)
 
 	case primitive.ErrorCodeWriteFailure:
 		var msg = &WriteFailure{ErrorMessage: errorMsg}
-		if msg.Consistency, err = primitive.ReadShort(source); err != nil {
+		var consistency uint16
+		if consistency, err = primitive.ReadShort(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR WRITE FAILURE consistency: %w", err)
 		}
+		msg.Consistency = primitive.ConsistencyLevel(consistency)
 		if msg.Received, err = primitive.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR WRITE FAILURE received: %w", err)
 		}
@@ -997,10 +1009,12 @@ func (c *errorCodec) Decode(source io.Reader, version primitive.ProtocolVersion)
 				return nil, fmt.Errorf("cannot read ERROR WRITE FAILURE num failures: %w", err)
 			}
 		}
-		if msg.WriteType, err = primitive.ReadString(source); err != nil {
+		var writeType string
+		if writeType, err = primitive.ReadString(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR WRITE FAILURE write type: %w", err)
 		}
-		if err = primitive.CheckWriteType(msg.WriteType); err != nil {
+		msg.WriteType = primitive.WriteType(writeType)
+		if err = primitive.CheckValidWriteType(msg.WriteType); err != nil {
 			return nil, err
 		}
 		return msg, nil
