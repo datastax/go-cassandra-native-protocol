@@ -198,8 +198,7 @@ func (c *CqlClientConnection) incomingLoop() {
 						log.Error().Msgf("%v: events queue is full, discarding event frame: %v", c, incoming)
 					}
 				} else {
-					err := c.inFlightHandler.onIncomingFrameReceived(incoming)
-					if err != nil {
+					if err := c.inFlightHandler.onIncomingFrameReceived(incoming); err != nil {
 						log.Error().Err(err).Msgf("%v: incoming frame delivery failed: %v", c, incoming)
 					} else {
 						log.Debug().Msgf("%v: incoming frame successfully delivered: %v", c, incoming)
@@ -279,10 +278,13 @@ type InFlightRequest interface {
 	// Incoming returns a channel to receive incoming frames for this in-flight request. Typically the channel will
 	// only ever emit one single frame, except when using continuous paging (DataStax Enterprise only).
 	// The returned channel is never nil. It is closed after receiving the last frame, or if an error occurs
-	// (typically a timeout), whichever happens first.
+	// (typically a timeout), whichever happens first; when the channel is closed, IsDone returns true.
 	// If the channel is closed because of an error, Err will return that error, otherwise it will return nil.
 	// Successive calls to Incoming return the same channel.
 	Incoming() <-chan *frame.Frame
+
+	// IsDone returns true if Incoming is closed, and false otherwise.
+	IsDone() bool
 
 	// If Incoming is not yet closed, Err returns nil.
 	// If Incoming is closed, Err returns either nil if the channel was closed normally, or a non-nil error explaining
@@ -407,6 +409,7 @@ func (c *CqlClientConnection) setClosed() bool {
 func (c *CqlClientConnection) Close() (err error) {
 	if c.setClosed() {
 		log.Debug().Msgf("%v: closing", c)
+		c.cancel()
 		err = c.conn.Close()
 		outgoing := c.outgoing
 		events := c.events
@@ -415,7 +418,6 @@ func (c *CqlClientConnection) Close() (err error) {
 		close(outgoing)
 		close(events)
 		c.inFlightHandler.close()
-		c.cancel()
 		c.waitGroup.Wait()
 		if err != nil {
 			err = fmt.Errorf("%v: error closing: %w", c, err)

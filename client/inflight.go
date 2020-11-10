@@ -189,16 +189,17 @@ type inFlightRequest struct {
 	_incoming       chan *frame.Frame // used internally; will be set to nil on close
 	incoming        chan *frame.Frame // exposed externally; never nil
 	err             error
-	closed          int32
+	done            bool
 	timeout         time.Duration
 	ctx             context.Context
 	cancel          context.CancelFunc
 	timeoutCtx      context.Context
 	timeoutCancel   context.CancelFunc
 
-	// lock guards the closing of incoming chan and the assignment of err;
+	// lock guards the closing of incoming chan and the assignment of done and err;
 	// required to fulfill the interface contract:
-	// if Incoming() is closed because of an error, Err() must return that error.
+	// if Incoming is closed, IsDone must return true; if it was closed because of an error,
+	// Err must return that error.
 	lock *sync.RWMutex
 }
 
@@ -210,6 +211,12 @@ func (r *inFlightRequest) Incoming() <-chan *frame.Frame {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 	return r.incoming
+}
+
+func (r *inFlightRequest) IsDone() bool {
+	r.lock.RLock()
+	defer r.lock.RUnlock()
+	return r.done
 }
 
 func (r *inFlightRequest) Err() error {
@@ -292,26 +299,20 @@ func (r inFlightRequest) resetTimeout() {
 	r.startTimeout()
 }
 
-func (r *inFlightRequest) isClosed() bool {
-	return atomic.LoadInt32(&r.closed) == 1
-}
-
-func (r *inFlightRequest) setClosed() bool {
-	return atomic.CompareAndSwapInt32(&r.closed, 0, 1)
-}
-
 func (r *inFlightRequest) close(err error) {
-	if r.setClosed() {
+	// need to hold the lock to keep the 3 states in sync: done, incoming and err
+	r.lock.Lock()
+	if !r.done {
 		log.Trace().Msgf("%v: closing", r)
 		r.cancel()
-		r.lock.Lock()
 		// set _incoming to nil first to avoid potential panic in onFrameReceived
 		r._incoming = nil
 		close(r.incoming)
 		r.err = err
-		r.lock.Unlock()
-		log.Trace().Msgf("%v: successfully closed", r)
+		r.done = true
 	}
+	r.lock.Unlock()
+	log.Trace().Msgf("%v: successfully closed", r)
 }
 
 func isLastFrame(f *frame.Frame) bool {
