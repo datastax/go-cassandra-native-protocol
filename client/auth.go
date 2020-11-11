@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// AuthCredentials encpasulates a username and a password to use with plain-text authenticators.
+// AuthCredentials encapsulates a username and a password to use with plain-text authenticators.
 type AuthCredentials struct {
 	Username string
 	Password string
