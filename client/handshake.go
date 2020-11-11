@@ -92,7 +92,7 @@ func (c *CqlClientConnection) InitiateHandshake(version primitive.ProtocolVersio
 	return err
 }
 
-// Listens for a client STARTUP requests and proceeds with the server-side handshake procedure. Authentication will be
+// Listens for a client STARTUP request and proceeds with the server-side handshake procedure. Authentication will be
 // required if the connection was created with auth credentials; otherwise the handshake will proceed without
 // authentication.
 func (c *CqlServerConnection) AcceptHandshake() (err error) {
