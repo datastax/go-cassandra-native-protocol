@@ -146,17 +146,18 @@ func (server *CqlServer) abort() {
 func (server *CqlServer) acceptLoop() {
 	server.waitGroup.Add(1)
 	go func() {
-		defer server.waitGroup.Done()
+		abort := false
 		for server.IsRunning() {
 			if conn, err := server.listener.Accept(); err != nil {
 				if !server.IsClosed() {
 					log.Error().Err(err).Msgf("%v: error accepting client connections, closing server", server)
-					server.abort()
+					abort = true
 				}
 				break
 			} else {
 				if connection, err := NewCqlServerConnection(
 					conn,
+					server.ctx,
 					server.Credentials,
 					server.Codec,
 					server.MaxInFlight,
@@ -171,15 +172,19 @@ func (server *CqlServer) acceptLoop() {
 				}
 			}
 		}
+		server.waitGroup.Done()
+		if abort {
+			server.abort()
+		}
 	}()
 }
 
 func (server *CqlServer) awaitDone() {
 	server.waitGroup.Add(1)
 	go func() {
-		defer server.waitGroup.Done()
 		<-server.ctx.Done()
 		log.Debug().Err(server.ctx.Err()).Msgf("%v: context was closed", server)
+		server.waitGroup.Done()
 		server.abort()
 	}()
 }
@@ -253,11 +258,14 @@ type CqlServerConnection struct {
 	waitGroup   *sync.WaitGroup
 	closed      int32
 	onClose     func(*CqlServerConnection)
+	ctx         context.Context
+	cancel      context.CancelFunc
 }
 
 // Creates a new CqlServerConnection from the given TCP net.Conn.
 func NewCqlServerConnection(
 	conn net.Conn,
+	ctx context.Context,
 	credentials *AuthCredentials,
 	codec frame.Codec,
 	maxInFlight int,
@@ -275,7 +283,7 @@ func NewCqlServerConnection(
 	if codec == nil {
 		codec = frame.NewCodec()
 	}
-	c := &CqlServerConnection{
+	connection := &CqlServerConnection{
 		conn:        conn,
 		codec:       codec,
 		credentials: credentials,
@@ -285,9 +293,11 @@ func NewCqlServerConnection(
 		waitGroup:   &sync.WaitGroup{},
 		onClose:     onClose,
 	}
-	c.incomingLoop()
-	c.outgoingLoop()
-	return c, nil
+	connection.ctx, connection.cancel = context.WithCancel(ctx)
+	connection.incomingLoop()
+	connection.outgoingLoop()
+	connection.awaitDone()
+	return connection, nil
 }
 
 func (c *CqlServerConnection) String() string {
@@ -298,13 +308,14 @@ func (c *CqlServerConnection) incomingLoop() {
 	log.Debug().Msgf("%v: listening for incoming frames...", c)
 	c.waitGroup.Add(1)
 	go func() {
-		defer c.waitGroup.Done()
+		abort := false
 		for !c.IsClosed() {
 			if err := c.conn.SetReadDeadline(time.Now().Add(c.idleTimeout)); err != nil {
 				if !c.IsClosed() {
 					log.Error().Err(err).Msgf("%v: error setting idle timeout, closing connection", c)
-					c.abort()
+					abort = true
 				}
+				break
 			} else if incoming, err := c.codec.DecodeFrame(c.conn); err != nil {
 				if !c.IsClosed() {
 					if errors.Is(err, io.EOF) {
@@ -312,7 +323,7 @@ func (c *CqlServerConnection) incomingLoop() {
 					} else {
 						log.Error().Err(err).Msgf("%v: error reading, closing connection", c)
 					}
-					c.abort()
+					abort = true
 				}
 				break
 			} else {
@@ -325,6 +336,10 @@ func (c *CqlServerConnection) incomingLoop() {
 				}
 			}
 		}
+		c.waitGroup.Done()
+		if abort {
+			c.abort()
+		}
 	}()
 }
 
@@ -332,12 +347,12 @@ func (c *CqlServerConnection) outgoingLoop() {
 	log.Debug().Msgf("%v: listening for outgoing frames...", c)
 	c.waitGroup.Add(1)
 	go func() {
-		defer c.waitGroup.Done()
+		abort := false
 		for !c.IsClosed() {
 			if outgoing, ok := <-c.outgoing; !ok {
 				if !c.IsClosed() {
 					log.Error().Msgf("%v: outgoing frame channel was closed unexpectedly, closing connection", c)
-					c.abort()
+					abort = true
 				}
 				break
 			} else {
@@ -349,7 +364,7 @@ func (c *CqlServerConnection) outgoingLoop() {
 						} else {
 							log.Error().Err(err).Msgf("%v: error writing, closing connection", c)
 						}
-						c.abort()
+						abort = true
 					}
 					break
 				} else {
@@ -357,6 +372,20 @@ func (c *CqlServerConnection) outgoingLoop() {
 				}
 			}
 		}
+		c.waitGroup.Done()
+		if abort {
+			c.abort()
+		}
+	}()
+}
+
+func (c *CqlServerConnection) awaitDone() {
+	c.waitGroup.Add(1)
+	go func() {
+		<-c.ctx.Done()
+		log.Debug().Err(c.ctx.Err()).Msgf("%v: context was closed", c)
+		c.waitGroup.Done()
+		c.abort()
 	}()
 }
 
@@ -405,6 +434,7 @@ func (c *CqlServerConnection) setClosed() bool {
 func (c *CqlServerConnection) Close() (err error) {
 	if c.setClosed() {
 		log.Debug().Msgf("%v: closing", c)
+		c.cancel()
 		err = c.conn.Close()
 		incoming := c.incoming
 		outgoing := c.outgoing

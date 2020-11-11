@@ -176,7 +176,7 @@ func (c *CqlClientConnection) incomingLoop() {
 	log.Debug().Msgf("%v: listening for incoming frames...", c)
 	c.waitGroup.Add(1)
 	go func() {
-		defer c.waitGroup.Done()
+		abort := false
 		for !c.IsClosed() {
 			if incoming, err := c.codec.DecodeFrame(c.conn); err != nil {
 				if !c.IsClosed() {
@@ -185,7 +185,7 @@ func (c *CqlClientConnection) incomingLoop() {
 					} else {
 						log.Error().Err(err).Msgf("%v: error reading, closing connection", c)
 					}
-					c.abort()
+					abort = true
 				}
 				break
 			} else {
@@ -205,11 +205,15 @@ func (c *CqlClientConnection) incomingLoop() {
 					}
 					if fatalError, errorCode := c.isFatalError(incoming); fatalError {
 						log.Error().Msgf("%v: server replied with fatal error code %v, closing connection", c, errorCode)
-						c.abort()
+						abort = true
 						break
 					}
 				}
 			}
+		}
+		c.waitGroup.Done()
+		if abort {
+			c.abort()
 		}
 	}()
 }
@@ -218,12 +222,12 @@ func (c *CqlClientConnection) outgoingLoop() {
 	log.Debug().Msgf("%v: listening for outgoing frames...", c)
 	c.waitGroup.Add(1)
 	go func() {
-		defer c.waitGroup.Done()
+		abort := false
 		for !c.IsClosed() {
 			if outgoing, ok := <-c.outgoing; !ok {
 				if !c.IsClosed() {
 					log.Error().Msgf("%v: outgoing frame channel was closed unexpectedly, closing connection", c)
-					c.abort()
+					abort = true
 				}
 				break
 			} else {
@@ -235,7 +239,7 @@ func (c *CqlClientConnection) outgoingLoop() {
 						} else {
 							log.Error().Err(err).Msgf("%v: error writing, closing connection", c)
 						}
-						c.abort()
+						abort = true
 					}
 					break
 				} else {
@@ -243,15 +247,19 @@ func (c *CqlClientConnection) outgoingLoop() {
 				}
 			}
 		}
+		c.waitGroup.Done()
+		if abort {
+			c.abort()
+		}
 	}()
 }
 
 func (c *CqlClientConnection) awaitDone() {
 	c.waitGroup.Add(1)
 	go func() {
-		defer c.waitGroup.Done()
 		<-c.ctx.Done()
 		log.Debug().Err(c.ctx.Err()).Msgf("%v: context was closed", c)
+		c.waitGroup.Done()
 		c.abort()
 	}()
 }
