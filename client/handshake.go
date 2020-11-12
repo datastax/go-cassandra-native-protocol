@@ -99,34 +99,45 @@ func (c *CqlServerConnection) AcceptHandshake() (err error) {
 	log.Debug().Msgf("%v: performing handshake", c)
 	var request *frame.Frame
 	authSuccess := false
-	if request, err = c.Receive(); err == nil {
-		if _, ok := request.Body.Message.(*message.Startup); !ok {
-			err = fmt.Errorf("expected STARTUP, got %v", request.Body.Message)
-		} else {
-			if c.credentials == nil {
-				ready, _ := frame.NewResponseFrame(request.Header.Version, request.Header.StreamId, nil, nil, nil, &message.Ready{}, false)
-				err = c.Send(ready)
-			} else {
-				authenticate, _ := frame.NewResponseFrame(request.Header.Version, request.Header.StreamId, nil, nil, nil, &message.Authenticate{Authenticator: "org.apache.cassandra.auth.PasswordAuthenticator"}, false)
-				if err = c.Send(authenticate); err == nil {
-					if request, err = c.Receive(); err == nil {
-						if authResponse, ok := request.Body.Message.(*message.AuthResponse); !ok {
-							err = fmt.Errorf("expected AUTH RESPONSE, got %v", request.Body.Message)
-						} else {
-							credentials := &AuthCredentials{}
-							if err = credentials.Unmarshal(authResponse.Token); err == nil {
-								if credentials.Username == c.credentials.Username && credentials.Password == c.credentials.Password {
-									authSuccess = true
-									authSuccess, _ := frame.NewResponseFrame(request.Header.Version, request.Header.StreamId, nil, nil, nil, &message.AuthSuccess{}, false)
-									err = c.Send(authSuccess)
-								} else {
-									authError, _ := frame.NewResponseFrame(request.Header.Version, request.Header.StreamId, nil, nil, nil, &message.AuthenticationError{ErrorMessage: "invalid credentials"}, false)
-									err = c.Send(authError)
+	done := false
+	for !done && err == nil {
+		if request, err = c.Receive(); err == nil {
+			switch request.Body.Message.(type) {
+			case *message.Options:
+				supported, _ := frame.NewResponseFrame(request.Header.Version, request.Header.StreamId, nil, nil, nil, &message.Supported{}, false)
+				err = c.Send(supported)
+				continue
+			case *message.Startup:
+				if c.credentials == nil {
+					authSuccess = true
+					ready, _ := frame.NewResponseFrame(request.Header.Version, request.Header.StreamId, nil, nil, nil, &message.Ready{}, false)
+					err = c.Send(ready)
+				} else {
+					authenticate, _ := frame.NewResponseFrame(request.Header.Version, request.Header.StreamId, nil, nil, nil, &message.Authenticate{Authenticator: "org.apache.cassandra.auth.PasswordAuthenticator"}, false)
+					if err = c.Send(authenticate); err == nil {
+						if request, err = c.Receive(); err == nil {
+							if authResponse, ok := request.Body.Message.(*message.AuthResponse); !ok {
+								err = fmt.Errorf("expected AUTH RESPONSE, got %v", request.Body.Message)
+							} else {
+								credentials := &AuthCredentials{}
+								if err = credentials.Unmarshal(authResponse.Token); err == nil {
+									if credentials.Username == c.credentials.Username && credentials.Password == c.credentials.Password {
+										authSuccess = true
+										authSuccess, _ := frame.NewResponseFrame(request.Header.Version, request.Header.StreamId, nil, nil, nil, &message.AuthSuccess{}, false)
+										err = c.Send(authSuccess)
+									} else {
+										authError, _ := frame.NewResponseFrame(request.Header.Version, request.Header.StreamId, nil, nil, nil, &message.AuthenticationError{ErrorMessage: "invalid credentials"}, false)
+										err = c.Send(authError)
+									}
 								}
 							}
 						}
 					}
 				}
+				done = true
+			default:
+				err = fmt.Errorf("expected STARTUP or OPTIONS, got %v", request.Body.Message)
+				done = true
 			}
 		}
 	}
@@ -139,5 +150,5 @@ func (c *CqlServerConnection) AcceptHandshake() (err error) {
 	} else {
 		log.Error().Err(err).Msgf("%v: handshake failed", c)
 	}
-	return nil
+	return err
 }
