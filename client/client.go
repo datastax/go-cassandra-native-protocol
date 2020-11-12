@@ -77,7 +77,7 @@ func (client *CqlClient) Connect(ctx context.Context) (*CqlClientConnection, err
 	if conn, err := dialer.DialContext(connectCtx, "tcp", client.RemoteAddress); err != nil {
 		return nil, fmt.Errorf("%v: cannot establish TCP connection: %w", client, err)
 	} else {
-		connection, err := NewCqlClientConnection(
+		connection, err := newCqlClientConnection(
 			conn,
 			ctx,
 			client.Credentials,
@@ -108,8 +108,7 @@ func (client *CqlClient) ConnectAndInit(
 }
 
 // CqlClientConnection encapsulates a TCP client connection to a remote Cassandra-compatible backend.
-// CqlClientConnection instances should be created by calling CqlClient.Connect or CqlClient.ConnectAndInit,
-// but it is also possible to create one from an existing TCP connection using NewCqlClientConnection.
+// CqlClientConnection instances should be created by calling CqlClient.Connect or CqlClient.ConnectAndInit.
 type CqlClientConnection struct {
 	conn            net.Conn
 	codec           frame.Codec
@@ -124,8 +123,7 @@ type CqlClientConnection struct {
 	cancel          context.CancelFunc
 }
 
-// Creates a new CqlClientConnection from the given TCP net.Conn.
-func NewCqlClientConnection(
+func newCqlClientConnection(
 	conn net.Conn,
 	ctx context.Context,
 	credentials *AuthCredentials,

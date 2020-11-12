@@ -155,7 +155,7 @@ func (server *CqlServer) acceptLoop() {
 				}
 				break
 			} else {
-				if connection, err := NewCqlServerConnection(
+				if connection, err := newCqlServerConnection(
 					conn,
 					server.ctx,
 					server.Credentials,
@@ -246,8 +246,7 @@ func (server *CqlServer) BindAndInit(
 }
 
 // CqlServerConnection encapsulates a TCP server connection to a remote CQL client.
-// CqlServerConnection instances should be created by calling CqlServer.Accept or CqlServer.Bind,
-// but it is also possible to create one from an existing TCP connection using NewCqlServerConnection..
+// CqlServerConnection instances should be created by calling CqlServer.Accept or CqlServer.Bind.
 type CqlServerConnection struct {
 	conn        net.Conn
 	codec       frame.Codec
@@ -262,8 +261,7 @@ type CqlServerConnection struct {
 	cancel      context.CancelFunc
 }
 
-// Creates a new CqlServerConnection from the given TCP net.Conn.
-func NewCqlServerConnection(
+func newCqlServerConnection(
 	conn net.Conn,
 	ctx context.Context,
 	credentials *AuthCredentials,
