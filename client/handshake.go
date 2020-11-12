@@ -95,6 +95,8 @@ func (c *CqlClientConnection) InitiateHandshake(version primitive.ProtocolVersio
 // Listens for a client STARTUP request and proceeds with the server-side handshake procedure. Authentication will be
 // required if the connection was created with auth credentials; otherwise the handshake will proceed without
 // authentication.
+// This method is intended for use when server-side handshake should be triggered manually. For automatic server-side
+// handshake, consider using HandshakeHandler instead.
 func (c *CqlServerConnection) AcceptHandshake() (err error) {
 	log.Debug().Msgf("%v: performing handshake", c)
 	var request *frame.Frame
@@ -151,4 +153,59 @@ func (c *CqlServerConnection) AcceptHandshake() (err error) {
 		log.Error().Err(err).Msgf("%v: handshake failed", c)
 	}
 	return err
+}
+
+const (
+	handshakeStateKey     = "HANDSHAKE"
+	handshakeStateStarted = "STARTED"
+	handshakeStateDone    = "DONE"
+)
+
+// A RequestHandler to handle server-side handshakes. This is an alternative to CqlServerConnection.AcceptHandshake
+// to make the server connection automatically handle all incoming handshake attempts.
+func HandshakeHandler(request *frame.Frame, conn *CqlServerConnection, ctx RequestHandlerContext) (response *frame.Frame) {
+	if ctx[handshakeStateKey] == handshakeStateDone {
+		return
+	}
+	version := request.Header.Version
+	id := request.Header.StreamId
+	switch msg := request.Body.Message.(type) {
+	case *message.Options:
+		log.Debug().Msgf("%v: [handshake handler]: intercepted OPTIONS before STARTUP", conn)
+		response, _ = frame.NewResponseFrame(version, id, nil, nil, nil, &message.Supported{}, false)
+	case *message.Startup:
+		if conn.Credentials() == nil {
+			ctx[handshakeStateKey] = handshakeStateDone
+			log.Info().Msgf("%v: [handshake handler]: handshake successful", conn)
+			response, _ = frame.NewResponseFrame(version, id, nil, nil, nil, &message.Ready{}, false)
+		} else {
+			ctx[handshakeStateKey] = handshakeStateStarted
+			response, _ = frame.NewResponseFrame(version, id, nil, nil, nil, &message.Authenticate{Authenticator: "org.apache.cassandra.auth.PasswordAuthenticator"}, false)
+		}
+	case *message.AuthResponse:
+		if ctx[handshakeStateKey] == handshakeStateStarted {
+			userCredentials := &AuthCredentials{}
+			if err := userCredentials.Unmarshal(msg.Token); err == nil {
+				serverCredentials := conn.Credentials()
+				if userCredentials.Username == serverCredentials.Username &&
+					userCredentials.Password == serverCredentials.Password {
+					log.Info().Msgf("%v: [handshake handler]: handshake successful", conn)
+					response, _ = frame.NewResponseFrame(version, id, nil, nil, nil, &message.AuthSuccess{}, false)
+				} else {
+					log.Error().Msgf("%v: [handshake handler]: authentication error: invalid credentials", conn)
+					response, _ = frame.NewResponseFrame(version, id, nil, nil, nil, &message.AuthenticationError{ErrorMessage: "invalid credentials"}, false)
+				}
+				ctx[handshakeStateKey] = handshakeStateDone
+			}
+		} else {
+			ctx[handshakeStateKey] = handshakeStateDone
+			log.Error().Msgf("%v: [handshake handler]: expected STARTUP, got AUTH_RESPONSE", conn)
+			response, _ = frame.NewResponseFrame(version, id, nil, nil, nil, &message.ProtocolError{ErrorMessage: "handshake failed"}, false)
+		}
+	default:
+		ctx[handshakeStateKey] = handshakeStateDone
+		log.Error().Msgf("%v: [handshake handler]: expected OPTIONS, STARTUP or AUTH_RESPONSE, got %v", conn, msg)
+		response, _ = frame.NewResponseFrame(version, id, nil, nil, nil, &message.ProtocolError{ErrorMessage: "handshake failed"}, false)
+	}
+	return
 }
