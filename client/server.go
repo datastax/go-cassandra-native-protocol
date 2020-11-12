@@ -189,14 +189,14 @@ func (server *CqlServer) awaitDone() {
 	}()
 }
 
-// Waits until a new client connection is accepted, the configured timeout is triggered, or the server is closed,
+// Waits until the given client is accepted, the configured timeout is triggered, or the server is closed,
 // whichever happens first.
-func (server *CqlServer) Accept(clientConnection *CqlClientConnection) (*CqlServerConnection, error) {
+func (server *CqlServer) Accept(clientAddress net.Addr) (*CqlServerConnection, error) {
 	if server.IsClosed() {
 		return nil, fmt.Errorf("%v: server closed", server)
 	}
-	log.Debug().Msgf("%v: waiting for incoming client connection to be accepted: %v", server, clientConnection)
-	if serverConnectionChannel, err := server.connectionsHandler.onConnectionAcceptRequested(clientConnection); err != nil {
+	log.Debug().Msgf("%v: waiting for incoming client connection to be accepted: %v", server, clientAddress)
+	if serverConnectionChannel, err := server.connectionsHandler.onConnectionAcceptRequested(clientAddress); err != nil {
 		return nil, err
 	} else {
 		select {
@@ -212,6 +212,27 @@ func (server *CqlServer) Accept(clientConnection *CqlClientConnection) (*CqlServ
 	}
 }
 
+// Waits until any client is accepted, the configured timeout is triggered, or the server is closed,
+// whichever happens first.
+// This method is useful when the client address is not known in advance.
+func (server *CqlServer) AcceptAny() (*CqlServerConnection, error) {
+	if server.IsClosed() {
+		return nil, fmt.Errorf("%v: server closed", server)
+	}
+	log.Debug().Msgf("%v: waiting for any incoming client connection to be accepted", server)
+	anyConn := server.connectionsHandler.anyConnectionChannel()
+	select {
+	case serverConnection, ok := <-anyConn:
+		if !ok {
+			return nil, fmt.Errorf("%v: incoming client connection channel closed unexpectedly", server)
+		}
+		log.Debug().Msgf("%v: returning accepted client connection: %v", server, serverConnection)
+		return serverConnection, nil
+	case <-time.After(server.AcceptTimeout):
+		return nil, fmt.Errorf("%v: timed out waiting for incoming client connection", server)
+	}
+}
+
 // Convenience method to connect a CqlClient to this CqlServer. The returned connections will be open, but not
 // initialized (i.e., no handshake performed). The server must be started prior to calling this method.
 func (server *CqlServer) Bind(client *CqlClient, ctx context.Context) (*CqlClientConnection, *CqlServerConnection, error) {
@@ -221,7 +242,7 @@ func (server *CqlServer) Bind(client *CqlClient, ctx context.Context) (*CqlClien
 		return nil, nil, fmt.Errorf("%v: server closed", server)
 	} else if clientConn, err := client.Connect(ctx); err != nil {
 		return nil, nil, fmt.Errorf("%v: bind failed, client %v could not connect: %w", server, client, err)
-	} else if serverConn, err := server.Accept(clientConn); err != nil {
+	} else if serverConn, err := server.Accept(clientConn.conn.LocalAddr()); err != nil {
 		return nil, nil, fmt.Errorf("%v: bind failed, client %v wasn't accepted: %w", server, client, err)
 	} else {
 		log.Debug().Msgf("%v: bind successful: %v", server, serverConn)
