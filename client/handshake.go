@@ -177,7 +177,7 @@ const (
 
 // A RequestHandler to handle server-side handshakes. This is an alternative to CqlServerConnection.AcceptHandshake
 // to make the server connection automatically handle all incoming handshake attempts.
-func HandshakeHandler(request *frame.Frame, conn *CqlServerConnection, ctx RequestHandlerContext) (response *frame.Frame) {
+var HandshakeHandler RequestHandler = func(request *frame.Frame, conn *CqlServerConnection, ctx RequestHandlerContext) (response *frame.Frame) {
 	if ctx.GetAttribute(handshakeStateKey) == handshakeStateDone {
 		return
 	}
