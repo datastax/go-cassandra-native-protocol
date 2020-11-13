@@ -114,6 +114,14 @@ func TestCqlServer_AllAcceptedClients(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, clientConn2)
 
+	serverConn1, err := server.Accept(clientConn1)
+	require.Nil(t, err)
+	require.NotNil(t, serverConn1)
+
+	serverConn2, err := server.Accept(clientConn2)
+	require.Nil(t, err)
+	require.NotNil(t, serverConn2)
+
 	clients, err := server.AllAcceptedClients()
 	require.Nil(t, err)
 	require.NotNil(t, clients)

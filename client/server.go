@@ -28,6 +28,36 @@ const (
 	ServerStateClosed     = int32(iota)
 )
 
+// The RequestHandler invocation context. Each invocation of a given RequestHandler will be passed
+// one instance of a RequestHandlerContext, that remains the same between invocations. This allows
+// handlers to become stateful if required.
+type RequestHandlerContext interface {
+	// Puts the given value in this context under the given key name.
+	// Will override any previously-stored value under that key.
+	PutAttribute(name string, value interface{})
+	// Retrieves the value stored in this context under the given key name.
+	// Returns nil if nil is stored, or if the key does not exist.
+	GetAttribute(name string) interface{}
+}
+
+type requestHandlerContext map[string]interface{}
+
+func (ctx requestHandlerContext) PutAttribute(name string, value interface{}) {
+	ctx[name] = value
+}
+
+func (ctx requestHandlerContext) GetAttribute(name string) interface{} {
+	return ctx[name]
+}
+
+// A request handler is a callback function that gets invoked whenever a CqlServerConnection receives an incoming
+// frame. The handler function should inspect the request frame and determine if it can handle the response for it.
+// If so, it should return a non-nil response frame. When that happens, no further handlers will be tried for the
+// incoming request.
+// If a handler returns nil, it is assumed that it was not able to handle the request, in which case another handler,
+// if any, may be tried.
+type RequestHandler func(request *frame.Frame, conn *CqlServerConnection, ctx RequestHandlerContext) (response *frame.Frame)
+
 // CqlServer is a minimalistic server stub that can be used to mimic CQL-compatible backends. It is preferable to
 // create CqlServer instances using the constructor function NewCqlServer. Once the server is properly created and
 // configured, use Start to start the server, then call Accept or AcceptAny to accept incoming client connections.
@@ -48,6 +78,8 @@ type CqlServer struct {
 	AcceptTimeout time.Duration
 	// The timeout to apply for closing idle connections.
 	IdleTimeout time.Duration
+	// An optional list of handlers to handle incoming requests.
+	RequestHandlers []RequestHandler
 
 	ctx                context.Context
 	cancel             context.CancelFunc
@@ -162,6 +194,7 @@ func (server *CqlServer) acceptLoop() {
 					server.Codec,
 					server.MaxInFlight,
 					server.IdleTimeout,
+					server.RequestHandlers,
 					server.connectionsHandler.onConnectionClosed,
 				); err != nil {
 					log.Error().Msgf("%v: failed to create incoming client connection: %v", server, connection)
@@ -277,9 +310,11 @@ func (server *CqlServer) BindAndInit(
 // CqlServerConnection instances should be created by calling CqlServer.Accept or CqlServer.Bind.
 type CqlServerConnection struct {
 	conn        net.Conn
+	credentials *AuthCredentials
 	codec       frame.Codec
 	idleTimeout time.Duration
-	credentials *AuthCredentials
+	handlers    []RequestHandler
+	handlerCtx  []RequestHandlerContext
 	incoming    chan *frame.Frame
 	outgoing    chan *frame.Frame
 	waitGroup   *sync.WaitGroup
@@ -296,6 +331,7 @@ func newCqlServerConnection(
 	codec frame.Codec,
 	maxInFlight int,
 	idleTimeout time.Duration,
+	handlers []RequestHandler,
 	onClose func(*CqlServerConnection),
 ) (*CqlServerConnection, error) {
 	if conn == nil {
@@ -314,10 +350,15 @@ func newCqlServerConnection(
 		codec:       codec,
 		credentials: credentials,
 		idleTimeout: idleTimeout,
+		handlers:    handlers,
+		handlerCtx:  make([]RequestHandlerContext, len(handlers)),
 		incoming:    make(chan *frame.Frame, maxInFlight),
 		outgoing:    make(chan *frame.Frame, maxInFlight),
 		waitGroup:   &sync.WaitGroup{},
 		onClose:     onClose,
+	}
+	for i := range handlers {
+		connection.handlerCtx[i] = requestHandlerContext{}
 	}
 	connection.ctx, connection.cancel = context.WithCancel(ctx)
 	connection.incomingLoop()
@@ -378,6 +419,9 @@ func (c *CqlServerConnection) incomingLoop() {
 				default:
 					log.Error().Msgf("%v: incoming frames queue is full, discarding frame: %v", c, incoming)
 				}
+				if len(c.handlers) > 0 {
+					c.invokeRequestHandlers(incoming)
+				}
 			}
 		}
 		c.waitGroup.Done()
@@ -430,6 +474,28 @@ func (c *CqlServerConnection) awaitDone() {
 		log.Debug().Err(c.ctx.Err()).Msgf("%v: context was closed", c)
 		c.waitGroup.Done()
 		c.abort()
+	}()
+}
+
+func (c *CqlServerConnection) invokeRequestHandlers(request *frame.Frame) {
+	c.waitGroup.Add(1)
+	go func() {
+		log.Debug().Msgf("%v: invoking request handlers for incoming request: %v", c, request)
+		var response *frame.Frame
+		var err error
+		for i, handler := range c.handlers {
+			if response = handler(request, c, c.handlerCtx[i]); response != nil {
+				log.Debug().Msgf("%v: request handler %v produced response: %v", c, i, response)
+				if err = c.Send(response); err != nil {
+					log.Error().Err(err).Msgf("%v: send failed for frame: %v", c, response)
+				}
+				break
+			}
+		}
+		if response == nil {
+			log.Debug().Msgf("%v: no request handler could handle the request: %v", c, request)
+		}
+		c.waitGroup.Done()
 	}()
 }
 
