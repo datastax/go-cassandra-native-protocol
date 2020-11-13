@@ -31,7 +31,24 @@ const (
 // The RequestHandler invocation context. Each invocation of a given RequestHandler will be passed
 // one instance of a RequestHandlerContext, that remains the same between invocations. This allows
 // handlers to become stateful if required.
-type RequestHandlerContext map[string]interface{}
+type RequestHandlerContext interface {
+	// Puts the given value in this context under the given key name.
+	// Will override any previously-stored value under that key.
+	PutAttribute(name string, value interface{})
+	// Retrieves the value stored in this context under the given key name.
+	// Returns nil if nil is stored, or if the key does not exist.
+	GetAttribute(name string) interface{}
+}
+
+type requestHandlerContext map[string]interface{}
+
+func (ctx requestHandlerContext) PutAttribute(name string, value interface{}) {
+	ctx[name] = value
+}
+
+func (ctx requestHandlerContext) GetAttribute(name string) interface{} {
+	return ctx[name]
+}
 
 // A request handler is a callback function that gets invoked whenever a CqlServerConnection receives an incoming
 // frame. The handler function should inspect the request frame and determine if it can handle the response for it.
@@ -341,7 +358,7 @@ func newCqlServerConnection(
 		onClose:     onClose,
 	}
 	for i := range handlers {
-		connection.handlerCtx[i] = RequestHandlerContext{}
+		connection.handlerCtx[i] = requestHandlerContext{}
 	}
 	connection.ctx, connection.cancel = context.WithCancel(ctx)
 	connection.incomingLoop()
