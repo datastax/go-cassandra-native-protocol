@@ -101,7 +101,7 @@ func (c *primitiveTypeCodec) encode(t DataType, _ io.Writer, version primitive.P
 	if !ok {
 		return errors.New(fmt.Sprintf("expected PrimitiveType, got %T", t))
 	}
-	if err := primitive.CheckPrimitiveDataTypeCode(t.GetDataTypeCode()); err != nil {
+	if err := primitive.CheckValidDataTypeCode(t.GetDataTypeCode()); err != nil {
 		return err
 	}
 	if version < primitive.ProtocolVersion5 && c.primitiveType.GetDataTypeCode() == primitive.DataTypeCodeDuration {
@@ -115,7 +115,7 @@ func (c *primitiveTypeCodec) encodedLength(t DataType, _ primitive.ProtocolVersi
 	if !ok {
 		return -1, errors.New(fmt.Sprintf("expected PrimitiveType, got %T", t))
 	}
-	if err := primitive.CheckPrimitiveDataTypeCode(t.GetDataTypeCode()); err != nil {
+	if err := primitive.CheckValidDataTypeCode(t.GetDataTypeCode()); err != nil {
 		return -1, err
 	}
 	return 0, nil

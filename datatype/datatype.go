@@ -25,7 +25,7 @@ type codec interface {
 }
 
 func WriteDataType(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error) {
-	if err = primitive.WriteShort(t.GetDataTypeCode(), dest); err != nil {
+	if err = primitive.WriteShort(uint16(t.GetDataTypeCode()), dest); err != nil {
 		return fmt.Errorf("cannot write data type code %v: %w", t.GetDataTypeCode(), err)
 	} else if codec, err := findCodec(t.GetDataTypeCode()); err != nil {
 		return err
@@ -48,10 +48,10 @@ func LengthOfDataType(t DataType, version primitive.ProtocolVersion) (length int
 }
 
 func ReadDataType(source io.Reader, version primitive.ProtocolVersion) (decoded DataType, err error) {
-	var typeCode primitive.DataTypeCode
+	var typeCode uint16
 	if typeCode, err = primitive.ReadShort(source); err != nil {
 		return nil, fmt.Errorf("cannot read data type code: %w", err)
-	} else if codec, err := findCodec(typeCode); err != nil {
+	} else if codec, err := findCodec(primitive.DataTypeCode(typeCode)); err != nil {
 		return nil, err
 	} else if decoded, err = codec.decode(source, version); err != nil {
 		return nil, fmt.Errorf("cannot read data type code %v: %w", typeCode, err)

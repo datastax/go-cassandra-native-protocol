@@ -45,7 +45,7 @@ func ReadValue(source io.Reader, version ProtocolVersion) (*Value, error) {
 		return NewNullValue(), nil
 	} else if length == ValueTypeUnset {
 		if version < ProtocolVersion4 {
-			return nil, fmt.Errorf("cannot use unset value in protocol version: %v", version)
+			return nil, fmt.Errorf("cannot use unset value with %v", version)
 		}
 		return NewUnsetValue(), nil
 	} else if length < 0 {
@@ -70,7 +70,7 @@ func WriteValue(value *Value, dest io.Writer, version ProtocolVersion) error {
 		return WriteInt(ValueTypeNull, dest)
 	case ValueTypeUnset:
 		if version < ProtocolVersion4 {
-			return fmt.Errorf("cannot use unset value in protocol version: %v", version)
+			return fmt.Errorf("cannot use unset value with %v", version)
 		}
 		return WriteInt(ValueTypeUnset, dest)
 	case ValueTypeRegular:

@@ -22,7 +22,7 @@ type ContinuousPagingOptions struct {
 }
 
 func EncodeContinuousPagingOptions(options *ContinuousPagingOptions, dest io.Writer, version primitive.ProtocolVersion) (err error) {
-	if err = primitive.CheckDseProtocolVersion(version); err != nil {
+	if err = primitive.CheckValidDseProtocolVersion(version); err != nil {
 		return err
 	} else if err = primitive.WriteInt(options.MaxPages, dest); err != nil {
 		return fmt.Errorf("cannot write max num pages: %w", err)
@@ -37,7 +37,7 @@ func EncodeContinuousPagingOptions(options *ContinuousPagingOptions, dest io.Wri
 }
 
 func LengthOfContinuousPagingOptions(_ *ContinuousPagingOptions, version primitive.ProtocolVersion) (length int, err error) {
-	if err = primitive.CheckDseProtocolVersion(version); err != nil {
+	if err = primitive.CheckValidDseProtocolVersion(version); err != nil {
 		return -1, err
 	}
 	length += primitive.LengthOfInt // max num pages
@@ -49,7 +49,7 @@ func LengthOfContinuousPagingOptions(_ *ContinuousPagingOptions, version primiti
 }
 
 func DecodeContinuousPagingOptions(source io.Reader, version primitive.ProtocolVersion) (options *ContinuousPagingOptions, err error) {
-	if err = primitive.CheckDseProtocolVersion(version); err != nil {
+	if err = primitive.CheckValidDseProtocolVersion(version); err != nil {
 		return nil, err
 	}
 	options = &ContinuousPagingOptions{}

@@ -35,11 +35,11 @@ func (c *reviseCodec) Encode(msg Message, dest io.Writer, version primitive.Prot
 	if !ok {
 		return fmt.Errorf("expected *message.Revise, got %T", msg)
 	}
-	if err := primitive.CheckDseProtocolVersion(version); err != nil {
+	if err := primitive.CheckValidDseProtocolVersion(version); err != nil {
 		return err
-	} else if err := primitive.CheckDseRevisionType(revise.RevisionType); err != nil {
+	} else if err := primitive.CheckValidDseRevisionType(revise.RevisionType); err != nil {
 		return err
-	} else if err := primitive.WriteInt(revise.RevisionType, dest); err != nil {
+	} else if err := primitive.WriteInt(int32(revise.RevisionType), dest); err != nil {
 		return fmt.Errorf("cannot write REVISE/CANCEL revision type: %w", err)
 	}
 	if err := primitive.WriteInt(revise.TargetStreamId, dest); err != nil {
@@ -55,7 +55,7 @@ func (c *reviseCodec) Encode(msg Message, dest io.Writer, version primitive.Prot
 }
 
 func (c *reviseCodec) EncodedLength(msg Message, version primitive.ProtocolVersion) (length int, err error) {
-	if err := primitive.CheckDseProtocolVersion(version); err != nil {
+	if err := primitive.CheckValidDseProtocolVersion(version); err != nil {
 		return -1, err
 	}
 	revise, ok := msg.(*Revise)
@@ -72,13 +72,16 @@ func (c *reviseCodec) EncodedLength(msg Message, version primitive.ProtocolVersi
 }
 
 func (c *reviseCodec) Decode(source io.Reader, version primitive.ProtocolVersion) (msg Message, err error) {
-	if err := primitive.CheckDseProtocolVersion(version); err != nil {
+	if err := primitive.CheckValidDseProtocolVersion(version); err != nil {
 		return nil, err
 	}
 	revise := &Revise{}
-	if revise.RevisionType, err = primitive.ReadInt(source); err != nil {
+	var revisionType int32
+	if revisionType, err = primitive.ReadInt(source); err != nil {
 		return nil, fmt.Errorf("cannot read REVISE/CANCEL revision type: %w", err)
-	} else if err := primitive.CheckDseRevisionType(revise.RevisionType); err != nil {
+	}
+	revise.RevisionType = primitive.DseRevisionType(revisionType)
+	if err := primitive.CheckValidDseRevisionType(revise.RevisionType); err != nil {
 		return nil, err
 	} else if revise.TargetStreamId, err = primitive.ReadInt(source); err != nil {
 		return nil, fmt.Errorf("cannot read REVISE/CANCEL target stream id: %w", err)

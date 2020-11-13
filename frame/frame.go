@@ -57,18 +57,18 @@ func NewRequestFrame(
 	if message.IsResponse() {
 		return nil, fmt.Errorf("message is not a request: opcode %d", message.GetOpCode())
 	}
-	var flags primitive.HeaderFlag = 0
+	var flags primitive.HeaderFlag
 	if tracing {
-		flags |= primitive.HeaderFlagTracing
+		flags = flags.Add(primitive.HeaderFlagTracing)
 	}
 	if customPayload != nil {
-		flags |= primitive.HeaderFlagCustomPayload
+		flags = flags.Add(primitive.HeaderFlagCustomPayload)
 	}
-	if primitive.IsProtocolVersionBeta(version) {
-		flags |= primitive.HeaderFlagUseBeta
+	if version.IsBeta() {
+		flags = flags.Add(primitive.HeaderFlagUseBeta)
 	}
 	if compress && isCompressible(message.GetOpCode()) {
-		flags |= primitive.HeaderFlagCompressed
+		flags = flags.Add(primitive.HeaderFlagCompressed)
 	}
 	return &Frame{
 		Header: &Header{
@@ -100,19 +100,19 @@ func NewResponseFrame(
 	}
 	var flags primitive.HeaderFlag = 0
 	if tracingId != nil {
-		flags |= primitive.HeaderFlagTracing
+		flags = flags.Add(primitive.HeaderFlagTracing)
 	}
 	if customPayload != nil {
-		flags |= primitive.HeaderFlagCustomPayload
+		flags = flags.Add(primitive.HeaderFlagCustomPayload)
 	}
 	if warnings != nil {
-		flags |= primitive.HeaderFlagWarning
+		flags = flags.Add(primitive.HeaderFlagWarning)
 	}
-	if primitive.IsProtocolVersionBeta(version) {
-		flags |= primitive.HeaderFlagUseBeta
+	if version.IsBeta() {
+		flags = flags.Add(primitive.HeaderFlagUseBeta)
 	}
 	if compress && isCompressible(message.GetOpCode()) {
-		flags |= primitive.HeaderFlagCompressed
+		flags = flags.Add(primitive.HeaderFlagCompressed)
 	}
 	return &Frame{
 		Header: &Header{

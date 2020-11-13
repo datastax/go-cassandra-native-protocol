@@ -15,24 +15,35 @@ func AllProtocolVersions() []ProtocolVersion {
 }
 
 func AllOssProtocolVersions() []ProtocolVersion {
-	return []ProtocolVersion{
-		ProtocolVersion3,
-		ProtocolVersion4,
-		ProtocolVersion5,
-	}
+	return matchingProtocolVersions(func(v ProtocolVersion) bool { return v.IsOss() })
 }
 
 func AllDseProtocolVersions() []ProtocolVersion {
-	return []ProtocolVersion{
-		ProtocolVersionDse1,
-		ProtocolVersionDse2,
-	}
+	return matchingProtocolVersions(func(v ProtocolVersion) bool { return v.IsDse() })
 }
 
 func AllBetaProtocolVersions() []ProtocolVersion {
-	return []ProtocolVersion{
-		ProtocolVersion5,
-	}
+	return matchingProtocolVersions(func(v ProtocolVersion) bool { return v.IsBeta() })
+}
+
+func AllNonBetaProtocolVersions() []ProtocolVersion {
+	return matchingProtocolVersions(func(v ProtocolVersion) bool { return !v.IsBeta() })
+}
+
+func AllProtocolVersionsGreaterThanOrEqualTo(version ProtocolVersion) []ProtocolVersion {
+	return matchingProtocolVersions(func(v ProtocolVersion) bool { return v >= version })
+}
+
+func AllProtocolVersionsGreaterThan(version ProtocolVersion) []ProtocolVersion {
+	return matchingProtocolVersions(func(v ProtocolVersion) bool { return v > version })
+}
+
+func AllProtocolVersionsLesserThanOrEqualTo(version ProtocolVersion) []ProtocolVersion {
+	return matchingProtocolVersions(func(v ProtocolVersion) bool { return v <= version })
+}
+
+func AllProtocolVersionsLesserThan(version ProtocolVersion) []ProtocolVersion {
+	return matchingProtocolVersions(func(v ProtocolVersion) bool { return v < version })
 }
 
 func matchingProtocolVersions(filters ...func(version ProtocolVersion) bool) []ProtocolVersion {
@@ -52,27 +63,7 @@ func matchingProtocolVersions(filters ...func(version ProtocolVersion) bool) []P
 	return result
 }
 
-func AllNonBetaProtocolVersions() []ProtocolVersion {
-	return matchingProtocolVersions(func(v ProtocolVersion) bool { return !IsProtocolVersionBeta(v) })
-}
-
-func AllProtocolVersionsGreaterThanOrEqualTo(version ProtocolVersion) []ProtocolVersion {
-	return matchingProtocolVersions(func(v ProtocolVersion) bool { return v >= version })
-}
-
-func AllProtocolVersionsGreaterThan(version ProtocolVersion) []ProtocolVersion {
-	return matchingProtocolVersions(func(v ProtocolVersion) bool { return v > version })
-}
-
-func AllProtocolVersionsLesserThanOrEqualTo(version ProtocolVersion) []ProtocolVersion {
-	return matchingProtocolVersions(func(v ProtocolVersion) bool { return v <= version })
-}
-
-func AllProtocolVersionsLesserThan(version ProtocolVersion) []ProtocolVersion {
-	return matchingProtocolVersions(func(v ProtocolVersion) bool { return v < version })
-}
-
-func CheckProtocolVersion(version ProtocolVersion) error {
+func CheckValidProtocolVersion(version ProtocolVersion) error {
 	for _, v := range AllProtocolVersions() {
 		if v == version {
 			return nil
@@ -81,50 +72,37 @@ func CheckProtocolVersion(version ProtocolVersion) error {
 	return fmt.Errorf("invalid protocol version: %v", version)
 }
 
-func IsProtocolVersion(version ProtocolVersion) bool {
-	return CheckProtocolVersion(version) == nil
+func IsValidProtocolVersion(version ProtocolVersion) bool {
+	return CheckValidProtocolVersion(version) == nil
 }
 
-func CheckOssProtocolVersion(version ProtocolVersion) error {
+func CheckValidOssProtocolVersion(version ProtocolVersion) error {
 	for _, v := range AllOssProtocolVersions() {
 		if v == version {
 			return nil
 		}
 	}
-	return fmt.Errorf("invalid OSS protocol version: %v", version)
+	return fmt.Errorf("invalid protocol version: %v", version)
 }
 
-func IsOssProtocolVersion(version ProtocolVersion) bool {
-	return CheckOssProtocolVersion(version) == nil
+func IsValidOssProtocolVersion(version ProtocolVersion) bool {
+	return CheckValidOssProtocolVersion(version) == nil
 }
 
-func CheckDseProtocolVersion(version ProtocolVersion) error {
+func CheckValidDseProtocolVersion(version ProtocolVersion) error {
 	for _, v := range AllDseProtocolVersions() {
 		if v == version {
 			return nil
 		}
 	}
-	return fmt.Errorf("invalid DSE protocol version: %v", version)
+	return fmt.Errorf("invalid protocol version: %v", version)
 }
 
-func IsDseProtocolVersion(version ProtocolVersion) bool {
-	return CheckDseProtocolVersion(version) == nil
+func IsValidDseProtocolVersion(version ProtocolVersion) bool {
+	return CheckValidDseProtocolVersion(version) == nil
 }
 
-func CheckProtocolVersionBeta(version ProtocolVersion) error {
-	for _, v := range AllBetaProtocolVersions() {
-		if v == version {
-			return nil
-		}
-	}
-	return fmt.Errorf("protocol version is not beta: %v", version)
-}
-
-func IsProtocolVersionBeta(version ProtocolVersion) bool {
-	return CheckProtocolVersionBeta(version) == nil
-}
-
-func CheckOpCode(code OpCode) error {
+func CheckValidOpCode(code OpCode) error {
 	switch code {
 	case OpCodeStartup:
 	case OpCodeOptions:
@@ -149,52 +127,42 @@ func CheckOpCode(code OpCode) error {
 	return nil
 }
 
-func IsOpCode(code OpCode) bool {
-	return CheckOpCode(code) == nil
+func IsValidOpCode(code OpCode) bool {
+	return CheckValidOpCode(code) == nil
 }
 
-func CheckRequestOpCode(code OpCode) error {
-	switch code {
-	case OpCodeStartup:
-	case OpCodeOptions:
-	case OpCodeQuery:
-	case OpCodePrepare:
-	case OpCodeExecute:
-	case OpCodeRegister:
-	case OpCodeBatch:
-	case OpCodeAuthResponse:
-	case OpCodeDseRevise:
-	default:
+func CheckValidRequestOpCode(code OpCode) error {
+	if err := CheckValidOpCode(code); err != nil {
+		return err
+	}
+	if !code.IsRequest() {
 		return fmt.Errorf("invalid request opcode: %v", code)
 	}
 	return nil
 }
 
-func IsRequestOpCode(code OpCode) bool {
-	return CheckRequestOpCode(code) == nil
+func IsValidRequestOpCode(code OpCode) bool {
+	return CheckValidRequestOpCode(code) == nil
 }
 
-func CheckResponseOpCode(code OpCode) error {
-	switch code {
-	case OpCodeError:
-	case OpCodeReady:
-	case OpCodeAuthenticate:
-	case OpCodeSupported:
-	case OpCodeResult:
-	case OpCodeEvent:
-	case OpCodeAuthChallenge:
-	case OpCodeAuthSuccess:
-	default:
+func CheckValidResponseOpCode(code OpCode) error {
+	if err := CheckValidOpCode(code); err != nil {
+		return err
+	}
+	if code.IsRequest() {
 		return fmt.Errorf("invalid response opcode: %v", code)
 	}
 	return nil
 }
 
-func IsResponseOpCode(code OpCode) bool {
-	return CheckResponseOpCode(code) == nil
+func IsValidResponseOpCode(code OpCode) bool {
+	return CheckValidResponseOpCode(code) == nil
 }
 
-func CheckDseOpCode(code OpCode) error {
+func CheckValidDseOpCode(code OpCode) error {
+	if err := CheckValidOpCode(code); err != nil {
+		return err
+	}
 	switch code {
 	case OpCodeDseRevise:
 	default:
@@ -203,11 +171,11 @@ func CheckDseOpCode(code OpCode) error {
 	return nil
 }
 
-func IsDseOpCode(code OpCode) bool {
-	return CheckDseOpCode(code) == nil
+func IsValidDseOpCode(code OpCode) bool {
+	return CheckValidDseOpCode(code) == nil
 }
 
-func CheckConsistencyLevel(consistency ConsistencyLevel) error {
+func CheckValidConsistencyLevel(consistency ConsistencyLevel) error {
 	switch consistency {
 	case ConsistencyLevelAny:
 	case ConsistencyLevelOne:
@@ -226,46 +194,53 @@ func CheckConsistencyLevel(consistency ConsistencyLevel) error {
 	return nil
 }
 
-func IsConsistencyLevel(consistency ConsistencyLevel) bool {
-	return CheckConsistencyLevel(consistency) == nil
+func IsValidConsistencyLevel(consistency ConsistencyLevel) bool {
+	return CheckValidConsistencyLevel(consistency) == nil
 }
 
-func CheckNonSerialConsistencyLevel(consistency ConsistencyLevel) error {
-	switch consistency {
-	case ConsistencyLevelAny:
-	case ConsistencyLevelOne:
-	case ConsistencyLevelTwo:
-	case ConsistencyLevelThree:
-	case ConsistencyLevelQuorum:
-	case ConsistencyLevelAll:
-	case ConsistencyLevelLocalQuorum:
-	case ConsistencyLevelEachQuorum:
-	case ConsistencyLevelLocalOne:
-	default:
+func CheckValidNonSerialConsistencyLevel(consistency ConsistencyLevel) error {
+	if err := CheckValidConsistencyLevel(consistency); err != nil {
+		return err
+	}
+	if consistency.IsSerial() {
 		return fmt.Errorf("invalid non-serial consistency level: %v", consistency)
 	}
 	return nil
 }
 
-func IsNonSerialConsistencyLevel(consistency ConsistencyLevel) bool {
-	return CheckNonSerialConsistencyLevel(consistency) == nil
+func IsValidNonSerialConsistencyLevel(consistency ConsistencyLevel) bool {
+	return CheckValidNonSerialConsistencyLevel(consistency) == nil
 }
 
-func CheckSerialConsistencyLevel(consistency ConsistencyLevel) error {
-	switch consistency {
-	case ConsistencyLevelLocalSerial:
-	case ConsistencyLevelSerial:
-	default:
+func CheckValidSerialConsistencyLevel(consistency ConsistencyLevel) error {
+	if err := CheckValidConsistencyLevel(consistency); err != nil {
+		return err
+	}
+	if !consistency.IsSerial() {
 		return fmt.Errorf("invalid serial consistency level: %v", consistency)
 	}
 	return nil
 }
 
-func IsSerialConsistencyLevel(consistency ConsistencyLevel) bool {
-	return CheckSerialConsistencyLevel(consistency) == nil
+func IsValidSerialConsistencyLevel(consistency ConsistencyLevel) bool {
+	return CheckValidSerialConsistencyLevel(consistency) == nil
 }
 
-func CheckEventType(eventType EventType) error {
+func CheckValidLocalConsistencyLevel(consistency ConsistencyLevel) error {
+	if err := CheckValidConsistencyLevel(consistency); err != nil {
+		return err
+	}
+	if !consistency.IsLocal() {
+		return fmt.Errorf("invalid local consistency level: %v", consistency)
+	}
+	return nil
+}
+
+func IsValidLocalConsistencyLevel(consistency ConsistencyLevel) bool {
+	return CheckValidLocalConsistencyLevel(consistency) == nil
+}
+
+func CheckValidEventType(eventType EventType) error {
 	switch eventType {
 	case EventTypeSchemaChange:
 	case EventTypeTopologyChange:
@@ -276,11 +251,11 @@ func CheckEventType(eventType EventType) error {
 	return nil
 }
 
-func IsEventType(eventType EventType) bool {
-	return CheckEventType(eventType) == nil
+func IsValidEventType(eventType EventType) bool {
+	return CheckValidEventType(eventType) == nil
 }
 
-func CheckWriteType(writeType WriteType) error {
+func CheckValidWriteType(writeType WriteType) error {
 	switch writeType {
 	case WriteTypeSimple:
 	case WriteTypeBatch:
@@ -295,11 +270,11 @@ func CheckWriteType(writeType WriteType) error {
 	return nil
 }
 
-func IsWriteType(writeType WriteType) bool {
-	return CheckWriteType(writeType) == nil
+func IsValidWriteType(writeType WriteType) bool {
+	return CheckValidWriteType(writeType) == nil
 }
 
-func CheckBatchType(batchType BatchType) error {
+func CheckValidBatchType(batchType BatchType) error {
 	switch batchType {
 	case BatchTypeLogged:
 	case BatchTypeUnlogged:
@@ -310,11 +285,11 @@ func CheckBatchType(batchType BatchType) error {
 	return nil
 }
 
-func IsBatchType(batchType BatchType) bool {
-	return CheckBatchType(batchType) == nil
+func IsValidBatchType(batchType BatchType) bool {
+	return CheckValidBatchType(batchType) == nil
 }
 
-func CheckPrimitiveDataTypeCode(code DataTypeCode) error {
+func CheckValidDataTypeCode(code DataTypeCode) error {
 	switch code {
 	case DataTypeCodeAscii:
 	case DataTypeCodeBigint:
@@ -342,11 +317,11 @@ func CheckPrimitiveDataTypeCode(code DataTypeCode) error {
 	return nil
 }
 
-func IsPrimitiveDataTypeCode(code DataTypeCode) bool {
-	return CheckPrimitiveDataTypeCode(code) == nil
+func IsValidDataTypeCode(code DataTypeCode) bool {
+	return CheckValidDataTypeCode(code) == nil
 }
 
-func CheckSchemaChangeType(t SchemaChangeType) error {
+func CheckValidSchemaChangeType(t SchemaChangeType) error {
 	switch t {
 	case SchemaChangeTypeCreated:
 	case SchemaChangeTypeUpdated:
@@ -357,11 +332,11 @@ func CheckSchemaChangeType(t SchemaChangeType) error {
 	return nil
 }
 
-func IsSchemaChangeType(t SchemaChangeType) bool {
-	return CheckSchemaChangeType(t) == nil
+func IsValidSchemaChangeType(t SchemaChangeType) bool {
+	return CheckValidSchemaChangeType(t) == nil
 }
 
-func CheckSchemaChangeTarget(target SchemaChangeTarget) error {
+func CheckValidSchemaChangeTarget(target SchemaChangeTarget) error {
 	switch target {
 	case SchemaChangeTargetKeyspace:
 	case SchemaChangeTargetTable:
@@ -374,11 +349,11 @@ func CheckSchemaChangeTarget(target SchemaChangeTarget) error {
 	return nil
 }
 
-func IsSchemaChangeTarget(target SchemaChangeTarget) bool {
-	return CheckSchemaChangeTarget(target) == nil
+func IsValidSchemaChangeTarget(target SchemaChangeTarget) bool {
+	return CheckValidSchemaChangeTarget(target) == nil
 }
 
-func CheckStatusChangeType(t StatusChangeType) error {
+func CheckValidStatusChangeType(t StatusChangeType) error {
 	switch t {
 	case StatusChangeTypeUp:
 	case StatusChangeTypeDown:
@@ -388,11 +363,11 @@ func CheckStatusChangeType(t StatusChangeType) error {
 	return nil
 }
 
-func IsStatusChangeType(t StatusChangeType) bool {
-	return CheckStatusChangeType(t) == nil
+func IsValidStatusChangeType(t StatusChangeType) bool {
+	return CheckValidStatusChangeType(t) == nil
 }
 
-func CheckTopologyChangeType(t TopologyChangeType) error {
+func CheckValidTopologyChangeType(t TopologyChangeType) error {
 	switch t {
 	case TopologyChangeTypeNewNode:
 	case TopologyChangeTypeRemovedNode:
@@ -402,11 +377,11 @@ func CheckTopologyChangeType(t TopologyChangeType) error {
 	return nil
 }
 
-func IsTopologyChangeType(t TopologyChangeType) bool {
-	return CheckTopologyChangeType(t) == nil
+func IsValidTopologyChangeType(t TopologyChangeType) bool {
+	return CheckValidTopologyChangeType(t) == nil
 }
 
-func CheckResultType(t ResultType) error {
+func CheckValidResultType(t ResultType) error {
 	switch t {
 	case ResultTypeVoid:
 	case ResultTypeRows:
@@ -419,11 +394,11 @@ func CheckResultType(t ResultType) error {
 	return nil
 }
 
-func IsResultType(t ResultType) bool {
-	return CheckResultType(t) == nil
+func IsValidResultType(t ResultType) bool {
+	return CheckValidResultType(t) == nil
 }
 
-func CheckDseRevisionType(t DseRevisionType) error {
+func CheckValidDseRevisionType(t DseRevisionType) error {
 	switch t {
 	case DseRevisionTypeCancelContinuousPaging:
 	case DseRevisionTypeMoreContinuousPages:
@@ -433,6 +408,25 @@ func CheckDseRevisionType(t DseRevisionType) error {
 	return nil
 }
 
-func IsDseRevisionType(t DseRevisionType) bool {
-	return CheckDseRevisionType(t) == nil
+func IsValidDseRevisionType(t DseRevisionType) bool {
+	return CheckValidDseRevisionType(t) == nil
+}
+
+func CheckValidFailureCode(c FailureCode) error {
+	switch c {
+	case FailureCodeUnknown:
+	case FailureCodeTooManyTombstonesRead:
+	case FailureCodeIndexNotAvailable:
+	case FailureCodeCdcSpaceFull:
+	case FailureCodeCounterWrite:
+	case FailureCodeTableNotFound:
+	case FailureCodeKeyspaceNotFound:
+	default:
+		return fmt.Errorf("invalid failure code: %v", c)
+	}
+	return nil
+}
+
+func IsValidFailureCode(t FailureCode) bool {
+	return CheckValidFailureCode(t) == nil
 }

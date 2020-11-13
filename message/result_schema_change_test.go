@@ -229,8 +229,8 @@ func TestResultCodec_EncodedLength_SchemaChange(test *testing.T) {
 						Keyspace:   "ks1",
 					},
 					primitive.LengthOfInt +
-						primitive.LengthOfString(primitive.SchemaChangeTypeCreated) +
-						primitive.LengthOfString(primitive.SchemaChangeTargetKeyspace) +
+						primitive.LengthOfString(string(primitive.SchemaChangeTypeCreated)) +
+						primitive.LengthOfString(string(primitive.SchemaChangeTargetKeyspace)) +
 						primitive.LengthOfString("ks1"),
 					nil,
 				},
@@ -243,8 +243,8 @@ func TestResultCodec_EncodedLength_SchemaChange(test *testing.T) {
 						Object:     "table1",
 					},
 					primitive.LengthOfInt +
-						primitive.LengthOfString(primitive.SchemaChangeTypeCreated) +
-						primitive.LengthOfString(primitive.SchemaChangeTargetTable) +
+						primitive.LengthOfString(string(primitive.SchemaChangeTypeCreated)) +
+						primitive.LengthOfString(string(primitive.SchemaChangeTargetTable)) +
 						primitive.LengthOfString("ks1") +
 						primitive.LengthOfString("table1"),
 					nil,
@@ -258,8 +258,8 @@ func TestResultCodec_EncodedLength_SchemaChange(test *testing.T) {
 						Object:     "udt1",
 					},
 					primitive.LengthOfInt +
-						primitive.LengthOfString(primitive.SchemaChangeTypeCreated) +
-						primitive.LengthOfString(primitive.SchemaChangeTargetType) +
+						primitive.LengthOfString(string(primitive.SchemaChangeTypeCreated)) +
+						primitive.LengthOfString(string(primitive.SchemaChangeTargetType)) +
 						primitive.LengthOfString("ks1") +
 						primitive.LengthOfString("udt1"),
 					nil,
@@ -274,8 +274,8 @@ func TestResultCodec_EncodedLength_SchemaChange(test *testing.T) {
 						Arguments:  []string{"int", "varchar"},
 					},
 					primitive.LengthOfInt +
-						primitive.LengthOfString(primitive.SchemaChangeTypeCreated) +
-						primitive.LengthOfString(primitive.SchemaChangeTargetFunction) +
+						primitive.LengthOfString(string(primitive.SchemaChangeTypeCreated)) +
+						primitive.LengthOfString(string(primitive.SchemaChangeTargetFunction)) +
 						primitive.LengthOfString("ks1") +
 						primitive.LengthOfString("func1") +
 						primitive.LengthOfStringList([]string{"int", "varchar"}),
@@ -291,8 +291,8 @@ func TestResultCodec_EncodedLength_SchemaChange(test *testing.T) {
 						Arguments:  []string{"int", "varchar"},
 					},
 					primitive.LengthOfInt +
-						primitive.LengthOfString(primitive.SchemaChangeTypeCreated) +
-						primitive.LengthOfString(primitive.SchemaChangeTargetAggregate) +
+						primitive.LengthOfString(string(primitive.SchemaChangeTypeCreated)) +
+						primitive.LengthOfString(string(primitive.SchemaChangeTargetAggregate)) +
 						primitive.LengthOfString("ks1") +
 						primitive.LengthOfString("agg1") +
 						primitive.LengthOfStringList([]string{"int", "varchar"}),

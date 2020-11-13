@@ -32,7 +32,7 @@ func TestReadValue(t *testing.T) {
 						0xff, 0xff, 0xff, 0xfe, // length -2
 					},
 					nil,
-					fmt.Errorf("cannot use unset value in protocol version: 3"),
+					fmt.Errorf("cannot use unset value with ProtocolVersion OSS 3"),
 				},
 				{
 					"value empty",
@@ -223,7 +223,7 @@ func TestWriteValue(t *testing.T) {
 					"empty value with type unset",
 					&Value{Type: ValueTypeUnset},
 					nil,
-					errors.New("cannot use unset value in protocol version: 3"),
+					errors.New("cannot use unset value with ProtocolVersion OSS 3"),
 				},
 				{
 					"empty value with type unset but non nil contents",
@@ -232,7 +232,7 @@ func TestWriteValue(t *testing.T) {
 						Contents: []byte{1, 2, 3, 4},
 					},
 					nil,
-					errors.New("cannot use unset value in protocol version: 3"),
+					errors.New("cannot use unset value with ProtocolVersion OSS 3"),
 				},
 				{
 					"unknown type",
