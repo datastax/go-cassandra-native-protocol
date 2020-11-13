@@ -44,6 +44,10 @@ func (c *AuthCredentials) Unmarshal(token []byte) error {
 	}
 }
 
+func (c AuthCredentials) Copy() *AuthCredentials {
+	return &c
+}
+
 // A simple authenticator to perform plain-text authentications for CQL clients.
 type PlainTextAuthenticator struct {
 	Credentials *AuthCredentials

@@ -30,7 +30,7 @@ const (
 
 // CqlServer is a minimalistic server stub that can be used to mimic CQL-compatible backends. It is preferable to
 // create CqlServer instances using the constructor function NewCqlServer. Once the server is properly created and
-// configured, use Start to start the server, then call Accept to accept incoming client connections.
+// configured, use Start to start the server, then call Accept or AcceptAny to accept incoming client connections.
 type CqlServer struct {
 	// The address to listen to.
 	ListenAddress string
@@ -189,14 +189,14 @@ func (server *CqlServer) awaitDone() {
 	}()
 }
 
-// Waits until the given client is accepted, the configured timeout is triggered, or the server is closed,
+// Waits until the given client address is accepted, the configured timeout is triggered, or the server is closed,
 // whichever happens first.
-func (server *CqlServer) Accept(clientAddress net.Addr) (*CqlServerConnection, error) {
+func (server *CqlServer) Accept(client *CqlClientConnection) (*CqlServerConnection, error) {
 	if server.IsClosed() {
 		return nil, fmt.Errorf("%v: server closed", server)
 	}
-	log.Debug().Msgf("%v: waiting for incoming client connection to be accepted: %v", server, clientAddress)
-	if serverConnectionChannel, err := server.connectionsHandler.onConnectionAcceptRequested(clientAddress); err != nil {
+	log.Debug().Msgf("%v: waiting for incoming client connection to be accepted: %v", server, client)
+	if serverConnectionChannel, err := server.connectionsHandler.onConnectionAcceptRequested(client); err != nil {
 		return nil, err
 	} else {
 		select {
@@ -213,8 +213,7 @@ func (server *CqlServer) Accept(clientAddress net.Addr) (*CqlServerConnection, e
 }
 
 // Waits until any client is accepted, the configured timeout is triggered, or the server is closed,
-// whichever happens first.
-// This method is useful when the client address is not known in advance.
+// whichever happens first. This method is useful when the client is not known in advance.
 func (server *CqlServer) AcceptAny() (*CqlServerConnection, error) {
 	if server.IsClosed() {
 		return nil, fmt.Errorf("%v: server closed", server)
@@ -233,6 +232,14 @@ func (server *CqlServer) AcceptAny() (*CqlServerConnection, error) {
 	}
 }
 
+// Returns a list of all the currently active server connections.
+func (server *CqlServer) AllAcceptedClients() ([]*CqlServerConnection, error) {
+	if server.IsClosed() {
+		return nil, fmt.Errorf("%v: server closed", server)
+	}
+	return server.connectionsHandler.allAcceptedClients(), nil
+}
+
 // Convenience method to connect a CqlClient to this CqlServer. The returned connections will be open, but not
 // initialized (i.e., no handshake performed). The server must be started prior to calling this method.
 func (server *CqlServer) Bind(client *CqlClient, ctx context.Context) (*CqlClientConnection, *CqlServerConnection, error) {
@@ -242,7 +249,7 @@ func (server *CqlServer) Bind(client *CqlClient, ctx context.Context) (*CqlClien
 		return nil, nil, fmt.Errorf("%v: server closed", server)
 	} else if clientConn, err := client.Connect(ctx); err != nil {
 		return nil, nil, fmt.Errorf("%v: bind failed, client %v could not connect: %w", server, client, err)
-	} else if serverConn, err := server.Accept(clientConn.conn.LocalAddr()); err != nil {
+	} else if serverConn, err := server.Accept(clientConn); err != nil {
 		return nil, nil, fmt.Errorf("%v: bind failed, client %v wasn't accepted: %w", server, client, err)
 	} else {
 		log.Debug().Msgf("%v: bind successful: %v", server, serverConn)
@@ -321,6 +328,24 @@ func newCqlServerConnection(
 
 func (c *CqlServerConnection) String() string {
 	return fmt.Sprintf("CQL server conn [L:%v <-> R:%v]", c.conn.LocalAddr(), c.conn.RemoteAddr())
+}
+
+// Returns the connection's local address (that is, the client address).
+func (c *CqlServerConnection) LocalAddr() net.Addr {
+	return c.conn.LocalAddr()
+}
+
+// Returns the connection's remote address (that is, the server address).
+func (c *CqlServerConnection) RemoteAddr() net.Addr {
+	return c.conn.RemoteAddr()
+}
+
+// Returns a copy of the connection's AuthCredentials, if any, or nil if no authentication was configured.
+func (c *CqlServerConnection) Credentials() *AuthCredentials {
+	if c.credentials == nil {
+		return nil
+	}
+	return c.credentials.Copy()
 }
 
 func (c *CqlServerConnection) incomingLoop() {

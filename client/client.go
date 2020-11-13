@@ -170,6 +170,24 @@ func (c *CqlClientConnection) String() string {
 	return fmt.Sprintf("CQL client conn [L:%v <-> R:%v]", c.conn.LocalAddr(), c.conn.RemoteAddr())
 }
 
+// Returns the connection's local address (that is, the client address).
+func (c *CqlClientConnection) LocalAddr() net.Addr {
+	return c.conn.LocalAddr()
+}
+
+// Returns the connection's remote address (that is, the server address).
+func (c *CqlClientConnection) RemoteAddr() net.Addr {
+	return c.conn.RemoteAddr()
+}
+
+// Returns a copy of the connection's AuthCredentials, if any, or nil if no authentication was configured.
+func (c *CqlClientConnection) Credentials() *AuthCredentials {
+	if c.credentials == nil {
+		return nil
+	}
+	return c.credentials.Copy()
+}
+
 func (c *CqlClientConnection) incomingLoop() {
 	log.Debug().Msgf("%v: listening for incoming frames...", c)
 	c.waitGroup.Add(1)

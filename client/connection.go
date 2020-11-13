@@ -43,11 +43,23 @@ func (h *clientConnectionHandler) anyConnectionChannel() <-chan *CqlServerConnec
 	return h.anyConnChan
 }
 
-func (h *clientConnectionHandler) onConnectionAcceptRequested(clientAddr net.Addr) (<-chan *CqlServerConnection, error) {
+func (h *clientConnectionHandler) allAcceptedClients() []*CqlServerConnection {
+	h.connectionsLock.Lock()
+	defer h.connectionsLock.Unlock()
+	var connections []*CqlServerConnection
+	for _, holder := range h.connections {
+		if holder.conn != nil && !holder.conn.IsClosed() {
+			connections = append(connections, holder.conn)
+		}
+	}
+	return connections
+}
+
+func (h *clientConnectionHandler) onConnectionAcceptRequested(client *CqlClientConnection) (<-chan *CqlServerConnection, error) {
 	if h.isClosed() {
 		return nil, fmt.Errorf("%v: handler closed", h)
 	}
-	if clientAddr, err := h.asMapKey(clientAddr); err != nil {
+	if clientAddr, err := h.asMapKey(client.conn.LocalAddr()); err != nil {
 		return nil, err
 	} else {
 		log.Trace().Msgf("%v: client accept requested: %v", h, clientAddr)
