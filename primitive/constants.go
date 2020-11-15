@@ -398,6 +398,34 @@ const (
 	DataTypeCodeTuple     = DataTypeCode(0x0031)
 )
 
+func (c DataTypeCode) IsPrimitive() bool {
+	switch c {
+	case DataTypeCodeAscii:
+	case DataTypeCodeBigint:
+	case DataTypeCodeBlob:
+	case DataTypeCodeBoolean:
+	case DataTypeCodeCounter:
+	case DataTypeCodeDecimal:
+	case DataTypeCodeDouble:
+	case DataTypeCodeFloat:
+	case DataTypeCodeInt:
+	case DataTypeCodeTimestamp:
+	case DataTypeCodeUuid:
+	case DataTypeCodeVarchar:
+	case DataTypeCodeVarint:
+	case DataTypeCodeTimeuuid:
+	case DataTypeCodeInet:
+	case DataTypeCodeDate:
+	case DataTypeCodeTime:
+	case DataTypeCodeSmallint:
+	case DataTypeCodeTinyint:
+	case DataTypeCodeDuration:
+	default:
+		return false
+	}
+	return true
+}
+
 func (c DataTypeCode) String() string {
 	switch c {
 	case DataTypeCodeCustom:

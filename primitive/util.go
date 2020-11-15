@@ -291,6 +291,7 @@ func IsValidBatchType(batchType BatchType) bool {
 
 func CheckValidDataTypeCode(code DataTypeCode) error {
 	switch code {
+	case DataTypeCodeCustom:
 	case DataTypeCodeAscii:
 	case DataTypeCodeBigint:
 	case DataTypeCodeBlob:
@@ -311,14 +312,33 @@ func CheckValidDataTypeCode(code DataTypeCode) error {
 	case DataTypeCodeSmallint:
 	case DataTypeCodeTinyint:
 	case DataTypeCodeDuration:
+	case DataTypeCodeList:
+	case DataTypeCodeMap:
+	case DataTypeCodeSet:
+	case DataTypeCodeUdt:
+	case DataTypeCodeTuple:
 	default:
-		return fmt.Errorf("invalid primitive data type code: %v", code)
+		return fmt.Errorf("invalid data type code: %v", code)
 	}
 	return nil
 }
 
 func IsValidDataTypeCode(code DataTypeCode) bool {
 	return CheckValidDataTypeCode(code) == nil
+}
+
+func CheckValidPrimitiveDataTypeCode(code DataTypeCode) error {
+	if err := CheckValidDataTypeCode(code); err != nil {
+		return err
+	}
+	if !code.IsPrimitive() {
+		return fmt.Errorf("invalid primitive data type code: %v", code)
+	}
+	return nil
+}
+
+func IsValidPrimitiveDataTypeCode(code DataTypeCode) bool {
+	return CheckValidPrimitiveDataTypeCode(code) == nil
 }
 
 func CheckValidSchemaChangeType(t SchemaChangeType) error {
