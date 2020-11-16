@@ -260,12 +260,12 @@ func TestConvertToRawFrame(t *testing.T) {
 			assert.Equal(t, encodedBodyBytes, rawFrame.Body)
 			assert.Equal(t, int32(encodedBody.Len()), rawFrame.Header.BodyLength)
 
-			var rawBody []byte
-			rawBody, err = codec.DecodeRawBody(test.frame.Header, encodedBody)
+			rawBody, err := codec.DecodeRawBody(test.frame.Header, encodedBody)
+			assert.Nil(t, err)
 			assert.Equal(t, encodedBodyBytes, rawBody)
 
-			var fullFrame *Frame
-			fullFrame, err = codec.ConvertFromRawFrame(rawFrame)
+			fullFrame, err := codec.ConvertFromRawFrame(rawFrame)
+			assert.Nil(t, err)
 			assert.Equal(t, test.frame, fullFrame)
 		})
 	}
