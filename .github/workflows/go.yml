@@ -29,6 +29,11 @@ jobs:
             dep ensure
         fi
 
+    - name: Check license
+      run: |
+        go get -u github.com/google/addlicense
+        addlicense -check **/*.go
+
     - name: Build
       run: go build -v ./...
 
