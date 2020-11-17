@@ -31,7 +31,7 @@ func TestListType(t *testing.T) {
 
 func TestListTypeCodecEncode(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
 				input    ListType
@@ -71,7 +71,7 @@ func TestListTypeCodecEncode(t *testing.T) {
 
 func TestListTypeCodecEncodedLength(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
 				input    ListType
@@ -98,7 +98,7 @@ func TestListTypeCodecEncodedLength(t *testing.T) {
 
 func TestListTypeCodecDecode(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
 				input    []byte

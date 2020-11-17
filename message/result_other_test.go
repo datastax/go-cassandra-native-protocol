@@ -16,7 +16,6 @@ package message
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -25,7 +24,7 @@ import (
 func TestResultCodec_Encode_Other(test *testing.T) {
 	codec := &resultCodec{}
 	for _, version := range primitive.AllProtocolVersions() {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
 					"void result",
@@ -60,7 +59,7 @@ func TestResultCodec_Encode_Other(test *testing.T) {
 func TestResultCodec_EncodedLength_Other(test *testing.T) {
 	codec := &resultCodec{}
 	for _, version := range primitive.AllProtocolVersions() {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"void result",
@@ -89,7 +88,7 @@ func TestResultCodec_EncodedLength_Other(test *testing.T) {
 func TestResultCodec_Decode_Other(test *testing.T) {
 	codec := &resultCodec{}
 	for _, version := range primitive.AllProtocolVersions() {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{
 					"void result",

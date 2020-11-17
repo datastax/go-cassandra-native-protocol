@@ -17,7 +17,6 @@ package message
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -25,9 +24,9 @@ import (
 
 func TestPrepareCodec_Encode(t *testing.T) {
 	codec := &prepareCodec{}
-	// versions <= 4
-	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion3, primitive.ProtocolVersion4, primitive.ProtocolVersionDse1} {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+	// versions <= 4 + DSE v1
+	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion2, primitive.ProtocolVersion3, primitive.ProtocolVersion4, primitive.ProtocolVersionDse1} {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []encodeTestCase{
 				{
 					"prepare simple",
@@ -56,7 +55,7 @@ func TestPrepareCodec_Encode(t *testing.T) {
 	}
 	// versions 5, DSE v2
 	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion5, primitive.ProtocolVersionDse2} {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []encodeTestCase{
 				{
 					"prepare simple",
@@ -98,9 +97,9 @@ func TestPrepareCodec_Encode(t *testing.T) {
 
 func TestPrepareCodec_EncodedLength(t *testing.T) {
 	codec := &prepareCodec{}
-	// versions <= 4
-	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion3, primitive.ProtocolVersion4, primitive.ProtocolVersionDse1} {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+	// versions <= 4 + DSE v1
+	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion2, primitive.ProtocolVersion3, primitive.ProtocolVersion4, primitive.ProtocolVersionDse1} {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"prepare simple",
@@ -126,7 +125,7 @@ func TestPrepareCodec_EncodedLength(t *testing.T) {
 	}
 	// versions 5, DSE v2
 	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion5, primitive.ProtocolVersionDse2} {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"prepare simple",
@@ -163,9 +162,9 @@ func TestPrepareCodec_EncodedLength(t *testing.T) {
 
 func TestPrepareCodec_Decode(t *testing.T) {
 	codec := &prepareCodec{}
-	// versions <= 4
-	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion3, primitive.ProtocolVersion4, primitive.ProtocolVersionDse1} {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+	// versions <= 4 + DSE v1
+	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion2, primitive.ProtocolVersion3, primitive.ProtocolVersion4, primitive.ProtocolVersionDse1} {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []decodeTestCase{
 				{
 					"prepare simple",
@@ -188,7 +187,7 @@ func TestPrepareCodec_Decode(t *testing.T) {
 	}
 	// versions 5, DSE v2
 	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion5, primitive.ProtocolVersionDse2} {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []decodeTestCase{
 				{
 					"prepare simple",

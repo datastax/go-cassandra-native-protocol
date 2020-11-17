@@ -16,7 +16,6 @@ package message
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -24,7 +23,7 @@ import (
 
 func TestContinuousPagingOptions_Encode(t *testing.T) {
 	version := primitive.ProtocolVersionDse1
-	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+	t.Run(version.String(), func(t *testing.T) {
 		tests := []struct {
 			name     string
 			input    *ContinuousPagingOptions
@@ -63,7 +62,7 @@ func TestContinuousPagingOptions_Encode(t *testing.T) {
 		}
 	})
 	version = primitive.ProtocolVersionDse2
-	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+	t.Run(version.String(), func(t *testing.T) {
 		tests := []struct {
 			name     string
 			input    *ContinuousPagingOptions
@@ -108,7 +107,7 @@ func TestContinuousPagingOptions_Encode(t *testing.T) {
 
 func TestContinuousPagingOptions_EncodedLength(t *testing.T) {
 	version := primitive.ProtocolVersionDse1
-	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+	t.Run(version.String(), func(t *testing.T) {
 		tests := []struct {
 			name     string
 			input    *ContinuousPagingOptions
@@ -140,7 +139,7 @@ func TestContinuousPagingOptions_EncodedLength(t *testing.T) {
 		}
 	})
 	version = primitive.ProtocolVersionDse2
-	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+	t.Run(version.String(), func(t *testing.T) {
 		tests := []struct {
 			name     string
 			input    *ContinuousPagingOptions
@@ -176,7 +175,7 @@ func TestContinuousPagingOptions_EncodedLength(t *testing.T) {
 
 func TestContinuousPagingOptions_Decode(t *testing.T) {
 	version := primitive.ProtocolVersionDse1
-	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+	t.Run(version.String(), func(t *testing.T) {
 		tests := []struct {
 			name     string
 			input    []byte
@@ -215,7 +214,7 @@ func TestContinuousPagingOptions_Decode(t *testing.T) {
 		}
 	})
 	version = primitive.ProtocolVersionDse2
-	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+	t.Run(version.String(), func(t *testing.T) {
 		tests := []struct {
 			name     string
 			input    []byte

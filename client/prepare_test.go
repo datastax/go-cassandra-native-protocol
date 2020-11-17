@@ -87,13 +87,10 @@ func testUnprepared(
 	clientConn *client.CqlClientConnection,
 	query string,
 ) {
-	execute, _ := frame.NewRequestFrame(
+	execute := frame.NewFrame(
 		primitive.ProtocolVersion4,
 		client.ManagedStreamId,
-		false,
-		nil,
 		&message.Execute{QueryId: []byte(query)},
-		false,
 	)
 	response, err := clientConn.SendAndReceive(execute)
 	require.NotNil(t, response)
@@ -111,13 +108,10 @@ func testPrepare(
 	variables *message.VariablesMetadata,
 	columns *message.RowsMetadata,
 ) {
-	prepare, _ := frame.NewRequestFrame(
+	prepare := frame.NewFrame(
 		primitive.ProtocolVersion4,
 		client.ManagedStreamId,
-		false,
-		nil,
 		&message.Prepare{Query: query},
-		false,
 	)
 	response, err := clientConn.SendAndReceive(prepare)
 	require.NotNil(t, response)
@@ -139,16 +133,13 @@ func testExecute(
 	pk *primitive.Value,
 	row message.Row,
 ) {
-	execute, _ := frame.NewRequestFrame(
+	execute := frame.NewFrame(
 		primitive.ProtocolVersion4,
 		client.ManagedStreamId,
-		false,
-		nil,
 		&message.Execute{
 			QueryId: []byte(query),
 			Options: &message.QueryOptions{PositionalValues: []*primitive.Value{pk}},
 		},
-		false,
 	)
 	response, err := clientConn.SendAndReceive(execute)
 	require.NotNil(t, response)

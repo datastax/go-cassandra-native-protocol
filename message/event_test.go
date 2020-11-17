@@ -25,141 +25,257 @@ import (
 
 func TestEventCodec_Encode(test *testing.T) {
 	codec := &eventCodec{}
-	// versions < 4
-	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
-			tests := []encodeTestCase{
-				{
-					"schema change event keyspace",
-					&SchemaChangeEvent{
-						ChangeType: primitive.SchemaChangeTypeCreated,
-						Target:     primitive.SchemaChangeTargetKeyspace,
-						Keyspace:   "ks1",
-					},
-					[]byte{
-						0, 13, S, C, H, E, M, A, __, C, H, A, N, G, E,
-						0, 7, C, R, E, A, T, E, D,
-						0, 8, K, E, Y, S, P, A, C, E,
-						0, 3, k, s, _1,
-					},
-					nil,
+	// version = 2
+	test.Run(primitive.ProtocolVersion2.String(), func(test *testing.T) {
+		tests := []encodeTestCase{
+			{
+				"schema change event keyspace",
+				&SchemaChangeEvent{
+					ChangeType: primitive.SchemaChangeTypeCreated,
+					Target:     primitive.SchemaChangeTargetKeyspace,
+					Keyspace:   "ks1",
 				},
-				{
-					"schema change event table",
-					&SchemaChangeEvent{
-						ChangeType: primitive.SchemaChangeTypeCreated,
-						Target:     primitive.SchemaChangeTargetTable,
-						Keyspace:   "ks1",
-						Object:     "table1",
-					},
-					[]byte{
-						0, 13, S, C, H, E, M, A, __, C, H, A, N, G, E,
-						0, 7, C, R, E, A, T, E, D,
-						0, 5, T, A, B, L, E,
-						0, 3, k, s, _1,
-						0, 6, t, a, b, l, e, _1,
-					},
-					nil,
+				[]byte{
+					0, 13, S, C, H, E, M, A, __, C, H, A, N, G, E,
+					0, 7, C, R, E, A, T, E, D,
+					0, 3, k, s, _1,
+					0, 0,
 				},
-				{
-					"schema change event type",
-					&SchemaChangeEvent{
-						ChangeType: primitive.SchemaChangeTypeCreated,
-						Target:     primitive.SchemaChangeTargetType,
-						Keyspace:   "ks1",
-						Object:     "udt1",
-					},
-					[]byte{
-						0, 13, S, C, H, E, M, A, __, C, H, A, N, G, E,
-						0, 7, C, R, E, A, T, E, D,
-						0, 4, T, Y, P, E,
-						0, 3, k, s, _1,
-						0, 4, u, d, t, _1,
-					},
-					nil,
+				nil,
+			},
+			{
+				"schema change event table",
+				&SchemaChangeEvent{
+					ChangeType: primitive.SchemaChangeTypeCreated,
+					Target:     primitive.SchemaChangeTargetTable,
+					Keyspace:   "ks1",
+					Object:     "table1",
 				},
-				{
-					"schema change event function",
-					&SchemaChangeEvent{
-						ChangeType: primitive.SchemaChangeTypeCreated,
-						Target:     primitive.SchemaChangeTargetFunction,
-						Keyspace:   "ks1",
-						Object:     "func1",
-						Arguments:  []string{"int", "varchar"},
-					},
-					[]byte{
-						0, 13, S, C, H, E, M, A, __, C, H, A, N, G, E,
-						0, 7, C, R, E, A, T, E, D,
-						0, 8, F, U, N, C, T, I, O, N,
-						0, 3, k, s, _1,
-					},
-					fmt.Errorf("FUNCTION schema change targets are not supported in protocol version %d", version),
+				[]byte{
+					0, 13, S, C, H, E, M, A, __, C, H, A, N, G, E,
+					0, 7, C, R, E, A, T, E, D,
+					0, 3, k, s, _1,
+					0, 6, t, a, b, l, e, _1,
 				},
-				{
-					"schema change event aggregate",
-					&SchemaChangeEvent{
-						ChangeType: primitive.SchemaChangeTypeCreated,
-						Target:     primitive.SchemaChangeTargetAggregate,
-						Keyspace:   "ks1",
-						Object:     "agg1",
-						Arguments:  []string{"int", "varchar"},
-					},
-					[]byte{
-						0, 13, S, C, H, E, M, A, __, C, H, A, N, G, E,
-						0, 7, C, R, E, A, T, E, D,
-						0, 9, A, G, G, R, E, G, A, T, E,
-						0, 3, k, s, _1,
-					},
-					fmt.Errorf("AGGREGATE schema change targets are not supported in protocol version %d", version),
+				nil,
+			},
+			{
+				"schema change result type",
+				&SchemaChangeEvent{
+					ChangeType: primitive.SchemaChangeTypeCreated,
+					Target:     primitive.SchemaChangeTargetType,
+					Keyspace:   "ks1",
+					Object:     "udt1",
 				},
-				{
-					"status change event",
-					&StatusChangeEvent{
-						ChangeType: primitive.StatusChangeTypeUp,
-						Address: &primitive.Inet{
-							Addr: net.IPv4(192, 168, 1, 1),
-							Port: 9042,
-						},
-					},
-					[]byte{
-						0, 13, S, T, A, T, U, S, __, C, H, A, N, G, E,
-						0, 2, U, P,
-						4, 192, 168, 1, 1,
-						0, 0, 0x23, 0x52,
-					},
-					nil,
+				[]byte{
+					0, 13, S, C, H, E, M, A, __, C, H, A, N, G, E,
+					0, 7, C, R, E, A, T, E, D,
 				},
-				{
-					"topology change event",
-					&TopologyChangeEvent{
-						ChangeType: primitive.TopologyChangeTypeNewNode,
-						Address: &primitive.Inet{
-							Addr: net.IPv4(192, 168, 1, 1),
-							Port: 9042,
-						},
-					},
-					[]byte{
-						0, 15, T, O, P, O, L, O, G, Y, __, C, H, A, N, G, E,
-						0, 8, N, E, W, __, N, O, D, E,
-						4, 192, 168, 1, 1,
-						0, 0, 0x23, 0x52,
-					},
-					nil,
+				fmt.Errorf("invalid schema change target for %v: %v", primitive.ProtocolVersion2, primitive.SchemaChangeTargetType),
+			},
+			{
+				"schema change result function",
+				&SchemaChangeEvent{
+					ChangeType: primitive.SchemaChangeTypeCreated,
+					Target:     primitive.SchemaChangeTargetFunction,
+					Keyspace:   "ks1",
+					Object:     "func1",
+					Arguments:  []string{"int", "varchar"},
 				},
-			}
-			for _, tt := range tests {
-				test.Run(tt.name, func(t *testing.T) {
-					dest := &bytes.Buffer{}
-					err := codec.Encode(tt.input, dest, version)
-					assert.Equal(t, tt.expected, dest.Bytes())
-					assert.Equal(t, tt.err, err)
-				})
-			}
-		})
-	}
+				[]byte{
+					0, 13, S, C, H, E, M, A, __, C, H, A, N, G, E,
+					0, 7, C, R, E, A, T, E, D,
+				},
+				fmt.Errorf("invalid schema change target for %v: %v", primitive.ProtocolVersion2, primitive.SchemaChangeTargetFunction),
+			},
+			{
+				"schema change result aggregate",
+				&SchemaChangeEvent{
+					ChangeType: primitive.SchemaChangeTypeCreated,
+					Target:     primitive.SchemaChangeTargetAggregate,
+					Keyspace:   "ks1",
+					Object:     "agg1",
+					Arguments:  []string{"int", "varchar"},
+				},
+				[]byte{
+					0, 13, S, C, H, E, M, A, __, C, H, A, N, G, E,
+					0, 7, C, R, E, A, T, E, D,
+				},
+				fmt.Errorf("invalid schema change target for %v: %v", primitive.ProtocolVersion2, primitive.SchemaChangeTargetAggregate),
+			},
+			{
+				"status change event",
+				&StatusChangeEvent{
+					ChangeType: primitive.StatusChangeTypeUp,
+					Address: &primitive.Inet{
+						Addr: net.IPv4(192, 168, 1, 1),
+						Port: 9042,
+					},
+				},
+				[]byte{
+					0, 13, S, T, A, T, U, S, __, C, H, A, N, G, E,
+					0, 2, U, P,
+					4, 192, 168, 1, 1,
+					0, 0, 0x23, 0x52,
+				},
+				nil,
+			},
+			{
+				"topology change event",
+				&TopologyChangeEvent{
+					ChangeType: primitive.TopologyChangeTypeNewNode,
+					Address: &primitive.Inet{
+						Addr: net.IPv4(192, 168, 1, 1),
+						Port: 9042,
+					},
+				},
+				[]byte{
+					0, 15, T, O, P, O, L, O, G, Y, __, C, H, A, N, G, E,
+					0, 8, N, E, W, __, N, O, D, E,
+					4, 192, 168, 1, 1,
+					0, 0, 0x23, 0x52,
+				},
+				nil,
+			},
+		}
+		for _, tt := range tests {
+			test.Run(tt.name, func(t *testing.T) {
+				dest := &bytes.Buffer{}
+				err := codec.Encode(tt.input, dest, primitive.ProtocolVersion2)
+				assert.Equal(t, tt.expected, dest.Bytes())
+				assert.Equal(t, tt.err, err)
+			})
+		}
+	})
+	// version = 3
+	test.Run(primitive.ProtocolVersion3.String(), func(test *testing.T) {
+		tests := []encodeTestCase{
+			{
+				"schema change event keyspace",
+				&SchemaChangeEvent{
+					ChangeType: primitive.SchemaChangeTypeCreated,
+					Target:     primitive.SchemaChangeTargetKeyspace,
+					Keyspace:   "ks1",
+				},
+				[]byte{
+					0, 13, S, C, H, E, M, A, __, C, H, A, N, G, E,
+					0, 7, C, R, E, A, T, E, D,
+					0, 8, K, E, Y, S, P, A, C, E,
+					0, 3, k, s, _1,
+				},
+				nil,
+			},
+			{
+				"schema change event table",
+				&SchemaChangeEvent{
+					ChangeType: primitive.SchemaChangeTypeCreated,
+					Target:     primitive.SchemaChangeTargetTable,
+					Keyspace:   "ks1",
+					Object:     "table1",
+				},
+				[]byte{
+					0, 13, S, C, H, E, M, A, __, C, H, A, N, G, E,
+					0, 7, C, R, E, A, T, E, D,
+					0, 5, T, A, B, L, E,
+					0, 3, k, s, _1,
+					0, 6, t, a, b, l, e, _1,
+				},
+				nil,
+			},
+			{
+				"schema change event type",
+				&SchemaChangeEvent{
+					ChangeType: primitive.SchemaChangeTypeCreated,
+					Target:     primitive.SchemaChangeTargetType,
+					Keyspace:   "ks1",
+					Object:     "udt1",
+				},
+				[]byte{
+					0, 13, S, C, H, E, M, A, __, C, H, A, N, G, E,
+					0, 7, C, R, E, A, T, E, D,
+					0, 4, T, Y, P, E,
+					0, 3, k, s, _1,
+					0, 4, u, d, t, _1,
+				},
+				nil,
+			},
+			{
+				"schema change event function",
+				&SchemaChangeEvent{
+					ChangeType: primitive.SchemaChangeTypeCreated,
+					Target:     primitive.SchemaChangeTargetFunction,
+					Keyspace:   "ks1",
+					Object:     "func1",
+					Arguments:  []string{"int", "varchar"},
+				},
+				[]byte{
+					0, 13, S, C, H, E, M, A, __, C, H, A, N, G, E,
+					0, 7, C, R, E, A, T, E, D,
+				},
+				fmt.Errorf("invalid schema change target for %v: %v", primitive.ProtocolVersion3, primitive.SchemaChangeTargetFunction),
+			},
+			{
+				"schema change event aggregate",
+				&SchemaChangeEvent{
+					ChangeType: primitive.SchemaChangeTypeCreated,
+					Target:     primitive.SchemaChangeTargetAggregate,
+					Keyspace:   "ks1",
+					Object:     "agg1",
+					Arguments:  []string{"int", "varchar"},
+				},
+				[]byte{
+					0, 13, S, C, H, E, M, A, __, C, H, A, N, G, E,
+					0, 7, C, R, E, A, T, E, D,
+				},
+				fmt.Errorf("invalid schema change target for %v: %v", primitive.ProtocolVersion3, primitive.SchemaChangeTargetAggregate),
+			},
+			{
+				"status change event",
+				&StatusChangeEvent{
+					ChangeType: primitive.StatusChangeTypeUp,
+					Address: &primitive.Inet{
+						Addr: net.IPv4(192, 168, 1, 1),
+						Port: 9042,
+					},
+				},
+				[]byte{
+					0, 13, S, T, A, T, U, S, __, C, H, A, N, G, E,
+					0, 2, U, P,
+					4, 192, 168, 1, 1,
+					0, 0, 0x23, 0x52,
+				},
+				nil,
+			},
+			{
+				"topology change event",
+				&TopologyChangeEvent{
+					ChangeType: primitive.TopologyChangeTypeNewNode,
+					Address: &primitive.Inet{
+						Addr: net.IPv4(192, 168, 1, 1),
+						Port: 9042,
+					},
+				},
+				[]byte{
+					0, 15, T, O, P, O, L, O, G, Y, __, C, H, A, N, G, E,
+					0, 8, N, E, W, __, N, O, D, E,
+					4, 192, 168, 1, 1,
+					0, 0, 0x23, 0x52,
+				},
+				nil,
+			},
+		}
+		for _, tt := range tests {
+			test.Run(tt.name, func(t *testing.T) {
+				dest := &bytes.Buffer{}
+				err := codec.Encode(tt.input, dest, primitive.ProtocolVersion3)
+				assert.Equal(t, tt.expected, dest.Bytes())
+				assert.Equal(t, tt.err, err)
+			})
+		}
+	})
 	// versions >= 4
 	for _, version := range primitive.AllProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion4) {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
 					"schema change event keyspace",
@@ -301,8 +417,187 @@ func TestEventCodec_Encode(test *testing.T) {
 
 func TestEventCodec_EncodedLength(test *testing.T) {
 	codec := &eventCodec{}
-	for _, version := range primitive.AllProtocolVersions() {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
+	// version = 2
+	test.Run(primitive.ProtocolVersion2.String(), func(test *testing.T) {
+		tests := []encodedLengthTestCase{
+			{
+				"schema change event keyspace",
+				&SchemaChangeEvent{
+					ChangeType: primitive.SchemaChangeTypeCreated,
+					Target:     primitive.SchemaChangeTargetKeyspace,
+					Keyspace:   "ks1",
+				},
+				primitive.LengthOfString(string(primitive.EventTypeSchemaChange)) +
+					primitive.LengthOfString(string(primitive.SchemaChangeTypeCreated)) +
+					primitive.LengthOfString("ks1") +
+					primitive.LengthOfString(""),
+				nil,
+			},
+			{
+				"schema change event table",
+				&SchemaChangeEvent{
+					ChangeType: primitive.SchemaChangeTypeCreated,
+					Target:     primitive.SchemaChangeTargetTable,
+					Keyspace:   "ks1",
+					Object:     "table1",
+				},
+				primitive.LengthOfString(string(primitive.EventTypeSchemaChange)) +
+					primitive.LengthOfString(string(primitive.SchemaChangeTypeCreated)) +
+					primitive.LengthOfString("ks1") +
+					primitive.LengthOfString("table1"),
+				nil,
+			},
+			{
+				"status change event",
+				&StatusChangeEvent{
+					ChangeType: primitive.StatusChangeTypeUp,
+					Address: &primitive.Inet{
+						Addr: net.IPv4(192, 168, 1, 1),
+						Port: 9042,
+					},
+				},
+				primitive.LengthOfString(string(primitive.EventTypeStatusChange)) +
+					primitive.LengthOfString(string(primitive.StatusChangeTypeUp)) +
+					primitive.LengthOfByte + net.IPv4len +
+					primitive.LengthOfInt,
+				nil,
+			},
+			{
+				"topology change event",
+				&TopologyChangeEvent{
+					ChangeType: primitive.TopologyChangeTypeNewNode,
+					Address: &primitive.Inet{
+						Addr: net.IPv4(192, 168, 1, 1),
+						Port: 9042,
+					},
+				},
+				primitive.LengthOfString(string(primitive.EventTypeTopologyChange)) +
+					primitive.LengthOfString(string(primitive.TopologyChangeTypeNewNode)) +
+					primitive.LengthOfByte + net.IPv4len +
+					primitive.LengthOfInt,
+				nil,
+			},
+		}
+		for _, tt := range tests {
+			test.Run(tt.name, func(t *testing.T) {
+				actual, err := codec.EncodedLength(tt.input, primitive.ProtocolVersion2)
+				assert.Equal(t, tt.expected, actual)
+				assert.Equal(t, tt.err, err)
+			})
+		}
+	})
+	// version = 3
+	test.Run(primitive.ProtocolVersion3.String(), func(test *testing.T) {
+		tests := []encodedLengthTestCase{
+			{
+				"schema change event keyspace",
+				&SchemaChangeEvent{
+					ChangeType: primitive.SchemaChangeTypeCreated,
+					Target:     primitive.SchemaChangeTargetKeyspace,
+					Keyspace:   "ks1",
+				},
+				primitive.LengthOfString(string(primitive.EventTypeSchemaChange)) +
+					primitive.LengthOfString(string(primitive.SchemaChangeTypeCreated)) +
+					primitive.LengthOfString(string(primitive.SchemaChangeTargetKeyspace)) +
+					primitive.LengthOfString("ks1"),
+				nil,
+			},
+			{
+				"schema change event table",
+				&SchemaChangeEvent{
+					ChangeType: primitive.SchemaChangeTypeCreated,
+					Target:     primitive.SchemaChangeTargetTable,
+					Keyspace:   "ks1",
+					Object:     "table1",
+				},
+				primitive.LengthOfString(string(primitive.EventTypeSchemaChange)) +
+					primitive.LengthOfString(string(primitive.SchemaChangeTypeCreated)) +
+					primitive.LengthOfString(string(primitive.SchemaChangeTargetTable)) +
+					primitive.LengthOfString("ks1") +
+					primitive.LengthOfString("table1"),
+				nil,
+			},
+			{
+				"schema change event type",
+				&SchemaChangeEvent{
+					ChangeType: primitive.SchemaChangeTypeCreated,
+					Target:     primitive.SchemaChangeTargetType,
+					Keyspace:   "ks1",
+					Object:     "udt1",
+				},
+				primitive.LengthOfString(string(primitive.EventTypeSchemaChange)) +
+					primitive.LengthOfString(string(primitive.SchemaChangeTypeCreated)) +
+					primitive.LengthOfString(string(primitive.SchemaChangeTargetType)) +
+					primitive.LengthOfString("ks1") +
+					primitive.LengthOfString("udt1"),
+				nil,
+			},
+			{
+				"schema change event function",
+				&SchemaChangeEvent{
+					ChangeType: primitive.SchemaChangeTypeCreated,
+					Target:     primitive.SchemaChangeTargetFunction,
+					Keyspace:   "ks1",
+					Object:     "func1",
+					Arguments:  []string{"int", "varchar"},
+				},
+				-1,
+				fmt.Errorf("invalid schema change target for %v: %v", primitive.ProtocolVersion3, primitive.SchemaChangeTargetFunction),
+			},
+			{
+				"schema change event aggregate",
+				&SchemaChangeEvent{
+					ChangeType: primitive.SchemaChangeTypeCreated,
+					Target:     primitive.SchemaChangeTargetAggregate,
+					Keyspace:   "ks1",
+					Object:     "agg1",
+					Arguments:  []string{"int", "varchar"},
+				},
+				-1,
+				fmt.Errorf("invalid schema change target for %v: %v", primitive.ProtocolVersion3, primitive.SchemaChangeTargetAggregate),
+			},
+			{
+				"status change event",
+				&StatusChangeEvent{
+					ChangeType: primitive.StatusChangeTypeUp,
+					Address: &primitive.Inet{
+						Addr: net.IPv4(192, 168, 1, 1),
+						Port: 9042,
+					},
+				},
+				primitive.LengthOfString(string(primitive.EventTypeStatusChange)) +
+					primitive.LengthOfString(string(primitive.StatusChangeTypeUp)) +
+					primitive.LengthOfByte + net.IPv4len +
+					primitive.LengthOfInt,
+				nil,
+			},
+			{
+				"topology change event",
+				&TopologyChangeEvent{
+					ChangeType: primitive.TopologyChangeTypeNewNode,
+					Address: &primitive.Inet{
+						Addr: net.IPv4(192, 168, 1, 1),
+						Port: 9042,
+					},
+				},
+				primitive.LengthOfString(string(primitive.EventTypeTopologyChange)) +
+					primitive.LengthOfString(string(primitive.TopologyChangeTypeNewNode)) +
+					primitive.LengthOfByte + net.IPv4len +
+					primitive.LengthOfInt,
+				nil,
+			},
+		}
+		for _, tt := range tests {
+			test.Run(tt.name, func(t *testing.T) {
+				actual, err := codec.EncodedLength(tt.input, primitive.ProtocolVersion3)
+				assert.Equal(t, tt.expected, actual)
+				assert.Equal(t, tt.err, err)
+			})
+		}
+	})
+	// versions >= 4
+	for _, version := range primitive.AllProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion4) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"schema change event keyspace",
@@ -425,129 +720,205 @@ func TestEventCodec_EncodedLength(test *testing.T) {
 
 func TestEventCodec_Decode(test *testing.T) {
 	codec := &eventCodec{}
-	// versions < 4
-	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
-			tests := []decodeTestCase{
-				{
-					"schema change event keyspace",
-					[]byte{
-						0, 13, S, C, H, E, M, A, __, C, H, A, N, G, E,
-						0, 7, C, R, E, A, T, E, D,
-						0, 8, K, E, Y, S, P, A, C, E,
-						0, 3, k, s, _1,
-					},
-					&SchemaChangeEvent{
-						ChangeType: primitive.SchemaChangeTypeCreated,
-						Target:     primitive.SchemaChangeTargetKeyspace,
-						Keyspace:   "ks1",
-					},
-					nil,
+	// version = 2
+	test.Run(primitive.ProtocolVersion2.String(), func(test *testing.T) {
+		tests := []decodeTestCase{
+			{
+				"schema change event keyspace",
+				[]byte{
+					0, 13, S, C, H, E, M, A, __, C, H, A, N, G, E,
+					0, 7, C, R, E, A, T, E, D,
+					0, 3, k, s, _1,
+					0, 0,
 				},
-				{
-					"schema change event table",
-					[]byte{
-						0, 13, S, C, H, E, M, A, __, C, H, A, N, G, E,
-						0, 7, C, R, E, A, T, E, D,
-						0, 5, T, A, B, L, E,
-						0, 3, k, s, _1,
-						0, 6, t, a, b, l, e, _1,
-					},
-					&SchemaChangeEvent{
-						ChangeType: primitive.SchemaChangeTypeCreated,
-						Target:     primitive.SchemaChangeTargetTable,
-						Keyspace:   "ks1",
-						Object:     "table1",
-					},
-					nil,
+				&SchemaChangeEvent{
+					ChangeType: primitive.SchemaChangeTypeCreated,
+					Target:     primitive.SchemaChangeTargetKeyspace,
+					Keyspace:   "ks1",
 				},
-				{
-					"schema change event type",
-					[]byte{
-						0, 13, S, C, H, E, M, A, __, C, H, A, N, G, E,
-						0, 7, C, R, E, A, T, E, D,
-						0, 4, T, Y, P, E,
-						0, 3, k, s, _1,
-						0, 4, u, d, t, _1,
-					},
-					&SchemaChangeEvent{
-						ChangeType: primitive.SchemaChangeTypeCreated,
-						Target:     primitive.SchemaChangeTargetType,
-						Keyspace:   "ks1",
-						Object:     "udt1",
-					},
-					nil,
+				nil,
+			},
+			{
+				"schema change event table",
+				[]byte{
+					0, 13, S, C, H, E, M, A, __, C, H, A, N, G, E,
+					0, 7, C, R, E, A, T, E, D,
+					0, 3, k, s, _1,
+					0, 6, t, a, b, l, e, _1,
 				},
-				{
-					"schema change event function",
-					[]byte{
-						0, 13, S, C, H, E, M, A, __, C, H, A, N, G, E,
-						0, 7, C, R, E, A, T, E, D,
-						0, 8, F, U, N, C, T, I, O, N,
-						0, 3, k, s, _1,
-					},
-					nil,
-					fmt.Errorf("FUNCTION schema change targets are not supported in protocol version %d", version),
+				&SchemaChangeEvent{
+					ChangeType: primitive.SchemaChangeTypeCreated,
+					Target:     primitive.SchemaChangeTargetTable,
+					Keyspace:   "ks1",
+					Object:     "table1",
 				},
-				{
-					"schema change event aggregate",
-					[]byte{
-						0, 13, S, C, H, E, M, A, __, C, H, A, N, G, E,
-						0, 7, C, R, E, A, T, E, D,
-						0, 9, A, G, G, R, E, G, A, T, E,
-						0, 3, k, s, _1,
-					},
-					nil,
-					fmt.Errorf("AGGREGATE schema change targets are not supported in protocol version %d", version),
+				nil,
+			},
+			{
+				"status change event",
+				[]byte{
+					0, 13, S, T, A, T, U, S, __, C, H, A, N, G, E,
+					0, 2, U, P,
+					4, 192, 168, 1, 1,
+					0, 0, 0x23, 0x52,
 				},
-				{
-					"status change event",
-					[]byte{
-						0, 13, S, T, A, T, U, S, __, C, H, A, N, G, E,
-						0, 2, U, P,
-						4, 192, 168, 1, 1,
-						0, 0, 0x23, 0x52,
+				&StatusChangeEvent{
+					ChangeType: primitive.StatusChangeTypeUp,
+					Address: &primitive.Inet{
+						Addr: net.IPv4(192, 168, 1, 1),
+						Port: 9042,
 					},
-					&StatusChangeEvent{
-						ChangeType: primitive.StatusChangeTypeUp,
-						Address: &primitive.Inet{
-							Addr: net.IPv4(192, 168, 1, 1),
-							Port: 9042,
-						},
-					},
-					nil,
 				},
-				{
-					"topology change event",
-					[]byte{
-						0, 15, T, O, P, O, L, O, G, Y, __, C, H, A, N, G, E,
-						0, 8, N, E, W, __, N, O, D, E,
-						4, 192, 168, 1, 1,
-						0, 0, 0x23, 0x52,
-					},
-					&TopologyChangeEvent{
-						ChangeType: primitive.TopologyChangeTypeNewNode,
-						Address: &primitive.Inet{
-							Addr: net.IPv4(192, 168, 1, 1),
-							Port: 9042,
-						},
-					},
-					nil,
+				nil,
+			},
+			{
+				"topology change event",
+				[]byte{
+					0, 15, T, O, P, O, L, O, G, Y, __, C, H, A, N, G, E,
+					0, 8, N, E, W, __, N, O, D, E,
+					4, 192, 168, 1, 1,
+					0, 0, 0x23, 0x52,
 				},
-			}
-			for _, tt := range tests {
-				test.Run(tt.name, func(t *testing.T) {
-					source := bytes.NewBuffer(tt.input)
-					actual, err := codec.Decode(source, version)
-					assert.Equal(t, tt.expected, actual)
-					assert.Equal(t, tt.err, err)
-				})
-			}
-		})
-	}
+				&TopologyChangeEvent{
+					ChangeType: primitive.TopologyChangeTypeNewNode,
+					Address: &primitive.Inet{
+						Addr: net.IPv4(192, 168, 1, 1),
+						Port: 9042,
+					},
+				},
+				nil,
+			},
+		}
+		for _, tt := range tests {
+			test.Run(tt.name, func(t *testing.T) {
+				source := bytes.NewBuffer(tt.input)
+				actual, err := codec.Decode(source, primitive.ProtocolVersion2)
+				assert.Equal(t, tt.expected, actual)
+				assert.Equal(t, tt.err, err)
+			})
+		}
+	})
+	// version = 3
+	test.Run(primitive.ProtocolVersion3.String(), func(test *testing.T) {
+		tests := []decodeTestCase{
+			{
+				"schema change event keyspace",
+				[]byte{
+					0, 13, S, C, H, E, M, A, __, C, H, A, N, G, E,
+					0, 7, C, R, E, A, T, E, D,
+					0, 8, K, E, Y, S, P, A, C, E,
+					0, 3, k, s, _1,
+				},
+				&SchemaChangeEvent{
+					ChangeType: primitive.SchemaChangeTypeCreated,
+					Target:     primitive.SchemaChangeTargetKeyspace,
+					Keyspace:   "ks1",
+				},
+				nil,
+			},
+			{
+				"schema change event table",
+				[]byte{
+					0, 13, S, C, H, E, M, A, __, C, H, A, N, G, E,
+					0, 7, C, R, E, A, T, E, D,
+					0, 5, T, A, B, L, E,
+					0, 3, k, s, _1,
+					0, 6, t, a, b, l, e, _1,
+				},
+				&SchemaChangeEvent{
+					ChangeType: primitive.SchemaChangeTypeCreated,
+					Target:     primitive.SchemaChangeTargetTable,
+					Keyspace:   "ks1",
+					Object:     "table1",
+				},
+				nil,
+			},
+			{
+				"schema change event type",
+				[]byte{
+					0, 13, S, C, H, E, M, A, __, C, H, A, N, G, E,
+					0, 7, C, R, E, A, T, E, D,
+					0, 4, T, Y, P, E,
+					0, 3, k, s, _1,
+					0, 4, u, d, t, _1,
+				},
+				&SchemaChangeEvent{
+					ChangeType: primitive.SchemaChangeTypeCreated,
+					Target:     primitive.SchemaChangeTargetType,
+					Keyspace:   "ks1",
+					Object:     "udt1",
+				},
+				nil,
+			},
+			{
+				"schema change event function",
+				[]byte{
+					0, 13, S, C, H, E, M, A, __, C, H, A, N, G, E,
+					0, 7, C, R, E, A, T, E, D,
+					0, 8, F, U, N, C, T, I, O, N,
+					0, 3, k, s, _1,
+				},
+				nil,
+				fmt.Errorf("invalid schema change target for %v: %v", primitive.ProtocolVersion3, primitive.SchemaChangeTargetFunction),
+			},
+			{
+				"schema change event aggregate",
+				[]byte{
+					0, 13, S, C, H, E, M, A, __, C, H, A, N, G, E,
+					0, 7, C, R, E, A, T, E, D,
+					0, 9, A, G, G, R, E, G, A, T, E,
+					0, 3, k, s, _1,
+				},
+				nil,
+				fmt.Errorf("invalid schema change target for %v: %v", primitive.ProtocolVersion3, primitive.SchemaChangeTargetAggregate),
+			},
+			{
+				"status change event",
+				[]byte{
+					0, 13, S, T, A, T, U, S, __, C, H, A, N, G, E,
+					0, 2, U, P,
+					4, 192, 168, 1, 1,
+					0, 0, 0x23, 0x52,
+				},
+				&StatusChangeEvent{
+					ChangeType: primitive.StatusChangeTypeUp,
+					Address: &primitive.Inet{
+						Addr: net.IPv4(192, 168, 1, 1),
+						Port: 9042,
+					},
+				},
+				nil,
+			},
+			{
+				"topology change event",
+				[]byte{
+					0, 15, T, O, P, O, L, O, G, Y, __, C, H, A, N, G, E,
+					0, 8, N, E, W, __, N, O, D, E,
+					4, 192, 168, 1, 1,
+					0, 0, 0x23, 0x52,
+				},
+				&TopologyChangeEvent{
+					ChangeType: primitive.TopologyChangeTypeNewNode,
+					Address: &primitive.Inet{
+						Addr: net.IPv4(192, 168, 1, 1),
+						Port: 9042,
+					},
+				},
+				nil,
+			},
+		}
+		for _, tt := range tests {
+			test.Run(tt.name, func(t *testing.T) {
+				source := bytes.NewBuffer(tt.input)
+				actual, err := codec.Decode(source, primitive.ProtocolVersion3)
+				assert.Equal(t, tt.expected, actual)
+				assert.Equal(t, tt.err, err)
+			})
+		}
+	})
 	// versions >= 4
 	for _, version := range primitive.AllProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion4) {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{
 					"schema change event keyspace",

@@ -138,8 +138,7 @@ func fullSystemLocal(cluster string, datacenter string, request *frame.Frame, co
 		},
 		Data: message.RowSet{systemLocalRow},
 	}
-	response, _ := frame.NewResponseFrame(request.Header.Version, request.Header.StreamId, nil, nil, nil, msg, false)
-	return response
+	return frame.NewFrame(request.Header.Version, request.Header.StreamId, msg)
 }
 
 func schemaVersion(request *frame.Frame) *frame.Frame {
@@ -150,8 +149,7 @@ func schemaVersion(request *frame.Frame) *frame.Frame {
 		},
 		Data: message.RowSet{message.Row{schemaVersionValue}},
 	}
-	response, _ := frame.NewResponseFrame(request.Header.Version, request.Header.StreamId, nil, nil, nil, msg, false)
-	return response
+	return frame.NewFrame(request.Header.Version, request.Header.StreamId, msg)
 }
 
 func clusterName(cluster string, request *frame.Frame) *frame.Frame {
@@ -162,8 +160,7 @@ func clusterName(cluster string, request *frame.Frame) *frame.Frame {
 		},
 		Data: message.RowSet{message.Row{message.Column(cluster)}},
 	}
-	response, _ := frame.NewResponseFrame(request.Header.Version, request.Header.StreamId, nil, nil, nil, msg, false)
-	return response
+	return frame.NewFrame(request.Header.Version, request.Header.StreamId, msg)
 }
 
 func emptySystemPeers(request *frame.Frame) *frame.Frame {
@@ -171,6 +168,5 @@ func emptySystemPeers(request *frame.Frame) *frame.Frame {
 		Metadata: &message.RowsMetadata{ColumnCount: 0},
 		Data:     message.RowSet{},
 	}
-	response, _ := frame.NewResponseFrame(request.Header.Version, request.Header.StreamId, nil, nil, nil, msg, false)
-	return response
+	return frame.NewFrame(request.Header.Version, request.Header.StreamId, msg)
 }

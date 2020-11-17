@@ -27,7 +27,7 @@ func TestErrorCodec_Encode(test *testing.T) {
 	codec := &errorCodec{}
 	// errors encoded the same in all versions
 	for _, version := range primitive.AllProtocolVersions() {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
 					"server error",
@@ -203,8 +203,8 @@ func TestErrorCodec_Encode(test *testing.T) {
 			}
 		})
 	}
-	// num failures v3, v4
-	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion3, primitive.ProtocolVersion4} {
+	// num failures v2, v3, v4
+	for _, version := range primitive.AllProtocolVersionsLesserThanOrEqualTo(primitive.ProtocolVersion4) {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -263,7 +263,7 @@ func TestErrorCodec_Encode(test *testing.T) {
 		})
 	}
 	// reason map in v5, DSE v1, DSE v2
-	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion5, primitive.ProtocolVersionDse1, primitive.ProtocolVersionDse2} {
+	for _, version := range primitive.AllProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion5) {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -331,7 +331,7 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 	codec := &errorCodec{}
 	// errors encoded the same in all versions
 	for _, version := range primitive.AllProtocolVersions() {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"server error",
@@ -462,8 +462,8 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 			}
 		})
 	}
-	// num failures in v3, v4
-	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion3, primitive.ProtocolVersion4} {
+	// num failures in v2, v3, v4
+	for _, version := range primitive.AllProtocolVersionsLesserThanOrEqualTo(primitive.ProtocolVersion4) {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -517,7 +517,7 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 		})
 	}
 	// reason map in v5, DSE v1, DSE v2
-	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion5, primitive.ProtocolVersionDse1, primitive.ProtocolVersionDse2} {
+	for _, version := range primitive.AllProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion5) {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -580,7 +580,7 @@ func TestErrorCodec_Decode(test *testing.T) {
 	codec := &errorCodec{}
 	// errors encoded the same in all versions
 	for _, version := range primitive.AllProtocolVersions() {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{
 					"server error",
@@ -757,7 +757,7 @@ func TestErrorCodec_Decode(test *testing.T) {
 		})
 	}
 	// num failures in v3, v4
-	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion3, primitive.ProtocolVersion4} {
+	for _, version := range primitive.AllProtocolVersionsLesserThanOrEqualTo(primitive.ProtocolVersion4) {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{
@@ -816,7 +816,7 @@ func TestErrorCodec_Decode(test *testing.T) {
 		})
 	}
 	// reason map in v5, DSE v1, DSE v2
-	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion5, primitive.ProtocolVersionDse1, primitive.ProtocolVersionDse2} {
+	for _, version := range primitive.AllProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion5) {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{

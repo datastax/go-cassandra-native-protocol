@@ -17,7 +17,6 @@ package message
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -26,7 +25,7 @@ import (
 func TestAuthenticateCodec_Encode(t *testing.T) {
 	codec := &authenticateCodec{}
 	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []encodeTestCase{
 				{
 					"simple authenticate",
@@ -62,7 +61,7 @@ func TestAuthenticateCodec_Encode(t *testing.T) {
 func TestAuthenticateCodec_EncodedLength(t *testing.T) {
 	codec := &authenticateCodec{}
 	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"simple authenticate",
@@ -97,7 +96,7 @@ func TestAuthenticateCodec_EncodedLength(t *testing.T) {
 func TestAuthenticateCodec_Decode(t *testing.T) {
 	codec := &authenticateCodec{}
 	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []decodeTestCase{
 				{
 					"simple authenticate",

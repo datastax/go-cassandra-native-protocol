@@ -17,7 +17,6 @@ package message
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -26,7 +25,7 @@ import (
 func TestOptionsCodec_Encode(t *testing.T) {
 	codec := &optionsCodec{}
 	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []encodeTestCase{
 				{
 					"options simple",
@@ -56,7 +55,7 @@ func TestOptionsCodec_Encode(t *testing.T) {
 func TestOptionsCodec_EncodedLength(t *testing.T) {
 	codec := &optionsCodec{}
 	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"options simple",
@@ -85,7 +84,7 @@ func TestOptionsCodec_EncodedLength(t *testing.T) {
 func TestOptionsCodec_Decode(t *testing.T) {
 	codec := &optionsCodec{}
 	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []decodeTestCase{
 				{
 					"options simple",

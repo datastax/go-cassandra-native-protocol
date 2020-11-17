@@ -25,7 +25,7 @@ import (
 func TestReadValue(t *testing.T) {
 	// versions < 4
 	for _, version := range AllProtocolVersionsLesserThan(ProtocolVersion4) {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
 				source   []byte
@@ -46,7 +46,7 @@ func TestReadValue(t *testing.T) {
 						0xff, 0xff, 0xff, 0xfe, // length -2
 					},
 					nil,
-					fmt.Errorf("cannot use unset value with ProtocolVersion OSS 3"),
+					fmt.Errorf("cannot use unset value with %v", version),
 				},
 				{
 					"value empty",
@@ -106,7 +106,7 @@ func TestReadValue(t *testing.T) {
 	}
 	// versions >= 4
 	for _, version := range AllProtocolVersionsGreaterThanOrEqualTo(ProtocolVersion4) {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			var tests = []struct {
 				name     string
 				source   []byte
@@ -189,8 +189,8 @@ func TestReadValue(t *testing.T) {
 
 func TestWriteValue(t *testing.T) {
 	// versions < 4
-	for _, version := range []ProtocolVersion{ProtocolVersion3} {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+	for _, version := range AllProtocolVersionsLesserThan(ProtocolVersion4) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
 				input    *Value
@@ -237,7 +237,7 @@ func TestWriteValue(t *testing.T) {
 					"empty value with type unset",
 					&Value{Type: ValueTypeUnset},
 					nil,
-					errors.New("cannot use unset value with ProtocolVersion OSS 3"),
+					fmt.Errorf("cannot use unset value with %v", version),
 				},
 				{
 					"empty value with type unset but non nil contents",
@@ -246,7 +246,7 @@ func TestWriteValue(t *testing.T) {
 						Contents: []byte{1, 2, 3, 4},
 					},
 					nil,
-					errors.New("cannot use unset value with ProtocolVersion OSS 3"),
+					fmt.Errorf("cannot use unset value with %v", version),
 				},
 				{
 					"unknown type",
@@ -267,7 +267,7 @@ func TestWriteValue(t *testing.T) {
 	}
 	// versions >= 4
 	for _, version := range AllProtocolVersionsGreaterThanOrEqualTo(ProtocolVersion4) {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			var tests = []struct {
 				name     string
 				input    *Value
@@ -417,7 +417,7 @@ func TestLengthOfValue(t *testing.T) {
 
 func TestReadPositionalValues(t *testing.T) {
 	for _, version := range AllProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
 				source   []byte
@@ -512,7 +512,7 @@ func TestReadPositionalValues(t *testing.T) {
 func TestWritePositionalValues(t *testing.T) {
 	// versions < 4
 	for _, version := range AllProtocolVersionsLesserThan(ProtocolVersion4) {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
 				input    []*Value
@@ -618,7 +618,7 @@ func TestWritePositionalValues(t *testing.T) {
 	}
 	// versions >= 4
 	for _, version := range AllProtocolVersionsGreaterThanOrEqualTo(ProtocolVersion4) {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			var tests = []struct {
 				name     string
 				input    []*Value
@@ -824,7 +824,7 @@ func TestLengthOfPositionalValues(t *testing.T) {
 
 func TestReadNamedValues(t *testing.T) {
 	for _, version := range AllProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
 				source   []byte
@@ -938,7 +938,7 @@ func TestReadNamedValues(t *testing.T) {
 
 func TestWriteNamedValues(t *testing.T) {
 	for _, version := range AllProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
 				input    map[string]*Value

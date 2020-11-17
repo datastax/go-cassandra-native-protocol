@@ -31,7 +31,7 @@ func TestSetType(t *testing.T) {
 
 func TestSetTypeCodecEncode(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
 				input    SetType
@@ -71,7 +71,7 @@ func TestSetTypeCodecEncode(t *testing.T) {
 
 func TestSetTypeCodecEncodedLength(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
 				input    SetType
@@ -98,7 +98,7 @@ func TestSetTypeCodecEncodedLength(t *testing.T) {
 
 func TestSetTypeCodecDecode(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
 				input    []byte

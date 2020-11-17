@@ -305,8 +305,7 @@ func (c *CqlClientConnection) NewStartupRequest(version primitive.ProtocolVersio
 		startup.SetCompression(c.codec.GetBodyCompressor().Algorithm())
 	}
 	startup.SetDriverName("DataStax Go client")
-	request, _ := frame.NewRequestFrame(version, streamId, false, nil, startup, false)
-	return request
+	return frame.NewFrame(version, streamId, startup)
 }
 
 // An in-flight request sent through CqlClientConnection.Send.

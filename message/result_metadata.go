@@ -50,6 +50,7 @@ type RowsMetadata struct {
 	// Must be always present, even when Columns is nil. If Columns is non-nil, the value of ColumnCount must match
 	// len(Columns), otherwise an error is returned when encoding.
 	ColumnCount int32
+	// PagingState is a [bytes] value. If provided, this means that this page of results is not the last page..
 	PagingState []byte
 	// Valid for protocol version 5 and DSE protocol version 2 only.
 	NewResultMetadataId []byte

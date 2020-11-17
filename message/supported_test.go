@@ -17,7 +17,6 @@ package message
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -26,7 +25,7 @@ import (
 func TestSupportedCodec_Encode(test *testing.T) {
 	codec := &supportedCodec{}
 	for _, version := range primitive.AllProtocolVersions() {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []struct {
 				name     string
 				input    Message
@@ -133,7 +132,7 @@ func TestSupportedCodec_Encode(test *testing.T) {
 func TestSupportedCodec_EncodedLength(test *testing.T) {
 	codec := &supportedCodec{}
 	for _, version := range primitive.AllProtocolVersions() {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"supported with nil options",
@@ -192,7 +191,7 @@ func TestSupportedCodec_EncodedLength(test *testing.T) {
 func TestSupportedCodec_Decode(test *testing.T) {
 	codec := &supportedCodec{}
 	for _, version := range primitive.AllProtocolVersions() {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{
 					"supported with empty options",

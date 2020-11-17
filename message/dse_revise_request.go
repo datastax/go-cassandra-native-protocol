@@ -51,7 +51,7 @@ func (c *reviseCodec) Encode(msg Message, dest io.Writer, version primitive.Prot
 	}
 	if err := primitive.CheckValidDseProtocolVersion(version); err != nil {
 		return err
-	} else if err := primitive.CheckValidDseRevisionType(revise.RevisionType); err != nil {
+	} else if err := primitive.CheckValidDseRevisionType(revise.RevisionType, version); err != nil {
 		return err
 	} else if err := primitive.WriteInt(int32(revise.RevisionType), dest); err != nil {
 		return fmt.Errorf("cannot write REVISE/CANCEL revision type: %w", err)
@@ -95,7 +95,7 @@ func (c *reviseCodec) Decode(source io.Reader, version primitive.ProtocolVersion
 		return nil, fmt.Errorf("cannot read REVISE/CANCEL revision type: %w", err)
 	}
 	revise.RevisionType = primitive.DseRevisionType(revisionType)
-	if err := primitive.CheckValidDseRevisionType(revise.RevisionType); err != nil {
+	if err := primitive.CheckValidDseRevisionType(revise.RevisionType, version); err != nil {
 		return nil, err
 	} else if revise.TargetStreamId, err = primitive.ReadInt(source); err != nil {
 		return nil, fmt.Errorf("cannot read REVISE/CANCEL target stream id: %w", err)

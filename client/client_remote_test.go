@@ -35,7 +35,7 @@ func TestRemoteServerNoAuth(t *testing.T) {
 		t.Skip("No remote cluster available")
 	}
 	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 
 			for genName, generator := range streamIdGenerators {
 				t.Run(fmt.Sprintf("generator %v", genName), func(t *testing.T) {
@@ -62,7 +62,7 @@ func TestRemoteServerAuth(t *testing.T) {
 		t.Skip("No remote cluster available")
 	}
 	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 
 			for genName, generator := range streamIdGenerators {
 				t.Run(fmt.Sprintf("generator %v", genName), func(t *testing.T) {
@@ -91,7 +91,7 @@ func TestRemoteDseServerAuthContinuousPaging(t *testing.T) {
 		t.Skip("No remote cluster available")
 	}
 	for _, version := range primitive.AllDseProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 
 			for genName, generator := range streamIdGenerators {
 				t.Run(fmt.Sprintf("generator %v", genName), func(t *testing.T) {
@@ -119,7 +119,7 @@ func clientTest(
 	t *testing.T,
 	clt *client.CqlClient,
 	version primitive.ProtocolVersion,
-	generator func(int) int16,
+	generator func(int, primitive.ProtocolVersion) int16,
 	compress bool,
 	continuousPaging bool,
 ) {
@@ -128,7 +128,7 @@ func clientTest(
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	clientConn, err := clt.ConnectAndInit(ctx, version, generator(1))
+	clientConn, err := clt.ConnectAndInit(ctx, version, generator(1, version))
 	require.Nil(t, err)
 
 	createSchema(t, clientConn, ks, table, version, generator, compress)
@@ -151,21 +151,19 @@ func createSchema(
 	ks string,
 	table string,
 	version primitive.ProtocolVersion,
-	generator func(int) int16,
+	generator func(int, primitive.ProtocolVersion) int16,
 	compress bool,
 ) {
-	request, _ := frame.NewRequestFrame(
+	request := frame.NewFrame(
 		version,
-		generator(1),
-		false,
-		nil,
+		generator(1, version),
 		&message.Query{
 			Query: fmt.Sprintf("CREATE KEYSPACE %s "+
 				"WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'} "+
 				"AND durable_writes = true", ks),
 		},
-		compress,
 	)
+	request.SetCompress(compress)
 	response, err := clientConn.SendAndReceive(request)
 	require.Nil(t, err)
 	require.IsType(t, &message.SchemaChangeResult{}, response.Body.Message)
@@ -174,17 +172,15 @@ func createSchema(
 	require.Equal(t, result.Target, primitive.SchemaChangeTargetKeyspace)
 	require.Equal(t, result.Keyspace, ks)
 	require.Equal(t, result.Object, "")
-	request, _ = frame.NewRequestFrame(
+	request = frame.NewFrame(
 		version,
-		generator(1),
-		false,
-		nil,
+		generator(1, version),
 		&message.Query{
 			Query: fmt.Sprintf("CREATE TABLE %s.%s "+
 				"(pk int, cc int, v int, PRIMARY KEY (pk, cc))", ks, table),
 		},
-		compress,
 	)
+	request.SetCompress(compress)
 	response, err = clientConn.SendAndReceive(request)
 	require.Nil(t, err)
 	require.IsType(t, &message.SchemaChangeResult{}, response.Body.Message)
@@ -200,19 +196,17 @@ func dropSchema(
 	clientConn *client.CqlClientConnection,
 	ks string,
 	version primitive.ProtocolVersion,
-	generator func(int) int16,
+	generator func(int, primitive.ProtocolVersion) int16,
 	compress bool,
 ) {
-	request, _ := frame.NewRequestFrame(
+	request := frame.NewFrame(
 		version,
-		generator(1),
-		false,
-		nil,
+		generator(1, version),
 		&message.Query{
 			Query: fmt.Sprintf("DROP KEYSPACE %s", ks),
 		},
-		compress,
 	)
+	request.SetCompress(compress)
 	response, err := clientConn.SendAndReceive(request)
 	require.Nil(t, err)
 	require.IsType(t, &message.SchemaChangeResult{}, response.Body.Message)
@@ -229,7 +223,7 @@ func insertData(
 	ks string,
 	table string,
 	version primitive.ProtocolVersion,
-	generator func(int) int16,
+	generator func(int, primitive.ProtocolVersion) int16,
 	compress bool,
 ) {
 	wg := &sync.WaitGroup{}
@@ -244,11 +238,9 @@ func insertData(
 				binary.BigEndian.PutUint32(pk, uint32(i))
 				binary.BigEndian.PutUint32(cc, uint32(j))
 				binary.BigEndian.PutUint32(v, uint32(i)*uint32(j))
-				request, _ := frame.NewRequestFrame(
+				request := frame.NewFrame(
 					version,
-					generator(i),
-					false,
-					nil,
+					generator(i, version),
 					&message.Query{
 						Query: fmt.Sprintf("INSERT INTO %s.%s (pk, cc, v) VALUES (?,?,?)", ks, table),
 						Options: &message.QueryOptions{
@@ -260,8 +252,8 @@ func insertData(
 							},
 						},
 					},
-					compress,
 				)
+				request.SetCompress(compress)
 				response, err := clientConn.SendAndReceive(request)
 				require.Nil(t, err)
 				require.IsType(t, &message.VoidResult{}, response.Body.Message)
@@ -277,7 +269,7 @@ func retrieveData(
 	ks string,
 	table string,
 	version primitive.ProtocolVersion,
-	generator func(int) int16,
+	generator func(int, primitive.ProtocolVersion) int16,
 	compress bool,
 ) {
 	wg := &sync.WaitGroup{}
@@ -290,11 +282,9 @@ func retrieveData(
 				cc := make([]byte, 4)
 				binary.BigEndian.PutUint32(pk, uint32(i))
 				binary.BigEndian.PutUint32(cc, uint32(j))
-				request, _ := frame.NewRequestFrame(
+				request := frame.NewFrame(
 					version,
-					generator(i),
-					false,
-					nil,
+					generator(i, version),
 					&message.Query{
 						Query: fmt.Sprintf("SELECT v FROM %s.%s WHERE pk = ? AND cc = ?", ks, table),
 						Options: &message.QueryOptions{
@@ -305,8 +295,8 @@ func retrieveData(
 							},
 						},
 					},
-					compress,
 				)
+				request.SetCompress(compress)
 				response, err := clientConn.SendAndReceive(request)
 				require.Nil(t, err)
 				require.IsType(t, &message.RowsResult{}, response.Body.Message)
@@ -324,12 +314,18 @@ func retrieveData(
 	wg.Wait()
 }
 
-func retrieveDataContinuousPaging(t *testing.T, clientConn *client.CqlClientConnection, ks string, table string, version primitive.ProtocolVersion, generator func(int) int16, compress bool) {
-	request, _ := frame.NewRequestFrame(
+func retrieveDataContinuousPaging(
+	t *testing.T,
+	clientConn *client.CqlClientConnection,
+	ks string,
+	table string,
+	version primitive.ProtocolVersion,
+	generator func(int, primitive.ProtocolVersion) int16,
+	compress bool,
+) {
+	request := frame.NewFrame(
 		version,
-		generator(1),
-		false,
-		nil,
+		generator(1, version),
 		&message.Query{
 			Query: fmt.Sprintf("SELECT v FROM %s.%s", ks, table),
 			Options: &message.QueryOptions{
@@ -338,8 +334,8 @@ func retrieveDataContinuousPaging(t *testing.T, clientConn *client.CqlClientConn
 				ContinuousPagingOptions: &message.ContinuousPagingOptions{MaxPages: 5},
 			},
 		},
-		compress,
 	)
+	request.SetCompress(compress)
 
 	ch, err := clientConn.Send(request)
 	require.Nil(t, err)
@@ -355,17 +351,15 @@ func retrieveDataContinuousPaging(t *testing.T, clientConn *client.CqlClientConn
 		require.Len(t, result.Data, 100)
 	}
 
-	request, _ = frame.NewRequestFrame(
+	request = frame.NewFrame(
 		version,
-		generator(1),
-		false,
-		nil,
+		generator(1, version),
 		&message.Revise{
 			RevisionType:   primitive.DseRevisionTypeCancelContinuousPaging,
 			TargetStreamId: int32(request.Header.StreamId),
 		},
-		compress,
 	)
+	request.SetCompress(compress)
 
 	response, err := clientConn.SendAndReceive(request)
 	require.Nil(t, err)

@@ -32,7 +32,7 @@ func TestMapType(t *testing.T) {
 
 func TestMapTypeCodecEncode(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
 				input    MapType
@@ -80,7 +80,7 @@ func TestMapTypeCodecEncode(t *testing.T) {
 
 func TestMapTypeCodecEncodedLength(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
 				input    MapType
@@ -117,7 +117,7 @@ func TestMapTypeCodecEncodedLength(t *testing.T) {
 
 func TestMapTypeCodecDecode(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
 				input    []byte

@@ -53,7 +53,6 @@ func (c *codec) DecodeHeader(source io.Reader) (*Header, error) {
 			IsResponse: isResponse,
 			Version:    version,
 		}
-		var streamId uint16
 		var flags uint8
 		var opCode uint8
 		if err := primitive.CheckValidProtocolVersion(version); err != nil {
@@ -62,14 +61,13 @@ func (c *codec) DecodeHeader(source io.Reader) (*Header, error) {
 			return nil, fmt.Errorf("cannot decode header flags: %w", err)
 		} else if version.IsBeta() && !primitive.HeaderFlag(flags).Contains(primitive.HeaderFlagUseBeta) {
 			return nil, fmt.Errorf("expected USE_BETA flag to be set for protocol version %v", version)
-		} else if streamId, err = primitive.ReadShort(source); err != nil {
+		} else if header.StreamId, err = primitive.ReadStreamId(source, version); err != nil {
 			return nil, fmt.Errorf("cannot decode header stream id: %w", err)
 		} else if opCode, err = primitive.ReadByte(source); err != nil {
 			return nil, fmt.Errorf("cannot decode header opcode: %w", err)
 		} else if header.BodyLength, err = primitive.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot decode header body length: %w", err)
 		}
-		header.StreamId = int16(streamId)
 		header.Flags = primitive.HeaderFlag(flags)
 		header.OpCode = primitive.OpCode(opCode)
 		return header, err

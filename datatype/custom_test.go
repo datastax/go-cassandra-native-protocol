@@ -31,7 +31,7 @@ func TestCustomType(t *testing.T) {
 
 func TestCustomTypeCodecEncode(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
 				input    CustomType
@@ -58,7 +58,7 @@ func TestCustomTypeCodecEncode(t *testing.T) {
 
 func TestCustomTypeCodecEncodedLength(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
 				input    CustomType
@@ -84,7 +84,7 @@ func TestCustomTypeCodecEncodedLength(t *testing.T) {
 
 func TestCustomTypeCodecDecode(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
 				input    []byte

@@ -21,6 +21,7 @@ type ProtocolVersion uint8
 const (
 
 	// Supported OSS versions
+	ProtocolVersion2 = ProtocolVersion(0x2)
 	ProtocolVersion3 = ProtocolVersion(0x3)
 	ProtocolVersion4 = ProtocolVersion(0x4)
 	ProtocolVersion5 = ProtocolVersion(0x5) // currently beta, should not be used in production
@@ -33,6 +34,7 @@ const (
 
 func (v ProtocolVersion) IsOss() bool {
 	switch v {
+	case ProtocolVersion2:
 	case ProtocolVersion3:
 	case ProtocolVersion4:
 	case ProtocolVersion5:
@@ -63,6 +65,8 @@ func (v ProtocolVersion) IsBeta() bool {
 
 func (v ProtocolVersion) String() string {
 	switch v {
+	case ProtocolVersion2:
+		return "ProtocolVersion OSS 2"
 	case ProtocolVersion3:
 		return "ProtocolVersion OSS 3"
 	case ProtocolVersion4:
@@ -394,6 +398,7 @@ const (
 	DataTypeCodeDouble    = DataTypeCode(0x0007)
 	DataTypeCodeFloat     = DataTypeCode(0x0008)
 	DataTypeCodeInt       = DataTypeCode(0x0009)
+	DataTypeCodeText      = DataTypeCode(0x000A) // removed in v3, alias for DataTypeCodeVarchar
 	DataTypeCodeTimestamp = DataTypeCode(0x000B)
 	DataTypeCodeUuid      = DataTypeCode(0x000C)
 	DataTypeCodeVarchar   = DataTypeCode(0x000D)
@@ -408,8 +413,8 @@ const (
 	DataTypeCodeList      = DataTypeCode(0x0020)
 	DataTypeCodeMap       = DataTypeCode(0x0021)
 	DataTypeCodeSet       = DataTypeCode(0x0022)
-	DataTypeCodeUdt       = DataTypeCode(0x0030)
-	DataTypeCodeTuple     = DataTypeCode(0x0031)
+	DataTypeCodeUdt       = DataTypeCode(0x0030) // v3+
+	DataTypeCodeTuple     = DataTypeCode(0x0031) // v3+
 )
 
 func (c DataTypeCode) IsPrimitive() bool {
@@ -423,6 +428,7 @@ func (c DataTypeCode) IsPrimitive() bool {
 	case DataTypeCodeDouble:
 	case DataTypeCodeFloat:
 	case DataTypeCodeInt:
+	case DataTypeCodeText:
 	case DataTypeCodeTimestamp:
 	case DataTypeCodeUuid:
 	case DataTypeCodeVarchar:
@@ -462,6 +468,8 @@ func (c DataTypeCode) String() string {
 		return "DataTypeCode Float [0x0008]"
 	case DataTypeCodeInt:
 		return "DataTypeCode Int [0x0009]"
+	case DataTypeCodeText:
+		return "DataTypeCode Text [0x000A]"
 	case DataTypeCodeTimestamp:
 		return "DataTypeCode Timestamp [0x000B]"
 	case DataTypeCodeUuid:
@@ -519,9 +527,9 @@ type SchemaChangeTarget string
 const (
 	SchemaChangeTargetKeyspace  = SchemaChangeTarget("KEYSPACE")
 	SchemaChangeTargetTable     = SchemaChangeTarget("TABLE")
-	SchemaChangeTargetType      = SchemaChangeTarget("TYPE")
-	SchemaChangeTargetFunction  = SchemaChangeTarget("FUNCTION")
-	SchemaChangeTargetAggregate = SchemaChangeTarget("AGGREGATE")
+	SchemaChangeTargetType      = SchemaChangeTarget("TYPE")      // v3+
+	SchemaChangeTargetFunction  = SchemaChangeTarget("FUNCTION")  // v3+
+	SchemaChangeTargetAggregate = SchemaChangeTarget("AGGREGATE") // v3+
 )
 
 type TopologyChangeType string
@@ -529,6 +537,7 @@ type TopologyChangeType string
 const (
 	TopologyChangeTypeNewNode     = TopologyChangeType("NEW_NODE")
 	TopologyChangeTypeRemovedNode = TopologyChangeType("REMOVED_NODE")
+	TopologyChangeTypeMovedNode   = TopologyChangeType("MOVED_NODE") // v3+
 )
 
 type StatusChangeType string
@@ -589,6 +598,10 @@ func (f HeaderFlag) Add(other HeaderFlag) HeaderFlag {
 	return f | other
 }
 
+func (f HeaderFlag) Remove(other HeaderFlag) HeaderFlag {
+	return f &^ other
+}
+
 func (f HeaderFlag) Contains(other HeaderFlag) bool {
 	return f&other != 0
 }
@@ -629,6 +642,10 @@ const (
 
 func (f QueryFlag) Add(other QueryFlag) QueryFlag {
 	return f | other
+}
+
+func (f QueryFlag) Remove(other QueryFlag) QueryFlag {
+	return f &^ other
 }
 
 func (f QueryFlag) Contains(other QueryFlag) bool {
@@ -679,6 +696,10 @@ func (f RowsFlag) Add(other RowsFlag) RowsFlag {
 	return f | other
 }
 
+func (f RowsFlag) Remove(other RowsFlag) RowsFlag {
+	return f &^ other
+}
+
 func (f RowsFlag) Contains(other RowsFlag) bool {
 	return f&other != 0
 }
@@ -712,6 +733,10 @@ func (f VariablesFlag) Add(other VariablesFlag) VariablesFlag {
 	return f | other
 }
 
+func (f VariablesFlag) Remove(other VariablesFlag) VariablesFlag {
+	return f &^ other
+}
+
 func (f VariablesFlag) Contains(other VariablesFlag) bool {
 	return f&other != 0
 }
@@ -732,6 +757,10 @@ const (
 
 func (f PrepareFlag) Add(other PrepareFlag) PrepareFlag {
 	return f | other
+}
+
+func (f PrepareFlag) Remove(other PrepareFlag) PrepareFlag {
+	return f &^ other
 }
 
 func (f PrepareFlag) Contains(other PrepareFlag) bool {
