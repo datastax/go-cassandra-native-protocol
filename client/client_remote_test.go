@@ -36,7 +36,7 @@ func TestRemoteServerNoAuth(t *testing.T) {
 	if !remoteAvailable {
 		t.Skip("No remote cluster available")
 	}
-	for _, version := range primitive.AllNonBetaProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 
 			for genName, generator := range streamIdGenerators {
@@ -50,7 +50,7 @@ func TestRemoteServerNoAuth(t *testing.T) {
 							if version <= primitive.ProtocolVersion2 {
 								clt.MaxInFlight = math.MaxInt8
 							}
-							clientTest(t, clt, version, generator, compressor != "NONE", false)
+							clientTest(t, clt, version, generator, compressor != "NONE", version.IsDse())
 
 						})
 					}
@@ -65,7 +65,7 @@ func TestRemoteServerAuth(t *testing.T) {
 	if !remoteAvailable {
 		t.Skip("No remote cluster available")
 	}
-	for _, version := range primitive.AllNonBetaProtocolVersions() {
+	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 
 			for genName, generator := range streamIdGenerators {
@@ -80,37 +80,7 @@ func TestRemoteServerAuth(t *testing.T) {
 							)
 							clt.Codec = frameCodec
 
-							clientTest(t, clt, version, generator, compressor != "NONE", false)
-						})
-					}
-				})
-			}
-		})
-	}
-}
-
-// This test requires a remote DSE 5.1+ server listening on localhost:9042 with authentication.
-func TestRemoteDseServerAuthContinuousPaging(t *testing.T) {
-	if !remoteAvailable {
-		t.Skip("No remote cluster available")
-	}
-	for _, version := range primitive.AllDseProtocolVersions() {
-		t.Run(version.String(), func(t *testing.T) {
-
-			for genName, generator := range streamIdGenerators {
-				t.Run(fmt.Sprintf("generator %v", genName), func(t *testing.T) {
-
-					for compressor, frameCodec := range codecs {
-						t.Run(fmt.Sprintf("compression %v", compressor), func(t *testing.T) {
-
-							clt := client.NewCqlClient(
-								"127.0.0.1:9042",
-								&client.AuthCredentials{Username: "cassandra", Password: "cassandra"},
-							)
-							clt.Codec = frameCodec
-
-							clientTest(t, clt, version, generator, compressor != "NONE", true)
-
+							clientTest(t, clt, version, generator, compressor != "NONE", version.IsDse())
 						})
 					}
 				})
@@ -380,7 +350,8 @@ func insertDataPrepared(
 					version,
 					generator(i, version),
 					&message.Execute{
-						QueryId: prepared.PreparedQueryId,
+						QueryId:          prepared.PreparedQueryId,
+						ResultMetadataId: prepared.ResultMetadataId,
 						Options: &message.QueryOptions{
 							Consistency: primitive.ConsistencyLevelOne,
 							PositionalValues: []*primitive.Value{
@@ -574,7 +545,8 @@ func retrieveDataPrepared(
 					version,
 					generator(i, version),
 					&message.Execute{
-						QueryId: prepared.PreparedQueryId,
+						QueryId:          prepared.PreparedQueryId,
+						ResultMetadataId: prepared.ResultMetadataId,
 						Options: &message.QueryOptions{
 							Consistency: primitive.ConsistencyLevelOne,
 							PositionalValues: []*primitive.Value{
@@ -618,7 +590,7 @@ func retrieveDataContinuousPaging(
 			Query: fmt.Sprintf("SELECT v FROM %s.%s", ks, table),
 			Options: &message.QueryOptions{
 				Consistency:             primitive.ConsistencyLevelLocalOne,
-				PageSize:                100,
+				PageSize:                10,
 				ContinuousPagingOptions: &message.ContinuousPagingOptions{MaxPages: 5},
 			},
 		},
@@ -634,9 +606,9 @@ func retrieveDataContinuousPaging(
 		require.NotNil(t, f)
 		require.IsType(t, &message.RowsResult{}, f.Body.Message)
 		result := f.Body.Message.(*message.RowsResult)
-		require.Equal(t, result.Metadata.ContinuousPageNumber, int32(i))
-		require.Equal(t, result.Metadata.LastContinuousPage, i == 5)
-		require.Len(t, result.Data, 100)
+		assert.Equal(t, result.Metadata.ContinuousPageNumber, int32(i))
+		assert.Equal(t, result.Metadata.LastContinuousPage, i == 5)
+		assert.Len(t, result.Data, 10)
 	}
 
 	request = frame.NewFrame(

@@ -323,7 +323,7 @@ func TestExecuteCodec_Encode(t *testing.T) {
 				nil,
 			},
 			{
-				"missing result metadata id",
+				"missing query id",
 				&Execute{},
 				nil,
 				errors.New("EXECUTE missing query id"),
@@ -518,7 +518,7 @@ func TestExecuteCodec_Encode(t *testing.T) {
 				nil,
 			},
 			{
-				"missing result metadata id",
+				"missing query id",
 				&Execute{},
 				nil,
 				errors.New("EXECUTE missing query id"),
