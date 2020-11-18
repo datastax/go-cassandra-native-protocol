@@ -28,7 +28,7 @@ func ReadStreamId(source io.Reader, version ProtocolVersion) (int16, error) {
 		return int16(id), err
 	} else {
 		id, err := ReadByte(source)
-		return int16(id), err
+		return int16(int8(id)), err
 	}
 }
 
@@ -37,7 +37,7 @@ func ReadStreamId(source io.Reader, version ProtocolVersion) (int16, error) {
 func WriteStreamId(streamId int16, dest io.Writer, version ProtocolVersion) error {
 	if version >= ProtocolVersion3 {
 		return WriteShort(uint16(streamId), dest)
-	} else if streamId > math.MaxUint8 {
+	} else if streamId > math.MaxInt8 || streamId < math.MinInt8 {
 		return fmt.Errorf("stream id out of range for %v: %v", version, streamId)
 	} else {
 		return WriteByte(uint8(streamId), dest)
