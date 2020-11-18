@@ -31,7 +31,8 @@ type ColumnMetadata struct {
 
 // VariablesMetadata is used in PreparedResult to indicate metadata about the prepared statement's bound variables.
 type VariablesMetadata struct {
-	// The indices of variables belonging to the table's partition key, if any. Valid from protocol v4 onwards.
+	// The indices of variables belonging to the table's partition key, if any. Valid from protocol version 4 onwards;
+	// will be nil for protocol versions lesser than 4.
 	PkIndices []uint16
 	Columns   []*ColumnMetadata
 }
@@ -58,7 +59,7 @@ type RowsMetadata struct {
 	ContinuousPageNumber int32
 	// Valid for DSE protocol versions only.
 	LastContinuousPage bool
-	// If nil, the NO_METADATA flag is set. Should never be nil in a PreparedResult.
+	// If nil, the NO_METADATA flag is set. In a PreparedResult, will be non-nil if the statement is a SELECT.
 	Columns []*ColumnMetadata
 }
 
