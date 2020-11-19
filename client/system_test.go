@@ -70,15 +70,12 @@ func TestNewSystemTablesHandler_EmptySystemPeers(t *testing.T) {
 }
 
 func testFullSystemLocal(t *testing.T, clientConn *client.CqlClientConnection) {
-	fullSystemLocalQuery, _ := frame.NewRequestFrame(
+	fullSystemLocalQuery := frame.NewFrame(
 		primitive.ProtocolVersion4,
 		client.ManagedStreamId,
-		false,
-		nil,
 		&message.Query{
 			Query: " SELECT  * \n FROM  \t system.local WHERE key = 'local'",
 		},
-		false,
 	)
 
 	response, err := clientConn.SendAndReceive(fullSystemLocalQuery)
@@ -95,15 +92,12 @@ func testFullSystemLocal(t *testing.T, clientConn *client.CqlClientConnection) {
 }
 
 func testSchemaVersion(t *testing.T, clientConn *client.CqlClientConnection) {
-	schemaVersionQuery, _ := frame.NewRequestFrame(
+	schemaVersionQuery := frame.NewFrame(
 		primitive.ProtocolVersion4,
 		client.ManagedStreamId,
-		false,
-		nil,
 		&message.Query{
 			Query: " SELECT  schema_version \n FROM  \t system.local WHERE key = 'local'",
 		},
-		false,
 	)
 
 	response, err := clientConn.SendAndReceive(schemaVersionQuery)
@@ -122,15 +116,12 @@ func testSchemaVersion(t *testing.T, clientConn *client.CqlClientConnection) {
 }
 
 func testClusterName(t *testing.T, clientConn *client.CqlClientConnection) {
-	clusterNameQuery, _ := frame.NewRequestFrame(
+	clusterNameQuery := frame.NewFrame(
 		primitive.ProtocolVersion4,
 		client.ManagedStreamId,
-		false,
-		nil,
 		&message.Query{
 			Query: " SELECT   cluster_name \n FROM  \t system.local",
 		},
-		false,
 	)
 
 	response, err := clientConn.SendAndReceive(clusterNameQuery)
@@ -148,15 +139,12 @@ func testClusterName(t *testing.T, clientConn *client.CqlClientConnection) {
 }
 
 func testSystemPeers(t *testing.T, clientConn *client.CqlClientConnection) {
-	systemPeersQuery, _ := frame.NewRequestFrame(
+	systemPeersQuery := frame.NewFrame(
 		primitive.ProtocolVersion4,
 		client.ManagedStreamId,
-		false,
-		nil,
 		&message.Query{
 			Query: " SELECT  * \n FROM  \t system.peers",
 		},
-		false,
 	)
 
 	response, err := clientConn.SendAndReceive(systemPeersQuery)

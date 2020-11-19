@@ -49,7 +49,7 @@ func NewPreparedStatementHandler(
 					ResultMetadata:    columns,
 				}
 				prepared = true
-				response, _ = frame.NewResponseFrame(version, id, nil, nil, nil, result, false)
+				response = frame.NewFrame(version, id, result)
 				log.Debug().Msgf("%v: [prepare handler]: returning %v", conn, response)
 			}
 		case *message.Execute:
@@ -60,13 +60,13 @@ func NewPreparedStatementHandler(
 						Metadata: columns,
 						Data:     rows(msg.Options),
 					}
-					response, _ = frame.NewResponseFrame(version, id, nil, nil, nil, result, false)
+					response = frame.NewFrame(version, id, result)
 				} else {
 					result := &message.Unprepared{
 						ErrorMessage: "Unprepared query: " + query,
 						Id:           []byte(query),
 					}
-					response, _ = frame.NewResponseFrame(version, id, nil, nil, nil, result, false)
+					response = frame.NewFrame(version, id, result)
 				}
 				log.Debug().Msgf("%v: [prepare handler]: returning %v", conn, response)
 			}

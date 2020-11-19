@@ -17,7 +17,6 @@ package message
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -27,7 +26,7 @@ func TestExecuteCodec_Encode(t *testing.T) {
 	codec := &executeCodec{}
 	// tests for versions < 4
 	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []encodeTestCase{
 				{
 					"execute with default options",
@@ -139,7 +138,7 @@ func TestExecuteCodec_Encode(t *testing.T) {
 		})
 	}
 	// tests for version = 4
-	t.Run(fmt.Sprintf("version %d", primitive.ProtocolVersion4), func(t *testing.T) {
+	t.Run(primitive.ProtocolVersion4.String(), func(t *testing.T) {
 		tests := []struct {
 			name     string
 			input    Message
@@ -259,7 +258,7 @@ func TestExecuteCodec_Encode(t *testing.T) {
 		}
 	})
 	// tests for version = 5
-	t.Run(fmt.Sprintf("version %v", primitive.ProtocolVersion5), func(t *testing.T) {
+	t.Run(primitive.ProtocolVersion5.String(), func(t *testing.T) {
 		tests := []encodeTestCase{
 			{
 				"execute with keyspace and now-in-seconds",
@@ -324,7 +323,7 @@ func TestExecuteCodec_Encode(t *testing.T) {
 				nil,
 			},
 			{
-				"missing result metadata id",
+				"missing query id",
 				&Execute{},
 				nil,
 				errors.New("EXECUTE missing query id"),
@@ -340,7 +339,7 @@ func TestExecuteCodec_Encode(t *testing.T) {
 		}
 	})
 	// tests for version = DSE v1
-	t.Run(fmt.Sprintf("version %d", primitive.ProtocolVersionDse1), func(t *testing.T) {
+	t.Run(primitive.ProtocolVersionDse1.String(), func(t *testing.T) {
 		tests := []struct {
 			name     string
 			input    Message
@@ -460,7 +459,7 @@ func TestExecuteCodec_Encode(t *testing.T) {
 		}
 	})
 	// tests for version = DSE v2
-	t.Run(fmt.Sprintf("version %v", primitive.ProtocolVersionDse2), func(t *testing.T) {
+	t.Run(primitive.ProtocolVersionDse2.String(), func(t *testing.T) {
 		tests := []encodeTestCase{
 			{
 				"execute with keyspace",
@@ -519,7 +518,7 @@ func TestExecuteCodec_Encode(t *testing.T) {
 				nil,
 			},
 			{
-				"missing result metadata id",
+				"missing query id",
 				&Execute{},
 				nil,
 				errors.New("EXECUTE missing query id"),
@@ -540,7 +539,7 @@ func TestExecuteCodec_EncodedLength(t *testing.T) {
 	codec := &executeCodec{}
 	// tests for versions < 4
 	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"execute with default options",
@@ -637,7 +636,7 @@ func TestExecuteCodec_EncodedLength(t *testing.T) {
 		})
 	}
 	// tests for version = 4
-	t.Run(fmt.Sprintf("version %d", primitive.ProtocolVersion4), func(t *testing.T) {
+	t.Run(primitive.ProtocolVersion4.String(), func(t *testing.T) {
 		tests := []struct {
 			name     string
 			input    Message
@@ -742,7 +741,7 @@ func TestExecuteCodec_EncodedLength(t *testing.T) {
 		}
 	})
 	// tests for version = 5
-	t.Run(fmt.Sprintf("version %v", primitive.ProtocolVersion5), func(t *testing.T) {
+	t.Run(primitive.ProtocolVersion5.String(), func(t *testing.T) {
 		tests := []encodedLengthTestCase{
 			{
 				"execute with keyspace and now-in-seconds",
@@ -806,7 +805,7 @@ func TestExecuteCodec_EncodedLength(t *testing.T) {
 		}
 	})
 	// tests for version = DSE v1
-	t.Run(fmt.Sprintf("version %d", primitive.ProtocolVersionDse1), func(t *testing.T) {
+	t.Run(primitive.ProtocolVersionDse1.String(), func(t *testing.T) {
 		tests := []struct {
 			name     string
 			input    Message
@@ -911,7 +910,7 @@ func TestExecuteCodec_EncodedLength(t *testing.T) {
 		}
 	})
 	// tests for version = DSE v2
-	t.Run(fmt.Sprintf("version %v", primitive.ProtocolVersionDse2), func(t *testing.T) {
+	t.Run(primitive.ProtocolVersionDse2.String(), func(t *testing.T) {
 		tests := []encodedLengthTestCase{
 			{
 				"execute with keyspace",
@@ -974,7 +973,7 @@ func TestExecuteCodec_Decode(t *testing.T) {
 	codec := &executeCodec{}
 	// tests for versions < 4
 	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []decodeTestCase{
 				{
 					"execute with default options",
@@ -1084,7 +1083,7 @@ func TestExecuteCodec_Decode(t *testing.T) {
 		})
 	}
 	// tests for version = 4
-	t.Run(fmt.Sprintf("version %d", primitive.ProtocolVersion4), func(t *testing.T) {
+	t.Run(primitive.ProtocolVersion4.String(), func(t *testing.T) {
 		tests := []struct {
 			name     string
 			input    []byte
@@ -1202,7 +1201,7 @@ func TestExecuteCodec_Decode(t *testing.T) {
 		}
 	})
 	// tests for version = 5
-	t.Run(fmt.Sprintf("version %v", primitive.ProtocolVersion5), func(t *testing.T) {
+	t.Run(primitive.ProtocolVersion5.String(), func(t *testing.T) {
 		tests := []decodeTestCase{
 			{
 				"execute with keyspace and now-in-seconds",
@@ -1305,7 +1304,7 @@ func TestExecuteCodec_Decode(t *testing.T) {
 		}
 	})
 	// tests for version = DSE v1
-	t.Run(fmt.Sprintf("version %d", primitive.ProtocolVersionDse1), func(t *testing.T) {
+	t.Run(primitive.ProtocolVersionDse1.String(), func(t *testing.T) {
 		tests := []struct {
 			name     string
 			input    []byte
@@ -1423,7 +1422,7 @@ func TestExecuteCodec_Decode(t *testing.T) {
 		}
 	})
 	// tests for version = DSE v2
-	t.Run(fmt.Sprintf("version %v", primitive.ProtocolVersionDse2), func(t *testing.T) {
+	t.Run(primitive.ProtocolVersionDse2.String(), func(t *testing.T) {
 		tests := []decodeTestCase{
 			{
 				"execute with keyspace",

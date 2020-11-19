@@ -16,7 +16,6 @@ package message
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/datatype"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"github.com/stretchr/testify/assert"
@@ -56,7 +55,7 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 	codec := &resultCodec{}
 	// versions < 5
 	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion5) {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
 					"rows result without column metadata",
@@ -151,7 +150,7 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 	}
 	// version = 5
 	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion5} {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
 					"rows result without column metadata",
@@ -277,7 +276,7 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 	}
 	// DSE v1
 	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersionDse1} {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
 					"rows result without column metadata",
@@ -402,7 +401,7 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 	}
 	// DSE v2
 	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersionDse2} {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
 					"rows result without column metadata",
@@ -591,7 +590,7 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 	codec := &resultCodec{}
 	// versions < 5
 	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion5) {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"rows result without column metadata",
@@ -670,7 +669,7 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 	}
 	// version = 5
 	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion5} {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"rows result without column metadata",
@@ -775,7 +774,7 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 	}
 	// DSE v1
 	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersionDse1} {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"rows result without column metadata",
@@ -879,7 +878,7 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 	}
 	// DSE v2
 	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersionDse2} {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"rows result without column metadata",
@@ -1042,7 +1041,7 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 	codec := &resultCodec{}
 	// versions < 5
 	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion5) {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{
 					"rows result without column metadata",
@@ -1137,7 +1136,7 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 	}
 	// versions = 5
 	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion5} {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{
 					"rows result without column metadata",
@@ -1232,7 +1231,7 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 	}
 	// DSE v1
 	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersionDse1} {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{
 					"rows result without column metadata",
@@ -1357,7 +1356,7 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 	}
 	// DSE v2
 	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersionDse2} {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{
 					"rows result without column metadata",

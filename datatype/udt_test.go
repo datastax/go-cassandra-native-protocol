@@ -40,7 +40,7 @@ var udt2, _ = NewUserDefinedType("ks1", "udt2", []string{"f1"}, []DataType{udt1}
 
 func TestUserDefinedTypeCodecEncode(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
 				input    UserDefinedType
@@ -99,7 +99,7 @@ func TestUserDefinedTypeCodecEncode(t *testing.T) {
 
 func TestUserDefinedTypeCodecEncodedLength(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
 				input    UserDefinedType
@@ -153,7 +153,7 @@ func TestUserDefinedTypeCodecEncodedLength(t *testing.T) {
 
 func TestUserDefinedTypeCodecDecode(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
 				input    []byte

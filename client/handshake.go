@@ -71,7 +71,7 @@ func (c *CqlClientConnection) InitiateHandshake(version primitive.ProtocolVersio
 				authenticator := &PlainTextAuthenticator{c.credentials}
 				var initialResponse []byte
 				if initialResponse, err = authenticator.InitialResponse(msg.Authenticator); err == nil {
-					authResponse, _ := frame.NewRequestFrame(version, streamId, false, nil, &message.AuthResponse{Token: initialResponse}, false)
+					authResponse := frame.NewFrame(version, streamId, &message.AuthResponse{Token: initialResponse})
 					if response, err = c.SendAndReceive(authResponse); err != nil {
 						err = fmt.Errorf("could not send AUTH RESPONSE: %w", err)
 					} else {
@@ -81,7 +81,7 @@ func (c *CqlClientConnection) InitiateHandshake(version primitive.ProtocolVersio
 						case *message.AuthChallenge:
 							var challenge []byte
 							if challenge, err = authenticator.EvaluateChallenge(msg.Token); err == nil {
-								authResponse, _ := frame.NewRequestFrame(version, streamId, false, nil, &message.AuthResponse{Token: challenge}, false)
+								authResponse := frame.NewFrame(version, streamId, &message.AuthResponse{Token: challenge})
 								if response, err = c.SendAndReceive(authResponse); err != nil {
 									err = fmt.Errorf("could not send AUTH RESPONSE: %w", err)
 								} else if _, authSuccess := response.Body.Message.(*message.AuthSuccess); !authSuccess {
@@ -120,16 +120,16 @@ func (c *CqlServerConnection) AcceptHandshake() (err error) {
 		if request, err = c.Receive(); err == nil {
 			switch request.Body.Message.(type) {
 			case *message.Options:
-				supported, _ := frame.NewResponseFrame(request.Header.Version, request.Header.StreamId, nil, nil, nil, &message.Supported{}, false)
+				supported := frame.NewFrame(request.Header.Version, request.Header.StreamId, &message.Supported{})
 				err = c.Send(supported)
 				continue
 			case *message.Startup:
 				if c.credentials == nil {
 					authSuccess = true
-					ready, _ := frame.NewResponseFrame(request.Header.Version, request.Header.StreamId, nil, nil, nil, &message.Ready{}, false)
+					ready := frame.NewFrame(request.Header.Version, request.Header.StreamId, &message.Ready{})
 					err = c.Send(ready)
 				} else {
-					authenticate, _ := frame.NewResponseFrame(request.Header.Version, request.Header.StreamId, nil, nil, nil, &message.Authenticate{Authenticator: "org.apache.cassandra.auth.PasswordAuthenticator"}, false)
+					authenticate := frame.NewFrame(request.Header.Version, request.Header.StreamId, &message.Authenticate{Authenticator: "org.apache.cassandra.auth.PasswordAuthenticator"})
 					if err = c.Send(authenticate); err == nil {
 						if request, err = c.Receive(); err == nil {
 							if authResponse, ok := request.Body.Message.(*message.AuthResponse); !ok {
@@ -139,10 +139,10 @@ func (c *CqlServerConnection) AcceptHandshake() (err error) {
 								if err = credentials.Unmarshal(authResponse.Token); err == nil {
 									if credentials.Username == c.credentials.Username && credentials.Password == c.credentials.Password {
 										authSuccess = true
-										authSuccess, _ := frame.NewResponseFrame(request.Header.Version, request.Header.StreamId, nil, nil, nil, &message.AuthSuccess{}, false)
+										authSuccess := frame.NewFrame(request.Header.Version, request.Header.StreamId, &message.AuthSuccess{})
 										err = c.Send(authSuccess)
 									} else {
-										authError, _ := frame.NewResponseFrame(request.Header.Version, request.Header.StreamId, nil, nil, nil, &message.AuthenticationError{ErrorMessage: "invalid credentials"}, false)
+										authError := frame.NewFrame(request.Header.Version, request.Header.StreamId, &message.AuthenticationError{ErrorMessage: "invalid credentials"})
 										err = c.Send(authError)
 									}
 								}
@@ -186,15 +186,15 @@ var HandshakeHandler RequestHandler = func(request *frame.Frame, conn *CqlServer
 	switch msg := request.Body.Message.(type) {
 	case *message.Options:
 		log.Debug().Msgf("%v: [handshake handler]: intercepted OPTIONS before STARTUP", conn)
-		response, _ = frame.NewResponseFrame(version, id, nil, nil, nil, &message.Supported{}, false)
+		response = frame.NewFrame(version, id, &message.Supported{})
 	case *message.Startup:
 		if conn.Credentials() == nil {
 			ctx.PutAttribute(handshakeStateKey, handshakeStateDone)
 			log.Info().Msgf("%v: [handshake handler]: handshake successful", conn)
-			response, _ = frame.NewResponseFrame(version, id, nil, nil, nil, &message.Ready{}, false)
+			response = frame.NewFrame(version, id, &message.Ready{})
 		} else {
 			ctx.PutAttribute(handshakeStateKey, handshakeStateStarted)
-			response, _ = frame.NewResponseFrame(version, id, nil, nil, nil, &message.Authenticate{Authenticator: "org.apache.cassandra.auth.PasswordAuthenticator"}, false)
+			response = frame.NewFrame(version, id, &message.Authenticate{Authenticator: "org.apache.cassandra.auth.PasswordAuthenticator"})
 		}
 	case *message.AuthResponse:
 		if ctx.GetAttribute(handshakeStateKey) == handshakeStateStarted {
@@ -204,22 +204,22 @@ var HandshakeHandler RequestHandler = func(request *frame.Frame, conn *CqlServer
 				if userCredentials.Username == serverCredentials.Username &&
 					userCredentials.Password == serverCredentials.Password {
 					log.Info().Msgf("%v: [handshake handler]: handshake successful", conn)
-					response, _ = frame.NewResponseFrame(version, id, nil, nil, nil, &message.AuthSuccess{}, false)
+					response = frame.NewFrame(version, id, &message.AuthSuccess{})
 				} else {
 					log.Error().Msgf("%v: [handshake handler]: authentication error: invalid credentials", conn)
-					response, _ = frame.NewResponseFrame(version, id, nil, nil, nil, &message.AuthenticationError{ErrorMessage: "invalid credentials"}, false)
+					response = frame.NewFrame(version, id, &message.AuthenticationError{ErrorMessage: "invalid credentials"})
 				}
 				ctx.PutAttribute(handshakeStateKey, handshakeStateDone)
 			}
 		} else {
 			ctx.PutAttribute(handshakeStateKey, handshakeStateDone)
 			log.Error().Msgf("%v: [handshake handler]: expected STARTUP, got AUTH_RESPONSE", conn)
-			response, _ = frame.NewResponseFrame(version, id, nil, nil, nil, &message.ProtocolError{ErrorMessage: "handshake failed"}, false)
+			response = frame.NewFrame(version, id, &message.ProtocolError{ErrorMessage: "handshake failed"})
 		}
 	default:
 		ctx.PutAttribute(handshakeStateKey, handshakeStateDone)
 		log.Error().Msgf("%v: [handshake handler]: expected OPTIONS, STARTUP or AUTH_RESPONSE, got %v", conn, msg)
-		response, _ = frame.NewResponseFrame(version, id, nil, nil, nil, &message.ProtocolError{ErrorMessage: "handshake failed"}, false)
+		response = frame.NewFrame(version, id, &message.ProtocolError{ErrorMessage: "handshake failed"})
 	}
 	return
 }

@@ -17,7 +17,6 @@ package message
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -26,7 +25,7 @@ import (
 func TestRegisterCodec_Encode(t *testing.T) {
 	codec := &registerCodec{}
 	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []encodeTestCase{
 				{
 					"register all events",
@@ -80,7 +79,7 @@ func TestRegisterCodec_Encode(t *testing.T) {
 func TestRegisterCodec_EncodedLength(t *testing.T) {
 	codec := &registerCodec{}
 	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"register all events",
@@ -116,7 +115,7 @@ func TestRegisterCodec_EncodedLength(t *testing.T) {
 func TestRegisterCodec_Decode(t *testing.T) {
 	codec := &registerCodec{}
 	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 			tests := []decodeTestCase{
 				{
 					"register all events",

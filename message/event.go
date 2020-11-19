@@ -30,11 +30,18 @@ type Event interface {
 
 // Note: this struct is identical to SchemaChangeResult
 type SchemaChangeEvent struct {
+	// The schema change type.
 	ChangeType primitive.SchemaChangeType
-	Target     primitive.SchemaChangeTarget
-	Keyspace   string
-	Object     string
-	Arguments  []string
+	// The schema change target, that is, the kind of schema object affected by the change.
+	Target primitive.SchemaChangeTarget
+	// The name of the keyspace affected by the change.
+	Keyspace string
+	// If the schema object affected by the change is not the keyspace itself, this field contains its name. Otherwise,
+	// this field is irrelevant and should be empty.
+	Object string
+	// If the schema object affected by the change is a function or an aggregate, this field contains its arguments.
+	// Otherwise, this field is irrelevant. Valid from protocol version 4 onwards.
+	Arguments []string
 }
 
 func (m *SchemaChangeEvent) IsResponse() bool {
@@ -84,8 +91,10 @@ func (m *StatusChangeEvent) String() string {
 // TOPOLOGY CHANGE EVENT
 
 type TopologyChangeEvent struct {
+	// The topology change type. Note that MOVED_NODE is only valid from protocol version 3 onwards.
 	ChangeType primitive.TopologyChangeType
-	Address    *primitive.Inet
+	// The address of the node.
+	Address *primitive.Inet
 }
 
 func (m *TopologyChangeEvent) IsResponse() bool {
@@ -129,42 +138,62 @@ func (c *eventCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 		} else if err = primitive.WriteString(string(sce.ChangeType), dest); err != nil {
 			return fmt.Errorf("cannot write SchemaChangeEvent.ChangeType: %w", err)
 		}
-		if err = primitive.CheckValidSchemaChangeTarget(sce.Target); err != nil {
-			return err
-		} else if err = primitive.WriteString(string(sce.Target), dest); err != nil {
-			return fmt.Errorf("cannot write SchemaChangeEvent.Target: %w", err)
-		}
-		if sce.Keyspace == "" {
-			return errors.New("EVENT SchemaChange: cannot write empty keyspace")
-		} else if err = primitive.WriteString(sce.Keyspace, dest); err != nil {
-			return fmt.Errorf("cannot write SchemaChangeEvent.Keyspace: %w", err)
-		}
-		switch sce.Target {
-		case primitive.SchemaChangeTargetKeyspace:
-		case primitive.SchemaChangeTargetTable:
-			fallthrough
-		case primitive.SchemaChangeTargetType:
-			if sce.Object == "" {
-				return errors.New("EVENT SchemaChange: cannot write empty object")
-			} else if err = primitive.WriteString(sce.Object, dest); err != nil {
-				return fmt.Errorf("cannot write SchemaChangeEvent.Object: %w", err)
-			}
-		case primitive.SchemaChangeTargetAggregate:
-			fallthrough
-		case primitive.SchemaChangeTargetFunction:
-			if version < primitive.ProtocolVersion4 {
-				return fmt.Errorf("%s schema change targets are not supported in protocol version %d", sce.Target, version)
+		if version >= primitive.ProtocolVersion3 {
+			if err = primitive.CheckValidSchemaChangeTarget(sce.Target, version); err != nil {
+				return err
+			} else if err = primitive.WriteString(string(sce.Target), dest); err != nil {
+				return fmt.Errorf("cannot write SchemaChangeEvent.Target: %w", err)
 			}
 			if sce.Keyspace == "" {
-				return errors.New("EVENT SchemaChange: cannot write empty object")
-			} else if err = primitive.WriteString(sce.Object, dest); err != nil {
-				return fmt.Errorf("cannot write SchemaChangeEvent.Object: %w", err)
+				return errors.New("EVENT SchemaChange: cannot write empty keyspace")
+			} else if err = primitive.WriteString(sce.Keyspace, dest); err != nil {
+				return fmt.Errorf("cannot write SchemaChangeEvent.Keyspace: %w", err)
 			}
-			if err = primitive.WriteStringList(sce.Arguments, dest); err != nil {
-				return fmt.Errorf("cannot write SchemaChangeEvent.Arguments: %w", err)
+			switch sce.Target {
+			case primitive.SchemaChangeTargetKeyspace:
+			case primitive.SchemaChangeTargetTable:
+				fallthrough
+			case primitive.SchemaChangeTargetType:
+				if sce.Object == "" {
+					return errors.New("EVENT SchemaChange: cannot write empty object")
+				} else if err = primitive.WriteString(sce.Object, dest); err != nil {
+					return fmt.Errorf("cannot write SchemaChangeEvent.Object: %w", err)
+				}
+			case primitive.SchemaChangeTargetAggregate:
+				fallthrough
+			case primitive.SchemaChangeTargetFunction:
+				if sce.Keyspace == "" {
+					return errors.New("EVENT SchemaChange: cannot write empty object")
+				} else if err = primitive.WriteString(sce.Object, dest); err != nil {
+					return fmt.Errorf("cannot write SchemaChangeEvent.Object: %w", err)
+				}
+				if err = primitive.WriteStringList(sce.Arguments, dest); err != nil {
+					return fmt.Errorf("cannot write SchemaChangeEvent.Arguments: %w", err)
+				}
 			}
-		default:
-			return fmt.Errorf("unknown schema change target: %v", sce.Target)
+		} else {
+			if err = primitive.CheckValidSchemaChangeTarget(sce.Target, version); err != nil {
+				return err
+			}
+			if sce.Keyspace == "" {
+				return errors.New("EVENT SchemaChange: cannot write empty keyspace")
+			} else if err = primitive.WriteString(sce.Keyspace, dest); err != nil {
+				return fmt.Errorf("cannot write SchemaChangeEvent.Keyspace: %w", err)
+			}
+			switch sce.Target {
+			case primitive.SchemaChangeTargetKeyspace:
+				if sce.Object != "" {
+					return errors.New("EVENT SchemaChange: table must be empty for keyspace targets")
+				} else if err = primitive.WriteString("", dest); err != nil {
+					return fmt.Errorf("cannot write SchemaChangeEvent.Object: %w", err)
+				}
+			case primitive.SchemaChangeTargetTable:
+				if sce.Object == "" {
+					return errors.New("EVENT SchemaChange: cannot write empty table")
+				} else if err = primitive.WriteString(sce.Object, dest); err != nil {
+					return fmt.Errorf("cannot write SchemaChangeEvent.Object: %w", err)
+				}
+			}
 		}
 		return nil
 	case primitive.EventTypeStatusChange:
@@ -186,7 +215,7 @@ func (c *eventCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 		if !ok {
 			return fmt.Errorf("expected *message.TopologyChangeEvent, got %T", msg)
 		}
-		if err = primitive.CheckValidTopologyChangeType(tce.ChangeType); err != nil {
+		if err = primitive.CheckValidTopologyChangeType(tce.ChangeType, version); err != nil {
 			return err
 		} else if err = primitive.WriteString(string(tce.ChangeType), dest); err != nil {
 			return fmt.Errorf("cannot write TopologyChangeEvent.ChangeType: %w", err)
@@ -199,7 +228,7 @@ func (c *eventCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 	return fmt.Errorf("unknown EVENT type: %v", event.GetEventType())
 }
 
-func (c *eventCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) (length int, err error) {
+func (c *eventCodec) EncodedLength(msg Message, version primitive.ProtocolVersion) (length int, err error) {
 	event, ok := msg.(Event)
 	if !ok {
 		return -1, fmt.Errorf("expected message.Event, got %T", msg)
@@ -212,21 +241,27 @@ func (c *eventCodec) EncodedLength(msg Message, _ primitive.ProtocolVersion) (le
 			return -1, fmt.Errorf("expected *message.SchemaChangeEvent, got %T", msg)
 		}
 		length += primitive.LengthOfString(string(sce.ChangeType))
-		length += primitive.LengthOfString(string(sce.Target))
-		length += primitive.LengthOfString(sce.Keyspace)
-		switch sce.Target {
-		case primitive.SchemaChangeTargetKeyspace:
-		case primitive.SchemaChangeTargetTable:
-			fallthrough
-		case primitive.SchemaChangeTargetType:
+		if err = primitive.CheckValidSchemaChangeTarget(sce.Target, version); err != nil {
+			return -1, err
+		}
+		if version >= primitive.ProtocolVersion3 {
+			length += primitive.LengthOfString(string(sce.Target))
+			length += primitive.LengthOfString(sce.Keyspace)
+			switch sce.Target {
+			case primitive.SchemaChangeTargetKeyspace:
+			case primitive.SchemaChangeTargetTable:
+				fallthrough
+			case primitive.SchemaChangeTargetType:
+				length += primitive.LengthOfString(sce.Object)
+			case primitive.SchemaChangeTargetAggregate:
+				fallthrough
+			case primitive.SchemaChangeTargetFunction:
+				length += primitive.LengthOfString(sce.Object)
+				length += primitive.LengthOfStringList(sce.Arguments)
+			}
+		} else {
+			length += primitive.LengthOfString(sce.Keyspace)
 			length += primitive.LengthOfString(sce.Object)
-		case primitive.SchemaChangeTargetAggregate:
-			fallthrough
-		case primitive.SchemaChangeTargetFunction:
-			length += primitive.LengthOfString(sce.Object)
-			length += primitive.LengthOfStringList(sce.Arguments)
-		default:
-			return -1, fmt.Errorf("unknown schema change target: %v", sce.Target)
 		}
 		return length, nil
 	case primitive.EventTypeStatusChange:
@@ -270,36 +305,50 @@ func (c *eventCodec) Decode(source io.Reader, version primitive.ProtocolVersion)
 			return nil, fmt.Errorf("cannot read SchemaChangeEvent.ChangeType: %w", err)
 		}
 		sce.ChangeType = primitive.SchemaChangeType(changeType)
-		var target string
-		if target, err = primitive.ReadString(source); err != nil {
-			return nil, fmt.Errorf("cannot read SchemaChangeEvent.Target: %w", err)
-		}
-		sce.Target = primitive.SchemaChangeTarget(target)
-		if sce.Keyspace, err = primitive.ReadString(source); err != nil {
-			return nil, fmt.Errorf("cannot read SchemaChangeEvent.Keyspace: %w", err)
-		}
-		switch sce.Target {
-		case primitive.SchemaChangeTargetKeyspace:
-		case primitive.SchemaChangeTargetTable:
-			fallthrough
-		case primitive.SchemaChangeTargetType:
+		if version >= primitive.ProtocolVersion3 {
+			var target string
+			if target, err = primitive.ReadString(source); err != nil {
+				return nil, fmt.Errorf("cannot read SchemaChangeEvent.Target: %w", err)
+			}
+			sce.Target = primitive.SchemaChangeTarget(target)
+			if err = primitive.CheckValidSchemaChangeTarget(sce.Target, version); err != nil {
+				return nil, err
+			}
+			if sce.Keyspace, err = primitive.ReadString(source); err != nil {
+				return nil, fmt.Errorf("cannot read SchemaChangeEvent.Keyspace: %w", err)
+			}
+			switch sce.Target {
+			case primitive.SchemaChangeTargetKeyspace:
+			case primitive.SchemaChangeTargetTable:
+				fallthrough
+			case primitive.SchemaChangeTargetType:
+				if sce.Object, err = primitive.ReadString(source); err != nil {
+					return nil, fmt.Errorf("cannot read SchemaChangeEvent.Object: %w", err)
+				}
+			case primitive.SchemaChangeTargetAggregate:
+				fallthrough
+			case primitive.SchemaChangeTargetFunction:
+				if sce.Object, err = primitive.ReadString(source); err != nil {
+					return nil, fmt.Errorf("cannot read SchemaChangeEvent.Object: %w", err)
+				}
+				if sce.Arguments, err = primitive.ReadStringList(source); err != nil {
+					return nil, fmt.Errorf("cannot read SchemaChangeEvent.Arguments: %w", err)
+				}
+			default:
+				return nil, fmt.Errorf("unknown schema change target: %v", sce.Target)
+			}
+		} else {
+			if sce.Keyspace, err = primitive.ReadString(source); err != nil {
+				return nil, fmt.Errorf("cannot read SchemaChangeEvent.Keyspace: %w", err)
+			}
 			if sce.Object, err = primitive.ReadString(source); err != nil {
 				return nil, fmt.Errorf("cannot read SchemaChangeEvent.Object: %w", err)
 			}
-		case primitive.SchemaChangeTargetAggregate:
-			fallthrough
-		case primitive.SchemaChangeTargetFunction:
-			if version < primitive.ProtocolVersion4 {
-				return nil, fmt.Errorf("%s schema change targets are not supported in protocol version %d", sce.Target, version)
+			if sce.Object == "" {
+				sce.Target = primitive.SchemaChangeTargetKeyspace
+			} else {
+				sce.Target = primitive.SchemaChangeTargetTable
 			}
-			if sce.Object, err = primitive.ReadString(source); err != nil {
-				return nil, fmt.Errorf("cannot read SchemaChangeEvent.Object: %w", err)
-			}
-			if sce.Arguments, err = primitive.ReadStringList(source); err != nil {
-				return nil, fmt.Errorf("cannot read SchemaChangeEvent.Arguments: %w", err)
-			}
-		default:
-			return nil, fmt.Errorf("unknown schema change target: %v", sce.Target)
 		}
 		return sce, nil
 	case primitive.EventTypeStatusChange:

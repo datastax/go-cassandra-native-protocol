@@ -17,7 +17,6 @@ package message
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -26,7 +25,7 @@ import (
 func TestReviseCodec_Encode(t *testing.T) {
 	codec := &reviseCodec{}
 	version := primitive.ProtocolVersionDse1
-	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+	t.Run(version.String(), func(t *testing.T) {
 		tests := []encodeTestCase{
 			{
 				"simple revise",
@@ -57,7 +56,7 @@ func TestReviseCodec_Encode(t *testing.T) {
 		}
 	})
 	version = primitive.ProtocolVersionDse2
-	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+	t.Run(version.String(), func(t *testing.T) {
 		tests := []encodeTestCase{
 			{
 				"revise cancel",
@@ -106,7 +105,7 @@ func TestReviseCodec_Encode(t *testing.T) {
 func TestReviseCodec_EncodedLength(t *testing.T) {
 	codec := &reviseCodec{}
 	version := primitive.ProtocolVersionDse1
-	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+	t.Run(version.String(), func(t *testing.T) {
 		tests := []encodedLengthTestCase{
 			{
 				"simple revise",
@@ -133,7 +132,7 @@ func TestReviseCodec_EncodedLength(t *testing.T) {
 		}
 	})
 	version = primitive.ProtocolVersionDse2
-	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+	t.Run(version.String(), func(t *testing.T) {
 		tests := []encodedLengthTestCase{
 			{
 				"revise cancel",
@@ -174,7 +173,7 @@ func TestReviseCodec_EncodedLength(t *testing.T) {
 func TestReviseCodec_Decode(t *testing.T) {
 	codec := &reviseCodec{}
 	version := primitive.ProtocolVersionDse1
-	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+	t.Run(version.String(), func(t *testing.T) {
 		tests := []decodeTestCase{
 			{
 				"simple revise",
@@ -199,7 +198,7 @@ func TestReviseCodec_Decode(t *testing.T) {
 		}
 	})
 	version = primitive.ProtocolVersionDse2
-	t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+	t.Run(version.String(), func(t *testing.T) {
 		tests := []decodeTestCase{
 			{
 				"revise cancel",

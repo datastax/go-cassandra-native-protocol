@@ -38,10 +38,13 @@ type Header struct {
 	IsResponse bool
 	Version    primitive.ProtocolVersion
 	Flags      primitive.HeaderFlag
-	// The stream id. The protocol spec states that the stream id is a [short], but this is wrong: the stream id
-	// is signed and can be negative, which is why it has type int16.
+	// The stream id. A stream id is a signed byte (protocol versions 1 and 2) or a signed 16-bit integer (protocol
+	// versions 3 and higher). Note that the protocol specs refer to the stream id as a primitive [short] integer,
+	// but in fact stream ids are signed integers. Indeed server-initiated messages, such as EVENT messages, have
+	// negative stream ids. For this reason, stream ids are represented as signed 16-bit integers in this library.
 	StreamId int16
-	OpCode   primitive.OpCode
+	// The OpCode is an unsigned byte that distinguishes the type of payload that a frame contains.
+	OpCode primitive.OpCode
 	// The encoded body length. When encoding a frame, this field is not read but is rather dynamically computed from
 	// the actual body length. When decoding a frame, this field is always correctly set to the exact decoded body
 	// length.
@@ -60,33 +63,15 @@ type Body struct {
 	Message message.Message
 }
 
-func NewRequestFrame(
-	version primitive.ProtocolVersion,
-	streamId int16,
-	tracing bool,
-	customPayload map[string][]byte,
-	message message.Message,
-	compress bool,
-) (*Frame, error) {
-	if message.IsResponse() {
-		return nil, fmt.Errorf("message is not a request: opcode %d", message.GetOpCode())
-	}
+// Creates a new Frame with the given version, stream id and message.
+func NewFrame(version primitive.ProtocolVersion, streamId int16, message message.Message) *Frame {
 	var flags primitive.HeaderFlag
-	if tracing {
-		flags = flags.Add(primitive.HeaderFlagTracing)
-	}
-	if customPayload != nil {
-		flags = flags.Add(primitive.HeaderFlagCustomPayload)
-	}
 	if version.IsBeta() {
 		flags = flags.Add(primitive.HeaderFlagUseBeta)
 	}
-	if compress && isCompressible(message.GetOpCode()) {
-		flags = flags.Add(primitive.HeaderFlagCompressed)
-	}
 	return &Frame{
 		Header: &Header{
-			IsResponse: false,
+			IsResponse: message.IsResponse(),
 			Version:    version,
 			Flags:      flags,
 			StreamId:   streamId,
@@ -94,56 +79,67 @@ func NewRequestFrame(
 			BodyLength: 0, // will be set later when encoding
 		},
 		Body: &Body{
-			CustomPayload: customPayload,
-			Message:       message,
+			Message: message,
 		},
-	}, nil
+	}
 }
 
-func NewResponseFrame(
-	version primitive.ProtocolVersion,
-	streamId int16,
-	tracingId *primitive.UUID,
-	customPayload map[string][]byte,
-	warnings []string,
-	message message.Message,
-	compress bool,
-) (*Frame, error) {
-	if !message.IsResponse() {
-		return nil, fmt.Errorf("message is not a response: opcode %d", message.GetOpCode())
+// Sets a new custom payload on this frame, adjusting the header flags accordingly. If nil, the existing payload,
+// if any, will be removed along with the corresponding header flag.
+// Note: custom payloads cannot be used with protocol versions lesser than 4.
+func (f *Frame) SetCustomPayload(customPayload map[string][]byte) {
+	if len(customPayload) > 0 {
+		f.Header.Flags = f.Header.Flags.Add(primitive.HeaderFlagCustomPayload)
+	} else {
+		f.Header.Flags = f.Header.Flags.Remove(primitive.HeaderFlagCustomPayload)
 	}
-	var flags primitive.HeaderFlag = 0
+	f.Body.CustomPayload = customPayload
+}
+
+// Sets new query warnings on this frame, adjusting the header flags accordingly. If nil, the existing warnings,
+// if any, will be removed along with the corresponding header flag.
+// Note: query warnings cannot be used with protocol versions lesser than 4.
+func (f *Frame) SetWarnings(warnings []string) {
+	if len(warnings) > 0 {
+		f.Header.Flags = f.Header.Flags.Add(primitive.HeaderFlagWarning)
+	} else {
+		f.Header.Flags = f.Header.Flags.Remove(primitive.HeaderFlagWarning)
+	}
+	f.Body.Warnings = warnings
+}
+
+// Sets a new tracing id on this frame, adjusting the header flags accordingly. If nil, the existing tracing id,
+// if any, will be removed along with the corresponding header flag.
+// Note: tracing ids can only be used with response frames.
+func (f *Frame) SetTracingId(tracingId *primitive.UUID) {
 	if tracingId != nil {
-		flags = flags.Add(primitive.HeaderFlagTracing)
+		f.Header.Flags = f.Header.Flags.Add(primitive.HeaderFlagTracing)
+	} else {
+		f.Header.Flags = f.Header.Flags.Remove(primitive.HeaderFlagTracing)
 	}
-	if customPayload != nil {
-		flags = flags.Add(primitive.HeaderFlagCustomPayload)
+	f.Body.TracingId = tracingId
+}
+
+// Configures this frame to request a tracing id from the server, adjusting the header flags accordingly.
+// Note: this method should only be used for request frames.
+func (f *Frame) RequestTracingId(tracing bool) {
+	if tracing {
+		f.Header.Flags = f.Header.Flags.Add(primitive.HeaderFlagTracing)
+	} else {
+		f.Header.Flags = f.Header.Flags.Remove(primitive.HeaderFlagTracing)
 	}
-	if warnings != nil {
-		flags = flags.Add(primitive.HeaderFlagWarning)
+}
+
+// Configures this frame to use compression, adjusting the header flags accordingly.
+// Note: this method will not enable compression on frames that cannot be compressed.
+// Also, enabling compression on a frame does not guarantee that the frame will be properly compressed:
+// the frame codec must also be configured to use a BodyCompressor.
+func (f *Frame) SetCompress(compress bool) {
+	if compress && isCompressible(f.Body.Message.GetOpCode()) {
+		f.Header.Flags = f.Header.Flags.Add(primitive.HeaderFlagCompressed)
+	} else {
+		f.Header.Flags = f.Header.Flags.Remove(primitive.HeaderFlagCompressed)
 	}
-	if version.IsBeta() {
-		flags = flags.Add(primitive.HeaderFlagUseBeta)
-	}
-	if compress && isCompressible(message.GetOpCode()) {
-		flags = flags.Add(primitive.HeaderFlagCompressed)
-	}
-	return &Frame{
-		Header: &Header{
-			IsResponse: true,
-			Version:    version,
-			Flags:      flags,
-			StreamId:   streamId,
-			OpCode:     message.GetOpCode(),
-			BodyLength: 0, // will be set later when encoding
-		},
-		Body: &Body{
-			TracingId:     tracingId,
-			CustomPayload: customPayload,
-			Warnings:      warnings,
-			Message:       message,
-		},
-	}, nil
 }
 
 func (f *Frame) String() string {

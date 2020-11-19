@@ -121,13 +121,10 @@ func checkClosed(t *testing.T, clientConn *client.CqlClientConnection, server *c
 }
 
 func testHeartbeat(t *testing.T, clientConn *client.CqlClientConnection) {
-	heartbeat, _ := frame.NewRequestFrame(
+	heartbeat := frame.NewFrame(
 		primitive.ProtocolVersion4,
 		client.ManagedStreamId,
-		false,
-		nil,
 		&message.Options{},
-		false,
 	)
 	for i := 0; i < 100; i++ {
 		response, err := clientConn.SendAndReceive(heartbeat)
@@ -139,13 +136,10 @@ func testHeartbeat(t *testing.T, clientConn *client.CqlClientConnection) {
 }
 
 func testUseQuery(t *testing.T, clientConn *client.CqlClientConnection) {
-	useQuery, _ := frame.NewRequestFrame(
+	useQuery := frame.NewFrame(
 		primitive.ProtocolVersion4,
 		client.ManagedStreamId,
-		false,
-		nil,
 		&message.Query{Query: " USE \n ks1 "},
-		false,
 	)
 	response, err := clientConn.SendAndReceive(useQuery)
 	require.NotNil(t, response)
@@ -157,13 +151,10 @@ func testUseQuery(t *testing.T, clientConn *client.CqlClientConnection) {
 }
 
 func testRegister(t *testing.T, clientConn *client.CqlClientConnection) {
-	register, _ := frame.NewRequestFrame(
+	register := frame.NewFrame(
 		primitive.ProtocolVersion4,
 		client.ManagedStreamId,
-		false,
-		nil,
 		&message.Register{EventTypes: []primitive.EventType{primitive.EventTypeSchemaChange, primitive.EventTypeTopologyChange}},
-		false,
 	)
 	response, err := clientConn.SendAndReceive(register)
 	require.NotNil(t, response)

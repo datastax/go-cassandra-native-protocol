@@ -17,7 +17,6 @@ package message
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -25,8 +24,119 @@ import (
 
 func TestQueryCodec_Encode(t *testing.T) {
 	codec := &queryCodec{}
+	// tests for version 2
+	t.Run(primitive.ProtocolVersion2.String(), func(t *testing.T) {
+		tests := []encodeTestCase{
+			{
+				"query with default options",
+				&Query{
+					Query:   "SELECT",
+					Options: &QueryOptions{},
+				},
+				[]byte{
+					0, 0, 0, 6, S, E, L, E, C, T,
+					0, 0, // consistency level
+					0, // flags
+				},
+				nil,
+			},
+			{
+				"query with custom options and no values",
+				&Query{
+					Query: "SELECT",
+					Options: &QueryOptions{
+						Consistency:       primitive.ConsistencyLevelLocalQuorum,
+						SkipMetadata:      true,
+						PageSize:          100,
+						PagingState:       []byte{0xca, 0xfe, 0xba, 0xbe},
+						SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
+						DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+					},
+				},
+				[]byte{
+					0, 0, 0, 6, S, E, L, E, C, T,
+					0, 6, // consistency level
+					0b0011_1110,  // flags
+					0, 0, 0, 100, // page size
+					0, 0, 0, 4, 0xca, 0xfe, 0xba, 0xbe, // paging state
+					0, 9, // serial consistency level
+					0, 0, 0, 0, 0, 0, 0, 123, // default timestamp
+				},
+				nil,
+			},
+			{
+				"query with positional values",
+				&Query{
+					Query: "SELECT",
+					Options: &QueryOptions{
+						PositionalValues: []*primitive.Value{
+							{
+								Type:     primitive.ValueTypeRegular,
+								Contents: []byte{h, e, l, l, o},
+							},
+							{
+								Type: primitive.ValueTypeNull,
+							},
+						},
+					},
+				},
+				[]byte{
+					0, 0, 0, 6, S, E, L, E, C, T,
+					0, 0, // consistency level
+					0b0000_0001, // flags
+					0, 2,        // values length
+					0, 0, 0, 5, h, e, l, l, o, // value 1
+					0xff, 0xff, 0xff, 0xff, // value 2
+				},
+				nil,
+			},
+			{
+				"query with named values",
+				&Query{
+					Query: "SELECT",
+					Options: &QueryOptions{
+						NamedValues: map[string]*primitive.Value{
+							"col1": {
+								Type:     primitive.ValueTypeRegular,
+								Contents: []byte{h, e, l, l, o},
+							},
+						},
+					},
+				},
+				[]byte{
+					0, 0, 0, 6, S, E, L, E, C, T,
+					0, 0, // consistency level
+					0b0100_0001, // flags
+					0, 1,        // values length
+					0, 4, c, o, l, _1, // name 1
+					0, 0, 0, 5, h, e, l, l, o, // value 1
+				},
+				nil,
+			},
+			{
+				"missing query",
+				&Query{},
+				nil,
+				errors.New("cannot write QUERY empty query string"),
+			},
+			{
+				"not a query",
+				&Options{},
+				nil,
+				errors.New("expected *message.Query, got *message.Options"),
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				dest := &bytes.Buffer{}
+				err := codec.Encode(tt.input, dest, primitive.ProtocolVersion2)
+				assert.Equal(t, tt.expected, dest.Bytes())
+				assert.Equal(t, tt.err, err)
+			})
+		}
+	})
 	// tests for version 3
-	t.Run("version 3", func(t *testing.T) {
+	t.Run(primitive.ProtocolVersion3.String(), func(t *testing.T) {
 		tests := []encodeTestCase{
 			{
 				"query with default options",
@@ -137,7 +247,7 @@ func TestQueryCodec_Encode(t *testing.T) {
 		}
 	})
 	// tests for version = 4
-	t.Run(fmt.Sprintf("version %d", primitive.ProtocolVersion4), func(t *testing.T) {
+	t.Run(primitive.ProtocolVersion4.String(), func(t *testing.T) {
 		tests := []struct {
 			name     string
 			input    Message
@@ -257,7 +367,7 @@ func TestQueryCodec_Encode(t *testing.T) {
 		}
 	})
 	// tests for version = 5
-	t.Run(fmt.Sprintf("version %v", primitive.ProtocolVersion5), func(t *testing.T) {
+	t.Run(primitive.ProtocolVersion5.String(), func(t *testing.T) {
 		tests := []encodeTestCase{
 			{
 				"query with keyspace and now-in-seconds",
@@ -328,7 +438,7 @@ func TestQueryCodec_Encode(t *testing.T) {
 		}
 	})
 	// tests for version = DSE v1
-	t.Run(fmt.Sprintf("version %d", primitive.ProtocolVersionDse1), func(t *testing.T) {
+	t.Run(primitive.ProtocolVersionDse1.String(), func(t *testing.T) {
 		tests := []struct {
 			name     string
 			input    Message
@@ -452,7 +562,7 @@ func TestQueryCodec_Encode(t *testing.T) {
 		}
 	})
 	// tests for version = DSE v2
-	t.Run(fmt.Sprintf("version %v", primitive.ProtocolVersionDse2), func(t *testing.T) {
+	t.Run(primitive.ProtocolVersionDse2.String(), func(t *testing.T) {
 		tests := []encodeTestCase{
 			{
 				"query with keyspace and continuous options",
@@ -555,8 +665,104 @@ func TestQueryCodec_Encode(t *testing.T) {
 
 func TestQueryCodec_EncodedLength(t *testing.T) {
 	codec := &queryCodec{}
+	// tests for version 2
+	t.Run(primitive.ProtocolVersion2.String(), func(t *testing.T) {
+		tests := []encodedLengthTestCase{
+			{
+				"query with default options",
+				&Query{
+					Query:   "SELECT",
+					Options: &QueryOptions{},
+				},
+				primitive.LengthOfLongString("SELECT") +
+					primitive.LengthOfShort + // consistency
+					primitive.LengthOfByte, // flags
+				nil,
+			},
+			{
+				"query with custom options and no values",
+				&Query{
+					Query: "SELECT",
+					Options: &QueryOptions{
+						Consistency:       primitive.ConsistencyLevelLocalQuorum,
+						SkipMetadata:      true,
+						PageSize:          100,
+						PagingState:       []byte{0xca, 0xfe, 0xba, 0xbe},
+						SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
+						DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+					},
+				},
+				primitive.LengthOfLongString("SELECT") +
+					primitive.LengthOfShort + // consistency
+					primitive.LengthOfByte + // flags
+					primitive.LengthOfInt + // page size
+					primitive.LengthOfBytes([]byte{0xca, 0xfe, 0xba, 0xbe}) + // paging state
+					primitive.LengthOfShort + // serial consistency
+					primitive.LengthOfLong, // default timestamp
+				nil,
+			},
+			{
+				"query with positional values",
+				&Query{
+					Query: "SELECT",
+					Options: &QueryOptions{
+						PositionalValues: []*primitive.Value{
+							{
+								Type:     primitive.ValueTypeRegular,
+								Contents: []byte{h, e, l, l, o},
+							},
+							{
+								Type: primitive.ValueTypeNull,
+							},
+						},
+					},
+				},
+				primitive.LengthOfLongString("SELECT") +
+					primitive.LengthOfShort + // consistency
+					primitive.LengthOfByte + // flags
+					primitive.LengthOfShort + // values length
+					primitive.LengthOfBytes([]byte{h, e, l, l, o}) + // value 1
+					primitive.LengthOfInt, // value 2
+				nil,
+			},
+			{
+				"query with named values",
+				&Query{
+					Query: "SELECT",
+					Options: &QueryOptions{
+						NamedValues: map[string]*primitive.Value{
+							"col1": {
+								Type:     primitive.ValueTypeRegular,
+								Contents: []byte{h, e, l, l, o},
+							},
+						},
+					},
+				},
+				primitive.LengthOfLongString("SELECT") +
+					primitive.LengthOfShort + // consistency
+					primitive.LengthOfByte + // flags
+					primitive.LengthOfShort + // values length
+					primitive.LengthOfString("col1") + // name 1
+					primitive.LengthOfBytes([]byte{h, e, l, l, o}), // value 1
+				nil,
+			},
+			{
+				"not a query",
+				&Options{},
+				-1,
+				errors.New("expected *message.Query, got *message.Options"),
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				actual, err := codec.EncodedLength(tt.input, primitive.ProtocolVersion2)
+				assert.Equal(t, tt.expected, actual)
+				assert.Equal(t, tt.err, err)
+			})
+		}
+	})
 	// tests for version 3
-	t.Run("version 3", func(t *testing.T) {
+	t.Run(primitive.ProtocolVersion3.String(), func(t *testing.T) {
 		tests := []encodedLengthTestCase{
 			{
 				"query with default options",
@@ -652,7 +858,7 @@ func TestQueryCodec_EncodedLength(t *testing.T) {
 		}
 	})
 	// tests for version = 4
-	t.Run(fmt.Sprintf("version %d", primitive.ProtocolVersion4), func(t *testing.T) {
+	t.Run(primitive.ProtocolVersion4.String(), func(t *testing.T) {
 		tests := []struct {
 			name     string
 			input    Message
@@ -757,7 +963,7 @@ func TestQueryCodec_EncodedLength(t *testing.T) {
 		}
 	})
 	// tests for version = 5
-	t.Run(fmt.Sprintf("version %v", primitive.ProtocolVersion5), func(t *testing.T) {
+	t.Run(primitive.ProtocolVersion5.String(), func(t *testing.T) {
 		tests := []encodedLengthTestCase{
 			{
 				"query with keyspace and now-in-seconds",
@@ -817,7 +1023,7 @@ func TestQueryCodec_EncodedLength(t *testing.T) {
 		}
 	})
 	// tests for version = DSE v1
-	t.Run(fmt.Sprintf("version %d", primitive.ProtocolVersionDse1), func(t *testing.T) {
+	t.Run(primitive.ProtocolVersionDse1.String(), func(t *testing.T) {
 		tests := []struct {
 			name     string
 			input    Message
@@ -924,7 +1130,7 @@ func TestQueryCodec_EncodedLength(t *testing.T) {
 		}
 	})
 	// tests for version = DSE v2
-	t.Run(fmt.Sprintf("version %v", primitive.ProtocolVersionDse2), func(t *testing.T) {
+	t.Run(primitive.ProtocolVersionDse2.String(), func(t *testing.T) {
 		tests := []encodedLengthTestCase{
 			{
 				"query with keyspace",
@@ -985,8 +1191,117 @@ func TestQueryCodec_EncodedLength(t *testing.T) {
 
 func TestQueryCodec_Decode(t *testing.T) {
 	codec := &queryCodec{}
+	// tests for version 2
+	t.Run(primitive.ProtocolVersion2.String(), func(t *testing.T) {
+		tests := []decodeTestCase{
+			{
+				"query with default options",
+				[]byte{
+					0, 0, 0, 6, S, E, L, E, C, T,
+					0, 0, // consistency level
+					0, // flags
+				},
+				&Query{
+					Query:   "SELECT",
+					Options: &QueryOptions{},
+				},
+				nil,
+			},
+			{
+				"query with custom options and no values",
+				[]byte{
+					0, 0, 0, 6, S, E, L, E, C, T,
+					0, 6, // consistency level
+					0b0011_1110,  // flags
+					0, 0, 0, 100, // page size
+					0, 0, 0, 4, 0xca, 0xfe, 0xba, 0xbe, // paging state
+					0, 9, // serial consistency level
+					0, 0, 0, 0, 0, 0, 0, 123, // default timestamp
+				},
+				&Query{
+					Query: "SELECT",
+					Options: &QueryOptions{
+						Consistency:       primitive.ConsistencyLevelLocalQuorum,
+						SkipMetadata:      true,
+						PageSize:          100,
+						PagingState:       []byte{0xca, 0xfe, 0xba, 0xbe},
+						SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
+						DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+					},
+				},
+				nil,
+			},
+			{
+				"query with positional values",
+				[]byte{
+					0, 0, 0, 6, S, E, L, E, C, T,
+					0, 0, // consistency level
+					0b0000_0001, // flags
+					0, 2,        // values length
+					0, 0, 0, 5, h, e, l, l, o, // value 1
+					0xff, 0xff, 0xff, 0xff, // value 2
+				},
+				&Query{
+					Query: "SELECT",
+					Options: &QueryOptions{
+						PositionalValues: []*primitive.Value{
+							{
+								Type:     primitive.ValueTypeRegular,
+								Contents: []byte{h, e, l, l, o},
+							},
+							{
+								Type: primitive.ValueTypeNull,
+							},
+						},
+					},
+				},
+				nil,
+			},
+			{
+				"query with named values",
+				[]byte{
+					0, 0, 0, 6, S, E, L, E, C, T,
+					0, 0, // consistency level
+					0b0100_0001, // flags
+					0, 1,        // values length
+					0, 4, c, o, l, _1, // name 1
+					0, 0, 0, 5, h, e, l, l, o, // value 1
+				},
+				&Query{
+					Query: "SELECT",
+					Options: &QueryOptions{
+						NamedValues: map[string]*primitive.Value{
+							"col1": {
+								Type:     primitive.ValueTypeRegular,
+								Contents: []byte{h, e, l, l, o},
+							},
+						},
+					},
+				},
+				nil,
+			},
+			{
+				"missing query",
+				[]byte{
+					0, 0, 0, 0, // empty query
+					0, 0, // consistency level
+					0, // flags
+				},
+				nil,
+				errors.New("cannot read QUERY empty query string"),
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				source := bytes.NewBuffer(tt.input)
+				actual, err := codec.Decode(source, primitive.ProtocolVersion2)
+				assert.Equal(t, tt.expected, actual)
+				assert.Equal(t, tt.err, err)
+			})
+		}
+	})
 	// tests for version 3
-	t.Run(fmt.Sprintf("version %d", primitive.ProtocolVersion3), func(t *testing.T) {
+	t.Run(primitive.ProtocolVersion3.String(), func(t *testing.T) {
 		tests := []decodeTestCase{
 			{
 				"query with default options",
@@ -1095,7 +1410,7 @@ func TestQueryCodec_Decode(t *testing.T) {
 		}
 	})
 	// tests for version = 4
-	t.Run(fmt.Sprintf("version %d", primitive.ProtocolVersion4), func(t *testing.T) {
+	t.Run(primitive.ProtocolVersion4.String(), func(t *testing.T) {
 		tests := []struct {
 			name     string
 			input    []byte
@@ -1213,7 +1528,7 @@ func TestQueryCodec_Decode(t *testing.T) {
 		}
 	})
 	// tests for version = 5
-	t.Run(fmt.Sprintf("version %v", primitive.ProtocolVersion5), func(t *testing.T) {
+	t.Run(primitive.ProtocolVersion5.String(), func(t *testing.T) {
 		tests := []decodeTestCase{
 			{
 				"query with keyspace and now-in-seconds",
@@ -1284,7 +1599,7 @@ func TestQueryCodec_Decode(t *testing.T) {
 		}
 	})
 	// tests for version = DSE v1
-	t.Run(fmt.Sprintf("version %d", primitive.ProtocolVersionDse1), func(t *testing.T) {
+	t.Run(primitive.ProtocolVersionDse1.String(), func(t *testing.T) {
 		tests := []struct {
 			name     string
 			input    []byte
@@ -1406,7 +1721,7 @@ func TestQueryCodec_Decode(t *testing.T) {
 		}
 	})
 	// tests for version = DSE v2
-	t.Run(fmt.Sprintf("version %v", primitive.ProtocolVersionDse2), func(t *testing.T) {
+	t.Run(primitive.ProtocolVersionDse2.String(), func(t *testing.T) {
 		tests := []decodeTestCase{
 			{
 				"query with keyspace and continuous paging",

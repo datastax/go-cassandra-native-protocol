@@ -47,7 +47,7 @@ func (c *codec) encodeFrameUncompressed(frame *Frame, dest io.Writer) error {
 func (c *codec) encodeFrameCompressed(frame *Frame, dest io.Writer) error {
 	compressedBody := bytes.Buffer{}
 	if err := c.EncodeBody(frame.Header, frame.Body, &compressedBody); err != nil {
-		return fmt.Errorf("cannot encode and compress body: %w", err)
+		return fmt.Errorf("cannot encode frame body: %w", err)
 	} else {
 		frame.Header.BodyLength = int32(compressedBody.Len())
 		if err := c.EncodeHeader(frame.Header, dest); err != nil {
@@ -85,7 +85,7 @@ func (c *codec) EncodeHeader(header *Header, dest io.Writer) error {
 		return fmt.Errorf("cannot encode header version and direction: %w", err)
 	} else if err := primitive.WriteByte(uint8(header.Flags), dest); err != nil {
 		return fmt.Errorf("cannot encode header flags: %w", err)
-	} else if err = primitive.WriteShort(uint16(header.StreamId), dest); err != nil {
+	} else if err = primitive.WriteStreamId(header.StreamId, dest, header.Version); err != nil {
 		return fmt.Errorf("cannot encode header stream id: %w", err)
 	} else if err = primitive.WriteByte(uint8(header.OpCode), dest); err != nil {
 		return fmt.Errorf("cannot encode header opcode: %w", err)

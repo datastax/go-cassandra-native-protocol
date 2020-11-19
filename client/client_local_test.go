@@ -31,7 +31,7 @@ import (
 func TestLocalServer(t *testing.T) {
 
 	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(fmt.Sprintf("version %v", version), func(t *testing.T) {
+		t.Run(version.String(), func(t *testing.T) {
 
 			for genName, generator := range streamIdGenerators {
 				t.Run(fmt.Sprintf("generator %v", genName), func(t *testing.T) {
@@ -98,12 +98,9 @@ func playServer(
 				if err != nil {
 					return
 				}
-				outgoing, _ := frame.NewResponseFrame(
+				outgoing := frame.NewFrame(
 					version,
 					incoming.Header.StreamId,
-					nil,
-					nil,
-					nil,
 					&message.RowsResult{
 						Metadata: &message.RowsMetadata{ColumnCount: 1},
 						Data: message.RowSet{
@@ -115,8 +112,8 @@ func playServer(
 							},
 						},
 					},
-					compressor != "NONE",
 				)
+				outgoing.SetCompress(compressor != "NONE")
 				err = serverConn.Send(outgoing)
 				if err != nil {
 					return
@@ -131,7 +128,7 @@ func playClient(
 	clientConn *client.CqlClientConnection,
 	version primitive.ProtocolVersion,
 	compressor string,
-	generateStreamId func(int) int16,
+	generateStreamId func(int, primitive.ProtocolVersion) int16,
 ) {
 	wg := &sync.WaitGroup{}
 	for i := 1; i <= 10; i++ {
@@ -139,17 +136,15 @@ func playClient(
 		go func(i int) {
 			defer wg.Done()
 			for j := 1; j <= 10; j++ {
-				outgoing, _ := frame.NewRequestFrame(
+				outgoing := frame.NewFrame(
 					version,
-					generateStreamId(i),
-					false,
-					nil,
+					generateStreamId(i, version),
 					&message.Query{
 						Query:   "SELECT * FROM system.local",
 						Options: &message.QueryOptions{},
 					},
-					compressor != "NONE",
 				)
+				outgoing.SetCompress(compressor != "NONE")
 				incoming, err := clientConn.SendAndReceive(outgoing)
 				require.Nil(t, err)
 				require.NotNil(t, incoming)

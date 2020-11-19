@@ -16,7 +16,6 @@ package message
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/datatype"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"github.com/stretchr/testify/assert"
@@ -27,7 +26,7 @@ func TestResultCodec_Encode_Prepared(test *testing.T) {
 	codec := &resultCodec{}
 	// versions < 4
 	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
 					"prepared result without bound variables",
@@ -135,9 +134,9 @@ func TestResultCodec_Encode_Prepared(test *testing.T) {
 			}
 		})
 	}
-	// version 4
+	// versions 4, DSE v1
 	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion4, primitive.ProtocolVersionDse1} {
-		test.Run(fmt.Sprintf("version %d", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
 					"prepared result without bound variables",
@@ -254,7 +253,7 @@ func TestResultCodec_Encode_Prepared(test *testing.T) {
 	}
 	// versions 5, DSE v2
 	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion5, primitive.ProtocolVersionDse2} {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
 					"prepared result without bound variables",
@@ -383,7 +382,7 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 	codec := &resultCodec{}
 	// versions < 4
 	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"prepared result without bound variables",
@@ -478,9 +477,9 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 			}
 		})
 	}
-	// version 4
+	// versions 4, DSE v1
 	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion4, primitive.ProtocolVersionDse1} {
-		test.Run(fmt.Sprintf("version %d", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"prepared result without bound variables",
@@ -584,7 +583,7 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 	}
 	// versions 5, DSE v2
 	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion5, primitive.ProtocolVersionDse2} {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
 					"prepared result without bound variables",
@@ -700,7 +699,7 @@ func TestResultCodec_Decode_Prepared(test *testing.T) {
 	codec := &resultCodec{}
 	// versions < 4
 	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{
 					"prepared result without bound variables",
@@ -812,9 +811,9 @@ func TestResultCodec_Decode_Prepared(test *testing.T) {
 			}
 		})
 	}
-	// version 4
+	// versions 4, DSE v1
 	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion4, primitive.ProtocolVersionDse1} {
-		test.Run(fmt.Sprintf("version %d", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{
 					"prepared result without bound variables",
@@ -936,7 +935,7 @@ func TestResultCodec_Decode_Prepared(test *testing.T) {
 	}
 	// versions 5, DSE v2
 	for _, version := range []primitive.ProtocolVersion{primitive.ProtocolVersion5, primitive.ProtocolVersionDse2} {
-		test.Run(fmt.Sprintf("version %v", version), func(test *testing.T) {
+		test.Run(version.String(), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{
 					"prepared result without bound variables",

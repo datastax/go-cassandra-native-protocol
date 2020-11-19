@@ -26,7 +26,7 @@ import (
 var HeartbeatHandler RequestHandler = func(request *frame.Frame, conn *CqlServerConnection, _ RequestHandlerContext) (response *frame.Frame) {
 	if _, ok := request.Body.Message.(*message.Options); ok {
 		log.Debug().Msgf("%v: [heartbeat handler]: received heartbeat probe", conn)
-		response, _ = frame.NewResponseFrame(request.Header.Version, request.Header.StreamId, nil, nil, nil, &message.Supported{}, false)
+		response = frame.NewFrame(request.Header.Version, request.Header.StreamId, &message.Supported{})
 	}
 	return
 }
@@ -42,7 +42,7 @@ func NewSetKeyspaceHandler(onKeyspaceSet func(string)) RequestHandler {
 				keyspace := strings.TrimPrefix(q, "use ")
 				onKeyspaceSet(keyspace)
 				log.Debug().Msgf("%v: [set keyspace handler]: received USE %v", conn, keyspace)
-				response, _ = frame.NewResponseFrame(request.Header.Version, request.Header.StreamId, nil, nil, nil, &message.SetKeyspaceResult{Keyspace: keyspace}, false)
+				response = frame.NewFrame(request.Header.Version, request.Header.StreamId, &message.SetKeyspaceResult{Keyspace: keyspace})
 			}
 		}
 		return
@@ -53,7 +53,7 @@ func NewSetKeyspaceHandler(onKeyspaceSet func(string)) RequestHandler {
 var RegisterHandler RequestHandler = func(request *frame.Frame, conn *CqlServerConnection, _ RequestHandlerContext) (response *frame.Frame) {
 	if register, ok := request.Body.Message.(*message.Register); ok {
 		log.Debug().Msgf("%v: [register handler]: received REGISTER: %v", conn, register.EventTypes)
-		response, _ = frame.NewResponseFrame(request.Header.Version, request.Header.StreamId, nil, nil, nil, &message.Ready{}, false)
+		response = frame.NewFrame(request.Header.Version, request.Header.StreamId, &message.Ready{})
 	}
 	return
 }

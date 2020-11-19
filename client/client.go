@@ -42,6 +42,10 @@ const (
 
 const ManagedStreamId int16 = 0
 
+// An event handler is a callback function that gets invoked whenever a CqlClientConnection receives an incoming
+// event.
+type EventHandler func(event *frame.Frame, conn *CqlClientConnection)
+
 // CqlClient is a client for Cassandra-compatible backends. It is preferable to create CqlClient instances using the
 // constructor function NewCqlClient. Once the client is created and properly configured, use Connect or ConnectAndInit
 // to establish new connections to the server.
@@ -62,6 +66,8 @@ type CqlClient struct {
 	ConnectTimeout time.Duration
 	// The timeout to apply when waiting for incoming responses.
 	ReadTimeout time.Duration
+	// An optional list of handlers to handle incoming events.
+	EventHandlers []EventHandler
 }
 
 // Creates a new CqlClient with default options. Leave credentials nil to opt out from authentication.
@@ -99,6 +105,7 @@ func (client *CqlClient) Connect(ctx context.Context) (*CqlClientConnection, err
 			client.MaxInFlight,
 			client.MaxPending,
 			client.ReadTimeout,
+			client.EventHandlers,
 		)
 		log.Info().Msgf("%v: new TCP connection established: %v", client, connection)
 		return connection, err
@@ -128,6 +135,7 @@ type CqlClientConnection struct {
 	codec           frame.Codec
 	readTimeout     time.Duration
 	credentials     *AuthCredentials
+	handlers        []EventHandler
 	inFlightHandler *inFlightRequestsHandler
 	outgoing        chan *frame.Frame
 	events          chan *frame.Frame
@@ -145,6 +153,7 @@ func newCqlClientConnection(
 	maxInFlight int,
 	maxPending int,
 	readTimeout time.Duration,
+	handlers []EventHandler,
 ) (*CqlClientConnection, error) {
 	if conn == nil {
 		return nil, fmt.Errorf("TCP connection cannot be nil")
@@ -168,6 +177,7 @@ func newCqlClientConnection(
 		codec:       codec,
 		readTimeout: readTimeout,
 		credentials: credentials,
+		handlers:    handlers,
 		outgoing:    make(chan *frame.Frame, maxInFlight),
 		events:      make(chan *frame.Frame, maxInFlight),
 		waitGroup:   &sync.WaitGroup{},
@@ -221,6 +231,9 @@ func (c *CqlClientConnection) incomingLoop() {
 			} else {
 				log.Debug().Msgf("%v: received incoming frame: %v", c, incoming)
 				if incoming.Header.OpCode == primitive.OpCodeEvent {
+					for _, handler := range c.handlers {
+						handler(incoming, c)
+					}
 					select {
 					case c.events <- incoming:
 						log.Debug().Msgf("%v: incoming event frame successfully delivered: %v", c, incoming)
@@ -238,6 +251,7 @@ func (c *CqlClientConnection) incomingLoop() {
 						if e.GetErrorCode().IsFatalError() {
 							log.Error().Msgf("%v: server replied with fatal error code %v, closing connection", c, e.GetErrorCode())
 							abort = true
+							break
 						}
 					}
 				}
@@ -305,8 +319,7 @@ func (c *CqlClientConnection) NewStartupRequest(version primitive.ProtocolVersio
 		startup.SetCompression(c.codec.GetBodyCompressor().Algorithm())
 	}
 	startup.SetDriverName("DataStax Go client")
-	request, _ := frame.NewRequestFrame(version, streamId, false, nil, startup, false)
-	return request
+	return frame.NewFrame(version, streamId, startup)
 }
 
 // An in-flight request sent through CqlClientConnection.Send.

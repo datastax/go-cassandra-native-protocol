@@ -20,8 +20,10 @@ import (
 	"github.com/datastax/go-cassandra-native-protocol/compression/lz4"
 	"github.com/datastax/go-cassandra-native-protocol/compression/snappy"
 	"github.com/datastax/go-cassandra-native-protocol/frame"
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"math"
 	"os"
 	"sync/atomic"
 	"testing"
@@ -64,7 +66,7 @@ func setLogLevel() {
 
 var codecs map[string]frame.Codec
 
-var streamIdGenerators map[string]func(int) int16
+var streamIdGenerators map[string]func(int, primitive.ProtocolVersion) int16
 
 func createCodecs() {
 	lz4Codec := frame.NewCodec()
@@ -79,27 +81,35 @@ func createCodecs() {
 }
 
 func createStreamIdGenerators() {
-	var managed = func(int) int16 {
+	var managed = func(clientId int, version primitive.ProtocolVersion) int16 {
 		return client.ManagedStreamId
 	}
-	var fixed = func(clientId int) int16 {
+	var fixed = func(clientId int, version primitive.ProtocolVersion) int16 {
 		if int16(clientId) == client.ManagedStreamId {
 			panic("stream id 0")
 		}
 		return int16(clientId)
 	}
-	counter := uint32(0)
-	var incremental = func(clientId int) int16 {
+	counter := uint32(1)
+	var incremental = func(clientId int, version primitive.ProtocolVersion) int16 {
+		var max uint32
+		if version <= primitive.ProtocolVersion2 {
+			max = math.MaxInt8
+		} else {
+			max = math.MaxInt16
+		}
 		for {
-			i := int16(atomic.AddUint32(&counter, 1))
-			// can overflow during tests
-			if i == client.ManagedStreamId {
-				continue
+			current := counter
+			next := current + 1
+			if next > max {
+				next = 1
 			}
-			return i
+			if atomic.CompareAndSwapUint32(&counter, current, next) {
+				return int16(next)
+			}
 		}
 	}
-	streamIdGenerators = map[string]func(int) int16{
+	streamIdGenerators = map[string]func(int, primitive.ProtocolVersion) int16{
 		"managed":     managed,
 		"fixed":       fixed,
 		"incremental": incremental,
