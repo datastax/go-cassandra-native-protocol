@@ -78,7 +78,7 @@ func (v ProtocolVersion) String() string {
 	case ProtocolVersionDse2:
 		return "ProtocolVersion DSE 2"
 	}
-	return fmt.Sprintf("ProtocolVersion ? [%#.2X]", v)
+	return fmt.Sprintf("ProtocolVersion ? [%#.2X]", uint8(v))
 }
 
 type OpCode uint8
