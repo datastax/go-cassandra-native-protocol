@@ -66,6 +66,23 @@ type QueryOptions struct {
 	ContinuousPagingOptions *ContinuousPagingOptions
 }
 
+func (o *QueryOptions) Clone() *QueryOptions {
+	return &QueryOptions{
+		Consistency:             o.Consistency,
+		PositionalValues:        CloneValuesSlice(o.PositionalValues),
+		NamedValues:             CloneValuesMap(o.NamedValues),
+		SkipMetadata:            o.SkipMetadata,
+		PageSize:                o.PageSize,
+		PageSizeInBytes:         o.PageSizeInBytes,
+		PagingState:             primitive.CloneByteSlice(o.PagingState),
+		SerialConsistency:       primitive.CloneNillableConsistencyLevel(o.SerialConsistency),
+		DefaultTimestamp:        primitive.CloneNillableInt64(o.DefaultTimestamp),
+		Keyspace:                o.Keyspace,
+		NowInSeconds:            primitive.CloneNillableInt32(o.NowInSeconds),
+		ContinuousPagingOptions: CloneContinuousPagingOptions(o.ContinuousPagingOptions),
+	}
+}
+
 func (o *QueryOptions) String() string {
 	return fmt.Sprintf(
 		"[cl=%v, positionalVals=%v, namedVals=%v, skip=%v, psize=%v, state=%v, serialCl=%v]",
@@ -321,4 +338,32 @@ func DecodeQueryOptions(source io.Reader, version primitive.ProtocolVersion) (op
 		}
 	}
 	return options, nil
+}
+
+func CloneValuesSlice(o []*primitive.Value) []*primitive.Value {
+	var newValues []*primitive.Value
+	if o != nil {
+		newValues = make([]*primitive.Value, len(o))
+		for idx, v := range o {
+			newValues[idx] = v.Clone()
+		}
+	} else {
+		newValues = nil
+	}
+
+	return newValues
+}
+
+func CloneValuesMap(o map[string]*primitive.Value) map[string]*primitive.Value {
+	var newValues map[string]*primitive.Value
+	if o != nil {
+		newValues = make(map[string]*primitive.Value)
+		for key, v := range o {
+			newValues[key] = v.Clone()
+		}
+	} else {
+		newValues = nil
+	}
+
+	return newValues
 }

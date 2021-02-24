@@ -22,6 +22,60 @@ import (
 	"testing"
 )
 
+func TestBatch_Clone(t *testing.T) {
+	msg := &Batch{
+		Type:              primitive.BatchTypeLogged,
+		Children:          []*BatchChild{&BatchChild{
+			QueryOrId: "query",
+			Values:    []*primitive.Value{&primitive.Value{
+				Type:     primitive.ValueTypeRegular,
+				Contents: []byte{0x0a},
+			}},
+		}},
+		Consistency:       primitive.ConsistencyLevelLocalOne,
+		SerialConsistency: &primitive.NillableConsistencyLevel{
+			Value: primitive.ConsistencyLevelSerial,
+		},
+		DefaultTimestamp:  &primitive.NillableInt64{Value: 1},
+		Keyspace:          "ks1",
+		NowInSeconds:      &primitive.NillableInt32{Value: 2},
+	}
+	cloned := msg.Clone().(*Batch)
+	assert.Equal(t, msg, cloned)
+	cloned.Type = primitive.BatchTypeUnlogged
+	cloned.Children = []*BatchChild{&BatchChild{
+		QueryOrId: "query2",
+		Values:    []*primitive.Value{&primitive.Value{
+			Type:     primitive.ValueTypeNull,
+			Contents: []byte{0x0b},
+		}},
+	}}
+	cloned.Consistency = primitive.ConsistencyLevelAll
+	cloned.SerialConsistency = &primitive.NillableConsistencyLevel{
+		Value: primitive.ConsistencyLevelLocalSerial,
+	}
+	cloned.DefaultTimestamp = &primitive.NillableInt64{
+		Value: 5,
+	}
+	cloned.Keyspace = "ks2"
+	cloned.NowInSeconds = &primitive.NillableInt32{Value: 9}
+	assert.Equal(t, "query", msg.Children[0].QueryOrId)
+	assert.Equal(t, "query2", cloned.Children[0].QueryOrId)
+	assert.Equal(t, primitive.BatchTypeLogged, msg.Type)
+	assert.Equal(t, primitive.BatchTypeUnlogged, cloned.Type)
+	assert.Equal(t, primitive.ConsistencyLevelLocalOne, msg.Consistency)
+	assert.Equal(t, primitive.ConsistencyLevelAll, cloned.Consistency)
+	assert.Equal(t, primitive.ConsistencyLevelSerial, msg.SerialConsistency.Value)
+	assert.Equal(t, primitive.ConsistencyLevelLocalSerial, cloned.SerialConsistency.Value)
+	assert.EqualValues(t, 1, msg.DefaultTimestamp.Value)
+	assert.EqualValues(t, 5, cloned.DefaultTimestamp.Value)
+	assert.Equal(t, "ks1", msg.Keyspace)
+	assert.Equal(t, "ks2", cloned.Keyspace)
+	assert.EqualValues(t, 2, msg.NowInSeconds.Value)
+	assert.EqualValues(t, 9, cloned.NowInSeconds.Value)
+	assert.NotEqual(t, msg, cloned)
+}
+
 func TestBatchCodec_Encode(t *testing.T) {
 	codec := &batchCodec{}
 	// version = 2

@@ -29,6 +29,16 @@ func TestSetType(t *testing.T) {
 	assert.Equal(t, Varchar, setType.GetElementType())
 }
 
+func TestSetTypeClone(t *testing.T) {
+	st := NewSetType(Varchar)
+	cloned := st.Clone().(*setType)
+	cloned.elementType = Int
+	assert.Equal(t, primitive.DataTypeCodeSet, st.GetDataTypeCode())
+	assert.Equal(t, Varchar, st.GetElementType())
+	assert.Equal(t, primitive.DataTypeCodeSet, cloned.GetDataTypeCode())
+	assert.Equal(t, Int, cloned.GetElementType())
+}
+
 func TestSetTypeCodecEncode(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {

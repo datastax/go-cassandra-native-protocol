@@ -42,6 +42,12 @@ func (t *listType) GetDataTypeCode() primitive.DataTypeCode {
 	return primitive.DataTypeCodeList
 }
 
+func (t *listType) Clone() DataType {
+	return &listType{
+		elementType: t.elementType.Clone(),
+	}
+}
+
 func (t *listType) String() string {
 	return fmt.Sprintf("list<%v>", t.elementType)
 }

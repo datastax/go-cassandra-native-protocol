@@ -22,6 +22,7 @@ import (
 
 type DataType interface {
 	GetDataTypeCode() primitive.DataTypeCode
+	Clone() DataType
 }
 
 type encoder interface {

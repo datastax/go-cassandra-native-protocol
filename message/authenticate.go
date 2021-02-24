@@ -37,6 +37,12 @@ func (m *Authenticate) String() string {
 	return "AUTHENTICATE " + m.Authenticator
 }
 
+// Performs a deep copy of this message object.
+func (m *Authenticate) Clone() Message {
+	newMsg := *m
+	return &newMsg
+}
+
 type authenticateCodec struct{}
 
 func (c *authenticateCodec) Encode(msg Message, dest io.Writer, _ primitive.ProtocolVersion) error {

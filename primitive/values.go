@@ -50,6 +50,20 @@ func NewUnsetValue() *Value {
 	return &Value{Type: ValueTypeUnset}
 }
 
+func (v *Value) Clone() *Value {
+	var newContents []byte
+	if v.Contents != nil {
+		newContents = make([]byte, len(v.Contents))
+		copy(newContents, v.Contents)
+	} else {
+		newContents = nil
+	}
+	return &Value{
+		Type:     v.Type,
+		Contents: newContents,
+	}
+}
+
 // [value]
 
 func ReadValue(source io.Reader, version ProtocolVersion) (*Value, error) {

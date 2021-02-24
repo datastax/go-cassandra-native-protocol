@@ -52,6 +52,16 @@ func (m *SchemaChangeEvent) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeEvent
 }
 
+func (m *SchemaChangeEvent) Clone() Message {
+	return &SchemaChangeEvent{
+		ChangeType: m.ChangeType,
+		Target:     m.Target,
+		Keyspace:   m.Keyspace,
+		Object:     m.Object,
+		Arguments:  primitive.CloneStringSlice(m.Arguments),
+	}
+}
+
 func (m *SchemaChangeEvent) GetEventType() primitive.EventType {
 	return primitive.EventTypeSchemaChange
 }
@@ -80,6 +90,13 @@ func (m *StatusChangeEvent) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeEvent
 }
 
+func (m *StatusChangeEvent) Clone() Message {
+	return &StatusChangeEvent{
+		ChangeType: m.ChangeType,
+		Address:    primitive.CloneInet(m.Address),
+	}
+}
+
 func (m *StatusChangeEvent) GetEventType() primitive.EventType {
 	return primitive.EventTypeStatusChange
 }
@@ -103,6 +120,13 @@ func (m *TopologyChangeEvent) IsResponse() bool {
 
 func (m *TopologyChangeEvent) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeEvent
+}
+
+func (m *TopologyChangeEvent) Clone() Message {
+	return &TopologyChangeEvent{
+		ChangeType: m.ChangeType,
+		Address:    primitive.CloneInet(m.Address),
+	}
 }
 
 func (m *TopologyChangeEvent) GetEventType() primitive.EventType {

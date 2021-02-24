@@ -146,6 +146,44 @@ func (f *Frame) String() string {
 	return fmt.Sprintf("{header: %v, body: %v}", f.Header, f.Body)
 }
 
+// Performs a deep copy of a header object and returns the new object.
+func (h *Header) Clone() *Header {
+	newHeader := *h // it's only value types so this is fine
+	return &newHeader
+}
+
+// Performs a deep copy of a body object and returns the new object.
+func (b *Body) Clone() *Body {
+	newUuid := b.TracingId.Clone()
+
+	var customPayload map[string][]byte
+	if b.CustomPayload == nil {
+		customPayload = nil
+	} else {
+		customPayload := make(map[string][]byte)
+		for key, value := range b.CustomPayload {
+			newValue := make([]byte, len(value))
+			copy(newValue, value)
+			customPayload[key] = newValue
+		}
+	}
+
+	var warnings []string
+	if b.Warnings == nil {
+		warnings = nil
+	} else {
+		warnings := make([]string, len(b.Warnings))
+		copy(warnings, b.Warnings)
+	}
+
+	return &Body{
+		TracingId:     &newUuid,
+		CustomPayload: customPayload,
+		Warnings:      warnings,
+		Message:       b.Message.Clone(),
+	}
+}
+
 func (f *RawFrame) String() string {
 	return fmt.Sprintf("{header: %v, body: %v}", f.Header, f.Body)
 }

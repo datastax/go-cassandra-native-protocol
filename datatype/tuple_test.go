@@ -29,6 +29,16 @@ func TestTupleType(t *testing.T) {
 	assert.Equal(t, []DataType{Varchar, Int}, tupleType.GetFieldTypes())
 }
 
+func TestTupleTypeClone(t *testing.T) {
+	tt := NewTupleType(Varchar, Int)
+	cloned := tt.Clone().(*tupleType)
+	cloned.fieldTypes = []DataType{Int, Uuid, Float}
+	assert.Equal(t, primitive.DataTypeCodeTuple, tt.GetDataTypeCode())
+	assert.Equal(t, []DataType{Varchar, Int}, tt.GetFieldTypes())
+	assert.Equal(t, primitive.DataTypeCodeTuple, cloned.GetDataTypeCode())
+	assert.Equal(t, []DataType{Int, Uuid, Float}, cloned.GetFieldTypes())
+}
+
 func TestTupleTypeCodecEncode(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {

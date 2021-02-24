@@ -35,6 +35,10 @@ func (m *Supported) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeSupported
 }
 
+func (m *Supported) Clone() Message {
+	return &Supported{Options: primitive.CloneSupportedOptions(m.Options)}
+}
+
 func (m *Supported) String() string {
 	return fmt.Sprintf("SUPPORTED %v", m.Options)
 }

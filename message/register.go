@@ -33,6 +33,20 @@ func (m *Register) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeRegister
 }
 
+func (m *Register) Clone() Message {
+	var newEventTypes []primitive.EventType
+	if m.EventTypes != nil {
+		newEventTypes = make([]primitive.EventType, len(m.EventTypes))
+		copy(newEventTypes, m.EventTypes)
+	} else {
+		newEventTypes = nil
+	}
+	
+	return &Register{
+		EventTypes: newEventTypes,
+	}
+}
+
 func (m *Register) String() string {
 	return fmt.Sprint("REGISTER ", m.EventTypes)
 }

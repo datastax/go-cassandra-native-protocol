@@ -22,6 +22,19 @@ import (
 	"testing"
 )
 
+func TestAuthSuccess_Clone(t *testing.T) {
+	token := []byte{0xca, 0xfe, 0xba, 0xbe}
+	msg := &AuthSuccess{
+		Token: token,
+	}
+	cloned := msg.Clone().(*AuthSuccess)
+	assert.Equal(t, msg, cloned)
+	cloned.Token = []byte{0xcb, 0xfd, 0xbc, 0xba}
+	assert.Equal(t, []byte{0xca, 0xfe, 0xba, 0xbe}, token)
+	assert.Equal(t, []byte{0xcb, 0xfd, 0xbc, 0xba}, cloned.Token)
+	assert.NotEqual(t, msg, cloned)
+}
+
 func TestAuthSuccessCodec_Encode(t *testing.T) {
 	token := []byte{0xca, 0xfe, 0xba, 0xbe}
 	codec := &authSuccessCodec{}

@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
+	"github.com/rs/zerolog/log"
 	"io"
 )
 
@@ -80,6 +81,29 @@ func (m *Batch) Flags() primitive.QueryFlag {
 	return flags
 }
 
+// Performs a deep copy of this batch message object
+func (m *Batch) Clone() Message {
+	var newBatchChildren []*BatchChild
+	if m.Children != nil {
+		newBatchChildren = make([]*BatchChild, len(m.Children))
+		for idx, child := range m.Children {
+			newBatchChildren[idx] = child.Clone()
+		}
+	} else {
+		newBatchChildren = nil
+	}
+
+	return &Batch{
+		Type:              m.Type,
+		Children:          newBatchChildren,
+		Consistency:       m.Consistency,
+		SerialConsistency: primitive.CloneNillableConsistencyLevel(m.SerialConsistency),
+		DefaultTimestamp:  primitive.CloneNillableInt64(m.DefaultTimestamp),
+		Keyspace:          m.Keyspace,
+		NowInSeconds:      primitive.CloneNillableInt32(m.NowInSeconds),
+	}
+}
+
 type BatchChild struct {
 	// Either a string or []byte; the former should be the CQL statement to execute, the latter the prepared id of
 	// the statement to execute.
@@ -87,6 +111,28 @@ type BatchChild struct {
 	// Note: named values are in theory possible, but their server-side implementation is
 	// broken. See https://issues.apache.org/jira/browse/CASSANDRA-10246
 	Values []*primitive.Value
+}
+
+func (c *BatchChild) Clone() *BatchChild {
+	var newQueryOrId interface{}
+	if c.QueryOrId != nil {
+		switch queryOrId := c.QueryOrId.(type) {
+		case string:
+			newQueryOrId = queryOrId
+		case []byte:
+			newQueryOrId = primitive.CloneByteSlice(queryOrId)
+		default:
+			log.Error().Msgf("could not clone QueryOrId, unexpected type: %T", queryOrId)
+			newQueryOrId = c.QueryOrId
+		}
+	} else {
+		newQueryOrId = nil
+	}
+
+	return &BatchChild{
+		QueryOrId: newQueryOrId,
+		Values:    CloneValuesSlice(c.Values),
+	}
 }
 
 type batchCodec struct{}

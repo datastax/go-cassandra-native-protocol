@@ -32,6 +32,10 @@ func (m *Ready) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeReady
 }
 
+func (m *Ready) Clone() Message {
+	return &Ready{}
+}
+
 func (m *Ready) String() string {
 	return "READY"
 }

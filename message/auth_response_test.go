@@ -22,6 +22,19 @@ import (
 	"testing"
 )
 
+func TestAuthResponse_Clone(t *testing.T) {
+	token := []byte{0xca, 0xfe, 0xba, 0xbe}
+	msg := &AuthResponse{
+		Token: token,
+	}
+	cloned := msg.Clone().(*AuthResponse)
+	assert.Equal(t, msg, cloned)
+	cloned.Token = []byte{0xcb, 0xfd, 0xbc, 0xba}
+	assert.Equal(t, []byte{0xca, 0xfe, 0xba, 0xbe}, token)
+	assert.Equal(t, []byte{0xcb, 0xfd, 0xbc, 0xba}, cloned.Token)
+	assert.NotEqual(t, msg, cloned)
+}
+
 func TestAuthResponseCodec_Encode(t *testing.T) {
 	token := []byte{0xca, 0xfe, 0xba, 0xbe}
 	codec := &authResponseCodec{}

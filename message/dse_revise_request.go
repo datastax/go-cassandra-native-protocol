@@ -38,6 +38,11 @@ func (m *Revise) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeDseRevise
 }
 
+func (m *Revise) Clone() Message {
+	newObj := *m
+	return &newObj
+}
+
 func (m *Revise) String() string {
 	return fmt.Sprintf("REVISE_REQUEST operation type: %v, stream id: %v", m.RevisionType, m.TargetStreamId)
 }

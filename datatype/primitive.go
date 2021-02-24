@@ -56,6 +56,12 @@ func (t *primitiveType) GetDataTypeCode() primitive.DataTypeCode {
 	return t.code
 }
 
+func (t *primitiveType) Clone() DataType {
+	return &primitiveType{
+		code: t.code,
+	}
+}
+
 func (t *primitiveType) String() string {
 	switch t.GetDataTypeCode() {
 	case primitive.DataTypeCodeAscii:

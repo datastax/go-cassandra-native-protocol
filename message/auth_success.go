@@ -37,6 +37,13 @@ func (m *AuthSuccess) String() string {
 	return "AUTH_SUCCESS"
 }
 
+// Performs a deep copy of this message object.
+func (m *AuthSuccess) Clone() Message {
+	return &AuthSuccess{
+		Token: primitive.CloneByteSlice(m.Token),
+	}
+}
+
 type authSuccessCodec struct{}
 
 func (c *authSuccessCodec) Encode(msg Message, dest io.Writer, _ primitive.ProtocolVersion) error {

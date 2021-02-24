@@ -66,6 +66,23 @@ func (t *userDefinedType) GetDataTypeCode() primitive.DataTypeCode {
 	return primitive.DataTypeCodeUdt
 }
 
+func (t *userDefinedType) Clone() DataType {
+	var newDataTypes []DataType
+	if t.fieldTypes != nil {
+		newDataTypes = make([]DataType, len(t.fieldTypes))
+		copy(newDataTypes, t.fieldTypes)
+	} else {
+		newDataTypes = nil
+	}
+
+	return &userDefinedType{
+		keyspace:   t.keyspace,
+		name:       t.name,
+		fieldNames: primitive.CloneStringSlice(t.fieldNames),
+		fieldTypes: newDataTypes,
+	}
+}
+
 func (t *userDefinedType) String() string {
 	return fmt.Sprintf("%v.%v<%v>", t.keyspace, t.name, t.fieldTypes)
 }
