@@ -22,6 +22,26 @@ import (
 	"testing"
 )
 
+func TestRevise_Clone(t *testing.T) {
+	obj := &Revise{
+		RevisionType:   primitive.DseRevisionTypeCancelContinuousPaging,
+		TargetStreamId: 5,
+		NextPages:      10,
+	}
+	cloned := obj.Clone().(*Revise)
+	assert.Equal(t, obj, cloned)
+	cloned.RevisionType = primitive.DseRevisionTypeMoreContinuousPages
+	cloned.TargetStreamId = 6
+	cloned.NextPages = 7
+	assert.NotEqual(t, obj, cloned)
+	assert.Equal(t, primitive.DseRevisionTypeCancelContinuousPaging, obj.RevisionType)
+	assert.EqualValues(t, 5, obj.TargetStreamId)
+	assert.EqualValues(t, 10, obj.NextPages)
+	assert.Equal(t, primitive.DseRevisionTypeMoreContinuousPages, cloned.RevisionType)
+	assert.EqualValues(t, 6, cloned.TargetStreamId)
+	assert.EqualValues(t, 7, cloned.NextPages)
+}
+
 func TestReviseCodec_Encode(t *testing.T) {
 	codec := &reviseCodec{}
 	version := primitive.ProtocolVersionDse1
