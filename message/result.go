@@ -548,7 +548,11 @@ func hasResultMetadataId(version primitive.ProtocolVersion) bool {
 }
 
 func cloneRowSet(o RowSet) RowSet {
-	newRowSet := RowSet{}
+	if o == nil {
+		return nil
+	}
+
+	newRowSet := make(RowSet, len(o))
 	for idx, v := range o {
 		newRowSet[idx] = cloneRow(v)
 	}
@@ -557,7 +561,11 @@ func cloneRowSet(o RowSet) RowSet {
 }
 
 func cloneRow(o Row) Row {
-	newRow := Row{}
+	if o == nil {
+		return nil
+	}
+
+	newRow := make(Row, len(o))
 	for idx, v := range o {
 		newRow[idx] = primitive.CloneByteSlice(v)
 	}

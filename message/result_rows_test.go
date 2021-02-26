@@ -22,6 +22,98 @@ import (
 	"testing"
 )
 
+func TestRowsResult_Clone(t *testing.T) {
+	msg := &RowsResult{
+		Metadata: &RowsMetadata{
+			ColumnCount:          1,
+			PagingState:          nil,
+			NewResultMetadataId:  nil,
+			ContinuousPageNumber: 1,
+			LastContinuousPage:   false,
+			Columns:              []*ColumnMetadata{
+				{
+					Keyspace: "ks1",
+					Table:    "tb1",
+					Name:     "c1",
+					Index:    0,
+					Type:     datatype.Ascii,
+				},
+			},
+		},
+		Data:     RowSet{
+			{
+				{0x12, 0x23},
+			},
+			{
+				{0x44, 0x55},
+			},
+		},
+	}
+
+	cloned := msg.Clone().(*RowsResult)
+	assert.Equal(t, msg, cloned)
+
+	cloned.Metadata = &RowsMetadata{
+		ColumnCount:          1,
+		PagingState:          []byte{0x22},
+		NewResultMetadataId:  []byte{0x33},
+		ContinuousPageNumber: 3,
+		LastContinuousPage:   true,
+		Columns:              []*ColumnMetadata{
+			{
+				Keyspace: "ks2",
+				Table:    "tb2",
+				Name:     "c2",
+				Index:    0,
+				Type:     datatype.Float,
+			},
+			{
+				Keyspace: "ks2",
+				Table:    "tb2",
+				Name:     "c3",
+				Index:    1,
+				Type:     datatype.Uuid,
+			},
+		},
+	}
+	cloned.Data = RowSet{
+		{
+			{0x52, 0x63},
+		},
+	}
+
+	assert.NotEqual(t, msg, cloned)
+
+	assert.EqualValues(t, 1, msg.Metadata.ColumnCount)
+	assert.Nil(t, msg.Metadata.PagingState)
+	assert.Nil(t, msg.Metadata.NewResultMetadataId)
+	assert.EqualValues(t, 1, msg.Metadata.ContinuousPageNumber)
+	assert.False(t, msg.Metadata.LastContinuousPage)
+	assert.Equal(t, "ks1", msg.Metadata.Columns[0].Keyspace)
+	assert.Equal(t, "tb1", msg.Metadata.Columns[0].Table)
+	assert.Equal(t, "c1", msg.Metadata.Columns[0].Name)
+	assert.EqualValues(t, 0, msg.Metadata.Columns[0].Index)
+	assert.Equal(t, datatype.Ascii, msg.Metadata.Columns[0].Type)
+	assert.Equal(t, RowSet{{{0x12, 0x23}},{{0x44, 0x55}}}, msg.Data)
+
+	assert.EqualValues(t, 1, cloned.Metadata.ColumnCount)
+	assert.Equal(t, []byte{0x22}, cloned.Metadata.PagingState)
+	assert.Equal(t, []byte{0x33}, cloned.Metadata.NewResultMetadataId)
+	assert.EqualValues(t, 3, cloned.Metadata.ContinuousPageNumber)
+	assert.True(t, cloned.Metadata.LastContinuousPage)
+	assert.Equal(t, "ks2", cloned.Metadata.Columns[0].Keyspace)
+	assert.Equal(t, "tb2", cloned.Metadata.Columns[0].Table)
+	assert.Equal(t, "c2", cloned.Metadata.Columns[0].Name)
+	assert.EqualValues(t, 0, cloned.Metadata.Columns[0].Index)
+	assert.Equal(t, datatype.Float, cloned.Metadata.Columns[0].Type)
+	assert.Equal(t, "ks2", cloned.Metadata.Columns[1].Keyspace)
+	assert.Equal(t, "tb2", cloned.Metadata.Columns[1].Table)
+	assert.Equal(t, "c3", cloned.Metadata.Columns[1].Name)
+	assert.EqualValues(t, 1, cloned.Metadata.Columns[1].Index)
+	assert.Equal(t, datatype.Uuid, cloned.Metadata.Columns[1].Type)
+	assert.Equal(t, RowSet{{{0x52, 0x63}}}, cloned.Data)
+}
+
 func TestResultCodec_Encode_Rows(test *testing.T) {
 	row1 := Row{
 		Column{0, 0, 0, 1},    // int = 1

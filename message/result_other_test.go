@@ -21,6 +21,22 @@ import (
 	"testing"
 )
 
+func TestSetKeyspaceResult_Clone(t *testing.T) {
+	msg := &SetKeyspaceResult{
+		Keyspace: "ks1",
+	}
+
+	cloned := msg.Clone().(*SetKeyspaceResult)
+	assert.Equal(t, msg, cloned)
+
+	cloned.Keyspace = "ks2"
+
+	assert.NotEqual(t, msg, cloned)
+
+	assert.Equal(t, "ks1", msg.Keyspace)
+	assert.Equal(t, "ks2", cloned.Keyspace)
+}
+
 func TestResultCodec_Encode_Other(test *testing.T) {
 	codec := &resultCodec{}
 	for _, version := range primitive.AllProtocolVersions() {

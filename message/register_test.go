@@ -22,6 +22,23 @@ import (
 	"testing"
 )
 
+func TestRegister_Clone(t *testing.T) {
+	msg := &Register{
+		EventTypes: []primitive.EventType{primitive.EventTypeSchemaChange},
+	}
+
+	cloned := msg.Clone().(*Register)
+	assert.Equal(t, msg, cloned)
+
+	cloned.EventTypes = []primitive.EventType{primitive.EventTypeSchemaChange, primitive.EventTypeStatusChange}
+
+	assert.NotEqual(t, msg, cloned)
+
+	assert.Equal(t, []primitive.EventType{primitive.EventTypeSchemaChange}, msg.EventTypes)
+
+	assert.Equal(t, []primitive.EventType{primitive.EventTypeSchemaChange, primitive.EventTypeStatusChange}, cloned.EventTypes)
+}
+
 func TestRegisterCodec_Encode(t *testing.T) {
 	codec := &registerCodec{}
 	for _, version := range primitive.AllProtocolVersions() {

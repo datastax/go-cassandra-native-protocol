@@ -22,6 +22,27 @@ import (
 	"testing"
 )
 
+func TestPrepare_Clone(t *testing.T) {
+	msg := &Prepare{
+		Query:    "query",
+		Keyspace: "ks1",
+	}
+
+	cloned := msg.Clone().(*Prepare)
+	assert.Equal(t, msg, cloned)
+
+	cloned.Query = "query2"
+	cloned.Keyspace = "ks2"
+
+	assert.NotEqual(t, msg, cloned)
+
+	assert.Equal(t, "query", msg.Query)
+	assert.Equal(t, "ks1", msg.Keyspace)
+
+	assert.Equal(t, "query2", cloned.Query)
+	assert.Equal(t, "ks2", cloned.Keyspace)
+}
+
 func TestPrepareCodec_Encode(t *testing.T) {
 	codec := &prepareCodec{}
 	// versions <= 4 + DSE v1

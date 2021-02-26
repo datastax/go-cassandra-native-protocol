@@ -146,6 +146,14 @@ func (f *Frame) String() string {
 	return fmt.Sprintf("{header: %v, body: %v}", f.Header, f.Body)
 }
 
+// Performs a deep copy of a frame object
+func (f* Frame) Clone() *Frame {
+	return &Frame{
+		Header: f.Header.Clone(),
+		Body:   f.Body.Clone(),
+	}
+}
+
 // Performs a deep copy of a header object and returns the new object.
 func (h *Header) Clone() *Header {
 	newHeader := *h // it's only value types so this is fine
@@ -160,7 +168,7 @@ func (b *Body) Clone() *Body {
 	if b.CustomPayload == nil {
 		customPayload = nil
 	} else {
-		customPayload := make(map[string][]byte)
+		customPayload = make(map[string][]byte)
 		for key, value := range b.CustomPayload {
 			newValue := make([]byte, len(value))
 			copy(newValue, value)
@@ -172,7 +180,7 @@ func (b *Body) Clone() *Body {
 	if b.Warnings == nil {
 		warnings = nil
 	} else {
-		warnings := make([]string, len(b.Warnings))
+		warnings = make([]string, len(b.Warnings))
 		copy(warnings, b.Warnings)
 	}
 
@@ -215,6 +223,14 @@ func (f *RawFrame) Dump() (string, error) {
 		return "", err
 	} else {
 		return hex.Dump(buffer.Bytes()), nil
+	}
+}
+
+// Performs a deep copy of a RawFrame object
+func (f *RawFrame) Clone() *RawFrame {
+	return &RawFrame{
+		Header: f.Header.Clone(),
+		Body:   primitive.CloneByteSlice(f.Body),
 	}
 }
 
