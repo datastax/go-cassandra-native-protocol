@@ -137,3 +137,40 @@ func TestBody_Clone(t *testing.T) {
 	assert.Equal(t, 2, len(cloned.Warnings))
 	assert.Equal(t, "q2", cloned.Message.(*message.Query).Query)
 }
+
+func TestBody_Clone_WithNils(t *testing.T) {
+	b := &Body{
+		TracingId:     nil,
+		CustomPayload: nil,
+		Warnings:      nil,
+		Message:       &message.Query{
+			Query:   "q1",
+		},
+	}
+
+	cloned := b.Clone()
+	assert.Equal(t, b, cloned)
+
+	cloned.TracingId = &primitive.UUID{0x03}
+	cloned.CustomPayload = map[string][]byte{}
+	cloned.CustomPayload["opt1"] = []byte{0x01}
+	cloned.CustomPayload["opt2"] = []byte{0x06}
+	cloned.Warnings = []string{"w1", "w2"}
+	cloned.Message.(*message.Query).Query = "q2"
+
+	assert.NotEqual(t, b, cloned)
+
+	assert.Nil(t, b.TracingId)
+	assert.Nil(t, b.CustomPayload)
+	assert.Nil(t, b.Warnings)
+	assert.Equal(t, "q1", b.Message.(*message.Query).Query)
+
+	assert.Equal(t, &primitive.UUID{0x03}, cloned.TracingId)
+	assert.Equal(t, []byte{0x01}, cloned.CustomPayload["opt1"])
+	assert.Equal(t, []byte{0x06}, cloned.CustomPayload["opt2"])
+	assert.Equal(t, 2, len(cloned.CustomPayload))
+	assert.Equal(t, "w1", cloned.Warnings[0])
+	assert.Equal(t, "w2", cloned.Warnings[1])
+	assert.Equal(t, 2, len(cloned.Warnings))
+	assert.Equal(t, "q2", cloned.Message.(*message.Query).Query)
+}
