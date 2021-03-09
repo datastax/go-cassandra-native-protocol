@@ -148,8 +148,8 @@ func (m *PreparedResult) Clone() Message {
 	return &PreparedResult{
 		PreparedQueryId:   primitive.CloneByteSlice(m.PreparedQueryId),
 		ResultMetadataId:  primitive.CloneByteSlice(m.ResultMetadataId),
-		VariablesMetadata: cloneVariablesMetadata(m.VariablesMetadata),
-		ResultMetadata:    cloneRowsMetadata(m.ResultMetadata),
+		VariablesMetadata: m.VariablesMetadata.Clone(),
+		ResultMetadata:    m.ResultMetadata.Clone(),
 	}
 }
 
@@ -188,7 +188,7 @@ func (m *RowsResult) GetOpCode() primitive.OpCode {
 
 func (m *RowsResult) Clone() Message {
 	return &RowsResult{
-		Metadata: cloneRowsMetadata(m.Metadata),
+		Metadata: m.Metadata.Clone(),
 		Data:     cloneRowSet(m.Data),
 	}
 }

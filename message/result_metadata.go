@@ -381,7 +381,7 @@ func haveSameTable(cols []*ColumnMetadata) bool {
 	return true
 }
 
-func cloneColumnMetadata(cm *ColumnMetadata) *ColumnMetadata {
+func (cm *ColumnMetadata) Clone() *ColumnMetadata {
 	if cm == nil {
 		return nil
 	}
@@ -395,7 +395,7 @@ func cloneColumnMetadata(cm *ColumnMetadata) *ColumnMetadata {
 	}
 }
 
-func cloneVariablesMetadata(vm *VariablesMetadata) *VariablesMetadata {
+func (vm *VariablesMetadata) Clone() *VariablesMetadata {
 	var newPkIndices []uint16
 	if vm.PkIndices != nil {
 		newPkIndices = make([]uint16, len(vm.PkIndices))
@@ -408,7 +408,7 @@ func cloneVariablesMetadata(vm *VariablesMetadata) *VariablesMetadata {
 	if vm.Columns != nil {
 		newColumnMetadata = make([]*ColumnMetadata, len(vm.Columns))
 		for idx, cm := range vm.Columns {
-			newColumnMetadata[idx] = cloneColumnMetadata(cm)
+			newColumnMetadata[idx] = cm.Clone()
 		}
 	} else {
 		newColumnMetadata = nil
@@ -420,12 +420,12 @@ func cloneVariablesMetadata(vm *VariablesMetadata) *VariablesMetadata {
 	}
 }
 
-func cloneRowsMetadata(rm *RowsMetadata) *RowsMetadata {
+func (rm *RowsMetadata) Clone() *RowsMetadata {
 	var newColumnMetadata []*ColumnMetadata
 	if rm.Columns != nil {
 		newColumnMetadata = make([]*ColumnMetadata, len(rm.Columns))
 		for idx, cm := range rm.Columns {
-			newColumnMetadata[idx] = cloneColumnMetadata(cm)
+			newColumnMetadata[idx] = cm.Clone()
 		}
 	} else {
 		newColumnMetadata = nil
