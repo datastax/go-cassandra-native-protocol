@@ -35,7 +35,7 @@ type ContinuousPagingOptions struct {
 	NextPages int32
 }
 
-func CloneContinuousPagingOptions(options *ContinuousPagingOptions) *ContinuousPagingOptions {
+func (options *ContinuousPagingOptions) Clone() *ContinuousPagingOptions {
 	if options == nil {
 		return nil
 	}

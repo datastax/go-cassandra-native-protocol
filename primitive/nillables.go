@@ -26,7 +26,7 @@ type NillableConsistencyLevel struct {
 	Value ConsistencyLevel
 }
 
-func CloneNillableInt32(n *NillableInt32) *NillableInt32 {
+func (n *NillableInt32) Clone() *NillableInt32 {
 	if n == nil {
 		return nil
 	}
@@ -34,7 +34,7 @@ func CloneNillableInt32(n *NillableInt32) *NillableInt32 {
 	return &NillableInt32{Value: n.Value}
 }
 
-func CloneNillableInt64(n *NillableInt64) *NillableInt64 {
+func (n *NillableInt64) Clone() *NillableInt64 {
 	if n == nil {
 		return nil
 	}
@@ -42,7 +42,7 @@ func CloneNillableInt64(n *NillableInt64) *NillableInt64 {
 	return &NillableInt64{Value: n.Value}
 }
 
-func CloneNillableConsistencyLevel(n *NillableConsistencyLevel) *NillableConsistencyLevel {
+func (n *NillableConsistencyLevel) Clone() *NillableConsistencyLevel {
 	if n == nil {
 		return nil
 	}

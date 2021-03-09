@@ -27,41 +27,51 @@ type QueryOptions struct {
 	// zero value of primitive.ConsistencyLevel is primitive.ConsistencyLevelAny. Note that ANY is NOT suitable for
 	// read queries.
 	Consistency primitive.ConsistencyLevel
+
 	// The positional values of the associated query. Positional values are designated in query strings with a
 	// question mark bind marker ('?'). Positional values are valid for all protocol versions.
 	// It is illegal to use both positional and named values at the same time. If this happens, positional values will
 	// be used and named values will be silently ignored.
 	PositionalValues []*primitive.Value
+
 	// The named values of the associated query. Named values are designated in query strings with a
 	// a bind marker starting with a colon (e.g. ':var1'). Named values can only be used with protocol version 3 or
 	// higher.
 	// It is illegal to use both positional and named values at the same time. If this happens, positional values will
 	// be used and named values will be silently ignored.
 	NamedValues map[string]*primitive.Value
+
 	// If true, asks the server to skip result set metadata when sending results. In such case, the RowsResult message
 	// returned as a response to the query (if any) will contain no result set metadata, and will have the NO_METADATA
 	// flag set; in other words, RowsResult.Metadata will be present but RowsResult.Metadata.Columns will be nil.
 	SkipMetadata bool
+
 	// The desired page size. A value of zero or negative is usually interpreted as "no pagination" and can result
 	// in the entire result set being returned in one single page.
 	PageSize int32
+
 	// Whether the page size is expressed in number of rows or number of bytes. Valid for DSE protocol versions only.
 	PageSizeInBytes bool
+
 	// PagingState is a [bytes] value coming from a previously-received RowsResult.Metadata object. If provided, the
 	// query will be executed but starting from a given paging state.
 	PagingState []byte
+
 	// The (optional) serial consistency level to use when executing the query. Valid for protocol versions 2 and
 	// higher.
 	SerialConsistency *primitive.NillableConsistencyLevel
+
 	// The default timestamp for the query in microseconds (negative values are discouraged but supported for
 	// backward compatibility reasons except for the smallest negative value (-2^63) that is forbidden). If provided,
 	// this will replace the server-side assigned timestamp as default timestamp. Note that a timestamp in the query
 	// itself (that is, if the query has a USING TIMESTAMP clause) will still override this timestamp.
 	// Default timestamps are valid for protocol versions 3 and higher.
 	DefaultTimestamp *primitive.NillableInt64
+
 	// Valid for protocol version 5 and DSE protocol version 2 only.
 	Keyspace     string
 	NowInSeconds *primitive.NillableInt32
+
 	// Valid only for DSE protocol versions.
 	ContinuousPagingOptions *ContinuousPagingOptions
 }
@@ -75,11 +85,11 @@ func (o *QueryOptions) Clone() *QueryOptions {
 		PageSize:                o.PageSize,
 		PageSizeInBytes:         o.PageSizeInBytes,
 		PagingState:             primitive.CloneByteSlice(o.PagingState),
-		SerialConsistency:       primitive.CloneNillableConsistencyLevel(o.SerialConsistency),
-		DefaultTimestamp:        primitive.CloneNillableInt64(o.DefaultTimestamp),
+		SerialConsistency:       o.SerialConsistency.Clone(),
+		DefaultTimestamp:        o.DefaultTimestamp.Clone(),
 		Keyspace:                o.Keyspace,
-		NowInSeconds:            primitive.CloneNillableInt32(o.NowInSeconds),
-		ContinuousPagingOptions: CloneContinuousPagingOptions(o.ContinuousPagingOptions),
+		NowInSeconds:            o.NowInSeconds.Clone(),
+		ContinuousPagingOptions: o.ContinuousPagingOptions.Clone(),
 	}
 }
 

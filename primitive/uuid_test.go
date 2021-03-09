@@ -88,3 +88,13 @@ func TestWriteUuid(t *testing.T) {
 		})
 	}
 }
+
+func TestUUID_Clone(t *testing.T) {
+	u := &UUID{0, 1, 2, 3, 4, 5, 6}
+	cloned := u.Clone()
+
+	assert.Equal(t, u, cloned)
+
+	cloned[1] = 9
+	assert.NotEqual(t, u, cloned)
+}

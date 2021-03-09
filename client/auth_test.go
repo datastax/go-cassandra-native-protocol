@@ -27,6 +27,7 @@ func TestAuthCredentials_Copy(t *testing.T) {
 	}
 
 	cpy := credentials.Copy()
+	assert.Equal(t, credentials, cpy)
 
 	cpy.Username = "user2"
 	cpy.Password = "pass2"

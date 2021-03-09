@@ -18,7 +18,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/rs/zerolog/log"
 	"io"
 )
 
@@ -84,23 +83,18 @@ func (m *Batch) Flags() primitive.QueryFlag {
 // Performs a deep copy of this batch message object
 func (m *Batch) Clone() Message {
 	var newBatchChildren []*BatchChild
-	if m.Children != nil {
-		newBatchChildren = make([]*BatchChild, len(m.Children))
-		for idx, child := range m.Children {
-			newBatchChildren[idx] = child.Clone()
-		}
-	} else {
-		newBatchChildren = nil
+	for _, child := range m.Children {
+		newBatchChildren = append(newBatchChildren, child.Clone())
 	}
 
 	return &Batch{
 		Type:              m.Type,
 		Children:          newBatchChildren,
 		Consistency:       m.Consistency,
-		SerialConsistency: primitive.CloneNillableConsistencyLevel(m.SerialConsistency),
-		DefaultTimestamp:  primitive.CloneNillableInt64(m.DefaultTimestamp),
+		SerialConsistency: m.SerialConsistency.Clone(),
+		DefaultTimestamp:  m.DefaultTimestamp.Clone(),
 		Keyspace:          m.Keyspace,
-		NowInSeconds:      primitive.CloneNillableInt32(m.NowInSeconds),
+		NowInSeconds:      m.NowInSeconds.Clone(),
 	}
 }
 
@@ -117,13 +111,10 @@ func (c *BatchChild) Clone() *BatchChild {
 	var newQueryOrId interface{}
 	if c.QueryOrId != nil {
 		switch queryOrId := c.QueryOrId.(type) {
-		case string:
-			newQueryOrId = queryOrId
 		case []byte:
 			newQueryOrId = primitive.CloneByteSlice(queryOrId)
 		default:
-			log.Error().Msgf("could not clone QueryOrId, unexpected type: %T", queryOrId)
-			newQueryOrId = c.QueryOrId
+			newQueryOrId = queryOrId
 		}
 	} else {
 		newQueryOrId = nil

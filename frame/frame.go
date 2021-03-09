@@ -162,14 +162,6 @@ func (h *Header) Clone() *Header {
 
 // Performs a deep copy of a body object and returns the new object.
 func (b *Body) Clone() *Body {
-	var tracingId *primitive.UUID
-	if b.TracingId == nil {
-		tracingId = nil
-	} else {
-		temp := b.TracingId.Clone()
-		tracingId = &temp
-	}
-
 	var customPayload map[string][]byte
 	if b.CustomPayload == nil {
 		customPayload = nil
@@ -191,7 +183,7 @@ func (b *Body) Clone() *Body {
 	}
 
 	return &Body{
-		TracingId:     tracingId,
+		TracingId:     b.TracingId.Clone(),
 		CustomPayload: customPayload,
 		Warnings:      warnings,
 		Message:       b.Message.Clone(),

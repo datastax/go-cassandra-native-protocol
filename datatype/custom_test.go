@@ -120,6 +120,7 @@ func TestCustomTypeCodecDecode(t *testing.T) {
 func TestCustomTypeClone(t *testing.T) {
 	ct := NewCustomType("foo.bar.qix")
 	clonedCustomType := ct.Clone().(*customType)
+	assert.Equal(t, ct, clonedCustomType)
 	clonedCustomType.className = "123"
 	assert.Equal(t, "123", clonedCustomType.GetClassName())
 	assert.Equal(t, "foo.bar.qix", ct.GetClassName())

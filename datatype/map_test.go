@@ -33,6 +33,7 @@ func TestMapType(t *testing.T) {
 func TestMapTypeClone(t *testing.T) {
 	mt := NewMapType(Varchar, Int)
 	cloned := mt.Clone().(*mapType)
+	assert.Equal(t, mt, cloned)
 	cloned.keyType = Inet
 	cloned.valueType = Uuid
 	assert.Equal(t, primitive.DataTypeCodeMap, mt.GetDataTypeCode())

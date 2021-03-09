@@ -27,12 +27,20 @@ const LengthOfUuid = 16
 
 type UUID [16]byte
 
-func (u UUID) Clone() UUID {
-	newUuid := u
-	return newUuid
+func (u *UUID) Clone() *UUID {
+	if u == nil {
+		return nil
+	}
+
+	newUuid := *u
+	return &newUuid
 }
 
-func (u UUID) String() string {
+func (u *UUID) String() string {
+	if u == nil {
+		return ""
+	}
+
 	return hex.EncodeToString(u[:])
 }
 

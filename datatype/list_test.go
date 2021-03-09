@@ -32,6 +32,7 @@ func TestListType(t *testing.T) {
 func TestListTypeClone(t *testing.T) {
 	lt := NewListType(Varchar)
 	clonedObj := lt.Clone().(*listType)
+	assert.Equal(t, lt, clonedObj)
 	clonedObj.elementType = Int
 	assert.Equal(t, primitive.DataTypeCodeList, lt.GetDataTypeCode())
 	assert.Equal(t, Varchar, lt.GetElementType())

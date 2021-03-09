@@ -21,13 +21,13 @@ import (
 	"testing"
 )
 
-func TestCloneContinuousPagingOptions(t *testing.T) {
+func TestContinuousPagingOptions_Clone(t *testing.T) {
 	obj := &ContinuousPagingOptions{
 		MaxPages:       1,
 		PagesPerSecond: 2,
 		NextPages:      3,
 	}
-	cloned := CloneContinuousPagingOptions(obj)
+	cloned := obj.Clone()
 	assert.Equal(t, obj, cloned)
 	cloned.MaxPages = 5
 	cloned.PagesPerSecond = 6

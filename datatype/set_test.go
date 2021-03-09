@@ -32,6 +32,7 @@ func TestSetType(t *testing.T) {
 func TestSetTypeClone(t *testing.T) {
 	st := NewSetType(Varchar)
 	cloned := st.Clone().(*setType)
+	assert.Equal(t, st, cloned)
 	cloned.elementType = Int
 	assert.Equal(t, primitive.DataTypeCodeSet, st.GetDataTypeCode())
 	assert.Equal(t, Varchar, st.GetElementType())
