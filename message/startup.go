@@ -110,6 +110,12 @@ func (m *Startup) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeStartup
 }
 
+func (m *Startup) Clone() Message {
+	return &Startup{
+		Options: primitive.CloneOptions(m.Options),
+	}
+}
+
 func (m *Startup) String() string {
 	return fmt.Sprint("STARTUP ", m.Options)
 }

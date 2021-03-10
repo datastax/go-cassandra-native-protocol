@@ -30,6 +30,20 @@ func TestMapType(t *testing.T) {
 	assert.Equal(t, Int, mapType.GetValueType())
 }
 
+func TestMapTypeClone(t *testing.T) {
+	mt := NewMapType(Varchar, Int)
+	cloned := mt.Clone().(*mapType)
+	assert.Equal(t, mt, cloned)
+	cloned.keyType = Inet
+	cloned.valueType = Uuid
+	assert.Equal(t, primitive.DataTypeCodeMap, mt.GetDataTypeCode())
+	assert.Equal(t, Varchar, mt.GetKeyType())
+	assert.Equal(t, Int, mt.GetValueType())
+	assert.Equal(t, primitive.DataTypeCodeMap, cloned.GetDataTypeCode())
+	assert.Equal(t, Inet, cloned.GetKeyType())
+	assert.Equal(t, Uuid, cloned.GetValueType())
+}
+
 func TestMapTypeCodecEncode(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {

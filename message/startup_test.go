@@ -22,6 +22,30 @@ import (
 	"testing"
 )
 
+func TestStartup_Clone(t *testing.T) {
+	msg := &Startup{
+		Options: map[string]string{
+			"opt1": "val1",
+			"opt2": "val2",
+		},
+	}
+
+	cloned := msg.Clone().(*Startup)
+	assert.Equal(t, msg, cloned)
+
+	cloned.Options["opt1"] = "val5"
+	cloned.Options["opt3"] = "val6"
+
+	assert.NotEqual(t, msg, cloned)
+
+	assert.Equal(t, "val1", msg.Options["opt1"])
+	assert.Equal(t, "val2", msg.Options["opt2"])
+
+	assert.Equal(t, "val5", cloned.Options["opt1"])
+	assert.Equal(t, "val2", cloned.Options["opt2"])
+	assert.Equal(t, "val6", cloned.Options["opt3"])
+}
+
 func TestStartupCodec_Encode(t *testing.T) {
 	codec := &startupCodec{}
 	for _, version := range primitive.AllProtocolVersions() {

@@ -29,6 +29,17 @@ func TestListType(t *testing.T) {
 	assert.Equal(t, Varchar, listType.GetElementType())
 }
 
+func TestListTypeClone(t *testing.T) {
+	lt := NewListType(Varchar)
+	clonedObj := lt.Clone().(*listType)
+	assert.Equal(t, lt, clonedObj)
+	clonedObj.elementType = Int
+	assert.Equal(t, primitive.DataTypeCodeList, lt.GetDataTypeCode())
+	assert.Equal(t, Varchar, lt.GetElementType())
+	assert.Equal(t, primitive.DataTypeCodeList, clonedObj.GetDataTypeCode())
+	assert.Equal(t, Int, clonedObj.GetElementType())
+}
+
 func TestListTypeCodecEncode(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {

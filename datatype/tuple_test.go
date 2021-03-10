@@ -29,6 +29,55 @@ func TestTupleType(t *testing.T) {
 	assert.Equal(t, []DataType{Varchar, Int}, tupleType.GetFieldTypes())
 }
 
+func TestTupleTypeClone(t *testing.T) {
+	tt := NewTupleType(Varchar, Int)
+	cloned := tt.Clone().(*tupleType)
+	assert.Equal(t, tt, cloned)
+	cloned.fieldTypes = []DataType{Int, Uuid, Float}
+	assert.NotEqual(t, tt, cloned)
+	assert.Equal(t, primitive.DataTypeCodeTuple, tt.GetDataTypeCode())
+	assert.Equal(t, []DataType{Varchar, Int}, tt.GetFieldTypes())
+	assert.Equal(t, primitive.DataTypeCodeTuple, cloned.GetDataTypeCode())
+	assert.Equal(t, []DataType{Int, Uuid, Float}, cloned.GetFieldTypes())
+}
+
+func TestTupleTypeClone_NilFieldTypesSlice(t *testing.T) {
+	tt := NewTupleType(Varchar, Int).(*tupleType)
+	tt.fieldTypes = nil
+	cloned := tt.Clone().(*tupleType)
+	assert.Equal(t, tt, cloned)
+	cloned.fieldTypes = []DataType{Int, Uuid, Float}
+	assert.NotEqual(t, tt, cloned)
+	assert.Equal(t, primitive.DataTypeCodeTuple, tt.GetDataTypeCode())
+	assert.Nil(t, tt.GetFieldTypes())
+	assert.Equal(t, primitive.DataTypeCodeTuple, cloned.GetDataTypeCode())
+	assert.Equal(t, []DataType{Int, Uuid, Float}, cloned.GetFieldTypes())
+}
+
+func TestTupleTypeClone_NilFieldType(t *testing.T) {
+	tt := NewTupleType(nil, Int).(*tupleType)
+	cloned := tt.Clone().(*tupleType)
+	assert.Equal(t, tt, cloned)
+	cloned.fieldTypes = []DataType{Int, Uuid, Float}
+	assert.NotEqual(t, tt, cloned)
+	assert.Equal(t, primitive.DataTypeCodeTuple, tt.GetDataTypeCode())
+	assert.Equal(t, []DataType{nil, Int}, tt.GetFieldTypes())
+	assert.Equal(t, primitive.DataTypeCodeTuple, cloned.GetDataTypeCode())
+	assert.Equal(t, []DataType{Int, Uuid, Float}, cloned.GetFieldTypes())
+}
+
+func TestTupleTypeClone_ComplexFieldTypes(t *testing.T) {
+	tt := NewTupleType(NewListType(NewTupleType(Varchar)), Int).(*tupleType)
+	cloned := tt.Clone().(*tupleType)
+	assert.Equal(t, tt, cloned)
+	cloned.GetFieldTypes()[0].(*listType).elementType = NewTupleType(Int)
+	assert.NotEqual(t, tt, cloned)
+	assert.Equal(t, primitive.DataTypeCodeTuple, tt.GetDataTypeCode())
+	assert.Equal(t, []DataType{NewListType(NewTupleType(Varchar)), Int}, tt.GetFieldTypes())
+	assert.Equal(t, primitive.DataTypeCodeTuple, cloned.GetDataTypeCode())
+	assert.Equal(t, []DataType{NewListType(NewTupleType(Int)), Int}, cloned.GetFieldTypes())
+}
+
 func TestTupleTypeCodecEncode(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {

@@ -22,6 +22,122 @@ import (
 	"testing"
 )
 
+func TestExecute_Clone(t *testing.T) {
+	msg := &Execute{
+		QueryId:          []byte{0x01},
+		ResultMetadataId: []byte{0x02},
+		Options:          &QueryOptions{
+			Consistency:             primitive.ConsistencyLevelAll,
+			PositionalValues:        []*primitive.Value{
+				&primitive.Value{
+					Type:     primitive.ValueTypeRegular,
+					Contents: []byte{0x11},
+				},
+			},
+			NamedValues:             map[string]*primitive.Value{
+				"1": &primitive.Value{
+					Type:     primitive.ValueTypeUnset,
+					Contents: []byte{0x21},
+				},
+			},
+			SkipMetadata:            false,
+			PageSize:                5,
+			PageSizeInBytes:         false,
+			PagingState:             []byte{0x33},
+			SerialConsistency:       &primitive.NillableConsistencyLevel{
+				Value: primitive.ConsistencyLevelLocalSerial},
+			DefaultTimestamp:        &primitive.NillableInt64{
+				Value: 1,
+			},
+			Keyspace:                "ks1",
+			NowInSeconds:            &primitive.NillableInt32{
+				Value: 3,
+			},
+			ContinuousPagingOptions: &ContinuousPagingOptions{
+				MaxPages:       5,
+				PagesPerSecond: 2,
+				NextPages:      3,
+			},
+		},
+	}
+
+	cloned := msg.Clone().(*Execute)
+	assert.Equal(t, msg, cloned)
+
+	cloned.QueryId = []byte{0x41}
+	cloned.ResultMetadataId = []byte{0x52}
+	cloned.Options = &QueryOptions{
+		Consistency:             primitive.ConsistencyLevelLocalOne,
+		PositionalValues:        []*primitive.Value{
+			&primitive.Value{
+				Type:     primitive.ValueTypeUnset,
+				Contents: []byte{0x21},
+			},
+		},
+		NamedValues:             map[string]*primitive.Value{
+			"1": &primitive.Value{
+				Type:     primitive.ValueTypeNull,
+				Contents: []byte{0x31},
+			},
+		},
+		SkipMetadata:            true,
+		PageSize:                4,
+		PageSizeInBytes:         true,
+		PagingState:             []byte{0x23},
+		SerialConsistency:       nil,
+		DefaultTimestamp:        &primitive.NillableInt64{
+			Value: 3,
+		},
+		Keyspace:                "ks2",
+		NowInSeconds:            nil,
+		ContinuousPagingOptions: &ContinuousPagingOptions{
+			MaxPages:       6,
+			PagesPerSecond: 3,
+			NextPages:      4,
+		},
+	}
+
+	assert.Equal(t, []byte{0x01}, msg.QueryId)
+	assert.Equal(t, []byte{0x02}, msg.ResultMetadataId)
+	assert.Equal(t, primitive.ConsistencyLevelAll, msg.Options.Consistency)
+	assert.Equal(t, primitive.ValueTypeRegular, msg.Options.PositionalValues[0].Type)
+	assert.Equal(t, []byte{0x11}, msg.Options.PositionalValues[0].Contents)
+	assert.Equal(t, primitive.ValueTypeUnset, msg.Options.NamedValues["1"].Type)
+	assert.Equal(t, []byte{0x21}, msg.Options.NamedValues["1"].Contents)
+	assert.False(t, msg.Options.SkipMetadata)
+	assert.EqualValues(t, 5, msg.Options.PageSize)
+	assert.False(t, msg.Options.PageSizeInBytes)
+	assert.Equal(t, []byte{0x33}, msg.Options.PagingState)
+	assert.Equal(t, primitive.ConsistencyLevelLocalSerial, msg.Options.SerialConsistency.Value)
+	assert.EqualValues(t, 1, msg.Options.DefaultTimestamp.Value)
+	assert.Equal(t, "ks1", msg.Options.Keyspace)
+	assert.EqualValues(t, 3, msg.Options.NowInSeconds.Value)
+	assert.EqualValues(t, 5, msg.Options.ContinuousPagingOptions.MaxPages)
+	assert.EqualValues(t, 2, msg.Options.ContinuousPagingOptions.PagesPerSecond)
+	assert.EqualValues(t, 3, msg.Options.ContinuousPagingOptions.NextPages)
+
+	assert.NotEqual(t, msg, cloned)
+
+	assert.Equal(t, []byte{0x41}, cloned.QueryId)
+	assert.Equal(t, []byte{0x52}, cloned.ResultMetadataId)
+	assert.Equal(t, primitive.ConsistencyLevelLocalOne, cloned.Options.Consistency)
+	assert.Equal(t, primitive.ValueTypeUnset, cloned.Options.PositionalValues[0].Type)
+	assert.Equal(t, []byte{0x21}, cloned.Options.PositionalValues[0].Contents)
+	assert.Equal(t, primitive.ValueTypeNull, cloned.Options.NamedValues["1"].Type)
+	assert.Equal(t, []byte{0x31}, cloned.Options.NamedValues["1"].Contents)
+	assert.True(t, cloned.Options.SkipMetadata)
+	assert.EqualValues(t, 4, cloned.Options.PageSize)
+	assert.True(t, cloned.Options.PageSizeInBytes)
+	assert.Equal(t, []byte{0x23}, cloned.Options.PagingState)
+	assert.Nil(t, cloned.Options.SerialConsistency)
+	assert.EqualValues(t, 3, cloned.Options.DefaultTimestamp.Value)
+	assert.Equal(t, "ks2", cloned.Options.Keyspace)
+	assert.Nil(t, cloned.Options.NowInSeconds)
+	assert.EqualValues(t, 6, cloned.Options.ContinuousPagingOptions.MaxPages)
+	assert.EqualValues(t, 3, cloned.Options.ContinuousPagingOptions.PagesPerSecond)
+	assert.EqualValues(t, 4, cloned.Options.ContinuousPagingOptions.NextPages)
+}
+
 func TestExecuteCodec_Encode(t *testing.T) {
 	codec := &executeCodec{}
 	// tests for versions < 4

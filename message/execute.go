@@ -38,6 +38,14 @@ func (m *Execute) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeExecute
 }
 
+func (m *Execute) Clone() Message {
+	return &Execute{
+		QueryId:          primitive.CloneByteSlice(m.QueryId),
+		ResultMetadataId: primitive.CloneByteSlice(m.ResultMetadataId),
+		Options:          m.Options.Clone(),
+	}
+}
+
 func (m *Execute) String() string {
 	return "EXECUTE " + hex.EncodeToString(m.QueryId)
 }

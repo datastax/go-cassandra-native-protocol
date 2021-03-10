@@ -35,6 +35,11 @@ func (m *Prepare) GetOpCode() primitive.OpCode {
 	return primitive.OpCodePrepare
 }
 
+func (m *Prepare) Clone() Message {
+	newObj := *m
+	return &newObj
+}
+
 func (m *Prepare) String() string {
 	return fmt.Sprintf("PREPARE (%v, %v)", m.Query, m.Keyspace)
 }

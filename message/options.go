@@ -32,6 +32,10 @@ func (m *Options) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeOptions
 }
 
+func (m *Options) Clone() Message {
+	return &Options{}
+}
+
 func (m *Options) String() string {
 	return "OPTIONS"
 }

@@ -23,6 +23,386 @@ import (
 	"testing"
 )
 
+func TestServerError_Clone(t *testing.T) {
+	msg := &ServerError{
+		ErrorMessage: "msg",
+	}
+	cloned := msg.Clone().(*ServerError)
+	assert.Equal(t, msg, cloned)
+	cloned.ErrorMessage = "alt msg"
+	assert.NotEqual(t, msg, cloned)
+	assert.Equal(t, "msg", msg.ErrorMessage)
+	assert.Equal(t, "alt msg", cloned.ErrorMessage)
+}
+
+func TestProtocolError_Clone(t *testing.T) {
+	msg := &ProtocolError{
+		ErrorMessage: "msg",
+	}
+	cloned := msg.Clone().(*ProtocolError)
+	assert.Equal(t, msg, cloned)
+	cloned.ErrorMessage = "alt msg"
+	assert.NotEqual(t, msg, cloned)
+	assert.Equal(t, "msg", msg.ErrorMessage)
+	assert.Equal(t, "alt msg", cloned.ErrorMessage)
+}
+
+func TestAuthenticationError_Clone(t *testing.T) {
+	msg := &AuthenticationError{
+		ErrorMessage: "msg",
+	}
+	cloned := msg.Clone().(*AuthenticationError)
+	assert.Equal(t, msg, cloned)
+	cloned.ErrorMessage = "alt msg"
+	assert.NotEqual(t, msg, cloned)
+	assert.Equal(t, "msg", msg.ErrorMessage)
+	assert.Equal(t, "alt msg", cloned.ErrorMessage)
+}
+
+func TestOverloaded_Clone(t *testing.T) {
+	msg := &Overloaded{
+		ErrorMessage: "msg",
+	}
+	cloned := msg.Clone().(*Overloaded)
+	assert.Equal(t, msg, cloned)
+	cloned.ErrorMessage = "alt msg"
+	assert.NotEqual(t, msg, cloned)
+	assert.Equal(t, "msg", msg.ErrorMessage)
+	assert.Equal(t, "alt msg", cloned.ErrorMessage)
+}
+
+func TestIsBootstrapping_Clone(t *testing.T) {
+	msg := &IsBootstrapping{
+		ErrorMessage: "msg",
+	}
+	cloned := msg.Clone().(*IsBootstrapping)
+	assert.Equal(t, msg, cloned)
+	cloned.ErrorMessage = "alt msg"
+	assert.NotEqual(t, msg, cloned)
+	assert.Equal(t, "msg", msg.ErrorMessage)
+	assert.Equal(t, "alt msg", cloned.ErrorMessage)
+}
+
+func TestTruncateError_Clone(t *testing.T) {
+	msg := &TruncateError{
+		ErrorMessage: "msg",
+	}
+	cloned := msg.Clone().(*TruncateError)
+	assert.Equal(t, msg, cloned)
+	cloned.ErrorMessage = "alt msg"
+	assert.NotEqual(t, msg, cloned)
+	assert.Equal(t, "msg", msg.ErrorMessage)
+	assert.Equal(t, "alt msg", cloned.ErrorMessage)
+}
+
+func TestSyntaxError_Clone(t *testing.T) {
+	msg := &SyntaxError{
+		ErrorMessage: "msg",
+	}
+	cloned := msg.Clone().(*SyntaxError)
+	assert.Equal(t, msg, cloned)
+	cloned.ErrorMessage = "alt msg"
+	assert.NotEqual(t, msg, cloned)
+	assert.Equal(t, "msg", msg.ErrorMessage)
+	assert.Equal(t, "alt msg", cloned.ErrorMessage)
+}
+
+func TestUnauthorized_Clone(t *testing.T) {
+	msg := &Unauthorized{
+		ErrorMessage: "msg",
+	}
+	cloned := msg.Clone().(*Unauthorized)
+	assert.Equal(t, msg, cloned)
+	cloned.ErrorMessage = "alt msg"
+	assert.NotEqual(t, msg, cloned)
+	assert.Equal(t, "msg", msg.ErrorMessage)
+	assert.Equal(t, "alt msg", cloned.ErrorMessage)
+}
+
+func TestInvalid_Clone(t *testing.T) {
+	msg := &Invalid{
+		ErrorMessage: "msg",
+	}
+	cloned := msg.Clone().(*Invalid)
+	assert.Equal(t, msg, cloned)
+	cloned.ErrorMessage = "alt msg"
+	assert.NotEqual(t, msg, cloned)
+	assert.Equal(t, "msg", msg.ErrorMessage)
+	assert.Equal(t, "alt msg", cloned.ErrorMessage)
+}
+
+func TestConfigError_Clone(t *testing.T) {
+	msg := &ConfigError{
+		ErrorMessage: "msg",
+	}
+	cloned := msg.Clone().(*ConfigError)
+	assert.Equal(t, msg, cloned)
+	cloned.ErrorMessage = "alt msg"
+	assert.NotEqual(t, msg, cloned)
+	assert.Equal(t, "msg", msg.ErrorMessage)
+	assert.Equal(t, "alt msg", cloned.ErrorMessage)
+}
+
+func TestUnavailable_Clone(t *testing.T) {
+	msg := &Unavailable{
+		ErrorMessage: "msg",
+		Consistency:  primitive.ConsistencyLevelAll,
+		Required:     2,
+		Alive:        1,
+	}
+	cloned := msg.Clone().(*Unavailable)
+	assert.Equal(t, msg, cloned)
+	cloned.ErrorMessage = "alt msg"
+	cloned.Consistency = primitive.ConsistencyLevelEachQuorum
+	cloned.Required = 3
+	cloned.Alive = 2
+	assert.NotEqual(t, msg, cloned)
+	assert.Equal(t, "msg", msg.ErrorMessage)
+	assert.Equal(t, primitive.ConsistencyLevelAll, msg.Consistency)
+	assert.EqualValues(t, 2, msg.Required)
+	assert.EqualValues(t, 1, msg.Alive)
+	assert.Equal(t, "alt msg", cloned.ErrorMessage)
+	assert.Equal(t, primitive.ConsistencyLevelEachQuorum, cloned.Consistency)
+	assert.EqualValues(t, 3, cloned.Required)
+	assert.EqualValues(t, 2, cloned.Alive)
+}
+
+func TestReadTimeout_Clone(t *testing.T) {
+	msg := &ReadTimeout{
+		ErrorMessage: "msg",
+		Consistency:  primitive.ConsistencyLevelAll,
+		Received:     3,
+		BlockFor:     4,
+		DataPresent:  false,
+	}
+	cloned := msg.Clone().(*ReadTimeout)
+	assert.Equal(t, msg, cloned)
+	cloned.ErrorMessage = "alt msg"
+	cloned.Consistency = primitive.ConsistencyLevelEachQuorum
+	cloned.Received = 2
+	cloned.BlockFor = 3
+	cloned.DataPresent = true
+	assert.NotEqual(t, msg, cloned)
+	assert.Equal(t, "msg", msg.ErrorMessage)
+	assert.Equal(t, primitive.ConsistencyLevelAll, msg.Consistency)
+	assert.EqualValues(t, 3, msg.Received)
+	assert.EqualValues(t, 4, msg.BlockFor)
+	assert.False(t, msg.DataPresent)
+	assert.Equal(t, "alt msg", cloned.ErrorMessage)
+	assert.Equal(t, primitive.ConsistencyLevelEachQuorum, cloned.Consistency)
+	assert.EqualValues(t, 2, cloned.Received)
+	assert.EqualValues(t, 3, cloned.BlockFor)
+	assert.True(t, cloned.DataPresent)
+}
+
+func TestWriteTimeout_Clone(t *testing.T) {
+	msg := &WriteTimeout{
+		ErrorMessage: "msg",
+		Consistency:  primitive.ConsistencyLevelAll,
+		Received:     5,
+		BlockFor:     6,
+		WriteType:    primitive.WriteTypeBatch,
+	}
+	cloned := msg.Clone().(*WriteTimeout)
+	assert.Equal(t, msg, cloned)
+	cloned.ErrorMessage = "alt msg"
+	cloned.Consistency = primitive.ConsistencyLevelEachQuorum
+	cloned.Received = 2
+	cloned.BlockFor = 3
+	cloned.WriteType = primitive.WriteTypeBatchLog
+	assert.NotEqual(t, msg, cloned)
+	assert.Equal(t, "msg", msg.ErrorMessage)
+	assert.Equal(t, primitive.ConsistencyLevelAll, msg.Consistency)
+	assert.EqualValues(t, 5, msg.Received)
+	assert.EqualValues(t, 6, msg.BlockFor)
+	assert.Equal(t, primitive.WriteTypeBatch, msg.WriteType)
+	assert.Equal(t, "alt msg", cloned.ErrorMessage)
+	assert.Equal(t, primitive.ConsistencyLevelEachQuorum, cloned.Consistency)
+	assert.EqualValues(t, 2, cloned.Received)
+	assert.EqualValues(t, 3, cloned.BlockFor)
+	assert.Equal(t, primitive.WriteTypeBatchLog, cloned.WriteType)
+}
+
+func TestReadFailure_Clone(t *testing.T) {
+	msg := &ReadFailure{
+		ErrorMessage:   "msg",
+		Consistency:    primitive.ConsistencyLevelAll,
+		Received:       1,
+		BlockFor:       2,
+		NumFailures:    1,
+		FailureReasons: []*primitive.FailureReason{
+			&primitive.FailureReason{
+				Endpoint: net.IP{0x01},
+				Code:     primitive.FailureCodeCdcSpaceFull,
+			},
+			&primitive.FailureReason{
+				Endpoint: net.IP{0x02},
+				Code:     primitive.FailureCodeCounterWrite,
+			},
+		},
+		DataPresent:    false,
+	}
+	cloned := msg.Clone().(*ReadFailure)
+	assert.Equal(t, msg, cloned)
+	cloned.ErrorMessage = "alt msg"
+	cloned.Consistency = primitive.ConsistencyLevelEachQuorum
+	cloned.Received = 2
+	cloned.BlockFor = 3
+	cloned.NumFailures = 2
+	cloned.FailureReasons = []*primitive.FailureReason{
+		&primitive.FailureReason{
+			Endpoint: net.IP{0x05},
+			Code:     primitive.FailureCodeIndexNotAvailable,
+		},
+		&primitive.FailureReason{
+			Endpoint: net.IP{0x06},
+			Code:     primitive.FailureCodeKeyspaceNotFound,
+		},
+	}
+	cloned.DataPresent = true
+	assert.NotEqual(t, msg, cloned)
+	assert.Equal(t, "msg", msg.ErrorMessage)
+	assert.Equal(t, primitive.ConsistencyLevelAll, msg.Consistency)
+	assert.EqualValues(t, 1, msg.Received)
+	assert.EqualValues(t, 2, msg.BlockFor)
+	assert.EqualValues(t, 1, msg.NumFailures)
+	assert.Equal(t, net.IP{0x01}, msg.FailureReasons[0].Endpoint)
+	assert.Equal(t, primitive.FailureCodeCdcSpaceFull, msg.FailureReasons[0].Code)
+	assert.Equal(t, net.IP{0x02}, msg.FailureReasons[1].Endpoint)
+	assert.Equal(t, primitive.FailureCodeCounterWrite, msg.FailureReasons[1].Code)
+	assert.False(t, msg.DataPresent)
+	assert.Equal(t, "alt msg", cloned.ErrorMessage)
+	assert.Equal(t, primitive.ConsistencyLevelEachQuorum, cloned.Consistency)
+	assert.EqualValues(t, 2, cloned.Received)
+	assert.EqualValues(t, 3, cloned.BlockFor)
+	assert.EqualValues(t, 2, cloned.NumFailures)
+	assert.Equal(t, net.IP{0x05}, cloned.FailureReasons[0].Endpoint)
+	assert.Equal(t, primitive.FailureCodeIndexNotAvailable, cloned.FailureReasons[0].Code)
+	assert.Equal(t, net.IP{0x06}, cloned.FailureReasons[1].Endpoint)
+	assert.Equal(t, primitive.FailureCodeKeyspaceNotFound, cloned.FailureReasons[1].Code)
+	assert.True(t, cloned.DataPresent)
+}
+
+func TestWriteFailure_Clone(t *testing.T) {
+	msg := &WriteFailure{
+		ErrorMessage: "msg",
+		Consistency:  primitive.ConsistencyLevelAll,
+		Received:     1,
+		BlockFor:     2,
+		NumFailures:  1,
+		FailureReasons: []*primitive.FailureReason{
+			&primitive.FailureReason{
+				Endpoint: net.IP{0x01},
+				Code:     primitive.FailureCodeCdcSpaceFull,
+			},
+			&primitive.FailureReason{
+				Endpoint: net.IP{0x02},
+				Code:     primitive.FailureCodeCounterWrite,
+			},
+		},
+		WriteType: primitive.WriteTypeBatchLog,
+	}
+	cloned := msg.Clone().(*WriteFailure)
+	assert.Equal(t, msg, cloned)
+	cloned.ErrorMessage = "alt msg"
+	cloned.Consistency = primitive.ConsistencyLevelEachQuorum
+	cloned.Received = 2
+	cloned.BlockFor = 3
+	cloned.NumFailures = 2
+	cloned.FailureReasons = []*primitive.FailureReason{
+		&primitive.FailureReason{
+			Endpoint: net.IP{0x05},
+			Code:     primitive.FailureCodeIndexNotAvailable,
+		},
+		&primitive.FailureReason{
+			Endpoint: net.IP{0x06},
+			Code:     primitive.FailureCodeKeyspaceNotFound,
+		},
+	}
+	cloned.WriteType = primitive.WriteTypeCdc
+	assert.NotEqual(t, msg, cloned)
+	assert.Equal(t, "msg", msg.ErrorMessage)
+	assert.Equal(t, primitive.ConsistencyLevelAll, msg.Consistency)
+	assert.EqualValues(t, 1, msg.Received)
+	assert.EqualValues(t, 2, msg.BlockFor)
+	assert.EqualValues(t, 1, msg.NumFailures)
+	assert.Equal(t, net.IP{0x01}, msg.FailureReasons[0].Endpoint)
+	assert.Equal(t, primitive.FailureCodeCdcSpaceFull, msg.FailureReasons[0].Code)
+	assert.Equal(t, net.IP{0x02}, msg.FailureReasons[1].Endpoint)
+	assert.Equal(t, primitive.FailureCodeCounterWrite, msg.FailureReasons[1].Code)
+	assert.Equal(t, primitive.WriteTypeBatchLog, msg.WriteType)
+	assert.Equal(t, "alt msg", cloned.ErrorMessage)
+	assert.Equal(t, primitive.ConsistencyLevelEachQuorum, cloned.Consistency)
+	assert.EqualValues(t, 2, cloned.Received)
+	assert.EqualValues(t, 3, cloned.BlockFor)
+	assert.EqualValues(t, 2, cloned.NumFailures)
+	assert.Equal(t, net.IP{0x05}, cloned.FailureReasons[0].Endpoint)
+	assert.Equal(t, primitive.FailureCodeIndexNotAvailable, cloned.FailureReasons[0].Code)
+	assert.Equal(t, net.IP{0x06}, cloned.FailureReasons[1].Endpoint)
+	assert.Equal(t, primitive.FailureCodeKeyspaceNotFound, cloned.FailureReasons[1].Code)
+	assert.Equal(t, primitive.WriteTypeCdc, cloned.WriteType)
+}
+
+func TestFunctionFailure_Clone(t *testing.T) {
+	msg := &FunctionFailure{
+		ErrorMessage: "msg",
+		Keyspace:     "ks1",
+		Function:     "f1",
+		Arguments:    []string{"arg1", "arg2"},
+	}
+	cloned := msg.Clone().(*FunctionFailure)
+	assert.Equal(t, msg, cloned)
+	cloned.ErrorMessage = "alt msg"
+	cloned.Keyspace = "ks2"
+	cloned.Function = "f2"
+	cloned.Arguments = []string{"arg3"}
+	assert.NotEqual(t, msg, cloned)
+	assert.Equal(t, "msg", msg.ErrorMessage)
+	assert.Equal(t, "ks1", msg.Keyspace)
+	assert.Equal(t, "f1", msg.Function)
+	assert.Equal(t, []string{"arg1", "arg2"}, msg.Arguments)
+	assert.Equal(t, "alt msg", cloned.ErrorMessage)
+	assert.Equal(t, "ks2", cloned.Keyspace)
+	assert.Equal(t, "f2", cloned.Function)
+	assert.Equal(t, []string{"arg3"}, cloned.Arguments)
+}
+
+func TestUnprepared_Clone(t *testing.T) {
+	msg := &Unprepared{
+		ErrorMessage: "msg",
+		Id:           []byte{0x01},
+	}
+	cloned := msg.Clone().(*Unprepared)
+	assert.Equal(t, msg, cloned)
+	cloned.ErrorMessage = "alt msg"
+	cloned.Id = []byte{0x02, 0x03}
+	assert.NotEqual(t, msg, cloned)
+	assert.Equal(t, "msg", msg.ErrorMessage)
+	assert.Equal(t, []byte{0x01}, msg.Id)
+	assert.Equal(t, "alt msg", cloned.ErrorMessage)
+	assert.Equal(t, []byte{0x02, 0x03}, cloned.Id)
+}
+
+func TestAlreadyExists_Clone(t *testing.T) {
+	msg := &AlreadyExists{
+		ErrorMessage: "msg",
+		Keyspace:     "ks1",
+		Table:        "table1",
+	}
+	cloned := msg.Clone().(*AlreadyExists)
+	assert.Equal(t, msg, cloned)
+	cloned.ErrorMessage = "alt msg"
+	cloned.Keyspace = "ks2"
+	cloned.Table = "table2"
+	assert.NotEqual(t, msg, cloned)
+	assert.Equal(t, "msg", msg.ErrorMessage)
+	assert.Equal(t, "ks1", msg.Keyspace)
+	assert.Equal(t, "table1", msg.Table)
+	assert.Equal(t, "alt msg", cloned.ErrorMessage)
+	assert.Equal(t, "ks2", cloned.Keyspace)
+	assert.Equal(t, "table2", cloned.Table)
+}
+
 func TestErrorCodec_Encode(test *testing.T) {
 	codec := &errorCodec{}
 	// errors encoded the same in all versions

@@ -38,6 +38,12 @@ func (t *setType) GetDataTypeCode() primitive.DataTypeCode {
 	return primitive.DataTypeCodeSet
 }
 
+func (t *setType) Clone() DataType {
+	return &setType{
+		elementType: t.elementType.Clone(),
+	}
+}
+
 func (t *setType) String() string {
 	return fmt.Sprintf("set<%v>", t.elementType)
 }

@@ -35,6 +35,79 @@ func TestUserDefinedType(t *testing.T) {
 	assert.Errorf(t, err2, "field names and field types length mismatch: 2 != 3")
 }
 
+func TestUserDefinedTypeClone(t *testing.T) {
+	fieldNames := []string{"f1", "f2"}
+	fieldTypes := []DataType{Varchar, Int}
+	udtType, err := NewUserDefinedType("ks1", "udt1", fieldNames, fieldTypes)
+	assert.Nil(t, err)
+
+	cloned := udtType.Clone().(*userDefinedType)
+	assert.Equal(t, udtType, cloned)
+	cloned.name = "udt2"
+	cloned.keyspace = "ks2"
+	cloned.fieldNames = []string{"f5", "field6", "f7"}
+	cloned.fieldTypes = []DataType{Uuid, Float, Varchar}
+	assert.NotEqual(t, udtType, cloned)
+
+	assert.Equal(t, primitive.DataTypeCodeUdt, udtType.GetDataTypeCode())
+	assert.Equal(t, []DataType{Varchar, Int}, udtType.GetFieldTypes())
+	assert.Equal(t, []string{"f1", "f2"}, udtType.GetFieldNames())
+	assert.Equal(t, "ks1", udtType.GetKeyspace())
+	assert.Equal(t, "udt1", udtType.GetName())
+
+	assert.Equal(t, primitive.DataTypeCodeUdt, cloned.GetDataTypeCode())
+	assert.Equal(t, []DataType{Uuid, Float, Varchar}, cloned.GetFieldTypes())
+	assert.Equal(t, []string{"f5", "field6", "f7"}, cloned.GetFieldNames())
+	assert.Equal(t, "ks2", cloned.GetKeyspace())
+	assert.Equal(t, "udt2", cloned.GetName())
+}
+
+func TestUserDefinedTypeClone_NilFieldTypesSlice(t *testing.T) {
+	fieldNames := []string{"f1", "f2", "f3"}
+	fieldTypes := []DataType{Int, Uuid, Float}
+	udtType, err := NewUserDefinedType("ks1", "udt1", fieldNames, fieldTypes)
+	assert.Nil(t, err)
+	udtType.(*userDefinedType).fieldTypes = nil
+
+	cloned := udtType.Clone().(*userDefinedType)
+	assert.Equal(t, udtType, cloned)
+	cloned.fieldTypes = []DataType{Uuid, Float, Varchar}
+	assert.NotEqual(t, udtType, cloned)
+
+	assert.Nil(t, udtType.GetFieldTypes())
+	assert.Equal(t, []DataType{Uuid, Float, Varchar}, cloned.GetFieldTypes())
+}
+
+func TestUserDefinedTypeClone_NilFieldType(t *testing.T) {
+	fieldNames := []string{"f1", "f2", "f3"}
+	fieldTypes := []DataType{nil, Uuid, Float}
+	udtType, err := NewUserDefinedType("ks1", "udt1", fieldNames, fieldTypes)
+	assert.Nil(t, err)
+
+	cloned := udtType.Clone().(*userDefinedType)
+	assert.Equal(t, udtType, cloned)
+	cloned.fieldTypes = []DataType{Uuid, Float, Varchar}
+	assert.NotEqual(t, udtType, cloned)
+
+	assert.Equal(t, []DataType{nil, Uuid, Float}, udtType.GetFieldTypes())
+	assert.Equal(t, []DataType{Uuid, Float, Varchar}, cloned.GetFieldTypes())
+}
+
+func TestUserDefinedTypeClone_ComplexFieldTypes(t *testing.T) {
+	fieldNames := []string{"f1", "f2", "f3"}
+	fieldTypes := []DataType{NewListType(NewTupleType(Varchar)), Uuid, Float}
+	udtType, err := NewUserDefinedType("ks1", "udt1", fieldNames, fieldTypes)
+	assert.Nil(t, err)
+
+	cloned := udtType.Clone().(*userDefinedType)
+	assert.Equal(t, udtType, cloned)
+	cloned.GetFieldTypes()[0].(*listType).elementType = NewTupleType(Int)
+	assert.NotEqual(t, udtType, cloned)
+
+	assert.Equal(t, []DataType{NewListType(NewTupleType(Varchar)), Uuid, Float}, udtType.GetFieldTypes())
+	assert.Equal(t, []DataType{NewListType(NewTupleType(Int)), Uuid, Float}, cloned.GetFieldTypes())
+}
+
 var udt1, _ = NewUserDefinedType("ks1", "udt1", []string{"f1", "f2"}, []DataType{Varchar, Int})
 var udt2, _ = NewUserDefinedType("ks1", "udt2", []string{"f1"}, []DataType{udt1})
 

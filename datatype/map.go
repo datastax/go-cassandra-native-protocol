@@ -44,6 +44,13 @@ func (t *mapType) GetDataTypeCode() primitive.DataTypeCode {
 	return primitive.DataTypeCodeMap
 }
 
+func (t *mapType) Clone() DataType {
+	return &mapType{
+		keyType:   t.keyType.Clone(),
+		valueType: t.valueType.Clone(),
+	}
+}
+
 func (t *mapType) String() string {
 	return fmt.Sprintf("map<%v,%v>", t.keyType, t.valueType)
 }

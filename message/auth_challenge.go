@@ -37,6 +37,13 @@ func (m *AuthChallenge) String() string {
 	return "AUTH_CHALLENGE"
 }
 
+// Performs a deep copy of this message object.
+func (m *AuthChallenge) Clone() Message {
+	return &AuthChallenge{
+		Token: primitive.CloneByteSlice(m.Token),
+	}
+}
+
 type authChallengeCodec struct{}
 
 func (c *authChallengeCodec) Encode(msg Message, dest io.Writer, _ primitive.ProtocolVersion) error {

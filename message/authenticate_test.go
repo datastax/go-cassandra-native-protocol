@@ -22,6 +22,18 @@ import (
 	"testing"
 )
 
+func TestAuthenticate_Clone(t *testing.T) {
+	msg := &Authenticate{
+		Authenticator: "auth",
+	}
+	cloned := msg.Clone().(*Authenticate)
+	assert.Equal(t, msg, cloned)
+	cloned.Authenticator = "auth2"
+	assert.Equal(t, "auth", msg.Authenticator)
+	assert.Equal(t, "auth2", cloned.Authenticator)
+	assert.NotEqual(t, msg, cloned)
+}
+
 func TestAuthenticateCodec_Encode(t *testing.T) {
 	codec := &authenticateCodec{}
 	for _, version := range primitive.AllProtocolVersions() {

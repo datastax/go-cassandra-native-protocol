@@ -35,6 +35,15 @@ type ContinuousPagingOptions struct {
 	NextPages int32
 }
 
+func (options *ContinuousPagingOptions) Clone() *ContinuousPagingOptions {
+	if options == nil {
+		return nil
+	}
+
+	newObj := *options
+	return &newObj
+}
+
 func EncodeContinuousPagingOptions(options *ContinuousPagingOptions, dest io.Writer, version primitive.ProtocolVersion) (err error) {
 	if err = primitive.CheckValidDseProtocolVersion(version); err != nil {
 		return err

@@ -21,6 +21,26 @@ import (
 	"testing"
 )
 
+func TestContinuousPagingOptions_Clone(t *testing.T) {
+	obj := &ContinuousPagingOptions{
+		MaxPages:       1,
+		PagesPerSecond: 2,
+		NextPages:      3,
+	}
+	cloned := obj.Clone()
+	assert.Equal(t, obj, cloned)
+	cloned.MaxPages = 5
+	cloned.PagesPerSecond = 6
+	cloned.NextPages = 7
+	assert.NotEqual(t, obj, cloned)
+	assert.EqualValues(t, 1, obj.MaxPages)
+	assert.EqualValues(t, 2, obj.PagesPerSecond)
+	assert.EqualValues(t, 3, obj.NextPages)
+	assert.EqualValues(t, 5, cloned.MaxPages)
+	assert.EqualValues(t, 6, cloned.PagesPerSecond)
+	assert.EqualValues(t, 7, cloned.NextPages)
+}
+
 func TestContinuousPagingOptions_Encode(t *testing.T) {
 	version := primitive.ProtocolVersionDse1
 	t.Run(version.String(), func(t *testing.T) {

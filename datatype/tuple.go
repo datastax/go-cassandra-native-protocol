@@ -42,6 +42,12 @@ func (t *tupleType) GetDataTypeCode() primitive.DataTypeCode {
 	return primitive.DataTypeCodeTuple
 }
 
+func (t *tupleType) Clone() DataType {
+	return &tupleType{
+		fieldTypes: cloneDataTypeSlice(t.fieldTypes),
+	}
+}
+
 func (t *tupleType) String() string {
 	return fmt.Sprintf("tuple<%v>", t.fieldTypes)
 }

@@ -42,6 +42,10 @@ func (m *VoidResult) GetResultType() primitive.ResultType {
 	return primitive.ResultTypeVoid
 }
 
+func (m *VoidResult) Clone() Message {
+	return &VoidResult{}
+}
+
 func (m *VoidResult) String() string {
 	return "RESULT VOID"
 }
@@ -54,6 +58,12 @@ type SetKeyspaceResult struct {
 
 func (m *SetKeyspaceResult) IsResponse() bool {
 	return true
+}
+
+func (m *SetKeyspaceResult) Clone() Message {
+	return &SetKeyspaceResult{
+		Keyspace: m.Keyspace,
+	}
 }
 
 func (m *SetKeyspaceResult) GetOpCode() primitive.OpCode {
@@ -95,6 +105,16 @@ func (m *SchemaChangeResult) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeResult
 }
 
+func (m *SchemaChangeResult) Clone() Message {
+	return &SchemaChangeResult{
+		ChangeType: m.ChangeType,
+		Target:     m.Target,
+		Keyspace:   m.Keyspace,
+		Object:     m.Object,
+		Arguments:  primitive.CloneStringSlice(m.Arguments),
+	}
+}
+
 func (m *SchemaChangeResult) GetResultType() primitive.ResultType {
 	return primitive.ResultTypeSchemaChange
 }
@@ -122,6 +142,15 @@ type PreparedResult struct {
 
 func (m *PreparedResult) IsResponse() bool {
 	return true
+}
+
+func (m *PreparedResult) Clone() Message {
+	return &PreparedResult{
+		PreparedQueryId:   primitive.CloneByteSlice(m.PreparedQueryId),
+		ResultMetadataId:  primitive.CloneByteSlice(m.ResultMetadataId),
+		VariablesMetadata: m.VariablesMetadata.Clone(),
+		ResultMetadata:    m.ResultMetadata.Clone(),
+	}
 }
 
 func (m *PreparedResult) GetOpCode() primitive.OpCode {
@@ -155,6 +184,13 @@ func (m *RowsResult) IsResponse() bool {
 
 func (m *RowsResult) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeResult
+}
+
+func (m *RowsResult) Clone() Message {
+	return &RowsResult{
+		Metadata: m.Metadata.Clone(),
+		Data:     cloneRowSet(m.Data),
+	}
 }
 
 func (m *RowsResult) GetResultType() primitive.ResultType {
@@ -509,4 +545,30 @@ func (c *resultCodec) GetOpCode() primitive.OpCode {
 func hasResultMetadataId(version primitive.ProtocolVersion) bool {
 	return version >= primitive.ProtocolVersion5 &&
 		version != primitive.ProtocolVersionDse1
+}
+
+func cloneRowSet(o RowSet) RowSet {
+	if o == nil {
+		return nil
+	}
+
+	newRowSet := make(RowSet, len(o))
+	for idx, v := range o {
+		newRowSet[idx] = cloneRow(v)
+	}
+
+	return newRowSet
+}
+
+func cloneRow(o Row) Row {
+	if o == nil {
+		return nil
+	}
+
+	newRow := make(Row, len(o))
+	for idx, v := range o {
+		newRow[idx] = primitive.CloneByteSlice(v)
+	}
+
+	return newRow
 }

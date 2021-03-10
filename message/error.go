@@ -40,6 +40,11 @@ func (m *ServerError) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
 }
 
+func (m *ServerError) Clone() Message {
+	newObj := *m
+	return &newObj
+}
+
 func (m *ServerError) GetErrorCode() primitive.ErrorCode {
 	return primitive.ErrorCodeServerError
 }
@@ -64,6 +69,11 @@ func (m *ProtocolError) IsResponse() bool {
 
 func (m *ProtocolError) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
+}
+
+func (m *ProtocolError) Clone() Message {
+	newObj := *m
+	return &newObj
 }
 
 func (m *ProtocolError) GetErrorCode() primitive.ErrorCode {
@@ -92,6 +102,11 @@ func (m *AuthenticationError) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
 }
 
+func (m *AuthenticationError) Clone() Message {
+	newObj := *m
+	return &newObj
+}
+
 func (m *AuthenticationError) GetErrorCode() primitive.ErrorCode {
 	return primitive.ErrorCodeAuthenticationError
 }
@@ -116,6 +131,11 @@ func (m *Overloaded) IsResponse() bool {
 
 func (m *Overloaded) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
+}
+
+func (m *Overloaded) Clone() Message {
+	newObj := *m
+	return &newObj
 }
 
 func (m *Overloaded) GetErrorCode() primitive.ErrorCode {
@@ -144,6 +164,11 @@ func (m *IsBootstrapping) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
 }
 
+func (m *IsBootstrapping) Clone() Message {
+	newObj := *m
+	return &newObj
+}
+
 func (m *IsBootstrapping) GetErrorCode() primitive.ErrorCode {
 	return primitive.ErrorCodeIsBootstrapping
 }
@@ -168,6 +193,11 @@ func (m *TruncateError) IsResponse() bool {
 
 func (m *TruncateError) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
+}
+
+func (m *TruncateError) Clone() Message {
+	newObj := *m
+	return &newObj
 }
 
 func (m *TruncateError) GetErrorCode() primitive.ErrorCode {
@@ -196,6 +226,11 @@ func (m *SyntaxError) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
 }
 
+func (m *SyntaxError) Clone() Message {
+	newObj := *m
+	return &newObj
+}
+
 func (m *SyntaxError) GetErrorCode() primitive.ErrorCode {
 	return primitive.ErrorCodeSyntaxError
 }
@@ -220,6 +255,11 @@ func (m *Unauthorized) IsResponse() bool {
 
 func (m *Unauthorized) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
+}
+
+func (m *Unauthorized) Clone() Message {
+	newObj := *m
+	return &newObj
 }
 
 func (m *Unauthorized) GetErrorCode() primitive.ErrorCode {
@@ -248,6 +288,11 @@ func (m *Invalid) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
 }
 
+func (m *Invalid) Clone() Message {
+	newObj := *m
+	return &newObj
+}
+
 func (m *Invalid) GetErrorCode() primitive.ErrorCode {
 	return primitive.ErrorCodeInvalid
 }
@@ -272,6 +317,11 @@ func (m *ConfigError) IsResponse() bool {
 
 func (m *ConfigError) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
+}
+
+func (m *ConfigError) Clone() Message {
+	newObj := *m
+	return &newObj
 }
 
 func (m *ConfigError) GetErrorCode() primitive.ErrorCode {
@@ -305,6 +355,11 @@ func (m *Unavailable) IsResponse() bool {
 
 func (m *Unavailable) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
+}
+
+func (m *Unavailable) Clone() Message {
+	newObj := *m
+	return &newObj
 }
 
 func (m *Unavailable) GetErrorCode() primitive.ErrorCode {
@@ -351,6 +406,11 @@ func (m *ReadTimeout) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
 }
 
+func (m *ReadTimeout) Clone() Message {
+	newObj := *m
+	return &newObj
+}
+
 func (m *ReadTimeout) GetErrorCode() primitive.ErrorCode {
 	return primitive.ErrorCodeReadTimeout
 }
@@ -391,6 +451,11 @@ func (m *WriteTimeout) IsResponse() bool {
 
 func (m *WriteTimeout) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
+}
+
+func (m *WriteTimeout) Clone() Message {
+	newObj := *m
+	return &newObj
 }
 
 func (m *WriteTimeout) GetErrorCode() primitive.ErrorCode {
@@ -441,6 +506,19 @@ func (m *ReadFailure) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
 }
 
+func (m *ReadFailure) Clone() Message {
+	newObj := &ReadFailure{
+		ErrorMessage:   m.ErrorMessage,
+		Consistency:    m.Consistency,
+		Received:       m.Received,
+		BlockFor:       m.BlockFor,
+		NumFailures:    m.NumFailures,
+		FailureReasons: cloneFailureReasons(m.FailureReasons),
+		DataPresent:    m.DataPresent,
+	}
+	return newObj
+}
+
 func (m *ReadFailure) GetErrorCode() primitive.ErrorCode {
 	return primitive.ErrorCodeReadFailure
 }
@@ -489,6 +567,18 @@ func (m *WriteFailure) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
 }
 
+func (m *WriteFailure) Clone() Message {
+	return &WriteFailure{
+		ErrorMessage:   m.ErrorMessage,
+		Consistency:    m.Consistency,
+		Received:       m.Received,
+		BlockFor:       m.BlockFor,
+		NumFailures:    m.NumFailures,
+		FailureReasons: cloneFailureReasons(m.FailureReasons),
+		WriteType:      m.WriteType,
+	}
+}
+
 func (m *WriteFailure) GetErrorCode() primitive.ErrorCode {
 	return primitive.ErrorCodeWriteFailure
 }
@@ -526,6 +616,23 @@ func (m *FunctionFailure) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
 }
 
+func (m *FunctionFailure) Clone() Message {
+	var arguments []string
+	if m.Arguments != nil {
+		arguments = make([]string, len(m.Arguments))
+		copy(arguments, m.Arguments)
+	} else {
+		arguments = nil
+	}
+
+	return &FunctionFailure{
+		ErrorMessage: m.ErrorMessage,
+		Keyspace:     m.Keyspace,
+		Function:     m.Function,
+		Arguments:    arguments,
+	}
+}
+
 func (m *FunctionFailure) GetErrorCode() primitive.ErrorCode {
 	return primitive.ErrorCodeFunctionFailure
 }
@@ -560,6 +667,13 @@ func (m *Unprepared) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
 }
 
+func (m *Unprepared) Clone() Message {
+	return &Unprepared{
+		ErrorMessage: m.ErrorMessage,
+		Id:           primitive.CloneByteSlice(m.Id),
+	}
+}
+
 func (m *Unprepared) GetErrorCode() primitive.ErrorCode {
 	return primitive.ErrorCodeUnprepared
 }
@@ -591,6 +705,11 @@ func (m *AlreadyExists) IsResponse() bool {
 
 func (m *AlreadyExists) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
+}
+
+func (m *AlreadyExists) Clone() Message {
+	newObj := *m
+	return &newObj
 }
 
 func (m *AlreadyExists) GetErrorCode() primitive.ErrorCode {
@@ -1072,4 +1191,15 @@ func (c *errorCodec) Decode(source io.Reader, version primitive.ProtocolVersion)
 
 func (c *errorCodec) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
+}
+
+func cloneFailureReasons(failureReasons []*primitive.FailureReason) []*primitive.FailureReason {
+	var result []*primitive.FailureReason
+	if failureReasons != nil {
+		result = make([]*primitive.FailureReason, len(failureReasons))
+		copy(result, failureReasons)
+	} else {
+		result = nil
+	}
+	return result
 }

@@ -22,6 +22,7 @@ import (
 
 type DataType interface {
 	GetDataTypeCode() primitive.DataTypeCode
+	Clone() DataType
 }
 
 type encoder interface {
@@ -109,4 +110,17 @@ func findCodec(code primitive.DataTypeCode) (codec, error) {
 		return nil, fmt.Errorf("cannot find codec for data type code %v", code)
 	}
 	return codec, nil
+}
+
+func cloneDataTypeSlice(o []DataType) []DataType {
+	var newFieldTypes []DataType
+	for _, fieldType := range o {
+		if fieldType == nil {
+			newFieldTypes = append(newFieldTypes, nil)
+		} else {
+			newFieldTypes = append(newFieldTypes, fieldType.Clone())
+		}
+	}
+
+	return newFieldTypes
 }

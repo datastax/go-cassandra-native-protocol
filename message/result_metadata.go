@@ -380,3 +380,63 @@ func haveSameTable(cols []*ColumnMetadata) bool {
 	}
 	return true
 }
+
+func (cm *ColumnMetadata) Clone() *ColumnMetadata {
+	if cm == nil {
+		return nil
+	}
+
+	return &ColumnMetadata{
+		Keyspace: cm.Keyspace,
+		Table:    cm.Table,
+		Name:     cm.Name,
+		Index:    cm.Index,
+		Type:     cm.Type.Clone(),
+	}
+}
+
+func (vm *VariablesMetadata) Clone() *VariablesMetadata {
+	var newPkIndices []uint16
+	if vm.PkIndices != nil {
+		newPkIndices = make([]uint16, len(vm.PkIndices))
+		copy(newPkIndices, vm.PkIndices)
+	} else {
+		newPkIndices = nil
+	}
+
+	var newColumnMetadata []*ColumnMetadata
+	if vm.Columns != nil {
+		newColumnMetadata = make([]*ColumnMetadata, len(vm.Columns))
+		for idx, cm := range vm.Columns {
+			newColumnMetadata[idx] = cm.Clone()
+		}
+	} else {
+		newColumnMetadata = nil
+	}
+
+	return &VariablesMetadata{
+		PkIndices: newPkIndices,
+		Columns:   newColumnMetadata,
+	}
+}
+
+func (rm *RowsMetadata) Clone() *RowsMetadata {
+	var newColumnMetadata []*ColumnMetadata
+	if rm.Columns != nil {
+		newColumnMetadata = make([]*ColumnMetadata, len(rm.Columns))
+		for idx, cm := range rm.Columns {
+			newColumnMetadata[idx] = cm.Clone()
+		}
+	} else {
+		newColumnMetadata = nil
+	}
+
+	return &RowsMetadata{
+		ColumnCount:          rm.ColumnCount,
+		PagingState:          primitive.CloneByteSlice(rm.PagingState),
+		NewResultMetadataId:  primitive.CloneByteSlice(rm.NewResultMetadataId),
+		ContinuousPageNumber: rm.ContinuousPageNumber,
+		LastContinuousPage:   rm.LastContinuousPage,
+		Columns:              newColumnMetadata,
+	}
+}

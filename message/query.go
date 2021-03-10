@@ -38,6 +38,20 @@ func (q *Query) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeQuery
 }
 
+func (q *Query) Clone() Message {
+	var newQueryOptions *QueryOptions
+	if q.Options != nil {
+		newQueryOptions = q.Options.Clone()
+	} else {
+		newQueryOptions = nil
+	}
+
+	return &Query{
+		Query:   q.Query,
+		Options: newQueryOptions,
+	}
+}
+
 type queryCodec struct{}
 
 func (c *queryCodec) Encode(msg Message, dest io.Writer, version primitive.ProtocolVersion) error {

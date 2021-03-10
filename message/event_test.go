@@ -23,6 +23,91 @@ import (
 	"testing"
 )
 
+func TestSchemaChangeEvent_Clone(t *testing.T) {
+	msg := &SchemaChangeEvent{
+		ChangeType: primitive.SchemaChangeTypeCreated,
+		Target:     primitive.SchemaChangeTargetAggregate,
+		Keyspace:   "ks1",
+		Object:     "aggregate",
+		Arguments:  []string{"arg1"},
+	}
+
+	cloned := msg.Clone().(*SchemaChangeEvent)
+	assert.Equal(t, msg, cloned)
+
+	cloned.ChangeType = primitive.SchemaChangeTypeDropped
+	cloned.Target = primitive.SchemaChangeTargetFunction
+	cloned.Keyspace = "ks2"
+	cloned.Object = "function"
+	cloned.Arguments = []string{"arg2"}
+
+	assert.Equal(t, primitive.SchemaChangeTypeCreated, msg.ChangeType)
+	assert.Equal(t, primitive.SchemaChangeTargetAggregate, msg.Target)
+	assert.Equal(t, "ks1", msg.Keyspace)
+	assert.Equal(t, "aggregate", msg.Object)
+	assert.Equal(t, []string{"arg1"}, msg.Arguments)
+
+	assert.Equal(t, primitive.SchemaChangeTypeDropped, cloned.ChangeType)
+	assert.Equal(t, primitive.SchemaChangeTargetFunction, cloned.Target)
+	assert.Equal(t, "ks2", cloned.Keyspace)
+	assert.Equal(t, "function", cloned.Object)
+	assert.Equal(t, []string{"arg2"}, cloned.Arguments)
+}
+
+func TestStatusChangeEvent_Clone(t *testing.T) {
+	msg := &StatusChangeEvent{
+		ChangeType: primitive.StatusChangeTypeDown,
+		Address:    &primitive.Inet{
+			Addr: net.IP{0x01},
+			Port: 80,
+		},
+	}
+
+	cloned := msg.Clone().(*StatusChangeEvent)
+	assert.Equal(t, msg, cloned)
+
+	cloned.ChangeType = primitive.StatusChangeTypeUp
+	cloned.Address = &primitive.Inet{
+		Addr: net.IP{0x02},
+		Port: 801,
+	}
+
+	assert.Equal(t, primitive.StatusChangeTypeDown, msg.ChangeType)
+	assert.Equal(t, net.IP{0x01}, msg.Address.Addr)
+	assert.EqualValues(t, 80, msg.Address.Port)
+
+	assert.Equal(t, primitive.StatusChangeTypeUp, cloned.ChangeType)
+	assert.Equal(t, net.IP{0x02}, cloned.Address.Addr)
+	assert.EqualValues(t, 801, cloned.Address.Port)
+}
+
+func TestTopologyChangeEvent_Clone(t *testing.T) {
+	msg := &TopologyChangeEvent{
+		ChangeType: primitive.TopologyChangeTypeNewNode,
+		Address:    &primitive.Inet{
+			Addr: net.IP{0x01},
+			Port: 80,
+		},
+	}
+
+	cloned := msg.Clone().(*TopologyChangeEvent)
+	assert.Equal(t, msg, cloned)
+
+	cloned.ChangeType = primitive.TopologyChangeTypeRemovedNode
+	cloned.Address = &primitive.Inet{
+		Addr: net.IP{0x02},
+		Port: 801,
+	}
+
+	assert.Equal(t, primitive.TopologyChangeTypeNewNode, msg.ChangeType)
+	assert.Equal(t, net.IP{0x01}, msg.Address.Addr)
+	assert.EqualValues(t, 80, msg.Address.Port)
+
+	assert.Equal(t, primitive.TopologyChangeTypeRemovedNode, cloned.ChangeType)
+	assert.Equal(t, net.IP{0x02}, cloned.Address.Addr)
+	assert.EqualValues(t, 801, cloned.Address.Port)
+}
+
 func TestEventCodec_Encode(test *testing.T) {
 	codec := &eventCodec{}
 	// version = 2

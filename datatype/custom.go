@@ -42,6 +42,12 @@ func (t *customType) GetDataTypeCode() primitive.DataTypeCode {
 	return primitive.DataTypeCodeCustom
 }
 
+func (t *customType) Clone() DataType {
+	return &customType{
+		className: t.className,
+	}
+}
+
 func (t *customType) String() string {
 	return fmt.Sprintf("custom(%v)", t.className)
 }
