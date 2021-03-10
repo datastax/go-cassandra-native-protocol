@@ -44,7 +44,7 @@ func (t *tupleType) GetDataTypeCode() primitive.DataTypeCode {
 
 func (t *tupleType) Clone() DataType {
 	return &tupleType{
-		fieldTypes: CloneDataTypeSlice(t.fieldTypes),
+		fieldTypes: cloneDataTypeSlice(t.fieldTypes),
 	}
 }
 

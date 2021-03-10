@@ -79,8 +79,8 @@ type QueryOptions struct {
 func (o *QueryOptions) Clone() *QueryOptions {
 	return &QueryOptions{
 		Consistency:             o.Consistency,
-		PositionalValues:        CloneValuesSlice(o.PositionalValues),
-		NamedValues:             CloneValuesMap(o.NamedValues),
+		PositionalValues:        cloneValuesSlice(o.PositionalValues),
+		NamedValues:             cloneValuesMap(o.NamedValues),
 		SkipMetadata:            o.SkipMetadata,
 		PageSize:                o.PageSize,
 		PageSizeInBytes:         o.PageSizeInBytes,
@@ -350,7 +350,7 @@ func DecodeQueryOptions(source io.Reader, version primitive.ProtocolVersion) (op
 	return options, nil
 }
 
-func CloneValuesSlice(o []*primitive.Value) []*primitive.Value {
+func cloneValuesSlice(o []*primitive.Value) []*primitive.Value {
 	var newValues []*primitive.Value
 	if o != nil {
 		newValues = make([]*primitive.Value, len(o))
@@ -364,7 +364,7 @@ func CloneValuesSlice(o []*primitive.Value) []*primitive.Value {
 	return newValues
 }
 
-func CloneValuesMap(o map[string]*primitive.Value) map[string]*primitive.Value {
+func cloneValuesMap(o map[string]*primitive.Value) map[string]*primitive.Value {
 	var newValues map[string]*primitive.Value
 	if o != nil {
 		newValues = make(map[string]*primitive.Value)

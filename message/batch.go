@@ -122,7 +122,7 @@ func (c *BatchChild) Clone() *BatchChild {
 
 	return &BatchChild{
 		QueryOrId: newQueryOrId,
-		Values:    CloneValuesSlice(c.Values),
+		Values:    cloneValuesSlice(c.Values),
 	}
 }
 

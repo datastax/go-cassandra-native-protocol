@@ -112,7 +112,7 @@ func findCodec(code primitive.DataTypeCode) (codec, error) {
 	return codec, nil
 }
 
-func CloneDataTypeSlice(o []DataType) []DataType {
+func cloneDataTypeSlice(o []DataType) []DataType {
 	var newFieldTypes []DataType
 	for _, fieldType := range o {
 		if fieldType == nil {

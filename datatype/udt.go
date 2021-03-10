@@ -71,7 +71,7 @@ func (t *userDefinedType) Clone() DataType {
 		keyspace:   t.keyspace,
 		name:       t.name,
 		fieldNames: primitive.CloneStringSlice(t.fieldNames),
-		fieldTypes: CloneDataTypeSlice(t.fieldTypes),
+		fieldTypes: cloneDataTypeSlice(t.fieldTypes),
 	}
 }
 
