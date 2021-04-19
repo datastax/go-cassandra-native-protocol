@@ -93,39 +93,3 @@ func (t *primitiveType) String() string {
 func (t *primitiveType) MarshalJSON() ([]byte, error) {
 	return []byte("\"" + t.String() + "\""), nil
 }
-//
-//type primitiveTypeCodecWhatIsThis struct {
-//	primitiveType PrimitiveType
-//}
-//
-//func (c *primitiveTypeCodec) encode(t DataType, _ io.Writer, version primitive.ProtocolVersion) (err error) {
-//	_, ok := t.(PrimitiveType)
-//	if !ok {
-//		return errors.New(fmt.Sprintf("expected PrimitiveType, got %T", t))
-//	}
-//	if err := primitive.CheckValidDataTypeCode(t.GetDataTypeCode(), version); err != nil {
-//		return err
-//	}
-//	if version < primitive.ProtocolVersion5 && c.primitiveType.GetDataTypeCode() == primitive.DataTypeCodeDuration {
-//		return fmt.Errorf("cannot use duration type with protocol version %v", version)
-//	}
-//	return nil
-//}
-//
-//func (c *primitiveTypeCodec) encodedLength(t DataType, version primitive.ProtocolVersion) (int, error) {
-//	_, ok := t.(PrimitiveType)
-//	if !ok {
-//		return -1, errors.New(fmt.Sprintf("expected PrimitiveType, got %T", t))
-//	}
-//	if err := primitive.CheckValidDataTypeCode(t.GetDataTypeCode(), version); err != nil {
-//		return -1, err
-//	}
-//	return 0, nil
-//}
-//
-//func (c *primitiveTypeCodec) decode(_ io.Reader, version primitive.ProtocolVersion) (t DataType, err error) {
-//	if version < primitive.ProtocolVersion5 && c.primitiveType.GetDataTypeCode() == primitive.DataTypeCodeDuration {
-//		return nil, fmt.Errorf("cannot use duration type with protocol version %v", version)
-//	}
-//	return c.primitiveType, nil
-//}
