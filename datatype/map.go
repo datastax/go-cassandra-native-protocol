@@ -15,7 +15,6 @@
 package datatype
 
 import (
-	"errors"
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
@@ -63,12 +62,10 @@ func NewMapType(keyType DataType, valueType DataType) MapType {
 	return &mapType{keyType: keyType, valueType: valueType}
 }
 
-type mapTypeCodec struct{}
-
-func (c *mapTypeCodec) encode(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error) {
+func writeMapType(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error) {
 	mapType, ok := t.(MapType)
 	if !ok {
-		return errors.New(fmt.Sprintf("expected MapType, got %T", t))
+		return fmt.Errorf("expected MapType, got %T", t)
 	} else if err = WriteDataType(mapType.GetKeyType(), dest, version); err != nil {
 		return fmt.Errorf("cannot write map key type: %w", err)
 	} else if err = WriteDataType(mapType.GetValueType(), dest, version); err != nil {
@@ -77,10 +74,10 @@ func (c *mapTypeCodec) encode(t DataType, dest io.Writer, version primitive.Prot
 	return nil
 }
 
-func (c *mapTypeCodec) encodedLength(t DataType, version primitive.ProtocolVersion) (length int, err error) {
+func lengthOfMapType(t DataType, version primitive.ProtocolVersion) (length int, err error) {
 	mapType, ok := t.(MapType)
 	if !ok {
-		return -1, errors.New(fmt.Sprintf("expected MapType, got %T", t))
+		return -1, fmt.Errorf("expected MapType, got %T", t)
 	}
 	if keyLength, err := LengthOfDataType(mapType.GetKeyType(), version); err != nil {
 		return -1, fmt.Errorf("cannot compute length of map key type: %w", err)
@@ -95,7 +92,7 @@ func (c *mapTypeCodec) encodedLength(t DataType, version primitive.ProtocolVersi
 	return length, nil
 }
 
-func (c *mapTypeCodec) decode(source io.Reader, version primitive.ProtocolVersion) (decoded DataType, err error) {
+func readMapType(source io.Reader, version primitive.ProtocolVersion) (decoded DataType, err error) {
 	mapType := &mapType{}
 	if mapType.keyType, err = ReadDataType(source, version); err != nil {
 		return nil, fmt.Errorf("cannot read map key type: %w", err)

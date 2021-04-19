@@ -25,91 +25,119 @@ type DataType interface {
 	Clone() DataType
 }
 
-type encoder interface {
-	encode(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error)
-	encodedLength(t DataType, version primitive.ProtocolVersion) (length int, err error)
-}
-
-type decoder interface {
-	decode(source io.Reader, version primitive.ProtocolVersion) (t DataType, err error)
-}
-
-type codec interface {
-	encoder
-	decoder
-}
-
 func WriteDataType(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error) {
-	if err = primitive.WriteShort(uint16(t.GetDataTypeCode()), dest); err != nil {
-		return fmt.Errorf("cannot write data type code %v: %w", t.GetDataTypeCode(), err)
-	} else if codec, err := findCodec(t.GetDataTypeCode()); err != nil {
+	if err = primitive.CheckValidDataTypeCode(t.GetDataTypeCode(), version); err != nil {
 		return err
-	} else if err = codec.encode(t, dest, version); err != nil {
-		return fmt.Errorf("cannot write data type %v: %w", t, err)
+	} else if err = primitive.WriteShort(uint16(t.GetDataTypeCode()), dest); err != nil {
+		return fmt.Errorf("cannot write data type code %v: %w", t.GetDataTypeCode(), err)
 	} else {
-		return nil
+		switch t.GetDataTypeCode() {
+		case primitive.DataTypeCodeCustom:
+			return writeCustomType(t, dest, version)
+		case primitive.DataTypeCodeList:
+			return writeListType(t, dest, version)
+		case primitive.DataTypeCodeMap:
+			return writeMapType(t, dest, version)
+		case primitive.DataTypeCodeSet:
+			return writeSetType(t, dest, version)
+		case primitive.DataTypeCodeUdt:
+			return writeUserDefinedType(t, dest, version)
+		case primitive.DataTypeCodeTuple:
+			return writeTupleType(t, dest, version)
+		}
+		return
 	}
 }
 
 func LengthOfDataType(t DataType, version primitive.ProtocolVersion) (length int, err error) {
 	length += primitive.LengthOfShort // type code
-	if codec, err := findCodec(t.GetDataTypeCode()); err != nil {
-		return -1, err
-	} else if dataTypeLength, err := codec.encodedLength(t, version); err != nil {
-		return -1, fmt.Errorf("cannot compute length of data type %v: %w", t, err)
-	} else {
-		return length + dataTypeLength, nil
+	dataTypeLength := 0
+	switch t.GetDataTypeCode() {
+	case primitive.DataTypeCodeCustom:
+		dataTypeLength, err = lengthOfCustomType(t, version)
+	case primitive.DataTypeCodeList:
+		dataTypeLength, err = lengthOfListType(t, version)
+	case primitive.DataTypeCodeMap:
+		dataTypeLength, err = lengthOfMapType(t, version)
+	case primitive.DataTypeCodeSet:
+		dataTypeLength, err = lengthOfSetType(t, version)
+	case primitive.DataTypeCodeUdt:
+		dataTypeLength, err = lengthOfUserDefinedType(t, version)
+	case primitive.DataTypeCodeTuple:
+		dataTypeLength, err = lengthOfTupleType(t, version)
 	}
+	if err != nil {
+		return -1, fmt.Errorf("cannot compute length of data type %v: %w", t, err)
+	}
+	return length + dataTypeLength, nil
 }
 
 func ReadDataType(source io.Reader, version primitive.ProtocolVersion) (decoded DataType, err error) {
 	var typeCode uint16
 	if typeCode, err = primitive.ReadShort(source); err != nil {
 		return nil, fmt.Errorf("cannot read data type code: %w", err)
-	} else if codec, err := findCodec(primitive.DataTypeCode(typeCode)); err != nil {
+	} else if err := primitive.CheckValidDataTypeCode(primitive.DataTypeCode(typeCode), version); err != nil {
 		return nil, err
-	} else if decoded, err = codec.decode(source, version); err != nil {
-		return nil, fmt.Errorf("cannot read data type code %v: %w", typeCode, err)
 	} else {
-		return decoded, nil
+		switch primitive.DataTypeCode(typeCode) {
+		case primitive.DataTypeCodeAscii:
+			return Ascii, nil
+		case primitive.DataTypeCodeBigint:
+			return Bigint, nil
+		case primitive.DataTypeCodeBlob:
+			return Blob, nil
+		case primitive.DataTypeCodeBoolean:
+			return Boolean, nil
+		case primitive.DataTypeCodeCounter:
+			return Counter, nil
+		case primitive.DataTypeCodeDecimal:
+			return Decimal, nil
+		case primitive.DataTypeCodeDouble:
+			return Double, nil
+		case primitive.DataTypeCodeFloat:
+			return Float, nil
+		case primitive.DataTypeCodeInt:
+			return Int, nil
+		case primitive.DataTypeCodeTimestamp:
+			return Timestamp, nil
+		case primitive.DataTypeCodeUuid:
+			return Uuid, nil
+		case primitive.DataTypeCodeVarchar:
+			return Varchar, nil
+		case primitive.DataTypeCodeVarint:
+			return Varint, nil
+		case primitive.DataTypeCodeTimeuuid:
+			return Timeuuid, nil
+		case primitive.DataTypeCodeInet:
+			return Inet, nil
+		case primitive.DataTypeCodeDate:
+			return Date, nil
+		case primitive.DataTypeCodeTime:
+			return Time, nil
+		case primitive.DataTypeCodeSmallint:
+			return Smallint, nil
+		case primitive.DataTypeCodeTinyint:
+			return Tinyint, nil
+		case primitive.DataTypeCodeDuration:
+			if version < primitive.ProtocolVersion5 {
+				return nil, fmt.Errorf("cannot use duration type with protocol version %v", version)
+			}
+			return Duration, nil
+		case primitive.DataTypeCodeCustom:
+			return readCustomType(source, version)
+		case primitive.DataTypeCodeList:
+			return readListType(source, version)
+		case primitive.DataTypeCodeMap:
+			return readMapType(source, version)
+		case primitive.DataTypeCodeSet:
+			return readSetType(source, version)
+		case primitive.DataTypeCodeUdt:
+			return readUserDefinedType(source, version)
+		case primitive.DataTypeCodeTuple:
+			return readTupleType(source, version)
+		}
+		return nil, fmt.Errorf("unknown type code: %w", err)
 	}
-}
-
-var codecs = map[primitive.DataTypeCode]codec{
-	primitive.DataTypeCodeAscii:     &primitiveTypeCodec{Ascii},
-	primitive.DataTypeCodeBigint:    &primitiveTypeCodec{Bigint},
-	primitive.DataTypeCodeBlob:      &primitiveTypeCodec{Blob},
-	primitive.DataTypeCodeBoolean:   &primitiveTypeCodec{Boolean},
-	primitive.DataTypeCodeCounter:   &primitiveTypeCodec{Counter},
-	primitive.DataTypeCodeDecimal:   &primitiveTypeCodec{Decimal},
-	primitive.DataTypeCodeDouble:    &primitiveTypeCodec{Double},
-	primitive.DataTypeCodeFloat:     &primitiveTypeCodec{Float},
-	primitive.DataTypeCodeInt:       &primitiveTypeCodec{Int},
-	primitive.DataTypeCodeTimestamp: &primitiveTypeCodec{Timestamp},
-	primitive.DataTypeCodeUuid:      &primitiveTypeCodec{Uuid},
-	primitive.DataTypeCodeVarchar:   &primitiveTypeCodec{Varchar},
-	primitive.DataTypeCodeVarint:    &primitiveTypeCodec{Varint},
-	primitive.DataTypeCodeTimeuuid:  &primitiveTypeCodec{Timeuuid},
-	primitive.DataTypeCodeInet:      &primitiveTypeCodec{Inet},
-	primitive.DataTypeCodeDate:      &primitiveTypeCodec{Date},
-	primitive.DataTypeCodeTime:      &primitiveTypeCodec{Time},
-	primitive.DataTypeCodeSmallint:  &primitiveTypeCodec{Smallint},
-	primitive.DataTypeCodeTinyint:   &primitiveTypeCodec{Tinyint},
-	primitive.DataTypeCodeDuration:  &primitiveTypeCodec{Duration},
-	primitive.DataTypeCodeList:      &listTypeCodec{},
-	primitive.DataTypeCodeSet:       &setTypeCodec{},
-	primitive.DataTypeCodeMap:       &mapTypeCodec{},
-	primitive.DataTypeCodeTuple:     &tupleTypeCodec{},
-	primitive.DataTypeCodeUdt:       &userDefinedTypeCodec{},
-	primitive.DataTypeCodeCustom:    &customTypeCodec{},
-}
-
-func findCodec(code primitive.DataTypeCode) (codec, error) {
-	codec, ok := codecs[code]
-	if !ok {
-		return nil, fmt.Errorf("cannot find codec for data type code %v", code)
-	}
-	return codec, nil
 }
 
 func cloneDataTypeSlice(o []DataType) []DataType {

@@ -15,7 +15,6 @@
 package datatype
 
 import (
-	"errors"
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
@@ -56,20 +55,18 @@ func (t *listType) MarshalJSON() ([]byte, error) {
 	return []byte("\"" + t.String() + "\""), nil
 }
 
-type listTypeCodec struct{}
-
-func (c *listTypeCodec) encode(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error) {
+func writeListType(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error) {
 	if listType, ok := t.(ListType); !ok {
-		return errors.New(fmt.Sprintf("expected ListType, got %T", t))
+		return fmt.Errorf("expected ListType, got %T", t)
 	} else if err = WriteDataType(listType.GetElementType(), dest, version); err != nil {
 		return fmt.Errorf("cannot write list element type: %w", err)
 	}
 	return nil
 }
 
-func (c *listTypeCodec) encodedLength(t DataType, version primitive.ProtocolVersion) (length int, err error) {
+func lengthOfListType(t DataType, version primitive.ProtocolVersion) (length int, err error) {
 	if listType, ok := t.(ListType); !ok {
-		return -1, errors.New(fmt.Sprintf("expected ListType, got %T", t))
+		return -1, fmt.Errorf("expected ListType, got %T", t)
 	} else if elementLength, err := LengthOfDataType(listType.GetElementType(), version); err != nil {
 		return -1, fmt.Errorf("cannot compute length of list element type: %w", err)
 	} else {
@@ -78,7 +75,7 @@ func (c *listTypeCodec) encodedLength(t DataType, version primitive.ProtocolVers
 	return length, nil
 }
 
-func (c *listTypeCodec) decode(source io.Reader, version primitive.ProtocolVersion) (decoded DataType, err error) {
+func readListType(source io.Reader, version primitive.ProtocolVersion) (decoded DataType, err error) {
 	listType := &listType{}
 	if listType.elementType, err = ReadDataType(source, version); err != nil {
 		return nil, fmt.Errorf("cannot read list element type: %w", err)

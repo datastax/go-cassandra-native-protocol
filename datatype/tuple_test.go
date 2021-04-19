@@ -78,7 +78,7 @@ func TestTupleTypeClone_ComplexFieldTypes(t *testing.T) {
 	assert.Equal(t, []DataType{NewListType(NewTupleType(Int)), Int}, cloned.GetFieldTypes())
 }
 
-func TestTupleTypeCodecEncode(t *testing.T) {
+func TestWriteTupleType(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
@@ -115,12 +115,11 @@ func TestTupleTypeCodecEncode(t *testing.T) {
 				},
 				{"nil tuple", nil, nil, errors.New("expected TupleType, got <nil>")},
 			}
-			codec, _ := findCodec(primitive.DataTypeCodeTuple)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var dest = &bytes.Buffer{}
 					var err error
-					err = codec.encode(test.input, dest, version)
+					err = writeTupleType(test.input, dest, version)
 					actual := dest.Bytes()
 					assert.Equal(t, test.expected, actual)
 					assert.Equal(t, test.err, err)
@@ -130,7 +129,7 @@ func TestTupleTypeCodecEncode(t *testing.T) {
 	}
 }
 
-func TestTupleTypeCodecEncodedLength(t *testing.T) {
+func TestLengthOfTupleType(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
@@ -153,12 +152,11 @@ func TestTupleTypeCodecEncodedLength(t *testing.T) {
 				},
 				{"nil tuple", nil, -1, errors.New("expected TupleType, got <nil>")},
 			}
-			codec, _ := findCodec(primitive.DataTypeCodeTuple)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var actual int
 					var err error
-					actual, err = codec.encodedLength(test.input, version)
+					actual, err = lengthOfTupleType(test.input, version)
 					assert.Equal(t, test.expected, actual)
 					assert.Equal(t, test.err, err)
 				})
@@ -167,7 +165,7 @@ func TestTupleTypeCodecEncodedLength(t *testing.T) {
 	}
 }
 
-func TestTupleTypeCodecDecode(t *testing.T) {
+func TestReadTupleType(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
@@ -211,13 +209,12 @@ func TestTupleTypeCodecDecode(t *testing.T) {
 							errors.New("EOF"))),
 				},
 			}
-			codec, _ := findCodec(primitive.DataTypeCodeTuple)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var source = bytes.NewBuffer(test.input)
 					var actual DataType
 					var err error
-					actual, err = codec.decode(source, version)
+					actual, err = readTupleType(source, version)
 					assert.Equal(t, test.expected, actual)
 					assert.Equal(t, test.err, err)
 				})

@@ -15,7 +15,6 @@
 package primitive
 
 import (
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -41,7 +40,50 @@ func (u *UUID) String() string {
 		return ""
 	}
 
-	return hex.EncodeToString(u[:])
+	var offsets = [...]int{0, 2, 4, 6, 9, 11, 14, 16, 19, 21, 24, 26, 28, 30, 32, 34}
+	const hexString = "0123456789abcdef"
+	r := make([]byte, 36)
+	for i, b := range u {
+		r[offsets[i]] = hexString[b>>4]
+		r[offsets[i]+1] = hexString[b&0xF]
+	}
+	r[8] = '-'
+	r[13] = '-'
+	r[18] = '-'
+	r[23] = '-'
+	return string(r)
+}
+
+// Bytes returns the raw byte slice for this UUID. A UUID is always 128 bits
+// (16 bytes) long.
+func (u *UUID) Bytes() []byte {
+	return u[:]
+}
+
+// ParseUuid parses a 32 digit hexadecimal number (that might contain hyphens)
+// representing an UUID.
+func ParseUuid(input string) (*UUID, error) {
+	var u UUID
+	i := 0
+	for _, r := range input {
+		switch {
+		case r == '-' && i&1 == 0:
+			continue
+		case r >= '0' && r <= '9' && i < 32:
+			u[i/2] |= byte(r-'0') << uint(4-i&1*4)
+		case r >= 'a' && r <= 'f' && i < 32:
+			u[i/2] |= byte(r-'a'+10) << uint(4-i&1*4)
+		case r >= 'A' && r <= 'F' && i < 32:
+			u[i/2] |= byte(r-'A'+10) << uint(4-i&1*4)
+		default:
+			return nil, fmt.Errorf("invalid UUID: %q", input)
+		}
+		i += 1
+	}
+	if i != 32 {
+		return nil, fmt.Errorf("invalid UUID: %q", input)
+	}
+	return &u, nil
 }
 
 func ReadUuid(source io.Reader) (*UUID, error) {

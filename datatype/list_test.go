@@ -40,7 +40,7 @@ func TestListTypeClone(t *testing.T) {
 	assert.Equal(t, Int, clonedObj.GetElementType())
 }
 
-func TestListTypeCodecEncode(t *testing.T) {
+func TestWriteListType(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
@@ -65,12 +65,11 @@ func TestListTypeCodecEncode(t *testing.T) {
 				},
 				{"nil list", nil, nil, errors.New("expected ListType, got <nil>")},
 			}
-			codec, _ := findCodec(primitive.DataTypeCodeList)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var dest = &bytes.Buffer{}
 					var err error
-					err = codec.encode(test.input, dest, version)
+					err = writeListType(test.input, dest, version)
 					actual := dest.Bytes()
 					assert.Equal(t, test.expected, actual)
 					assert.Equal(t, test.err, err)
@@ -80,7 +79,7 @@ func TestListTypeCodecEncode(t *testing.T) {
 	}
 }
 
-func TestListTypeCodecEncodedLength(t *testing.T) {
+func TestLengthOfListType(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
@@ -93,12 +92,11 @@ func TestListTypeCodecEncodedLength(t *testing.T) {
 				{"complex list", NewListType(NewListType(Varchar)), primitive.LengthOfShort + primitive.LengthOfShort, nil},
 				{"nil list", nil, -1, errors.New("expected ListType, got <nil>")},
 			}
-			codec, _ := findCodec(primitive.DataTypeCodeList)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var actual int
 					var err error
-					actual, err = codec.encodedLength(test.input, version)
+					actual, err = lengthOfListType(test.input, version)
 					assert.Equal(t, test.expected, actual)
 					assert.Equal(t, test.err, err)
 				})
@@ -107,7 +105,7 @@ func TestListTypeCodecEncodedLength(t *testing.T) {
 	}
 }
 
-func TestListTypeCodecDecode(t *testing.T) {
+func TestReadListType(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
@@ -140,13 +138,12 @@ func TestListTypeCodecDecode(t *testing.T) {
 								errors.New("EOF")))),
 				},
 			}
-			codec, _ := findCodec(primitive.DataTypeCodeList)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var source = bytes.NewBuffer(test.input)
 					var actual DataType
 					var err error
-					actual, err = codec.decode(source, version)
+					actual, err = readListType(source, version)
 					assert.Equal(t, test.expected, actual)
 					assert.Equal(t, test.err, err)
 				})

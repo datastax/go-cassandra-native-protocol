@@ -111,7 +111,7 @@ func TestUserDefinedTypeClone_ComplexFieldTypes(t *testing.T) {
 var udt1, _ = NewUserDefinedType("ks1", "udt1", []string{"f1", "f2"}, []DataType{Varchar, Int})
 var udt2, _ = NewUserDefinedType("ks1", "udt2", []string{"f1"}, []DataType{udt1})
 
-func TestUserDefinedTypeCodecEncode(t *testing.T) {
+func TestWriteUserDefinedType(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
@@ -155,12 +155,11 @@ func TestUserDefinedTypeCodecEncode(t *testing.T) {
 				},
 				{"nil udt", nil, nil, errors.New("expected UserDefinedType, got <nil>")},
 			}
-			codec, _ := findCodec(primitive.DataTypeCodeUdt)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var dest = &bytes.Buffer{}
 					var err error
-					err = codec.encode(test.input, dest, version)
+					err = writeUserDefinedType(test.input, dest, version)
 					actual := dest.Bytes()
 					assert.Equal(t, test.expected, actual)
 					assert.Equal(t, test.err, err)
@@ -170,7 +169,7 @@ func TestUserDefinedTypeCodecEncode(t *testing.T) {
 	}
 }
 
-func TestUserDefinedTypeCodecEncodedLength(t *testing.T) {
+func TestLengthOfUserDefinedType(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
@@ -210,12 +209,11 @@ func TestUserDefinedTypeCodecEncodedLength(t *testing.T) {
 				},
 				{"nil udt", nil, -1, errors.New("expected UserDefinedType, got <nil>")},
 			}
-			codec, _ := findCodec(primitive.DataTypeCodeUdt)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var actual int
 					var err error
-					actual, err = codec.encodedLength(test.input, version)
+					actual, err = lengthOfUserDefinedType(test.input, version)
 					assert.Equal(t, test.expected, actual)
 					assert.Equal(t, test.err, err)
 				})
@@ -224,7 +222,7 @@ func TestUserDefinedTypeCodecEncodedLength(t *testing.T) {
 	}
 }
 
-func TestUserDefinedTypeCodecDecode(t *testing.T) {
+func TestReadUserDefinedType(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
@@ -276,13 +274,12 @@ func TestUserDefinedTypeCodecDecode(t *testing.T) {
 								errors.New("EOF")))),
 				},
 			}
-			codec, _ := findCodec(primitive.DataTypeCodeUdt)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var source = bytes.NewBuffer(test.input)
 					var actual DataType
 					var err error
-					actual, err = codec.decode(source, version)
+					actual, err = readUserDefinedType(source, version)
 					assert.Equal(t, test.expected, actual)
 					assert.Equal(t, test.err, err)
 				})

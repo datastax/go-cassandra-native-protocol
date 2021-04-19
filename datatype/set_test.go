@@ -40,7 +40,7 @@ func TestSetTypeClone(t *testing.T) {
 	assert.Equal(t, Int, cloned.GetElementType())
 }
 
-func TestSetTypeCodecEncode(t *testing.T) {
+func TestWriteSetType(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
@@ -65,12 +65,11 @@ func TestSetTypeCodecEncode(t *testing.T) {
 				},
 				{"nil set", nil, nil, errors.New("expected SetType, got <nil>")},
 			}
-			codec, _ := findCodec(primitive.DataTypeCodeSet)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var dest = &bytes.Buffer{}
 					var err error
-					err = codec.encode(test.input, dest, version)
+					err = writeSetType(test.input, dest, version)
 					actual := dest.Bytes()
 					assert.Equal(t, test.expected, actual)
 					assert.Equal(t, test.err, err)
@@ -80,7 +79,7 @@ func TestSetTypeCodecEncode(t *testing.T) {
 	}
 }
 
-func TestSetTypeCodecEncodedLength(t *testing.T) {
+func TestLengthOfSetType(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
@@ -93,12 +92,11 @@ func TestSetTypeCodecEncodedLength(t *testing.T) {
 				{"complex set", NewSetType(NewSetType(Varchar)), primitive.LengthOfShort + primitive.LengthOfShort, nil},
 				{"nil set", nil, -1, errors.New("expected SetType, got <nil>")},
 			}
-			codec, _ := findCodec(primitive.DataTypeCodeSet)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var actual int
 					var err error
-					actual, err = codec.encodedLength(test.input, version)
+					actual, err = lengthOfSetType(test.input, version)
 					assert.Equal(t, test.expected, actual)
 					assert.Equal(t, test.err, err)
 				})
@@ -107,7 +105,7 @@ func TestSetTypeCodecEncodedLength(t *testing.T) {
 	}
 }
 
-func TestSetTypeCodecDecode(t *testing.T) {
+func TestReadSetType(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
@@ -140,13 +138,12 @@ func TestSetTypeCodecDecode(t *testing.T) {
 								errors.New("EOF")))),
 				},
 			}
-			codec, _ := findCodec(primitive.DataTypeCodeSet)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var source = bytes.NewBuffer(test.input)
 					var actual DataType
 					var err error
-					actual, err = codec.decode(source, version)
+					actual, err = readSetType(source, version)
 					assert.Equal(t, test.expected, actual)
 					assert.Equal(t, test.err, err)
 				})

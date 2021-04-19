@@ -44,7 +44,7 @@ func TestMapTypeClone(t *testing.T) {
 	assert.Equal(t, Uuid, cloned.GetValueType())
 }
 
-func TestMapTypeCodecEncode(t *testing.T) {
+func TestWriteMapType(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
@@ -77,12 +77,11 @@ func TestMapTypeCodecEncode(t *testing.T) {
 				},
 				{"nil map", nil, nil, errors.New("expected MapType, got <nil>")},
 			}
-			codec, _ := findCodec(primitive.DataTypeCodeMap)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var dest = &bytes.Buffer{}
 					var err error
-					err = codec.encode(test.input, dest, version)
+					err = writeMapType(test.input, dest, version)
 					actual := dest.Bytes()
 					assert.Equal(t, test.expected, actual)
 					assert.Equal(t, test.err, err)
@@ -92,7 +91,7 @@ func TestMapTypeCodecEncode(t *testing.T) {
 	}
 }
 
-func TestMapTypeCodecEncodedLength(t *testing.T) {
+func TestLengthOfMapType(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
@@ -115,12 +114,11 @@ func TestMapTypeCodecEncodedLength(t *testing.T) {
 				},
 				{"nil map", nil, -1, errors.New("expected MapType, got <nil>")},
 			}
-			codec, _ := findCodec(primitive.DataTypeCodeMap)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var actual int
 					var err error
-					actual, err = codec.encodedLength(test.input, version)
+					actual, err = lengthOfMapType(test.input, version)
 					assert.Equal(t, test.expected, actual)
 					assert.Equal(t, test.err, err)
 				})
@@ -129,7 +127,7 @@ func TestMapTypeCodecEncodedLength(t *testing.T) {
 	}
 }
 
-func TestMapTypeCodecDecode(t *testing.T) {
+func TestReadMapType(t *testing.T) {
 	for _, version := range primitive.AllProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
@@ -170,13 +168,12 @@ func TestMapTypeCodecDecode(t *testing.T) {
 								errors.New("EOF")))),
 				},
 			}
-			codec, _ := findCodec(primitive.DataTypeCodeMap)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					var source = bytes.NewBuffer(test.input)
 					var actual DataType
 					var err error
-					actual, err = codec.decode(source, version)
+					actual, err = readMapType(source, version)
 					assert.Equal(t, test.expected, actual)
 					assert.Equal(t, test.err, err)
 				})

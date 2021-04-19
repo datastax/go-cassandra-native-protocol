@@ -15,7 +15,6 @@
 package datatype
 
 import (
-	"errors"
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
@@ -56,20 +55,18 @@ func NewSetType(elementType DataType) SetType {
 	return &setType{elementType: elementType}
 }
 
-type setTypeCodec struct{}
-
-func (c *setTypeCodec) encode(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error) {
+func writeSetType(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error) {
 	if setType, ok := t.(SetType); !ok {
-		return errors.New(fmt.Sprintf("expected SetType, got %T", t))
+		return fmt.Errorf("expected SetType, got %T", t)
 	} else if err = WriteDataType(setType.GetElementType(), dest, version); err != nil {
 		return fmt.Errorf("cannot write set element type: %w", err)
 	}
 	return nil
 }
 
-func (c *setTypeCodec) encodedLength(t DataType, version primitive.ProtocolVersion) (length int, err error) {
+func lengthOfSetType(t DataType, version primitive.ProtocolVersion) (length int, err error) {
 	if setType, ok := t.(SetType); !ok {
-		return -1, errors.New(fmt.Sprintf("expected SetType, got %T", t))
+		return -1, fmt.Errorf("expected SetType, got %T", t)
 	} else if elementLength, err := LengthOfDataType(setType.GetElementType(), version); err != nil {
 		return -1, fmt.Errorf("cannot compute length of set element type: %w", err)
 	} else {
@@ -78,7 +75,7 @@ func (c *setTypeCodec) encodedLength(t DataType, version primitive.ProtocolVersi
 	return length, nil
 }
 
-func (c *setTypeCodec) decode(source io.Reader, version primitive.ProtocolVersion) (decoded DataType, err error) {
+func readSetType(source io.Reader, version primitive.ProtocolVersion) (decoded DataType, err error) {
 	setType := &setType{}
 	if setType.elementType, err = ReadDataType(source, version); err != nil {
 		return nil, fmt.Errorf("cannot read set element type: %w", err)
