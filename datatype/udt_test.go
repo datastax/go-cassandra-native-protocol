@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 
@@ -112,61 +113,89 @@ var udt1, _ = NewUserDefinedType("ks1", "udt1", []string{"f1", "f2"}, []DataType
 var udt2, _ = NewUserDefinedType("ks1", "udt2", []string{"f1"}, []DataType{udt1})
 
 func TestWriteUserDefinedType(t *testing.T) {
-	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(version.String(), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    UserDefinedType
-				expected []byte
-				err      error
-			}{
-				{
-					"simple udt",
-					udt1,
-					[]byte{
-						0, 3, byte('k'), byte('s'), byte('1'),
-						0, 4, byte('u'), byte('d'), byte('t'), byte('1'),
-						0, 2, // field count
-						0, 2, byte('f'), byte('1'),
-						0, byte(primitive.DataTypeCodeVarchar & 0xFF),
-						0, 2, byte('f'), byte('2'),
-						0, byte(primitive.DataTypeCodeInt & 0xFF),
-					},
-					nil,
-				},
-				{
-					"complex udt",
-					udt2,
-					[]byte{
-						0, 3, byte('k'), byte('s'), byte('1'),
-						0, 4, byte('u'), byte('d'), byte('t'), byte('2'),
-						0, 1, // field count
-						0, 2, byte('f'), byte('1'),
-						0, byte(primitive.DataTypeCodeUdt & 0xFF),
-						0, 3, byte('k'), byte('s'), byte('1'),
-						0, 4, byte('u'), byte('d'), byte('t'), byte('1'),
-						0, 2, // field count
-						0, 2, byte('f'), byte('1'),
-						0, byte(primitive.DataTypeCodeVarchar & 0xFF),
-						0, 2, byte('f'), byte('2'),
-						0, byte(primitive.DataTypeCodeInt & 0xFF),
-					},
-					nil,
-				},
-				{"nil udt", nil, nil, errors.New("expected UserDefinedType, got <nil>")},
-			}
-			for _, test := range tests {
-				t.Run(test.name, func(t *testing.T) {
-					var dest = &bytes.Buffer{}
-					var err error
-					err = writeUserDefinedType(test.input, dest, version)
-					actual := dest.Bytes()
-					assert.Equal(t, test.expected, actual)
-					assert.Equal(t, test.err, err)
-				})
-			}
-		})
+	tests := []struct {
+		name     string
+		input    UserDefinedType
+		expected []byte
+		err      error
+	}{
+		{
+			"simple udt",
+			udt1,
+			[]byte{
+				0, byte(primitive.DataTypeCodeUdt & 0xFF),
+				0, 3, byte('k'), byte('s'), byte('1'),
+				0, 4, byte('u'), byte('d'), byte('t'), byte('1'),
+				0, 2, // field count
+				0, 2, byte('f'), byte('1'),
+				0, byte(primitive.DataTypeCodeVarchar & 0xFF),
+				0, 2, byte('f'), byte('2'),
+				0, byte(primitive.DataTypeCodeInt & 0xFF),
+			},
+			nil,
+		},
+		{
+			"complex udt",
+			udt2,
+			[]byte{
+				0, byte(primitive.DataTypeCodeUdt & 0xFF),
+				0, 3, byte('k'), byte('s'), byte('1'),
+				0, 4, byte('u'), byte('d'), byte('t'), byte('2'),
+				0, 1, // field count
+				0, 2, byte('f'), byte('1'),
+				0, byte(primitive.DataTypeCodeUdt & 0xFF),
+				0, 3, byte('k'), byte('s'), byte('1'),
+				0, 4, byte('u'), byte('d'), byte('t'), byte('1'),
+				0, 2, // field count
+				0, 2, byte('f'), byte('1'),
+				0, byte(primitive.DataTypeCodeVarchar & 0xFF),
+				0, 2, byte('f'), byte('2'),
+				0, byte(primitive.DataTypeCodeInt & 0xFF),
+			},
+			nil,
+		},
+		{"nil udt", nil, nil, errors.New("DataType can not be nil")},
 	}
+
+	t.Run("versions_with_udt_support", func(t *testing.T) {
+		for _, version := range primitive.AllProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion3) {
+			t.Run(version.String(), func(t *testing.T) {
+				for _, test := range tests {
+					t.Run(test.name, func(t *testing.T) {
+						var dest = &bytes.Buffer{}
+						var err error
+						err = WriteDataType(test.input, dest, version)
+						assert.Equal(t, test.err, err)
+						actual := dest.Bytes()
+						assert.Equal(t, test.expected, actual)
+					})
+				}
+			})
+		}
+	})
+
+	t.Run("versions_without_udt_support", func(t *testing.T) {
+		for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion3) {
+			t.Run(version.String(), func(t *testing.T) {
+				for _, test := range tests {
+					t.Run(test.name, func(t *testing.T) {
+						var dest = &bytes.Buffer{}
+						var err error
+						err = WriteDataType(test.input, dest, version)
+						actual := dest.Bytes()
+						require.NotNil(t, err)
+						if test.err != nil {
+							assert.Equal(t, test.err, err)
+						} else {
+							assert.Contains(t, err.Error(),
+								fmt.Sprintf("invalid data type code for %s: DataTypeCode Udt", version))
+						}
+						assert.Equal(t, 0, len(actual))
+					})
+				}
+			})
+		}
+	})
 }
 
 func TestLengthOfUserDefinedType(t *testing.T) {
@@ -223,67 +252,91 @@ func TestLengthOfUserDefinedType(t *testing.T) {
 }
 
 func TestReadUserDefinedType(t *testing.T) {
-	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(version.String(), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    []byte
-				expected UserDefinedType
-				err      error
-			}{
-				{
-					"simple udt",
-					[]byte{
-						0, 3, byte('k'), byte('s'), byte('1'),
-						0, 4, byte('u'), byte('d'), byte('t'), byte('1'),
-						0, 2, // field count
-						0, 2, byte('f'), byte('1'),
-						0, byte(primitive.DataTypeCodeVarchar & 0xFF),
-						0, 2, byte('f'), byte('2'),
-						0, byte(primitive.DataTypeCodeInt & 0xFF),
-					},
-					udt1,
-					nil,
-				},
-				{
-					"complex udt",
-					[]byte{
-						0, 3, byte('k'), byte('s'), byte('1'),
-						0, 4, byte('u'), byte('d'), byte('t'), byte('2'),
-						0, 1, // field count
-						0, 2, byte('f'), byte('1'),
-						0, byte(primitive.DataTypeCodeUdt & 0xFF),
-						0, 3, byte('k'), byte('s'), byte('1'),
-						0, 4, byte('u'), byte('d'), byte('t'), byte('1'),
-						0, 2, // field count
-						0, 2, byte('f'), byte('1'),
-						0, byte(primitive.DataTypeCodeVarchar & 0xFF),
-						0, 2, byte('f'), byte('2'),
-						0, byte(primitive.DataTypeCodeInt & 0xFF),
-					},
-					udt2,
-					nil,
-				},
-				{
-					"cannot read udt",
-					[]byte{},
-					nil,
-					fmt.Errorf("cannot read udt keyspace: %w",
-						fmt.Errorf("cannot read [string] length: %w",
-							fmt.Errorf("cannot read [short]: %w",
-								errors.New("EOF")))),
-				},
-			}
-			for _, test := range tests {
-				t.Run(test.name, func(t *testing.T) {
-					var source = bytes.NewBuffer(test.input)
-					var actual DataType
-					var err error
-					actual, err = readUserDefinedType(source, version)
-					assert.Equal(t, test.expected, actual)
-					assert.Equal(t, test.err, err)
-				})
-			}
-		})
+	tests := []struct {
+		name     string
+		input    []byte
+		expected UserDefinedType
+		err      error
+	}{
+		{
+			"simple udt",
+			[]byte{
+				0, byte(primitive.DataTypeCodeUdt & 0xFF),
+				0, 3, byte('k'), byte('s'), byte('1'),
+				0, 4, byte('u'), byte('d'), byte('t'), byte('1'),
+				0, 2, // field count
+				0, 2, byte('f'), byte('1'),
+				0, byte(primitive.DataTypeCodeVarchar & 0xFF),
+				0, 2, byte('f'), byte('2'),
+				0, byte(primitive.DataTypeCodeInt & 0xFF),
+			},
+			udt1,
+			nil,
+		},
+		{
+			"complex udt",
+			[]byte{
+				0, byte(primitive.DataTypeCodeUdt & 0xFF),
+				0, 3, byte('k'), byte('s'), byte('1'),
+				0, 4, byte('u'), byte('d'), byte('t'), byte('2'),
+				0, 1, // field count
+				0, 2, byte('f'), byte('1'),
+				0, byte(primitive.DataTypeCodeUdt & 0xFF),
+				0, 3, byte('k'), byte('s'), byte('1'),
+				0, 4, byte('u'), byte('d'), byte('t'), byte('1'),
+				0, 2, // field count
+				0, 2, byte('f'), byte('1'),
+				0, byte(primitive.DataTypeCodeVarchar & 0xFF),
+				0, 2, byte('f'), byte('2'),
+				0, byte(primitive.DataTypeCodeInt & 0xFF),
+			},
+			udt2,
+			nil,
+		},
+		{
+			"cannot read udt",
+			[]byte{0, byte(primitive.DataTypeCodeUdt & 0xFF)},
+			nil,
+			fmt.Errorf("cannot read udt keyspace: %w",
+				fmt.Errorf("cannot read [string] length: %w",
+					fmt.Errorf("cannot read [short]: %w",
+						errors.New("EOF")))),
+		},
 	}
+
+	t.Run("versions_with_udt_support", func(t *testing.T) {
+		for _, version := range primitive.AllProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion3) {
+			t.Run(version.String(), func(t *testing.T) {
+				for _, test := range tests {
+					t.Run(test.name, func(t *testing.T) {
+						var source = bytes.NewBuffer(test.input)
+						var actual DataType
+						var err error
+						actual, err = ReadDataType(source, version)
+						assert.Equal(t, test.err, err)
+						assert.Equal(t, test.expected, actual)
+					})
+				}
+			})
+		}
+	})
+
+	t.Run("versions_without_udt_support", func(t *testing.T) {
+		for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion3) {
+			t.Run(version.String(), func(t *testing.T) {
+				for _, test := range tests {
+					t.Run(test.name, func(t *testing.T) {
+						var source = bytes.NewBuffer(test.input)
+						var actual DataType
+						var err error
+						actual, err = ReadDataType(source, version)
+						require.NotNil(t, err)
+						assert.Contains(t, err.Error(),
+							fmt.Sprintf("invalid data type code for %s: DataTypeCode Udt", version))
+						assert.Nil(t, actual)
+					})
+				}
+			})
+		}
+	})
 }

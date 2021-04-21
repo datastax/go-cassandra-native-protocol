@@ -26,7 +26,9 @@ type DataType interface {
 }
 
 func WriteDataType(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error) {
-	if err = primitive.CheckValidDataTypeCode(t.GetDataTypeCode(), version); err != nil {
+	if t == nil {
+		return fmt.Errorf("DataType can not be nil")
+	} else if err = primitive.CheckValidDataTypeCode(t.GetDataTypeCode(), version); err != nil {
 		return err
 	} else if err = primitive.WriteShort(uint16(t.GetDataTypeCode()), dest); err != nil {
 		return fmt.Errorf("cannot write data type code %v: %w", t.GetDataTypeCode(), err)

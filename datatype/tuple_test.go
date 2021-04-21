@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 
@@ -79,54 +80,82 @@ func TestTupleTypeClone_ComplexFieldTypes(t *testing.T) {
 }
 
 func TestWriteTupleType(t *testing.T) {
-	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(version.String(), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    TupleType
-				expected []byte
-				err      error
-			}{
-				{
-					"simple tuple",
-					NewTupleType(Varchar, Int),
-					[]byte{
-						0, 2, // field count
-						0, byte(primitive.DataTypeCodeVarchar & 0xFF),
-						0, byte(primitive.DataTypeCodeInt & 0xFF),
-					},
-					nil,
-				},
-				{
-					"complex tuple",
-					NewTupleType(NewTupleType(Varchar, Int), NewTupleType(Boolean, Float)),
-					[]byte{
-						0, 2, // field count
-						0, byte(primitive.DataTypeCodeTuple & 0xFF),
-						0, 2, // field count
-						0, byte(primitive.DataTypeCodeVarchar & 0xFF),
-						0, byte(primitive.DataTypeCodeInt & 0xFF),
-						0, byte(primitive.DataTypeCodeTuple & 0xFF),
-						0, 2, // field count
-						0, byte(primitive.DataTypeCodeBoolean & 0xFF),
-						0, byte(primitive.DataTypeCodeFloat & 0xFF),
-					},
-					nil,
-				},
-				{"nil tuple", nil, nil, errors.New("expected TupleType, got <nil>")},
-			}
-			for _, test := range tests {
-				t.Run(test.name, func(t *testing.T) {
-					var dest = &bytes.Buffer{}
-					var err error
-					err = writeTupleType(test.input, dest, version)
-					actual := dest.Bytes()
-					assert.Equal(t, test.expected, actual)
-					assert.Equal(t, test.err, err)
-				})
-			}
-		})
+	tests := []struct {
+		name     string
+		input    TupleType
+		expected []byte
+		err      error
+	}{
+		{
+			"simple tuple",
+			NewTupleType(Varchar, Int),
+			[]byte{
+				0, byte(primitive.DataTypeCodeTuple & 0xFF),
+				0, 2, // field count
+				0, byte(primitive.DataTypeCodeVarchar & 0xFF),
+				0, byte(primitive.DataTypeCodeInt & 0xFF),
+			},
+			nil,
+		},
+		{
+			"complex tuple",
+			NewTupleType(NewTupleType(Varchar, Int), NewTupleType(Boolean, Float)),
+			[]byte{
+				0, byte(primitive.DataTypeCodeTuple & 0xFF),
+				0, 2, // field count
+				0, byte(primitive.DataTypeCodeTuple & 0xFF),
+				0, 2, // field count
+				0, byte(primitive.DataTypeCodeVarchar & 0xFF),
+				0, byte(primitive.DataTypeCodeInt & 0xFF),
+				0, byte(primitive.DataTypeCodeTuple & 0xFF),
+				0, 2, // field count
+				0, byte(primitive.DataTypeCodeBoolean & 0xFF),
+				0, byte(primitive.DataTypeCodeFloat & 0xFF),
+			},
+			nil,
+		},
+		{"nil tuple", nil, nil, errors.New("DataType can not be nil")},
 	}
+
+	t.Run("versions_with_tuple_support", func(t *testing.T) {
+		for _, version := range primitive.AllProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion3) {
+			t.Run(version.String(), func(t *testing.T) {
+				for _, test := range tests {
+					t.Run(test.name, func(t *testing.T) {
+						var dest = &bytes.Buffer{}
+						var err error
+						err = WriteDataType(test.input, dest, version)
+						actual := dest.Bytes()
+						assert.Equal(t, test.err, err)
+						assert.Equal(t, test.expected, actual)
+					})
+				}
+			})
+		}
+	})
+
+	t.Run("versions_without_tuple_support", func(t *testing.T) {
+		for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion3) {
+			t.Run(version.String(), func(t *testing.T) {
+				for _, test := range tests {
+					t.Run(test.name, func(t *testing.T) {
+						var dest = &bytes.Buffer{}
+						var err error
+						err = WriteDataType(test.input, dest, version)
+						actual := dest.Bytes()
+						require.NotNil(t, err)
+						if test.err != nil {
+							assert.Equal(t, test.err, err)
+						} else {
+							assert.Contains(t, err.Error(),
+								fmt.Sprintf("invalid data type code for %s: DataTypeCode Tuple", version))
+						}
+						assert.Equal(t, 0, len(actual))
+					})
+				}
+			})
+		}
+	})
 }
 
 func TestLengthOfTupleType(t *testing.T) {
@@ -166,59 +195,85 @@ func TestLengthOfTupleType(t *testing.T) {
 }
 
 func TestReadTupleType(t *testing.T) {
-	for _, version := range primitive.AllProtocolVersions() {
-		t.Run(version.String(), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				input    []byte
-				expected TupleType
-				err      error
-			}{
-				{
-					"simple tuple",
-					[]byte{
-						0, 2, // field count
-						0, byte(primitive.DataTypeCodeVarchar & 0xFF),
-						0, byte(primitive.DataTypeCodeInt & 0xFF),
-					},
-					NewTupleType(Varchar, Int),
-					nil,
-				},
-				{
-					"complex tuple",
-					[]byte{
-						0, 2, // field count
-						0, byte(primitive.DataTypeCodeTuple & 0xFF),
-						0, 2, // field count
-						0, byte(primitive.DataTypeCodeVarchar & 0xFF),
-						0, byte(primitive.DataTypeCodeInt & 0xFF),
-						0, byte(primitive.DataTypeCodeTuple & 0xFF),
-						0, 2, // field count
-						0, byte(primitive.DataTypeCodeBoolean & 0xFF),
-						0, byte(primitive.DataTypeCodeFloat & 0xFF),
-					},
-					NewTupleType(NewTupleType(Varchar, Int), NewTupleType(Boolean, Float)),
-					nil,
-				},
-				{
-					"cannot read tuple",
-					[]byte{},
-					nil,
-					fmt.Errorf("cannot read tuple field count: %w",
-						fmt.Errorf("cannot read [short]: %w",
-							errors.New("EOF"))),
-				},
-			}
-			for _, test := range tests {
-				t.Run(test.name, func(t *testing.T) {
-					var source = bytes.NewBuffer(test.input)
-					var actual DataType
-					var err error
-					actual, err = readTupleType(source, version)
-					assert.Equal(t, test.expected, actual)
-					assert.Equal(t, test.err, err)
-				})
-			}
-		})
+	tests := []struct {
+		name     string
+		input    []byte
+		expected TupleType
+		err      error
+	}{
+		{
+			"simple tuple",
+			[]byte{
+				0, byte(primitive.DataTypeCodeTuple & 0xFF),
+				0, 2, // field count
+				0, byte(primitive.DataTypeCodeVarchar & 0xFF),
+				0, byte(primitive.DataTypeCodeInt & 0xFF),
+			},
+			NewTupleType(Varchar, Int),
+			nil,
+		},
+		{
+			"complex tuple",
+			[]byte{
+				0, byte(primitive.DataTypeCodeTuple & 0xFF),
+				0, 2, // field count
+				0, byte(primitive.DataTypeCodeTuple & 0xFF),
+				0, 2, // field count
+				0, byte(primitive.DataTypeCodeVarchar & 0xFF),
+				0, byte(primitive.DataTypeCodeInt & 0xFF),
+				0, byte(primitive.DataTypeCodeTuple & 0xFF),
+				0, 2, // field count
+				0, byte(primitive.DataTypeCodeBoolean & 0xFF),
+				0, byte(primitive.DataTypeCodeFloat & 0xFF),
+			},
+			NewTupleType(NewTupleType(Varchar, Int), NewTupleType(Boolean, Float)),
+			nil,
+		},
+		{
+			"cannot read tuple",
+			[]byte{
+				0, byte(primitive.DataTypeCodeTuple & 0xFF)},
+			nil,
+			fmt.Errorf("cannot read tuple field count: %w",
+				fmt.Errorf("cannot read [short]: %w",
+					errors.New("EOF"))),
+		},
 	}
+
+	t.Run("versions_with_tuple_support", func(t *testing.T) {
+		for _, version := range primitive.AllProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion3) {
+			t.Run(version.String(), func(t *testing.T) {
+
+				for _, test := range tests {
+					t.Run(test.name, func(t *testing.T) {
+						var source = bytes.NewBuffer(test.input)
+						var actual DataType
+						var err error
+						actual, err = ReadDataType(source, version)
+						assert.Equal(t, test.expected, actual)
+						assert.Equal(t, test.err, err)
+					})
+				}
+			})
+		}
+	})
+
+	t.Run("versions_without_tuple_support", func(t *testing.T) {
+		for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion3) {
+			t.Run(version.String(), func(t *testing.T) {
+				for _, test := range tests {
+					t.Run(test.name, func(t *testing.T) {
+						var source = bytes.NewBuffer(test.input)
+						var actual DataType
+						var err error
+						actual, err = ReadDataType(source, version)
+						require.NotNil(t, err)
+						assert.Contains(t, err.Error(),
+							fmt.Sprintf("invalid data type code for %s: DataTypeCode Tuple", version))
+						assert.Nil(t, actual)
+					})
+				}
+			})
+		}
+	})
 }
