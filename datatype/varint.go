@@ -24,7 +24,7 @@ var Varint PrimitiveType = &primitiveType{code: primitive.DataTypeCodeVarint}
 
 type VarintCodec struct{}
 
-func (c *VarintCodec) Marshal(value interface{}, _ primitive.ProtocolVersion) (encoded []byte, err error) {
+func (c *VarintCodec) Encode(value interface{}, _ primitive.ProtocolVersion) (encoded []byte, err error) {
 	if value == nil {
 		return nil, nil
 	} else {
@@ -76,7 +76,7 @@ func (c *VarintCodec) Marshal(value interface{}, _ primitive.ProtocolVersion) (e
 	}
 }
 
-func (c *VarintCodec) Unmarshal(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
+func (c *VarintCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
 	length := len(encoded)
 	if length == 0 {
 		return nil, nil

@@ -26,7 +26,7 @@ var Tinyint PrimitiveType = &primitiveType{code: primitive.DataTypeCodeTinyint}
 
 type TinyintCodec struct{}
 
-func (c *TinyintCodec) Marshal(value interface{}, _ primitive.ProtocolVersion) (encoded []byte, err error) {
+func (c *TinyintCodec) Encode(value interface{}, _ primitive.ProtocolVersion) (encoded []byte, err error) {
 	if value == nil {
 		return nil, nil
 	} else {
@@ -120,7 +120,7 @@ func (c *TinyintCodec) Marshal(value interface{}, _ primitive.ProtocolVersion) (
 	}
 }
 
-func (c *TinyintCodec) Unmarshal(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
+func (c *TinyintCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
 	length := len(encoded)
 	if length == 0 {
 		return int8(0), nil

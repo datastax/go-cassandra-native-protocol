@@ -23,7 +23,7 @@ var Uuid PrimitiveType = &primitiveType{code: primitive.DataTypeCodeUuid}
 
 type UuidCodec struct{}
 
-func (c *UuidCodec) Marshal(value interface{}, _ primitive.ProtocolVersion) (encoded []byte, err error) {
+func (c *UuidCodec) Encode(value interface{}, _ primitive.ProtocolVersion) (encoded []byte, err error) {
 	if value == nil {
 		return nil, nil
 	} else {
@@ -50,7 +50,7 @@ func (c *UuidCodec) Marshal(value interface{}, _ primitive.ProtocolVersion) (enc
 	}
 }
 
-func (c *UuidCodec) Unmarshal(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
+func (c *UuidCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
 	length := len(encoded)
 	if length == 0 {
 		return nil, nil

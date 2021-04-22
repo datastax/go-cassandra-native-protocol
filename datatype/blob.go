@@ -23,7 +23,7 @@ var Blob PrimitiveType = &primitiveType{code: primitive.DataTypeCodeBlob}
 
 type BlobCodec struct{}
 
-func (c *BlobCodec) Marshal(value interface{}, _ primitive.ProtocolVersion) (encoded []byte, err error) {
+func (c *BlobCodec) Encode(value interface{}, _ primitive.ProtocolVersion) (encoded []byte, err error) {
 	if value == nil {
 		return nil, nil
 	} else {
@@ -40,7 +40,7 @@ func (c *BlobCodec) Marshal(value interface{}, _ primitive.ProtocolVersion) (enc
 	}
 }
 
-func (c *BlobCodec) Unmarshal(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
+func (c *BlobCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
 	if len(encoded) == 0 {
 		return "", nil
 	} else {

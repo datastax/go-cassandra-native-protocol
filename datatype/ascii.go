@@ -24,7 +24,7 @@ var Ascii PrimitiveType = &primitiveType{code: primitive.DataTypeCodeAscii}
 
 type AsciiCodec struct{}
 
-func (c *AsciiCodec) Marshal(value interface{}, _ primitive.ProtocolVersion) (encoded []byte, err error) {
+func (c *AsciiCodec) Encode(value interface{}, _ primitive.ProtocolVersion) (encoded []byte, err error) {
 	if value == nil {
 		return nil, nil
 	} else {
@@ -45,7 +45,7 @@ func (c *AsciiCodec) Marshal(value interface{}, _ primitive.ProtocolVersion) (en
 	}
 }
 
-func (c *AsciiCodec) Unmarshal(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
+func (c *AsciiCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
 	if len(encoded) == 0 {
 		return "", nil
 	} else {

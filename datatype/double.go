@@ -28,7 +28,7 @@ const lengthOfDouble = 8
 
 type DoubleCodec struct{}
 
-func (c *DoubleCodec) Marshal(value interface{}, _ primitive.ProtocolVersion) (encoded []byte, err error) {
+func (c *DoubleCodec) Encode(value interface{}, _ primitive.ProtocolVersion) (encoded []byte, err error) {
 	if value == nil {
 		return nil, nil
 	} else {
@@ -50,7 +50,7 @@ func (c *DoubleCodec) Marshal(value interface{}, _ primitive.ProtocolVersion) (e
 	}
 }
 
-func (c *DoubleCodec) Unmarshal(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
+func (c *DoubleCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
 	length := len(encoded)
 	if length == 0 {
 		return float64(0), nil

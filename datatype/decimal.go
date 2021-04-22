@@ -30,7 +30,7 @@ var Decimal PrimitiveType = &primitiveType{code: primitive.DataTypeCodeDecimal}
 
 type DecimalCodec struct{}
 
-func (c *DecimalCodec) Marshal(value interface{}, _ primitive.ProtocolVersion) (encoded []byte, err error) {
+func (c *DecimalCodec) Encode(value interface{}, _ primitive.ProtocolVersion) (encoded []byte, err error) {
 	if value == nil {
 		return nil, nil
 	} else if val, ok := value.(*Dec); !ok {
@@ -44,7 +44,7 @@ func (c *DecimalCodec) Marshal(value interface{}, _ primitive.ProtocolVersion) (
 	}
 }
 
-func (c *DecimalCodec) Unmarshal(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
+func (c *DecimalCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
 	length := len(encoded)
 	if length == 0 {
 		return nil, nil

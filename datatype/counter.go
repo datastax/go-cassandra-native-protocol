@@ -29,7 +29,7 @@ const lengthOfCounter = 8
 
 type CounterCodec struct{}
 
-func (c *CounterCodec) Marshal(value interface{}, _ primitive.ProtocolVersion) (encoded []byte, err error) {
+func (c *CounterCodec) Encode(value interface{}, _ primitive.ProtocolVersion) (encoded []byte, err error) {
 	if value == nil {
 		return nil, nil
 	} else {
@@ -93,7 +93,7 @@ func (c *CounterCodec) Marshal(value interface{}, _ primitive.ProtocolVersion) (
 	}
 }
 
-func (c *CounterCodec) Unmarshal(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
+func (c *CounterCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
 	length := len(encoded)
 	if length == 0 {
 		return int64(0), nil

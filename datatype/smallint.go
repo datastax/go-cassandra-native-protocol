@@ -27,7 +27,7 @@ var Smallint PrimitiveType = &primitiveType{code: primitive.DataTypeCodeSmallint
 
 type SmallintCodec struct{}
 
-func (c *SmallintCodec) Marshal(value interface{}, _ primitive.ProtocolVersion) (encoded []byte, err error) {
+func (c *SmallintCodec) Encode(value interface{}, _ primitive.ProtocolVersion) (encoded []byte, err error) {
 	if value == nil {
 		return nil, nil
 	} else {
@@ -117,7 +117,7 @@ func (c *SmallintCodec) Marshal(value interface{}, _ primitive.ProtocolVersion) 
 	}
 }
 
-func (c *SmallintCodec) Unmarshal(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
+func (c *SmallintCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
 	length := len(encoded)
 	if length == 0 {
 		return int16(0), nil

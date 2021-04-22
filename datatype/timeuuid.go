@@ -23,7 +23,7 @@ var Timeuuid PrimitiveType = &primitiveType{code: primitive.DataTypeCodeTimeuuid
 
 type TimeuuidCodec struct{}
 
-func (c *TimeuuidCodec) Marshal(value interface{}, _ primitive.ProtocolVersion) (encoded []byte, err error) {
+func (c *TimeuuidCodec) Encode(value interface{}, _ primitive.ProtocolVersion) (encoded []byte, err error) {
 	if value == nil {
 		return nil, nil
 	} else {
@@ -50,7 +50,7 @@ func (c *TimeuuidCodec) Marshal(value interface{}, _ primitive.ProtocolVersion) 
 	}
 }
 
-func (c *TimeuuidCodec) Unmarshal(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
+func (c *TimeuuidCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
 	length := len(encoded)
 	if length == 0 {
 		return nil, nil

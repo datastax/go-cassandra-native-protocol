@@ -28,7 +28,7 @@ const lengthOfFloat = 4
 
 type FloatCodec struct{}
 
-func (c *FloatCodec) Marshal(value interface{}, _ primitive.ProtocolVersion) (encoded []byte, err error) {
+func (c *FloatCodec) Encode(value interface{}, _ primitive.ProtocolVersion) (encoded []byte, err error) {
 	if value == nil {
 		return nil, fmt.Errorf("expected float32, got nil")
 	} else {
@@ -51,7 +51,7 @@ func (c *FloatCodec) Marshal(value interface{}, _ primitive.ProtocolVersion) (en
 	}
 }
 
-func (c *FloatCodec) Unmarshal(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
+func (c *FloatCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
 	length := len(encoded)
 	if length == 0 {
 		return float32(0), nil

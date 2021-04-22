@@ -23,7 +23,7 @@ var Varchar PrimitiveType = &primitiveType{code: primitive.DataTypeCodeVarchar}
 
 type VarcharCodec struct{}
 
-func (c *VarcharCodec) Marshal(value interface{}, _ primitive.ProtocolVersion) (encoded []byte, err error) {
+func (c *VarcharCodec) Encode(value interface{}, _ primitive.ProtocolVersion) (encoded []byte, err error) {
 	if value == nil {
 		return nil, nil
 	} else {
@@ -38,7 +38,7 @@ func (c *VarcharCodec) Marshal(value interface{}, _ primitive.ProtocolVersion) (
 	}
 }
 
-func (c *VarcharCodec) Unmarshal(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
+func (c *VarcharCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
 	if len(encoded) == 0 {
 		return "", nil
 	} else {

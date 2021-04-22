@@ -18,7 +18,7 @@ import (
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
-type Marshaler interface {
-	Marshal(value interface{}, version primitive.ProtocolVersion) (encoded []byte, err error)
-	Unmarshal(encoded []byte, version primitive.ProtocolVersion) (value interface{}, err error)
+type Codec interface {
+	Encode(value interface{}, version primitive.ProtocolVersion) (encoded []byte, err error)
+	Decode(encoded []byte, version primitive.ProtocolVersion) (value interface{}, err error)
 }

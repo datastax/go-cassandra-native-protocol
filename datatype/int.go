@@ -27,7 +27,7 @@ var Int PrimitiveType = &primitiveType{code: primitive.DataTypeCodeInt}
 
 type IntCodec struct{}
 
-func (c *IntCodec) Marshal(value interface{}, _ primitive.ProtocolVersion) (encoded []byte, err error) {
+func (c *IntCodec) Encode(value interface{}, _ primitive.ProtocolVersion) (encoded []byte, err error) {
 	if value == nil {
 		return nil, nil
 	} else {
@@ -108,7 +108,7 @@ func (c *IntCodec) Marshal(value interface{}, _ primitive.ProtocolVersion) (enco
 	}
 }
 
-func (c *IntCodec) Unmarshal(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
+func (c *IntCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
 	length := len(encoded)
 	if length == 0 {
 		return int32(0), nil

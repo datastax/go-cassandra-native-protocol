@@ -29,7 +29,7 @@ const lengthOfBigint = 8
 
 type BigintCodec struct{}
 
-func (c *BigintCodec) Marshal(value interface{}, _ primitive.ProtocolVersion) (encoded []byte, err error) {
+func (c *BigintCodec) Encode(value interface{}, _ primitive.ProtocolVersion) (encoded []byte, err error) {
 	if value == nil {
 		return nil, nil
 	} else {
@@ -93,7 +93,7 @@ func (c *BigintCodec) Marshal(value interface{}, _ primitive.ProtocolVersion) (e
 	}
 }
 
-func (c *BigintCodec) Unmarshal(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
+func (c *BigintCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
 	length := len(encoded)
 	if length == 0 {
 		return int64(0), nil

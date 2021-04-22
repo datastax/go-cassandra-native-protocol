@@ -25,7 +25,7 @@ var Boolean PrimitiveType = &primitiveType{code: primitive.DataTypeCodeBoolean}
 
 type BooleanCodec struct{}
 
-func (c *BooleanCodec) Marshal(value interface{}, _ primitive.ProtocolVersion) (encoded []byte, err error) {
+func (c *BooleanCodec) Encode(value interface{}, _ primitive.ProtocolVersion) (encoded []byte, err error) {
 	if value == nil {
 		return nil, nil
 	} else {
@@ -73,7 +73,7 @@ func (c *BooleanCodec) Marshal(value interface{}, _ primitive.ProtocolVersion) (
 	}
 }
 
-func (c *BooleanCodec) Unmarshal(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
+func (c *BooleanCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
 	length := len(encoded)
 	if length == 0 {
 		return false, nil
