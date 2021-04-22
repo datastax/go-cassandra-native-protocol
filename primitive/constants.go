@@ -81,6 +81,10 @@ func (v ProtocolVersion) String() string {
 	return fmt.Sprintf("ProtocolVersion ? [%#.2X]", uint8(v))
 }
 
+func (v ProtocolVersion) Uses4BytesCollectionLength() bool {
+	return v >= ProtocolVersion3
+}
+
 type OpCode uint8
 
 const (

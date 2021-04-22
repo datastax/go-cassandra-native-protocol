@@ -15,9 +15,12 @@
 package datatype
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
+	"math"
+	"reflect"
 )
 
 type ListType interface {
@@ -81,4 +84,70 @@ func readListType(source io.Reader, version primitive.ProtocolVersion) (decoded 
 		return nil, fmt.Errorf("cannot read list element type: %w", err)
 	}
 	return listType, nil
+}
+
+
+type ListCodec struct {
+	ElementCodec Codec
+}
+
+func NewListCodec(elementCodec Codec) *ListCodec {
+	return &ListCodec{ElementCodec: elementCodec}
+}
+
+func (c *ListCodec) Encode(data interface{}, version primitive.ProtocolVersion) (encoded []byte, err error) {
+	if data == nil {
+		return nil, nil
+	}
+
+	value := reflect.ValueOf(data)
+	valueType := value.Type()
+	valueKind := valueType.Kind()
+	if valueKind == reflect.Slice && value.IsNil() {
+		return nil, nil
+	}
+
+	if valueKind != reflect.Slice && valueKind != reflect.Array {
+		return nil, fmt.Errorf("can not encode %T into list", data)
+	}
+
+	buf := &bytes.Buffer{}
+	n := value.Len()
+
+	if err := writeCollectionSize(version, n, buf); err != nil {
+		return nil, err
+	}
+
+	for i := 0; i < n; i++ {
+		item, err := c.ElementCodec.Encode(value.Index(i).Interface(), version)
+		if err != nil {
+			return nil, err
+		}
+		if err := writeCollectionSize(version, len(item), buf); err != nil {
+			return nil, err
+		}
+		buf.Write(item)
+	}
+	return buf.Bytes(), nil
+}
+
+func (c *ListCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
+	// TODO
+	return nil, nil
+}
+
+func writeCollectionSize(version primitive.ProtocolVersion, n int, buf *bytes.Buffer) error {
+	if version.Uses4BytesCollectionLength() {
+		if n > math.MaxInt32 {
+			return fmt.Errorf("could not encode collection: collection too large (%d elements)", n)
+		}
+
+		return primitive.WriteInt(int32(n), buf)
+	} else {
+		if n > math.MaxUint16 {
+			return fmt.Errorf("could not encode collection: collection too large (%d elements)", n)
+		}
+
+		return primitive.WriteShort(uint16(n), buf)
+	}
 }

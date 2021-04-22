@@ -20,8 +20,12 @@ import (
 )
 
 var Varchar PrimitiveType = &primitiveType{code: primitive.DataTypeCodeVarchar}
+var Text PrimitiveType = &primitiveType{code: primitive.DataTypeCodeText}
+var Ascii PrimitiveType = &primitiveType{code: primitive.DataTypeCodeAscii}
 
 type VarcharCodec struct{}
+type AsciiCodec = VarcharCodec
+type TextCodec = VarcharCodec
 
 func (c *VarcharCodec) Encode(value interface{}, _ primitive.ProtocolVersion) (encoded []byte, err error) {
 	if value == nil {
