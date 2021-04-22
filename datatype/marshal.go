@@ -20,8 +20,5 @@ import (
 
 type Marshaler interface {
 	Marshal(value interface{}, version primitive.ProtocolVersion) (encoded []byte, err error)
-}
-
-type Unmarshaler interface {
 	Unmarshal(encoded []byte, version primitive.ProtocolVersion) (value interface{}, err error)
 }
