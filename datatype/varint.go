@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"math/big"
+	"reflect"
 )
 
 var Varint PrimitiveType = &primitiveType{code: primitive.DataTypeCodeVarint}
@@ -84,4 +85,8 @@ func (c *VarintCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value
 		value = (&big.Int{}).SetBytes(encoded)
 		return
 	}
+}
+
+func (c *VarintCodec) GetDecodeOutputType() reflect.Type {
+	return getDatatypeDecodeOutputType(Varint)
 }

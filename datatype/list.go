@@ -86,9 +86,8 @@ func readListType(source io.Reader, version primitive.ProtocolVersion) (decoded 
 	return listType, nil
 }
 
-
 type ListCodec struct {
-	ElementCodec Codec
+	ElementCodec    Codec
 }
 
 func NewListCodec(elementCodec Codec) *ListCodec {
@@ -131,12 +130,39 @@ func (c *ListCodec) Encode(data interface{}, version primitive.ProtocolVersion) 
 	return buf.Bytes(), nil
 }
 
-func (c *ListCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
-	// TODO
-	return nil, nil
+func (c *ListCodec) Decode(encoded []byte, version primitive.ProtocolVersion) (value interface{}, err error) {
+	if encoded == nil {
+		return nil, nil
+	}
+
+	n, read, err := readCollectionSize(version, encoded)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(encoded) < n {
+		return nil, fmt.Errorf("decode list: unexpected eof")
+	}
+
+	encoded = encoded[read:]
+	childDecodeOutputType := c.GetDecodeOutputType()
+	slice := reflect.MakeSlice(reflect.SliceOf(childDecodeOutputType), n, n)
+	for i := 0; i < n; i++ {
+		decodedElemValue, m, err := decodeChildElement(c.ElementCodec, childDecodeOutputType, encoded, version)
+		if err != nil {
+			return nil, err
+		}
+		encoded = encoded[m:]
+		slice.Index(i).Set(*decodedElemValue)
+	}
+	return slice.Interface(), nil
 }
 
-func writeCollectionSize(version primitive.ProtocolVersion, n int, buf *bytes.Buffer) error {
+func (c *ListCodec) GetDecodeOutputType() reflect.Type {
+	return reflect.SliceOf(c.ElementCodec.GetDecodeOutputType())
+}
+
+func writeCollectionSize(version primitive.ProtocolVersion, n int, buf io.Writer) error {
 	if version.Uses4BytesCollectionLength() {
 		if n > math.MaxInt32 {
 			return fmt.Errorf("could not encode collection: collection too large (%d elements)", n)
@@ -150,4 +176,40 @@ func writeCollectionSize(version primitive.ProtocolVersion, n int, buf *bytes.Bu
 
 		return primitive.WriteShort(uint16(n), buf)
 	}
+}
+
+func readCollectionSize(version primitive.ProtocolVersion, encoded []byte) (int, int, error) {
+	if version.Uses4BytesCollectionLength() {
+		sizeInt32, err := primitive.ReadInt(bytes.NewBuffer(encoded))
+		return int(sizeInt32), 4, err
+	} else {
+		sizeInt16, err := primitive.ReadShort(bytes.NewBuffer(encoded))
+		return int(sizeInt16), 2, err
+	}
+}
+
+func decodeChildElement(
+	elementCodec Codec,
+	elementType reflect.Type,
+	encoded []byte,
+	version primitive.ProtocolVersion) (output *reflect.Value, read int, err error) {
+	m, read, err := readCollectionSize(version, encoded)
+	if err != nil {
+		return nil, -1, err
+	}
+	encoded = encoded[read:]
+	var decodedElemValue reflect.Value
+	if m < 0 {
+		decodedElemValue = reflect.Zero(elementType)
+	} else if len(encoded) < m {
+		return nil, -1, fmt.Errorf("decode list: unexpected eof")
+	} else {
+		decodedElem, err := elementCodec.Decode(encoded[:m], version)
+		if err != nil {
+			return nil, -1, err
+		}
+		decodedElemValue = reflect.ValueOf(decodedElem)
+	}
+
+	return &decodedElemValue, read + m, nil
 }

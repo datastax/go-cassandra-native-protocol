@@ -17,6 +17,7 @@ package datatype
 import (
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
+	"reflect"
 )
 
 var Blob PrimitiveType = &primitiveType{code: primitive.DataTypeCodeBlob}
@@ -46,4 +47,8 @@ func (c *BlobCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value i
 	} else {
 		return string(encoded), nil
 	}
+}
+
+func (c *BlobCodec) GetDecodeOutputType() reflect.Type {
+	return getDatatypeDecodeOutputType(Blob)
 }

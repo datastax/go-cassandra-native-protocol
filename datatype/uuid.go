@@ -17,6 +17,7 @@ package datatype
 import (
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
+	"reflect"
 )
 
 var Uuid PrimitiveType = &primitiveType{code: primitive.DataTypeCodeUuid}
@@ -59,6 +60,10 @@ func (c *UuidCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value i
 	} else {
 		val := &primitive.UUID{}
 		copy(val[:], encoded)
-		return
+		return *val, nil
 	}
+}
+
+func (c *UuidCodec) GetDecodeOutputType() reflect.Type {
+	return getDatatypeDecodeOutputType(Uuid)
 }

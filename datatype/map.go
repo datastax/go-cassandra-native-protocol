@@ -15,9 +15,11 @@
 package datatype
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
+	"reflect"
 )
 
 type MapType interface {
@@ -100,4 +102,102 @@ func readMapType(source io.Reader, version primitive.ProtocolVersion) (decoded D
 		return nil, fmt.Errorf("cannot read map value type: %w", err)
 	}
 	return mapType, nil
+}
+
+type MapCodec struct {
+	KeyCodec    Codec
+	ValueCodec    Codec
+}
+
+func NewMapCodec(keyCodec Codec, valueCodec Codec) *MapCodec {
+	return &MapCodec{KeyCodec: keyCodec, ValueCodec: valueCodec}
+}
+
+func (c *MapCodec) Encode(data interface{}, version primitive.ProtocolVersion) (encoded []byte, err error) {
+	if data == nil {
+		return nil, nil
+	}
+
+	value := reflect.ValueOf(data)
+	valueType := value.Type()
+	valueKind := valueType.Kind()
+	if valueKind == reflect.Map && value.IsNil() {
+		return nil, nil
+	}
+
+	if valueKind != reflect.Map {
+		return nil, fmt.Errorf("can not encode %T into map", data)
+	}
+
+	buf := &bytes.Buffer{}
+	n := value.Len()
+
+	if err := writeCollectionSize(version, n, buf); err != nil {
+		return nil, err
+	}
+
+	iter := value.MapRange()
+	for iter.Next() {
+		mapKey := iter.Key()
+		item, err := c.KeyCodec.Encode(mapKey.Interface(), version)
+		if err != nil {
+			return nil, err
+		}
+		if err := writeCollectionSize(version, len(item), buf); err != nil {
+			return nil, err
+		}
+		buf.Write(item)
+
+		mapValue := iter.Value()
+		item, err = c.ValueCodec.Encode(mapValue.Interface(), version)
+		if err != nil {
+			return nil, err
+		}
+		if err := writeCollectionSize(version, len(item), buf); err != nil {
+			return nil, err
+		}
+		buf.Write(item)
+	}
+	return buf.Bytes(), nil
+}
+
+func (c *MapCodec) Decode(encoded []byte, version primitive.ProtocolVersion) (value interface{}, err error) {
+	if encoded == nil {
+		return nil, nil
+	}
+
+	n, read, err := readCollectionSize(version, encoded)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(encoded) < n {
+		return nil, fmt.Errorf("decode map: unexpected eof")
+	}
+
+	encoded = encoded[read:]
+	keyType := c.KeyCodec.GetDecodeOutputType()
+	valueType := c.ValueCodec.GetDecodeOutputType()
+	newMap := reflect.MakeMap(reflect.MapOf(keyType, valueType))
+	for i := 0; i < n; i++ {
+		decodedKeyValue, m, err := decodeChildElement(c.KeyCodec, keyType, encoded, version)
+		if err != nil {
+			return nil, err
+		}
+		encoded = encoded[m:]
+
+		decodedValue, m, err := decodeChildElement(c.ValueCodec, valueType, encoded, version)
+		if err != nil {
+			return nil, err
+		}
+		encoded = encoded[m:]
+
+		newMap.SetMapIndex(*decodedKeyValue, *decodedValue)
+	}
+
+	return newMap.Interface(), nil
+}
+
+func (c *MapCodec) GetDecodeOutputType() reflect.Type {
+	return reflect.MapOf(c.KeyCodec.GetDecodeOutputType(), c.ValueCodec.GetDecodeOutputType())
 }

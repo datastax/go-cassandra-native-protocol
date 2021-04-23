@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"math/big"
+	"reflect"
 	"strconv"
 )
 
@@ -83,4 +84,8 @@ func (c *BooleanCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (valu
 		value = encoded[0] != 0
 		return
 	}
+}
+
+func (c *BooleanCodec) GetDecodeOutputType() reflect.Type {
+	return getDatatypeDecodeOutputType(Boolean)
 }

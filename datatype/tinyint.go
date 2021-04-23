@@ -19,6 +19,7 @@ import (
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"math"
 	"math/big"
+	"reflect"
 	"strconv"
 )
 
@@ -129,4 +130,8 @@ func (c *TinyintCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (valu
 	} else {
 		return int8(encoded[0]), nil
 	}
+}
+
+func (c *TinyintCodec) GetDecodeOutputType() reflect.Type {
+	return getDatatypeDecodeOutputType(Tinyint)
 }
