@@ -86,3 +86,7 @@ func (c *NilDecoderCodec) Encode(data interface{}, version primitive.ProtocolVer
 func (c *NilDecoderCodec) Decode(encoded []byte, version primitive.ProtocolVersion) (value interface{}, err error) {
 	return encoded, nil
 }
+
+func (c *NilDecoderCodec) GetDecodeOutputType() reflect.Type {
+	return defaultOutputType
+}
