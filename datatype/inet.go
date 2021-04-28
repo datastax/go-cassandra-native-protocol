@@ -42,6 +42,10 @@ func (c *InetCodec) Encode(value interface{}, _ primitive.ProtocolVersion) (enco
 }
 
 func (c *InetCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
+	if encoded == nil {
+		return nil, nil
+	}
+
 	var encodedLen int
 	if encodedLen = len(encoded); !(encodedLen == 4 || encodedLen == 16) {
 		return nil, fmt.Errorf(

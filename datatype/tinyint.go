@@ -123,8 +123,8 @@ func (c *TinyintCodec) Encode(value interface{}, _ primitive.ProtocolVersion) (e
 
 func (c *TinyintCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
 	length := len(encoded)
-	if length == 0 {
-		return int8(0), nil
+	if encoded == nil {
+		return nil, nil
 	} else if length > 1 {
 		return int8(0), fmt.Errorf("cannot unmarshal tinyint: expecting 1 byte but got: %v", length)
 	} else {

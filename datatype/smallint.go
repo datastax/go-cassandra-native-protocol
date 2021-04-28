@@ -120,8 +120,8 @@ func (c *SmallintCodec) Encode(value interface{}, _ primitive.ProtocolVersion) (
 
 func (c *SmallintCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
 	length := len(encoded)
-	if length == 0 {
-		return int16(0), nil
+	if encoded == nil {
+		return nil, nil
 	} else if length != primitive.LengthOfShort {
 		return int16(0), fmt.Errorf("cannot unmarshal smallint: expecting %v bytes but got: %v", primitive.LengthOfShort, length)
 	} else {

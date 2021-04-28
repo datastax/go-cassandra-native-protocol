@@ -53,8 +53,8 @@ func (c *DoubleCodec) Encode(value interface{}, _ primitive.ProtocolVersion) (en
 
 func (c *DoubleCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
 	length := len(encoded)
-	if length == 0 {
-		return float64(0), nil
+	if encoded == nil {
+		return nil, nil
 	} else if length != lengthOfDouble {
 		return float64(0), fmt.Errorf("cannot unmarshal double: expecting %v bytes but got: %v", lengthOfDouble, length)
 	} else {

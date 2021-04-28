@@ -111,8 +111,8 @@ func (c *IntCodec) Encode(value interface{}, _ primitive.ProtocolVersion) (encod
 
 func (c *IntCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
 	length := len(encoded)
-	if length == 0 {
-		return int32(0), nil
+	if encoded == nil {
+		return nil, nil
 	} else if length != primitive.LengthOfInt {
 		return int32(0), fmt.Errorf("cannot unmarshal int: expecting %v bytes but got: %v", primitive.LengthOfInt, length)
 	} else {

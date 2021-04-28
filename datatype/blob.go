@@ -42,7 +42,9 @@ func (c *BlobCodec) Encode(value interface{}, _ primitive.ProtocolVersion) (enco
 }
 
 func (c *BlobCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
-	if len(encoded) == 0 {
+	if encoded == nil {
+		return nil, nil
+	} else if len(encoded) == 0 {
 		return "", nil
 	} else {
 		return string(encoded), nil

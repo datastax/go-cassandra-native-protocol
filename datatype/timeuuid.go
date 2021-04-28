@@ -53,7 +53,7 @@ func (c *TimeuuidCodec) Encode(value interface{}, _ primitive.ProtocolVersion) (
 
 func (c *TimeuuidCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
 	length := len(encoded)
-	if length == 0 {
+	if encoded == nil {
 		return nil, nil
 	} else if length != primitive.LengthOfUuid {
 		return nil, fmt.Errorf("cannot unmarshal timeuuid: expected 16 bytes, got: %v", length)

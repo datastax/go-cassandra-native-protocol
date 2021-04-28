@@ -96,9 +96,9 @@ func (c *BigintCodec) Encode(value interface{}, _ primitive.ProtocolVersion) (en
 
 func (c *BigintCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
 	length := len(encoded)
-	if length == 0 {
-		return int64(0), nil
-	} else if length != lengthOfBigint {
+	if encoded == nil {
+		return nil, nil
+	} else if len(encoded) != lengthOfBigint {
 		return int64(0), fmt.Errorf("cannot unmarshal bigint: expecting %v bytes but got: %v", lengthOfBigint, length)
 	} else {
 		value = int64(binary.BigEndian.Uint64(encoded))

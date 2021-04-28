@@ -47,7 +47,7 @@ func (c *DecimalCodec) Encode(value interface{}, _ primitive.ProtocolVersion) (e
 
 func (c *DecimalCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
 	length := len(encoded)
-	if length == 0 {
+	if encoded == nil {
 		return nil, nil
 	} else if length <= primitive.LengthOfInt {
 		return nil, fmt.Errorf("cannot unmarshal decimal: not enough bytes to read decimal: %v", length)

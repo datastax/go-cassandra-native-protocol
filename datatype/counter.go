@@ -96,8 +96,8 @@ func (c *CounterCodec) Encode(value interface{}, _ primitive.ProtocolVersion) (e
 
 func (c *CounterCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
 	length := len(encoded)
-	if length == 0 {
-		return int64(0), nil
+	if encoded == nil {
+		return nil, nil
 	} else if length != lengthOfCounter {
 		return int64(0), fmt.Errorf("cannot unmarshal counter: expecting %v bytes but got: %v", lengthOfCounter, length)
 	} else {

@@ -76,8 +76,8 @@ func (c *BooleanCodec) Encode(value interface{}, _ primitive.ProtocolVersion) (e
 
 func (c *BooleanCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
 	length := len(encoded)
-	if length == 0 {
-		return false, nil
+	if encoded == nil {
+		return nil, nil
 	} else if length != 1 {
 		return false, fmt.Errorf("invalid boolean value, expecting 1 byte but got: %v", length)
 	} else {

@@ -54,8 +54,8 @@ func (c *FloatCodec) Encode(value interface{}, _ primitive.ProtocolVersion) (enc
 
 func (c *FloatCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
 	length := len(encoded)
-	if length == 0 {
-		return float32(0), nil
+	if encoded == nil {
+		return nil, nil
 	} else if length != lengthOfFloat {
 		return float32(0), fmt.Errorf("cannot unmarshal float: expecting %v bytes but got: %v", lengthOfFloat, length)
 	} else {

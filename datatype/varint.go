@@ -78,8 +78,7 @@ func (c *VarintCodec) Encode(value interface{}, _ primitive.ProtocolVersion) (en
 }
 
 func (c *VarintCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
-	length := len(encoded)
-	if length == 0 {
+	if encoded == nil {
 		return nil, nil
 	} else {
 		value = (&big.Int{}).SetBytes(encoded)

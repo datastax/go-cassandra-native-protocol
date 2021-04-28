@@ -53,7 +53,7 @@ func (c *UuidCodec) Encode(value interface{}, _ primitive.ProtocolVersion) (enco
 
 func (c *UuidCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value interface{}, err error) {
 	length := len(encoded)
-	if length == 0 {
+	if encoded == nil {
 		return nil, nil
 	} else if length != primitive.LengthOfUuid {
 		return nil, fmt.Errorf("cannot unmarshal uuid: expected 16 bytes, got: %v", length)
