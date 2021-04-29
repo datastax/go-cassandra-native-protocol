@@ -145,7 +145,7 @@ func (c *ListCodec) Decode(encoded []byte, version primitive.ProtocolVersion) (v
 	}
 
 	encoded = encoded[read:]
-	childDecodeOutputType := c.GetDecodeOutputType()
+	childDecodeOutputType := c.ElementCodec.GetDecodeOutputType()
 	slice := reflect.MakeSlice(reflect.SliceOf(childDecodeOutputType), n, n)
 	for i := 0; i < n; i++ {
 		decodedElemValue, m, err := decodeChildElement(c.ElementCodec, childDecodeOutputType, encoded, version)
