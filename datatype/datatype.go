@@ -113,12 +113,24 @@ func ReadDataType(source io.Reader, version primitive.ProtocolVersion) (decoded 
 		case primitive.DataTypeCodeInet:
 			return Inet, nil
 		case primitive.DataTypeCodeDate:
+			if version < primitive.ProtocolVersion4 {
+				return nil, fmt.Errorf("cannot use date type with protocol version %v", version)
+			}
 			return Date, nil
 		case primitive.DataTypeCodeTime:
+			if version < primitive.ProtocolVersion4 {
+				return nil, fmt.Errorf("cannot use time type with protocol version %v", version)
+			}
 			return Time, nil
 		case primitive.DataTypeCodeSmallint:
+			if version < primitive.ProtocolVersion4 {
+				return nil, fmt.Errorf("cannot use smallint type with protocol version %v", version)
+			}
 			return Smallint, nil
 		case primitive.DataTypeCodeTinyint:
+			if version < primitive.ProtocolVersion4 {
+				return nil, fmt.Errorf("cannot use tinyint type with protocol version %v", version)
+			}
 			return Tinyint, nil
 		case primitive.DataTypeCodeDuration:
 			if version < primitive.ProtocolVersion5 {
@@ -134,8 +146,14 @@ func ReadDataType(source io.Reader, version primitive.ProtocolVersion) (decoded 
 		case primitive.DataTypeCodeSet:
 			return readSetType(source, version)
 		case primitive.DataTypeCodeUdt:
+			if version < primitive.ProtocolVersion3 {
+				return nil, fmt.Errorf("cannot use udt type with protocol version %v", version)
+			}
 			return readUserDefinedType(source, version)
 		case primitive.DataTypeCodeTuple:
+			if version < primitive.ProtocolVersion3 {
+				return nil, fmt.Errorf("cannot use tuple type with protocol version %v", version)
+			}
 			return readTupleType(source, version)
 		}
 		return nil, fmt.Errorf("unknown type code: %w", err)
