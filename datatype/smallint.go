@@ -20,7 +20,6 @@ import (
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"math"
 	"math/big"
-	"reflect"
 	"strconv"
 )
 
@@ -128,8 +127,4 @@ func (c *SmallintCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (val
 		value = int16(binary.BigEndian.Uint16(encoded))
 		return
 	}
-}
-
-func (c *SmallintCodec) GetDecodeOutputType() reflect.Type {
-	return getDatatypeDecodeOutputType(Smallint)
 }

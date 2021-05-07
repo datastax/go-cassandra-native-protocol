@@ -17,7 +17,6 @@ package datatype
 import (
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"reflect"
 )
 
 var Varchar PrimitiveType = &primitiveType{code: primitive.DataTypeCodeVarchar}
@@ -51,8 +50,4 @@ func (c *VarcharCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (valu
 	} else {
 		return string(encoded), nil
 	}
-}
-
-func (c *VarcharCodec) GetDecodeOutputType() reflect.Type {
-	return getDatatypeDecodeOutputType(Varchar)
 }

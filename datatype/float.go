@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"math"
-	"reflect"
 	"strconv"
 )
 
@@ -62,8 +61,4 @@ func (c *FloatCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value 
 		value = math.Float32frombits(binary.BigEndian.Uint32(encoded))
 		return
 	}
-}
-
-func (c *FloatCodec) GetDecodeOutputType() reflect.Type {
-	return getDatatypeDecodeOutputType(Float)
 }

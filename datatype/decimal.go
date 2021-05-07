@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"math/big"
-	"reflect"
 )
 
 type Dec struct {
@@ -57,8 +56,4 @@ func (c *DecimalCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (valu
 		val.Unscaled = (&big.Int{}).SetBytes(encoded[primitive.LengthOfInt:])
 		return val, nil
 	}
-}
-
-func (c *DecimalCodec) GetDecodeOutputType() reflect.Type {
-	return getDatatypeDecodeOutputType(Decimal)
 }

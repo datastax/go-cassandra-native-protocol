@@ -145,21 +145,16 @@ func (c *ListCodec) Decode(encoded []byte, version primitive.ProtocolVersion) (v
 	}
 
 	encoded = encoded[read:]
-	childDecodeOutputType := c.ElementCodec.GetDecodeOutputType()
-	slice := reflect.MakeSlice(reflect.SliceOf(childDecodeOutputType), n, n)
+	slice := make([]interface{}, n)
 	for i := 0; i < n; i++ {
-		decodedElemValue, m, err := decodeChildElement(c.ElementCodec, childDecodeOutputType, encoded, version)
+		decodedElemValue, m, err := decodeChildElement(c.ElementCodec, encoded, version)
 		if err != nil {
 			return nil, err
 		}
 		encoded = encoded[m:]
-		slice.Index(i).Set(*decodedElemValue)
+		slice[i] = decodedElemValue
 	}
-	return slice.Interface(), nil
-}
-
-func (c *ListCodec) GetDecodeOutputType() reflect.Type {
-	return reflect.SliceOf(c.ElementCodec.GetDecodeOutputType())
+	return slice, nil
 }
 
 func writeCollectionSize(version primitive.ProtocolVersion, n int, buf io.Writer) error {
@@ -190,17 +185,16 @@ func readCollectionSize(version primitive.ProtocolVersion, encoded []byte) (int,
 
 func decodeChildElement(
 	elementCodec Codec,
-	elementType reflect.Type,
 	encoded []byte,
-	version primitive.ProtocolVersion) (output *reflect.Value, read int, err error) {
+	version primitive.ProtocolVersion) (output interface{}, read int, err error) {
 	m, read, err := readCollectionSize(version, encoded)
 	if err != nil {
 		return nil, -1, err
 	}
 	encoded = encoded[read:]
-	var decodedElemValue reflect.Value
+	var decodedElemValue interface{}
 	if m < 0 {
-		decodedElemValue = reflect.Zero(elementType)
+		decodedElemValue = nil
 	} else if len(encoded) < m {
 		return nil, -1, fmt.Errorf("decode list: unexpected eof")
 	} else {
@@ -208,8 +202,8 @@ func decodeChildElement(
 		if err != nil {
 			return nil, -1, err
 		}
-		decodedElemValue = reflect.ValueOf(decodedElem)
+		decodedElemValue = decodedElem
 	}
 
-	return &decodedElemValue, read + m, nil
+	return decodedElemValue, read + m, nil
 }

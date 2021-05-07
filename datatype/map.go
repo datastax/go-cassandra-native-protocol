@@ -176,28 +176,22 @@ func (c *MapCodec) Decode(encoded []byte, version primitive.ProtocolVersion) (va
 	}
 
 	encoded = encoded[read:]
-	keyType := c.KeyCodec.GetDecodeOutputType()
-	valueType := c.ValueCodec.GetDecodeOutputType()
-	newMap := reflect.MakeMap(reflect.MapOf(keyType, valueType))
+	newMap := make(map[interface{}]interface{})
 	for i := 0; i < n; i++ {
-		decodedKeyValue, m, err := decodeChildElement(c.KeyCodec, keyType, encoded, version)
+		decodedKeyValue, m, err := decodeChildElement(c.KeyCodec, encoded, version)
 		if err != nil {
 			return nil, err
 		}
 		encoded = encoded[m:]
 
-		decodedValue, m, err := decodeChildElement(c.ValueCodec, valueType, encoded, version)
+		decodedValue, m, err := decodeChildElement(c.ValueCodec, encoded, version)
 		if err != nil {
 			return nil, err
 		}
 		encoded = encoded[m:]
 
-		newMap.SetMapIndex(*decodedKeyValue, *decodedValue)
+		newMap[decodedKeyValue] = decodedValue
 	}
 
-	return newMap.Interface(), nil
-}
-
-func (c *MapCodec) GetDecodeOutputType() reflect.Type {
-	return reflect.MapOf(c.KeyCodec.GetDecodeOutputType(), c.ValueCodec.GetDecodeOutputType())
+	return newMap, nil
 }

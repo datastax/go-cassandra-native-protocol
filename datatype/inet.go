@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"net"
-	"reflect"
 )
 
 type InetCodec struct{}
@@ -58,8 +57,4 @@ func (c *InetCodec) Decode(encoded []byte, _ primitive.ProtocolVersion) (value i
 		return v4, nil
 	}
 	return ip, nil
-}
-
-func (c *InetCodec) GetDecodeOutputType() reflect.Type {
-	return getDatatypeDecodeOutputType(Inet)
 }
