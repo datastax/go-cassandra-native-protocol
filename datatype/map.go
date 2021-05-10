@@ -15,10 +15,11 @@
 package datatype
 
 import (
-	"errors"
+	"bytes"
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
+	"reflect"
 )
 
 type MapType interface {
@@ -63,12 +64,10 @@ func NewMapType(keyType DataType, valueType DataType) MapType {
 	return &mapType{keyType: keyType, valueType: valueType}
 }
 
-type mapTypeCodec struct{}
-
-func (c *mapTypeCodec) encode(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error) {
+func writeMapType(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error) {
 	mapType, ok := t.(MapType)
 	if !ok {
-		return errors.New(fmt.Sprintf("expected MapType, got %T", t))
+		return fmt.Errorf("expected MapType, got %T", t)
 	} else if err = WriteDataType(mapType.GetKeyType(), dest, version); err != nil {
 		return fmt.Errorf("cannot write map key type: %w", err)
 	} else if err = WriteDataType(mapType.GetValueType(), dest, version); err != nil {
@@ -77,10 +76,10 @@ func (c *mapTypeCodec) encode(t DataType, dest io.Writer, version primitive.Prot
 	return nil
 }
 
-func (c *mapTypeCodec) encodedLength(t DataType, version primitive.ProtocolVersion) (length int, err error) {
+func lengthOfMapType(t DataType, version primitive.ProtocolVersion) (length int, err error) {
 	mapType, ok := t.(MapType)
 	if !ok {
-		return -1, errors.New(fmt.Sprintf("expected MapType, got %T", t))
+		return -1, fmt.Errorf("expected MapType, got %T", t)
 	}
 	if keyLength, err := LengthOfDataType(mapType.GetKeyType(), version); err != nil {
 		return -1, fmt.Errorf("cannot compute length of map key type: %w", err)
@@ -95,7 +94,7 @@ func (c *mapTypeCodec) encodedLength(t DataType, version primitive.ProtocolVersi
 	return length, nil
 }
 
-func (c *mapTypeCodec) decode(source io.Reader, version primitive.ProtocolVersion) (decoded DataType, err error) {
+func readMapType(source io.Reader, version primitive.ProtocolVersion) (decoded DataType, err error) {
 	mapType := &mapType{}
 	if mapType.keyType, err = ReadDataType(source, version); err != nil {
 		return nil, fmt.Errorf("cannot read map key type: %w", err)
@@ -103,4 +102,96 @@ func (c *mapTypeCodec) decode(source io.Reader, version primitive.ProtocolVersio
 		return nil, fmt.Errorf("cannot read map value type: %w", err)
 	}
 	return mapType, nil
+}
+
+type MapCodec struct {
+	KeyCodec    Codec
+	ValueCodec    Codec
+}
+
+func NewMapCodec(keyCodec Codec, valueCodec Codec) *MapCodec {
+	return &MapCodec{KeyCodec: keyCodec, ValueCodec: valueCodec}
+}
+
+func (c *MapCodec) Encode(data interface{}, version primitive.ProtocolVersion) (encoded []byte, err error) {
+	if data == nil {
+		return nil, nil
+	}
+
+	value := reflect.ValueOf(data)
+	valueType := value.Type()
+	valueKind := valueType.Kind()
+	if valueKind == reflect.Map && value.IsNil() {
+		return nil, nil
+	}
+
+	if valueKind != reflect.Map {
+		return nil, fmt.Errorf("can not encode %T into map", data)
+	}
+
+	buf := &bytes.Buffer{}
+	n := value.Len()
+
+	if err := writeCollectionSize(version, n, buf); err != nil {
+		return nil, err
+	}
+
+	iter := value.MapRange()
+	for iter.Next() {
+		mapKey := iter.Key()
+		item, err := c.KeyCodec.Encode(mapKey.Interface(), version)
+		if err != nil {
+			return nil, err
+		}
+		if err := writeCollectionSize(version, len(item), buf); err != nil {
+			return nil, err
+		}
+		buf.Write(item)
+
+		mapValue := iter.Value()
+		item, err = c.ValueCodec.Encode(mapValue.Interface(), version)
+		if err != nil {
+			return nil, err
+		}
+		if err := writeCollectionSize(version, len(item), buf); err != nil {
+			return nil, err
+		}
+		buf.Write(item)
+	}
+	return buf.Bytes(), nil
+}
+
+func (c *MapCodec) Decode(encoded []byte, version primitive.ProtocolVersion) (value interface{}, err error) {
+	if encoded == nil {
+		return nil, nil
+	}
+
+	n, read, err := readCollectionSize(version, encoded)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(encoded) < n {
+		return nil, fmt.Errorf("decode map: unexpected eof")
+	}
+
+	encoded = encoded[read:]
+	newMap := make(map[interface{}]interface{})
+	for i := 0; i < n; i++ {
+		decodedKeyValue, m, err := decodeChildElement(c.KeyCodec, encoded, version)
+		if err != nil {
+			return nil, err
+		}
+		encoded = encoded[m:]
+
+		decodedValue, m, err := decodeChildElement(c.ValueCodec, encoded, version)
+		if err != nil {
+			return nil, err
+		}
+		encoded = encoded[m:]
+
+		newMap[decodedKeyValue] = decodedValue
+	}
+
+	return newMap, nil
 }

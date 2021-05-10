@@ -15,32 +15,14 @@
 package datatype
 
 import (
-	"errors"
-	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"io"
 )
 
 var (
-	Ascii     PrimitiveType = &primitiveType{code: primitive.DataTypeCodeAscii}
-	Bigint    PrimitiveType = &primitiveType{code: primitive.DataTypeCodeBigint}
-	Blob      PrimitiveType = &primitiveType{code: primitive.DataTypeCodeBlob}
-	Boolean   PrimitiveType = &primitiveType{code: primitive.DataTypeCodeBoolean}
-	Counter   PrimitiveType = &primitiveType{code: primitive.DataTypeCodeCounter}
-	Decimal   PrimitiveType = &primitiveType{code: primitive.DataTypeCodeDecimal}
-	Double    PrimitiveType = &primitiveType{code: primitive.DataTypeCodeDouble}
-	Float     PrimitiveType = &primitiveType{code: primitive.DataTypeCodeFloat}
-	Int       PrimitiveType = &primitiveType{code: primitive.DataTypeCodeInt}
 	Timestamp PrimitiveType = &primitiveType{code: primitive.DataTypeCodeTimestamp}
-	Uuid      PrimitiveType = &primitiveType{code: primitive.DataTypeCodeUuid}
-	Varchar   PrimitiveType = &primitiveType{code: primitive.DataTypeCodeVarchar}
-	Varint    PrimitiveType = &primitiveType{code: primitive.DataTypeCodeVarint}
-	Timeuuid  PrimitiveType = &primitiveType{code: primitive.DataTypeCodeTimeuuid}
 	Inet      PrimitiveType = &primitiveType{code: primitive.DataTypeCodeInet}
 	Date      PrimitiveType = &primitiveType{code: primitive.DataTypeCodeDate}
 	Time      PrimitiveType = &primitiveType{code: primitive.DataTypeCodeTime}
-	Smallint  PrimitiveType = &primitiveType{code: primitive.DataTypeCodeSmallint}
-	Tinyint   PrimitiveType = &primitiveType{code: primitive.DataTypeCodeTinyint}
 	Duration  PrimitiveType = &primitiveType{code: primitive.DataTypeCodeDuration}
 )
 
@@ -110,40 +92,4 @@ func (t *primitiveType) String() string {
 
 func (t *primitiveType) MarshalJSON() ([]byte, error) {
 	return []byte("\"" + t.String() + "\""), nil
-}
-
-type primitiveTypeCodec struct {
-	primitiveType PrimitiveType
-}
-
-func (c *primitiveTypeCodec) encode(t DataType, _ io.Writer, version primitive.ProtocolVersion) (err error) {
-	_, ok := t.(PrimitiveType)
-	if !ok {
-		return errors.New(fmt.Sprintf("expected PrimitiveType, got %T", t))
-	}
-	if err := primitive.CheckValidDataTypeCode(t.GetDataTypeCode(), version); err != nil {
-		return err
-	}
-	if version < primitive.ProtocolVersion5 && c.primitiveType.GetDataTypeCode() == primitive.DataTypeCodeDuration {
-		return fmt.Errorf("cannot use duration type with protocol version %v", version)
-	}
-	return nil
-}
-
-func (c *primitiveTypeCodec) encodedLength(t DataType, version primitive.ProtocolVersion) (int, error) {
-	_, ok := t.(PrimitiveType)
-	if !ok {
-		return -1, errors.New(fmt.Sprintf("expected PrimitiveType, got %T", t))
-	}
-	if err := primitive.CheckValidDataTypeCode(t.GetDataTypeCode(), version); err != nil {
-		return -1, err
-	}
-	return 0, nil
-}
-
-func (c *primitiveTypeCodec) decode(_ io.Reader, version primitive.ProtocolVersion) (t DataType, err error) {
-	if version < primitive.ProtocolVersion5 && c.primitiveType.GetDataTypeCode() == primitive.DataTypeCodeDuration {
-		return nil, fmt.Errorf("cannot use duration type with protocol version %v", version)
-	}
-	return c.primitiveType, nil
 }

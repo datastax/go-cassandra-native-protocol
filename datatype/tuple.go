@@ -15,7 +15,6 @@
 package datatype
 
 import (
-	"errors"
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
@@ -56,12 +55,10 @@ func (t *tupleType) MarshalJSON() ([]byte, error) {
 	return []byte("\"" + t.String() + "\""), nil
 }
 
-type tupleTypeCodec struct{}
-
-func (c *tupleTypeCodec) encode(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error) {
+func writeTupleType(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error) {
 	tupleType, ok := t.(TupleType)
 	if !ok {
-		return errors.New(fmt.Sprintf("expected TupleType, got %T", t))
+		return fmt.Errorf("expected TupleType, got %T", t)
 	} else if err = primitive.WriteShort(uint16(len(tupleType.GetFieldTypes())), dest); err != nil {
 		return fmt.Errorf("cannot write tuple type field count: %w", err)
 	}
@@ -73,9 +70,9 @@ func (c *tupleTypeCodec) encode(t DataType, dest io.Writer, version primitive.Pr
 	return nil
 }
 
-func (c *tupleTypeCodec) encodedLength(t DataType, version primitive.ProtocolVersion) (int, error) {
+func lengthOfTupleType(t DataType, version primitive.ProtocolVersion) (int, error) {
 	if tupleType, ok := t.(TupleType); !ok {
-		return -1, errors.New(fmt.Sprintf("expected TupleType, got %T", t))
+		return -1, fmt.Errorf("expected TupleType, got %T", t)
 	} else {
 		length := primitive.LengthOfShort // field count
 		for i, fieldType := range tupleType.GetFieldTypes() {
@@ -89,7 +86,7 @@ func (c *tupleTypeCodec) encodedLength(t DataType, version primitive.ProtocolVer
 	}
 }
 
-func (c *tupleTypeCodec) decode(source io.Reader, version primitive.ProtocolVersion) (DataType, error) {
+func readTupleType(source io.Reader, version primitive.ProtocolVersion) (DataType, error) {
 	if fieldCount, err := primitive.ReadShort(source); err != nil {
 		return nil, fmt.Errorf("cannot read tuple field count: %w", err)
 	} else {

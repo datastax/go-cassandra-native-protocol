@@ -15,7 +15,6 @@
 package datatype
 
 import (
-	"errors"
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
@@ -83,12 +82,10 @@ func (t *userDefinedType) MarshalJSON() ([]byte, error) {
 	return []byte("\"" + t.String() + "\""), nil
 }
 
-type userDefinedTypeCodec struct{}
-
-func (c *userDefinedTypeCodec) encode(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error) {
+func writeUserDefinedType(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error) {
 	userDefinedType, ok := t.(UserDefinedType)
 	if !ok {
-		return errors.New(fmt.Sprintf("expected UserDefinedType, got %T", t))
+		return fmt.Errorf("expected UserDefinedType, got %T", t)
 	} else if err = primitive.WriteString(userDefinedType.GetKeyspace(), dest); err != nil {
 		return fmt.Errorf("cannot write udt keyspace: %w", err)
 	} else if err = primitive.WriteString(userDefinedType.GetName(), dest); err != nil {
@@ -110,10 +107,10 @@ func (c *userDefinedTypeCodec) encode(t DataType, dest io.Writer, version primit
 	return nil
 }
 
-func (c *userDefinedTypeCodec) encodedLength(t DataType, version primitive.ProtocolVersion) (length int, err error) {
+func lengthOfUserDefinedType(t DataType, version primitive.ProtocolVersion) (length int, err error) {
 	userDefinedType, ok := t.(UserDefinedType)
 	if !ok {
-		return -1, errors.New(fmt.Sprintf("expected UserDefinedType, got %T", t))
+		return -1, fmt.Errorf("expected UserDefinedType, got %T", t)
 	}
 	length += primitive.LengthOfString(userDefinedType.GetKeyspace())
 	length += primitive.LengthOfString(userDefinedType.GetName())
@@ -133,7 +130,7 @@ func (c *userDefinedTypeCodec) encodedLength(t DataType, version primitive.Proto
 	return length, nil
 }
 
-func (c *userDefinedTypeCodec) decode(source io.Reader, version primitive.ProtocolVersion) (decoded DataType, err error) {
+func readUserDefinedType(source io.Reader, version primitive.ProtocolVersion) (decoded DataType, err error) {
 	userDefinedType := &userDefinedType{}
 	if userDefinedType.keyspace, err = primitive.ReadString(source); err != nil {
 		return nil, fmt.Errorf("cannot read udt keyspace: %w", err)
