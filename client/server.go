@@ -16,17 +16,19 @@ package client
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/frame"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/rs/zerolog/log"
 	"io"
 	"math"
 	"net"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/datastax/go-cassandra-native-protocol/frame"
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -94,6 +96,8 @@ type CqlServer struct {
 	IdleTimeout time.Duration
 	// An optional list of handlers to handle incoming requests.
 	RequestHandlers []RequestHandler
+	// TLS configuration
+	TLSConfig *tls.Config
 
 	ctx                context.Context
 	cancel             context.CancelFunc
@@ -147,9 +151,16 @@ func (server *CqlServer) Start(ctx context.Context) (err error) {
 	}
 	if server.transitionState(ServerStateNotStarted, ServerStateRunning) {
 		log.Debug().Msgf("%v: server is starting", server)
-		if server.connectionsHandler, err = newClientConnectionHandler(server.String(), server.MaxConnections); err != nil {
+		server.connectionsHandler, err = newClientConnectionHandler(server.String(), server.MaxConnections)
+		if err != nil {
 			return fmt.Errorf("%v: start failed: %w", server, err)
-		} else if server.listener, err = net.Listen("tcp", server.ListenAddress); err != nil {
+		}
+		if server.TLSConfig != nil {
+			server.listener, err = tls.Listen("tcp", server.ListenAddress, server.TLSConfig)
+		} else {
+			server.listener, err = net.Listen("tcp", server.ListenAddress)
+		}
+		if err != nil {
 			return fmt.Errorf("%v: start failed: %w", server, err)
 		}
 		server.ctx, server.cancel = context.WithCancel(ctx)
@@ -401,6 +412,10 @@ func (c *CqlServerConnection) Credentials() *AuthCredentials {
 		return nil
 	}
 	return c.credentials.Copy()
+}
+
+func (c *CqlServerConnection) GetConn() net.Conn {
+	return c.conn
 }
 
 func (c *CqlServerConnection) incomingLoop() {
