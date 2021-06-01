@@ -115,11 +115,18 @@ func TestReadStringMultiMap(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			buf := bytes.NewBuffer(tt.source)
+			buf := bytes.NewReader(tt.source)
 			actual, err := ReadStringMultiMap(buf)
 			assert.Equal(t, tt.expected, actual)
-			assert.Equal(t, tt.remaining, buf.Bytes())
 			assert.Equal(t, tt.err, err)
+			remaining := make([]byte, buf.Len())
+			_, err = buf.Read(remaining)
+			if len(tt.remaining) == 0 {
+				assert.NotNil(t, err)
+			} else {
+				assert.Nil(t, err)
+				assert.Equal(t, tt.remaining, remaining)
+			}
 		})
 	}
 }

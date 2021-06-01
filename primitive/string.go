@@ -25,6 +25,8 @@ import (
 func ReadString(source io.Reader) (string, error) {
 	if length, err := ReadShort(source); err != nil {
 		return "", fmt.Errorf("cannot read [string] length: %w", err)
+	} else if length <= 0 {
+		return "", nil
 	} else {
 		decoded := make([]byte, length)
 		if read, err := source.Read(decoded); err != nil {

@@ -25,6 +25,10 @@ import (
 func ReadShortBytes(source io.Reader) ([]byte, error) {
 	if length, err := ReadShort(source); err != nil {
 		return nil, fmt.Errorf("cannot read [short bytes] length: %w", err)
+	} else if length < 0 {
+		return nil, nil
+	} else if length == 0 {
+		return []byte{}, nil
 	} else {
 		decoded := make([]byte, length)
 		if read, err := source.Read(decoded); err != nil {

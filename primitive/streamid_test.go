@@ -52,7 +52,7 @@ func TestReadStreamId(t *testing.T) {
 			}
 			for _, tt := range tests {
 				t.Run(tt.name, func(t *testing.T) {
-					buf := bytes.NewBuffer(tt.source)
+					buf := bytes.NewReader(tt.source)
 					actual, err := ReadStreamId(buf, version)
 					assert.Equal(t, tt.expected, actual)
 					assert.Equal(t, tt.err, err)
@@ -89,7 +89,7 @@ func TestReadStreamId(t *testing.T) {
 			}
 			for _, tt := range tests {
 				t.Run(tt.name, func(t *testing.T) {
-					buf := bytes.NewBuffer(tt.source)
+					buf := bytes.NewReader(tt.source)
 					actual, err := ReadStreamId(buf, version)
 					assert.Equal(t, tt.expected, actual)
 					assert.Equal(t, tt.err, err)

@@ -78,6 +78,8 @@ func ReadValue(source io.Reader, version ProtocolVersion) (*Value, error) {
 		return NewUnsetValue(), nil
 	} else if length < 0 {
 		return nil, fmt.Errorf("invalid [value] length: %v", length)
+	} else if length == 0 {
+		return NewValue([]byte{}), nil
 	} else {
 		decoded := make([]byte, length)
 		if read, err := source.Read(decoded); err != nil {
