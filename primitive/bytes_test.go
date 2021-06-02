@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"io/ioutil"
 	"testing"
 )
 
@@ -56,14 +57,8 @@ func TestReadBytes(t *testing.T) {
 			assert.Equal(t, tt.err, err)
 			assert.Equal(t, tt.expected, actual)
 
-			remaining := make([]byte, buf.Len())
-			_, err = buf.Read(remaining)
-			if len(tt.remaining) == 0 {
-				assert.NotNil(t, err)
-			} else {
-				assert.Nil(t, err)
-				assert.Equal(t, tt.remaining, remaining)
-			}
+			remaining, _ := ioutil.ReadAll(buf)
+			assert.Equal(t, tt.remaining, remaining)
 		})
 	}
 }
