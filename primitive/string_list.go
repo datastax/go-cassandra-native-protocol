@@ -27,6 +27,13 @@ func ReadStringList(source io.Reader) (decoded []string, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("cannot read [string list] length: %w", err)
 	}
+
+	if length < 0 {
+		return nil, nil
+	} else if length == 0 {
+		return []string{}, nil
+	}
+
 	decoded = make([]string, length)
 	for i := uint16(0); i < length; i++ {
 		var str string

@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"io/ioutil"
 	"testing"
 )
 
@@ -51,11 +52,13 @@ func TestReadBytes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			buf := bytes.NewBuffer(tt.source)
+			buf := bytes.NewReader(tt.source)
 			actual, err := ReadBytes(buf)
-			assert.Equal(t, tt.expected, actual)
-			assert.Equal(t, tt.remaining, buf.Bytes())
 			assert.Equal(t, tt.err, err)
+			assert.Equal(t, tt.expected, actual)
+
+			remaining, _ := ioutil.ReadAll(buf)
+			assert.Equal(t, tt.remaining, remaining)
 		})
 	}
 }
