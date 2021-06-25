@@ -31,6 +31,8 @@ func (c *BooleanCodec) Encode(value interface{}, _ primitive.ProtocolVersion) (e
 	} else {
 		var val bool
 		switch v := value.(type) {
+		case bool:
+			val = v
 		case int:
 			val = v != 0
 		case uint:
