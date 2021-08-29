@@ -212,6 +212,7 @@ func (server *CqlServer) acceptLoop() {
 				}
 				break
 			} else {
+				log.Debug().Msgf("%v: new TCP connection accepted", server)
 				if connection, err := newCqlServerConnection(
 					conn,
 					server.ctx,
@@ -222,11 +223,13 @@ func (server *CqlServer) acceptLoop() {
 					server.RequestHandlers,
 					server.connectionsHandler.onConnectionClosed,
 				); err != nil {
-					log.Error().Msgf("%v: failed to create incoming client connection: %v", server, connection)
-				} else if err := server.connectionsHandler.onConnectionAccepted(connection); err == nil {
-					log.Info().Msgf("%v: accepted new incoming client connection: %v", server, connection)
+					log.Error().Msgf("%v: failed to accept incoming CQL client connection: %v", server, connection)
+					_ = conn.Close()
+				} else if err := server.connectionsHandler.onConnectionAccepted(connection); err != nil {
+					log.Error().Msgf("%v: handler rejected incoming CQL client connection: %v", server, connection)
+					_ = conn.Close()
 				} else {
-					log.Error().Msgf("%v: failed to accept client connection: %v", server, connection)
+					log.Info().Msgf("%v: accepted new incoming CQL client connection: %v", server, connection)
 				}
 			}
 		}

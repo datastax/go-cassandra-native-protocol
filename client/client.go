@@ -93,11 +93,13 @@ func (client *CqlClient) String() string {
 func (client *CqlClient) Connect(ctx context.Context) (*CqlClientConnection, error) {
 	log.Debug().Msgf("%v: connecting", client)
 	dialer := net.Dialer{}
-	connectCtx, _ := context.WithTimeout(ctx, client.ConnectTimeout)
+	connectCtx, connectCancel := context.WithTimeout(ctx, client.ConnectTimeout)
+	defer connectCancel()
 	if conn, err := dialer.DialContext(connectCtx, "tcp", client.RemoteAddress); err != nil {
 		return nil, fmt.Errorf("%v: cannot establish TCP connection: %w", client, err)
 	} else {
-		connection, err := newCqlClientConnection(
+		log.Debug().Msgf("%v: new TCP connection established", client)
+		if connection, err := newCqlClientConnection(
 			conn,
 			ctx,
 			client.Credentials,
@@ -106,9 +108,14 @@ func (client *CqlClient) Connect(ctx context.Context) (*CqlClientConnection, err
 			client.MaxPending,
 			client.ReadTimeout,
 			client.EventHandlers,
-		)
-		log.Info().Msgf("%v: new TCP connection established: %v", client, connection)
-		return connection, err
+		); err != nil {
+			log.Err(err).Msgf("%v: cannot establish CQL connection", client)
+			_ = conn.Close()
+			return nil, err
+		} else {
+			log.Info().Msgf("%v: new CQL connection established: %v", client, connection)
+			return connection, nil
+		}
 	}
 }
 
