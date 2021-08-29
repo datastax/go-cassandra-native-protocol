@@ -44,14 +44,14 @@ const (
 	ServerStateClosed     = int32(iota)
 )
 
-// The RequestHandler invocation context. Each invocation of a given RequestHandler will be passed
-// one instance of a RequestHandlerContext, that remains the same between invocations. This allows
+// RequestHandlerContext is the RequestHandler invocation context. Each invocation of a given RequestHandler will be
+// passed one instance of a RequestHandlerContext, that remains the same between invocations. This allows
 // handlers to become stateful if required.
 type RequestHandlerContext interface {
-	// Puts the given value in this context under the given key name.
+	// PutAttribute puts the given value in this context under the given key name.
 	// Will override any previously-stored value under that key.
 	PutAttribute(name string, value interface{})
-	// Retrieves the value stored in this context under the given key name.
+	// GetAttribute retrieves the value stored in this context under the given key name.
 	// Returns nil if nil is stored, or if the key does not exist.
 	GetAttribute(name string) interface{}
 }
@@ -66,7 +66,7 @@ func (ctx requestHandlerContext) GetAttribute(name string) interface{} {
 	return ctx[name]
 }
 
-// A request handler is a callback function that gets invoked whenever a CqlServerConnection receives an incoming
+// RequestHandler is a callback function that gets invoked whenever a CqlServerConnection receives an incoming
 // frame. The handler function should inspect the request frame and determine if it can handle the response for it.
 // If so, it should return a non-nil response frame. When that happens, no further handlers will be tried for the
 // incoming request.
@@ -78,25 +78,25 @@ type RequestHandler func(request *frame.Frame, conn *CqlServerConnection, ctx Re
 // create CqlServer instances using the constructor function NewCqlServer. Once the server is properly created and
 // configured, use Start to start the server, then call Accept or AcceptAny to accept incoming client connections.
 type CqlServer struct {
-	// The address to listen to.
+	// ListenAddress is the address to listen to.
 	ListenAddress string
-	// The AuthCredentials to use. If nil, no authentication will used; otherwise, clients will be required to
-	// authenticate with plain-text auth using the same credentials.
+	// Credentials is the AuthCredentials to use. If nil, no authentication will be used; otherwise, clients will be
+	// required to authenticate with plain-text auth using the same credentials.
 	Credentials *AuthCredentials
-	// The frame.Codec to use; if none provided, a default codec will be used.
+	// Codec is the frame.Codec to use; if none provided, a default codec will be used.
 	Codec frame.Codec
-	// The maximum number of open client connections to accept. Must be strictly positive.
+	// MaxConnections is the maximum number of open client connections to accept. Must be strictly positive.
 	MaxConnections int
-	// The maximum number of in-flight requests to apply for each connection created with Accept. Must be strictly
-	// positive.
+	// MaxInFlight is the maximum number of in-flight requests to apply for each connection created with Accept. Must
+	// be strictly positive.
 	MaxInFlight int
-	// The timeout to apply when accepting new connections.
+	// AcceptTimeout is the timeout to apply when accepting new connections.
 	AcceptTimeout time.Duration
-	// The timeout to apply for closing idle connections.
+	// IdleTimeout is the timeout to apply for closing idle connections.
 	IdleTimeout time.Duration
-	// An optional list of handlers to handle incoming requests.
+	// RequestHandlers is an optional list of handlers to handle incoming requests.
 	RequestHandlers []RequestHandler
-	// TLS configuration
+	// TLSConfig is the TLS configuration to use.
 	TLSConfig *tls.Config
 
 	ctx                context.Context
@@ -107,7 +107,7 @@ type CqlServer struct {
 	state              int32
 }
 
-// Creates a new CqlServer with default options. Leave credentials nil to opt out from authentication.
+// NewCqlServer creates a new CqlServer with default options. Leave credentials nil to opt out from authentication.
 func NewCqlServer(listenAddress string, credentials *AuthCredentials) *CqlServer {
 	return &CqlServer{
 		ListenAddress:  listenAddress,
@@ -143,7 +143,7 @@ func (server *CqlServer) transitionState(old int32, new int32) bool {
 	return atomic.CompareAndSwapInt32(&server.state, old, new)
 }
 
-// Starts the server and binds to its listen address. This method must be called before calling Accept.
+// Start starts the server and binds to its listen address. This method must be called before calling Accept.
 // Set ctx to context.Background if no parent context exists.
 func (server *CqlServer) Start(ctx context.Context) (err error) {
 	if ctx == nil {
@@ -250,8 +250,8 @@ func (server *CqlServer) awaitDone() {
 	}()
 }
 
-// Waits until the given client address is accepted, the configured timeout is triggered, or the server is closed,
-// whichever happens first.
+// Accept waits until the given client address is accepted, the configured timeout is triggered, or the server is
+// closed, whichever happens first.
 func (server *CqlServer) Accept(client *CqlClientConnection) (*CqlServerConnection, error) {
 	if server.IsClosed() {
 		return nil, fmt.Errorf("%v: server closed", server)
@@ -273,7 +273,7 @@ func (server *CqlServer) Accept(client *CqlClientConnection) (*CqlServerConnecti
 	}
 }
 
-// Waits until any client is accepted, the configured timeout is triggered, or the server is closed,
+// AcceptAny waits until any client is accepted, the configured timeout is triggered, or the server is closed,
 // whichever happens first. This method is useful when the client is not known in advance.
 func (server *CqlServer) AcceptAny() (*CqlServerConnection, error) {
 	if server.IsClosed() {
@@ -293,7 +293,7 @@ func (server *CqlServer) AcceptAny() (*CqlServerConnection, error) {
 	}
 }
 
-// Returns a list of all the currently active server connections.
+// AllAcceptedClients returns a list of all the currently active server connections.
 func (server *CqlServer) AllAcceptedClients() ([]*CqlServerConnection, error) {
 	if server.IsClosed() {
 		return nil, fmt.Errorf("%v: server closed", server)
@@ -301,7 +301,7 @@ func (server *CqlServer) AllAcceptedClients() ([]*CqlServerConnection, error) {
 	return server.connectionsHandler.allAcceptedClients(), nil
 }
 
-// Convenience method to connect a CqlClient to this CqlServer. The returned connections will be open, but not
+// Bind is a convenience method to connect a CqlClient to this CqlServer. The returned connections will be open, but not
 // initialized (i.e., no handshake performed). The server must be started prior to calling this method.
 func (server *CqlServer) Bind(client *CqlClient, ctx context.Context) (*CqlClientConnection, *CqlServerConnection, error) {
 	if server.IsNotStarted() {
@@ -318,8 +318,8 @@ func (server *CqlServer) Bind(client *CqlClient, ctx context.Context) (*CqlClien
 	}
 }
 
-// Convenience method to connect a CqlClient to this CqlServer. The returned connections will be open and
-// initialized (i.e., handshake is already performed). The server must be started prior to calling this method.
+// BindAndInit is a convenience method to connect a CqlClient to this CqlServer. The returned connections will be open
+// and initialized (i.e., handshake is already performed). The server must be started prior to calling this method.
 // Use stream id zero to activate automatic stream id management.
 func (server *CqlServer) BindAndInit(
 	client *CqlClient,
@@ -399,17 +399,17 @@ func (c *CqlServerConnection) String() string {
 	return fmt.Sprintf("CQL server conn [L:%v <-> R:%v]", c.conn.LocalAddr(), c.conn.RemoteAddr())
 }
 
-// Returns the connection's local address (that is, the client address).
+// LocalAddr Returns the connection's local address (that is, the client address).
 func (c *CqlServerConnection) LocalAddr() net.Addr {
 	return c.conn.LocalAddr()
 }
 
-// Returns the connection's remote address (that is, the server address).
+// RemoteAddr Returns the connection's remote address (that is, the server address).
 func (c *CqlServerConnection) RemoteAddr() net.Addr {
 	return c.conn.RemoteAddr()
 }
 
-// Returns a copy of the connection's AuthCredentials, if any, or nil if no authentication was configured.
+// Credentials Returns a copy of the connection's AuthCredentials, if any, or nil if no authentication was configured.
 func (c *CqlServerConnection) Credentials() *AuthCredentials {
 	if c.credentials == nil {
 		return nil
@@ -531,7 +531,7 @@ func (c *CqlServerConnection) invokeRequestHandlers(request *frame.Frame) {
 	}()
 }
 
-// Sends the given response frame.
+// Send Sends the given response frame.
 func (c *CqlServerConnection) Send(f *frame.Frame) error {
 	if c.IsClosed() {
 		return fmt.Errorf("%v: connection closed", c)
@@ -546,7 +546,7 @@ func (c *CqlServerConnection) Send(f *frame.Frame) error {
 	}
 }
 
-// Waits  until the next request frame is received, or the configured idle timeout is triggered, or the connection
+// Receive Waits  until the next request frame is received, or the configured idle timeout is triggered, or the connection
 // itself is closed, whichever happens first.
 func (c *CqlServerConnection) Receive() (*frame.Frame, error) {
 	if c.IsClosed() {

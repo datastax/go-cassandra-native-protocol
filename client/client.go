@@ -42,7 +42,7 @@ const (
 
 const ManagedStreamId int16 = 0
 
-// An event handler is a callback function that gets invoked whenever a CqlClientConnection receives an incoming
+// EventHandler An event handler is a callback function that gets invoked whenever a CqlClientConnection receives an incoming
 // event.
 type EventHandler func(event *frame.Frame, conn *CqlClientConnection)
 
@@ -70,7 +70,7 @@ type CqlClient struct {
 	EventHandlers []EventHandler
 }
 
-// Creates a new CqlClient with default options. Leave credentials nil to opt out from authentication.
+// NewCqlClient Creates a new CqlClient with default options. Leave credentials nil to opt out from authentication.
 func NewCqlClient(remoteAddress string, credentials *AuthCredentials) *CqlClient {
 	return &CqlClient{
 		RemoteAddress:  remoteAddress,
@@ -201,17 +201,17 @@ func (c *CqlClientConnection) String() string {
 	return fmt.Sprintf("CQL client conn [L:%v <-> R:%v]", c.conn.LocalAddr(), c.conn.RemoteAddr())
 }
 
-// Returns the connection's local address (that is, the client address).
+// LocalAddr returns the connection's local address (that is, the client address).
 func (c *CqlClientConnection) LocalAddr() net.Addr {
 	return c.conn.LocalAddr()
 }
 
-// Returns the connection's remote address (that is, the server address).
+// RemoteAddr returns the connection's remote address (that is, the server address).
 func (c *CqlClientConnection) RemoteAddr() net.Addr {
 	return c.conn.RemoteAddr()
 }
 
-// Returns a copy of the connection's AuthCredentials, if any, or nil if no authentication was configured.
+// Credentials returns a copy of the connection's AuthCredentials, if any, or nil if no authentication was configured.
 func (c *CqlClientConnection) Credentials() *AuthCredentials {
 	if c.credentials == nil {
 		return nil
@@ -317,9 +317,9 @@ func (c *CqlClientConnection) awaitDone() {
 	}()
 }
 
-// Convenience method to create a new STARTUP request frame. The compression option will be automatically set to the
-// appropriate compression algorithm, depending on whether the frame codec has a body compressor or not. Use stream id
-// zero to activate automatic stream id management.
+// NewStartupRequest is a convenience method to create a new STARTUP request frame. The compression option will be
+// automatically set to the appropriate compression algorithm, depending on whether the frame codec has a body
+// compressor or not. Use stream id zero to activate automatic stream id management.
 func (c *CqlClientConnection) NewStartupRequest(version primitive.ProtocolVersion, streamId int16) *frame.Frame {
 	startup := message.NewStartup()
 	if c.codec.GetBodyCompressor() != nil {
@@ -329,10 +329,10 @@ func (c *CqlClientConnection) NewStartupRequest(version primitive.ProtocolVersio
 	return frame.NewFrame(version, streamId, startup)
 }
 
-// An in-flight request sent through CqlClientConnection.Send.
+// InFlightRequest is an in-flight request sent through CqlClientConnection.Send.
 type InFlightRequest interface {
 
-	// The in-flight request stream id.
+	// StreamId is the in-flight request stream id.
 	StreamId() int16
 
 	// Incoming returns a channel to receive incoming frames for this in-flight request. Typically the channel will
@@ -346,19 +346,19 @@ type InFlightRequest interface {
 	// IsDone returns true if Incoming is closed, and false otherwise.
 	IsDone() bool
 
-	// If Incoming is not yet closed, Err returns nil.
+	// Err returns nil if Incoming is not yet closed.
 	// If Incoming is closed, Err returns either nil if the channel was closed normally, or a non-nil error explaining
 	// why the channel was closed abnormally.
 	// After Err returns a non-nil error, successive calls to Err return the same error.
 	Err() error
 }
 
-// Sends the given request frame and returns a receive channel that can be used to receive response frames and errors
-// matching the request's stream id. The channel will be closed after receiving the last frame, or if the configured
-// read timeout is triggered, or if the connection itself is closed, whichever happens first.
+// Send sends the given request frame and returns a receive channel that can be used to receive response frames and
+// errors matching the request's stream id. The channel will be closed after receiving the last frame, or if the
+// configured read timeout is triggered, or if the connection itself is closed, whichever happens first.
 // Stream id management: if the frame's stream id is ManagedStreamId (0), it is assumed that the frame's stream id is
 // to be automatically assigned by the connection upon write. Users are free to choose between managed stream ids or
-// manually assigned ones, but it is not recommended to mix managed stream ids with non-managed ones on the same
+// manually assigned ones, but it is not recommended mixing managed stream ids with non-managed ones on the same
 // connection.
 func (c *CqlClientConnection) Send(f *frame.Frame) (InFlightRequest, error) {
 	if f == nil {
@@ -381,8 +381,8 @@ func (c *CqlClientConnection) Send(f *frame.Frame) (InFlightRequest, error) {
 	}
 }
 
-// Convenience method that takes an InFlightRequest obtained through Send and waits until the next response frame
-// is received, or an error occurs, whichever happens first.
+// Receive is a convenience method that takes an InFlightRequest obtained through Send and waits until the next response
+// frame is received, or an error occurs, whichever happens first.
 // If the in-flight request is completed already without returning more frames, this method return a nil frame and a
 // nil error.
 func (c *CqlClientConnection) Receive(ch InFlightRequest) (*frame.Frame, error) {
@@ -403,7 +403,7 @@ func (c *CqlClientConnection) Receive(ch InFlightRequest) (*frame.Frame, error) 
 	}
 }
 
-// Convenience method chaining a call to Send to a call to Receive.
+// SendAndReceive is a convenience method chaining a call to Send to a call to Receive.
 func (c *CqlClientConnection) SendAndReceive(f *frame.Frame) (*frame.Frame, error) {
 	if ch, err := c.Send(f); err != nil {
 		return nil, err
@@ -412,18 +412,18 @@ func (c *CqlClientConnection) SendAndReceive(f *frame.Frame) (*frame.Frame, erro
 	}
 }
 
-// A receive-only channel for incoming events. A receive channel can be obtained through
+// EventChannel is a receive-only channel for incoming events. A receive channel can be obtained through
 // CqlClientConnection.EventChannel.
 type EventChannel <-chan *frame.Frame
 
-// Returns a channel for listening to incoming events received on this connection. This channel will be closed when the
-// connection is closed. If this connection has already been closed, this method returns nil.
+// EventChannel returns a channel for listening to incoming events received on this connection. This channel will be
+// closed when the connection is closed. If this connection has already been closed, this method returns nil.
 func (c *CqlClientConnection) EventChannel() EventChannel {
 	return c.events
 }
 
-// Waits until an event frame is received, or the configured read timeout is triggered, or the connection is closed,
-// whichever happens first. Returns the event frame, if any.
+// ReceiveEvent waits until an event frame is received, or the configured read timeout is triggered, or the connection
+// is closed, whichever happens first. Returns the event frame, if any.
 func (c *CqlClientConnection) ReceiveEvent() (*frame.Frame, error) {
 	if c.IsClosed() {
 		return nil, fmt.Errorf("%v: connection closed", c)
