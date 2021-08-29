@@ -23,10 +23,10 @@ import (
 )
 
 func (c *codec) EncodeFrame(frame *Frame, dest io.Writer) error {
-	if frame.Header.Flags&primitive.HeaderFlagCompressed == 0 {
-		return c.encodeFrameUncompressed(frame, dest)
-	} else {
+	if frame.Header.Flags.Contains(primitive.HeaderFlagCompressed) {
 		return c.encodeFrameCompressed(frame, dest)
+	} else {
+		return c.encodeFrameUncompressed(frame, dest)
 	}
 }
 
@@ -60,7 +60,7 @@ func (c *codec) encodeFrameCompressed(frame *Frame, dest io.Writer) error {
 }
 
 func (c *codec) EncodeRawFrame(frame *RawFrame, dest io.Writer) error {
-	if err := primitive.CheckValidProtocolVersion(frame.Header.Version); err != nil {
+	if err := primitive.CheckSupportedProtocolVersion(frame.Header.Version); err != nil {
 		return err
 	} else {
 		frame.Header.BodyLength = int32(len(frame.Body))
@@ -75,7 +75,7 @@ func (c *codec) EncodeRawFrame(frame *RawFrame, dest io.Writer) error {
 
 func (c *codec) EncodeHeader(header *Header, dest io.Writer) error {
 	useBetaFlag := header.Flags.Contains(primitive.HeaderFlagUseBeta)
-	if err := primitive.CheckValidProtocolVersion(header.Version); err != nil {
+	if err := primitive.CheckSupportedProtocolVersion(header.Version); err != nil {
 		return NewProtocolVersionErr(err.Error(), header.Version, useBetaFlag)
 	} else if header.Version.IsBeta() && !useBetaFlag {
 		return NewProtocolVersionErr("expected USE_BETA flag to be set", header.Version, useBetaFlag)
@@ -102,9 +102,7 @@ func (c *codec) EncodeHeader(header *Header, dest io.Writer) error {
 func (c *codec) EncodeBody(header *Header, body *Body, dest io.Writer) error {
 	if header.OpCode != body.Message.GetOpCode() {
 		return fmt.Errorf("opcode mismatch between header and body: %d != %d", header.OpCode, body.Message.GetOpCode())
-	} else if header.Flags&primitive.HeaderFlagCompressed == 0 {
-		return c.encodeBodyUncompressed(header, body, dest)
-	} else {
+	} else if header.Flags.Contains(primitive.HeaderFlagCompressed) {
 		if c.compressor == nil {
 			return errors.New("cannot compress body: no compressor available")
 		} else if uncompressedBodyLength, err := c.uncompressedBodyLength(header, body); err != nil {
@@ -113,11 +111,13 @@ func (c *codec) EncodeBody(header *Header, body *Body, dest io.Writer) error {
 			uncompressedBody := bytes.NewBuffer(make([]byte, 0, uncompressedBodyLength))
 			if err = c.encodeBodyUncompressed(header, body, uncompressedBody); err != nil {
 				return fmt.Errorf("cannot encode body: %w", err)
-			} else if err := c.compressor.Compress(uncompressedBody, dest); err != nil {
+			} else if err := c.compressor.CompressWithLength(uncompressedBody, dest); err != nil {
 				return fmt.Errorf("cannot compress body: %w", err)
 			}
 			return nil
 		}
+	} else {
+		return c.encodeBodyUncompressed(header, body, dest)
 	}
 }
 

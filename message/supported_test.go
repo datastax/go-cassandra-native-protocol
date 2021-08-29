@@ -48,7 +48,7 @@ func TestSupported_Clone(t *testing.T) {
 
 func TestSupportedCodec_Encode(test *testing.T) {
 	codec := &supportedCodec{}
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		test.Run(version.String(), func(test *testing.T) {
 			tests := []struct {
 				name     string
@@ -155,7 +155,7 @@ func TestSupportedCodec_Encode(test *testing.T) {
 
 func TestSupportedCodec_EncodedLength(test *testing.T) {
 	codec := &supportedCodec{}
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -214,7 +214,7 @@ func TestSupportedCodec_EncodedLength(test *testing.T) {
 
 func TestSupportedCodec_Decode(test *testing.T) {
 	codec := &supportedCodec{}
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		test.Run(version.String(), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{

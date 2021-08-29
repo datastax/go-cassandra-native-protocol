@@ -31,7 +31,7 @@ import (
 
 func TestFrameEncodeDecode(t *testing.T) {
 	codecs := createCodecs()
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			request, response := createFrames(version)
 			for algorithm, codec := range codecs {
@@ -61,7 +61,7 @@ func TestFrameEncodeDecode(t *testing.T) {
 
 func TestRawFrameEncodeDecode(t *testing.T) {
 	codecs := createCodecs()
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			request, response := createFrames(version)
 			for algorithm, codec := range codecs {
@@ -93,7 +93,7 @@ func TestRawFrameEncodeDecode(t *testing.T) {
 
 func TestConvertToRawFrame(t *testing.T) {
 	codec := NewRawCodec()
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			request, response := createFrames(version)
 			tests := []struct {
@@ -136,11 +136,9 @@ func TestConvertToRawFrame(t *testing.T) {
 func createCodecs() map[string]RawCodec {
 	codecs := map[string]RawCodec{
 		"NONE":   NewRawCodec(),
-		"LZ4":    NewRawCodec(),
-		"SNAPPY": NewRawCodec(),
+		"LZ4":    NewRawCodecWithCompression(lz4.Compressor{}),
+		"SNAPPY": NewRawCodecWithCompression(snappy.Compressor{}),
 	}
-	codecs["LZ4"].SetBodyCompressor(lz4.BodyCompressor{})
-	codecs["SNAPPY"].SetBodyCompressor(snappy.BodyCompressor{})
 	return codecs
 }
 

@@ -54,7 +54,7 @@ func (c *reviseCodec) Encode(msg Message, dest io.Writer, version primitive.Prot
 	if !ok {
 		return fmt.Errorf("expected *message.Revise, got %T", msg)
 	}
-	if err := primitive.CheckValidDseProtocolVersion(version); err != nil {
+	if err := primitive.CheckDseProtocolVersion(version); err != nil {
 		return err
 	} else if err := primitive.CheckValidDseRevisionType(revise.RevisionType, version); err != nil {
 		return err
@@ -74,7 +74,7 @@ func (c *reviseCodec) Encode(msg Message, dest io.Writer, version primitive.Prot
 }
 
 func (c *reviseCodec) EncodedLength(msg Message, version primitive.ProtocolVersion) (length int, err error) {
-	if err := primitive.CheckValidDseProtocolVersion(version); err != nil {
+	if err := primitive.CheckDseProtocolVersion(version); err != nil {
 		return -1, err
 	}
 	revise, ok := msg.(*Revise)
@@ -91,7 +91,7 @@ func (c *reviseCodec) EncodedLength(msg Message, version primitive.ProtocolVersi
 }
 
 func (c *reviseCodec) Decode(source io.Reader, version primitive.ProtocolVersion) (msg Message, err error) {
-	if err := primitive.CheckValidDseProtocolVersion(version); err != nil {
+	if err := primitive.CheckDseProtocolVersion(version); err != nil {
 		return nil, err
 	}
 	revise := &Revise{}

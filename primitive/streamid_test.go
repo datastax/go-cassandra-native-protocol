@@ -23,7 +23,7 @@ import (
 )
 
 func TestReadStreamId(t *testing.T) {
-	for _, version := range AllProtocolVersionsLesserThanOrEqualTo(ProtocolVersion2) {
+	for _, version := range SupportedProtocolVersionsLesserThanOrEqualTo(ProtocolVersion2) {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -60,7 +60,7 @@ func TestReadStreamId(t *testing.T) {
 			}
 		})
 	}
-	for _, version := range AllProtocolVersionsGreaterThanOrEqualTo(ProtocolVersion3) {
+	for _, version := range SupportedProtocolVersionsGreaterThanOrEqualTo(ProtocolVersion3) {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -100,7 +100,7 @@ func TestReadStreamId(t *testing.T) {
 }
 
 func TestWriteStreamId(t *testing.T) {
-	for _, version := range AllProtocolVersionsLesserThanOrEqualTo(ProtocolVersion2) {
+	for _, version := range SupportedProtocolVersionsLesserThanOrEqualTo(ProtocolVersion2) {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -149,7 +149,7 @@ func TestWriteStreamId(t *testing.T) {
 			}
 		})
 	}
-	for _, version := range AllProtocolVersionsGreaterThanOrEqualTo(ProtocolVersion3) {
+	for _, version := range SupportedProtocolVersionsGreaterThanOrEqualTo(ProtocolVersion3) {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string

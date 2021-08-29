@@ -12,19 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package frame
+package segment
 
 import (
 	"io"
 )
 
-type BodyCompressor interface {
+type PayloadCompressor interface {
 
-	// CompressWithLength compresses the source, reading it fully, and writes the compressed length and the compressed
-	// result to dest. This is Cassandra's expected format of compressed frame bodies.
-	CompressWithLength(source io.Reader, dest io.Writer) error
+	// Compress compresses the source, reading it fully, and writes the compressed result to dest.
+	Compress(source io.Reader, dest io.Writer) error
 
-	// DecompressWithLength reads the compressed length then decompresses the source, reading it fully, and writes the
-	// decompressed result to dest. This is Cassandra's expected format of compressed frame bodies.
-	DecompressWithLength(source io.Reader, dest io.Writer) error
+	// Decompress decompresses the source, reading it fully, and writes the decompressed result to dest.
+	Decompress(source io.Reader, dest io.Writer) error
 }

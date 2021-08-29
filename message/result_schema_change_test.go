@@ -236,7 +236,7 @@ func TestResultCodec_Encode_SchemaChange(test *testing.T) {
 		}
 	})
 	// versions >= 4
-	for _, version := range primitive.AllProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion4) {
+	for _, version := range primitive.SupportedProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion4) {
 		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -499,7 +499,7 @@ func TestResultCodec_EncodedLength_SchemaChange(test *testing.T) {
 		}
 	})
 	// versions >= 4
-	for _, version := range primitive.AllProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion4) {
+	for _, version := range primitive.SupportedProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion4) {
 		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -722,7 +722,7 @@ func TestResultCodec_Decode_SchemaChange(test *testing.T) {
 		}
 	})
 	// versions >= 4
-	for _, version := range primitive.AllProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion4) {
+	for _, version := range primitive.SupportedProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion4) {
 		test.Run(version.String(), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{

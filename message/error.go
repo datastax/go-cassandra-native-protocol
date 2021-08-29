@@ -344,7 +344,7 @@ type Unavailable struct {
 	Consistency primitive.ConsistencyLevel
 	// The number of nodes that should be alive to respect Consistency.
 	Required int32
-	//The number of replicas that were known to be alive when the request was processed (since an
+	// The number of replicas that were known to be alive when the request was processed (since an
 	// unavailable exception has been triggered, Alive < Required).
 	Alive int32
 }
@@ -443,6 +443,8 @@ type WriteTimeout struct {
 	BlockFor int32
 	// The type of the write that failed.
 	WriteType primitive.WriteType
+	// The number of contentions occurred during the CAS operation. This field is only present when WriteType is "CAS".
+	Contentions uint16
 }
 
 func (m *WriteTimeout) IsResponse() bool {
@@ -468,13 +470,14 @@ func (m *WriteTimeout) GetErrorMessage() string {
 
 func (m *WriteTimeout) String() string {
 	return fmt.Sprintf(
-		"ERROR WRITE TIMEOUT (code=%v, msg=%v, cl=%v, received=%v, blockfor=%v, type=%v)",
+		"ERROR WRITE TIMEOUT (code=%v, msg=%v, cl=%v, received=%v, blockfor=%v, type=%v, contentions=%v)",
 		m.GetErrorCode(),
 		m.GetErrorMessage(),
 		m.Consistency,
 		m.Received,
 		m.BlockFor,
 		m.WriteType,
+		m.Contentions,
 	)
 }
 
@@ -804,6 +807,10 @@ func (c *errorCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 			return fmt.Errorf("cannot write ERROR WRITE TIMEOUT block for: %w", err)
 		} else if err = primitive.WriteString(string(writeTimeout.WriteType), dest); err != nil {
 			return fmt.Errorf("cannot write ERROR WRITE TIMEOUT write type: %w", err)
+		} else if version.SupportsWriteTimeoutContentions() && writeTimeout.WriteType == primitive.WriteTypeCas {
+			if err = primitive.WriteShort(uint16(writeTimeout.Contentions), dest); err != nil {
+				return fmt.Errorf("cannot write ERROR WRITE TIMEOUT contentions: %w", err)
+			}
 		}
 
 	case primitive.ErrorCodeReadFailure:
@@ -818,7 +825,7 @@ func (c *errorCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 		} else if err = primitive.WriteInt(readFailure.BlockFor, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR READ FAILURE block for: %w", err)
 		}
-		if version >= primitive.ProtocolVersion5 {
+		if version.SupportsReadWriteFailureReasonMap() {
 			if err = primitive.WriteReasonMap(readFailure.FailureReasons, dest); err != nil {
 				return fmt.Errorf("cannot write ERROR READ FAILURE reason map: %w", err)
 			}
@@ -848,7 +855,7 @@ func (c *errorCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 		} else if err = primitive.WriteInt(writeFailure.BlockFor, dest); err != nil {
 			return fmt.Errorf("cannot write ERROR WRITE FAILURE block for: %w", err)
 		}
-		if version >= primitive.ProtocolVersion5 {
+		if version.SupportsReadWriteFailureReasonMap() {
 			if err = primitive.WriteReasonMap(writeFailure.FailureReasons, dest); err != nil {
 				return fmt.Errorf("cannot write ERROR WRITE FAILURE reason map: %w", err)
 			}
@@ -936,13 +943,16 @@ func (c *errorCodec) EncodedLength(msg Message, version primitive.ProtocolVersio
 		length += primitive.LengthOfInt                                    // received
 		length += primitive.LengthOfInt                                    // block for
 		length += primitive.LengthOfString(string(writeTimeout.WriteType)) // write type
+		if version.SupportsWriteTimeoutContentions() && writeTimeout.WriteType == primitive.WriteTypeCas {
+			length += primitive.LengthOfShort // contentions
+		}
 
 	case primitive.ErrorCodeReadFailure:
 		length += primitive.LengthOfShort // consistency
 		length += primitive.LengthOfInt   // received
 		length += primitive.LengthOfInt   // block for
 		length += primitive.LengthOfByte  // data present
-		if version >= primitive.ProtocolVersion5 {
+		if version.SupportsReadWriteFailureReasonMap() {
 			readFailure, ok := errMsg.(*ReadFailure)
 			if !ok {
 				return -1, fmt.Errorf("expected *message.ReadFailure, got %T", msg)
@@ -965,7 +975,7 @@ func (c *errorCodec) EncodedLength(msg Message, version primitive.ProtocolVersio
 		length += primitive.LengthOfInt                                    // received
 		length += primitive.LengthOfInt                                    // block for
 		length += primitive.LengthOfString(string(writeFailure.WriteType)) // write type
-		if version >= primitive.ProtocolVersion5 {
+		if version.SupportsReadWriteFailureReasonMap() {
 			if reasonMapLength, err := primitive.LengthOfReasonMap(writeFailure.FailureReasons); err != nil {
 				return -1, fmt.Errorf("cannot compute length of ERROR WRITE FAILURE rason map: %w", err)
 			} else {
@@ -1085,6 +1095,13 @@ func (c *errorCodec) Decode(source io.Reader, version primitive.ProtocolVersion)
 			return nil, fmt.Errorf("cannot read ERROR WRITE TIMEOUT write type: %w", err)
 		}
 		msg.WriteType = primitive.WriteType(writeType)
+		if msg.WriteType == primitive.WriteTypeCas && version.SupportsWriteTimeoutContentions() {
+			var contentions uint16
+			if contentions, err = primitive.ReadShort(source); err != nil {
+				return nil, fmt.Errorf("cannot read ERROR WRITE TIMEOUT contentions: %w", err)
+			}
+			msg.Contentions = contentions
+		}
 		return msg, nil
 
 	case primitive.ErrorCodeReadFailure:
@@ -1100,7 +1117,7 @@ func (c *errorCodec) Decode(source io.Reader, version primitive.ProtocolVersion)
 		if msg.BlockFor, err = primitive.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR READ FAILURE block for: %w", err)
 		}
-		if version >= primitive.ProtocolVersion5 {
+		if version.SupportsReadWriteFailureReasonMap() {
 			if msg.FailureReasons, err = primitive.ReadReasonMap(source); err != nil {
 				return nil, fmt.Errorf("cannot read ERROR READ FAILURE reason map: %w", err)
 			}
@@ -1133,7 +1150,7 @@ func (c *errorCodec) Decode(source io.Reader, version primitive.ProtocolVersion)
 		if msg.BlockFor, err = primitive.ReadInt(source); err != nil {
 			return nil, fmt.Errorf("cannot read ERROR WRITE FAILURE block for: %w", err)
 		}
-		if version >= primitive.ProtocolVersion5 {
+		if version.SupportsReadWriteFailureReasonMap() {
 			if msg.FailureReasons, err = primitive.ReadReasonMap(source); err != nil {
 				return nil, fmt.Errorf("cannot read ERROR WRITE FAILURE reason map: %w", err)
 			}

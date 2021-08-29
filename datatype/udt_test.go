@@ -158,7 +158,7 @@ func TestWriteUserDefinedType(t *testing.T) {
 	}
 
 	t.Run("versions_with_udt_support", func(t *testing.T) {
-		for _, version := range primitive.AllProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion3) {
+		for _, version := range primitive.SupportedProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion3) {
 			t.Run(version.String(), func(t *testing.T) {
 				for _, test := range tests {
 					t.Run(test.name, func(t *testing.T) {
@@ -175,7 +175,7 @@ func TestWriteUserDefinedType(t *testing.T) {
 	})
 
 	t.Run("versions_without_udt_support", func(t *testing.T) {
-		for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion3) {
+		for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion3) {
 			t.Run(version.String(), func(t *testing.T) {
 				for _, test := range tests {
 					t.Run(test.name, func(t *testing.T) {
@@ -199,7 +199,7 @@ func TestWriteUserDefinedType(t *testing.T) {
 }
 
 func TestLengthOfUserDefinedType(t *testing.T) {
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -305,7 +305,7 @@ func TestReadUserDefinedType(t *testing.T) {
 	}
 
 	t.Run("versions_with_udt_support", func(t *testing.T) {
-		for _, version := range primitive.AllProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion3) {
+		for _, version := range primitive.SupportedProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion3) {
 			t.Run(version.String(), func(t *testing.T) {
 				for _, test := range tests {
 					t.Run(test.name, func(t *testing.T) {
@@ -322,7 +322,7 @@ func TestReadUserDefinedType(t *testing.T) {
 	})
 
 	t.Run("versions_without_udt_support", func(t *testing.T) {
-		for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion3) {
+		for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion3) {
 			t.Run(version.String(), func(t *testing.T) {
 				for _, test := range tests {
 					t.Run(test.name, func(t *testing.T) {

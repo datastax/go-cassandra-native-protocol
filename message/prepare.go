@@ -22,7 +22,9 @@ import (
 )
 
 type Prepare struct {
+	// The CQL query to prepare.
 	Query string
+	// The keyspace that the query should be executed in.
 	// Introduced in Protocol Version 5, also present in DSE protocol v2.
 	Keyspace string
 }
@@ -64,7 +66,7 @@ func (c *prepareCodec) Encode(msg Message, dest io.Writer, version primitive.Pro
 	} else if err = primitive.WriteLongString(prepare.Query, dest); err != nil {
 		return fmt.Errorf("cannot write PREPARE query string: %w", err)
 	}
-	if hasPrepareFlags(version) {
+	if version.SupportsPrepareFlags() {
 		flags := prepare.Flags()
 		if err = primitive.WriteInt(int32(flags), dest); err != nil {
 			return fmt.Errorf("cannot write PREPARE flags: %w", err)
@@ -86,7 +88,7 @@ func (c *prepareCodec) EncodedLength(msg Message, version primitive.ProtocolVers
 		return -1, errors.New(fmt.Sprintf("expected *message.Prepare, got %T", msg))
 	}
 	size += primitive.LengthOfLongString(prepare.Query)
-	if hasPrepareFlags(version) {
+	if version.SupportsPrepareFlags() {
 		size += primitive.LengthOfInt // flags
 		if prepare.Keyspace != "" {
 			size += primitive.LengthOfString(prepare.Keyspace)
@@ -100,7 +102,7 @@ func (c *prepareCodec) Decode(source io.Reader, version primitive.ProtocolVersio
 	if prepare.Query, err = primitive.ReadLongString(source); err != nil {
 		return nil, fmt.Errorf("cannot read PREPARE query: %w", err)
 	}
-	if hasPrepareFlags(version) {
+	if version.SupportsPrepareFlags() {
 		var flags primitive.PrepareFlag
 		var f int32
 		if f, err = primitive.ReadInt(source); err != nil {
@@ -118,9 +120,4 @@ func (c *prepareCodec) Decode(source io.Reader, version primitive.ProtocolVersio
 
 func (c *prepareCodec) GetOpCode() primitive.OpCode {
 	return primitive.OpCodePrepare
-}
-
-func hasPrepareFlags(version primitive.ProtocolVersion) bool {
-	return version >= primitive.ProtocolVersion5 &&
-		version != primitive.ProtocolVersionDse1
 }

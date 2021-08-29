@@ -41,7 +41,7 @@ func TestRegister_Clone(t *testing.T) {
 
 func TestRegisterCodec_Encode(t *testing.T) {
 	codec := &registerCodec{}
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -95,7 +95,7 @@ func TestRegisterCodec_Encode(t *testing.T) {
 
 func TestRegisterCodec_EncodedLength(t *testing.T) {
 	codec := &registerCodec{}
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -131,7 +131,7 @@ func TestRegisterCodec_EncodedLength(t *testing.T) {
 
 func TestRegisterCodec_Decode(t *testing.T) {
 	codec := &registerCodec{}
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []decodeTestCase{
 				{

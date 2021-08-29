@@ -24,7 +24,7 @@ import (
 
 func TestOptionsCodec_Encode(t *testing.T) {
 	codec := &optionsCodec{}
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -54,7 +54,7 @@ func TestOptionsCodec_Encode(t *testing.T) {
 
 func TestOptionsCodec_EncodedLength(t *testing.T) {
 	codec := &optionsCodec{}
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -83,7 +83,7 @@ func TestOptionsCodec_EncodedLength(t *testing.T) {
 
 func TestOptionsCodec_Decode(t *testing.T) {
 	codec := &optionsCodec{}
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []decodeTestCase{
 				{

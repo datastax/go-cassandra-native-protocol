@@ -43,9 +43,9 @@ func TestReadReasonMap(t *testing.T) {
 			[]byte{
 				0, 0, 0, 1, // length
 				4, 192, 168, 1, 1, // key
-				0, 42, // value
+				0, 1, // value
 			},
-			[]*FailureReason{{net.IPv4(192, 168, 1, 1), 42}},
+			[]*FailureReason{{net.IPv4(192, 168, 1, 1), FailureCodeTooManyTombstonesRead}},
 			nil,
 		},
 		{
@@ -108,11 +108,11 @@ func TestWriteReasonMap(t *testing.T) {
 		},
 		{
 			"map 1 key",
-			[]*FailureReason{{net.IPv4(192, 168, 1, 1), 42}},
+			[]*FailureReason{{net.IPv4(192, 168, 1, 1), FailureCodeTooManyTombstonesRead}},
 			[]byte{
 				0, 0, 0, 1, // length
 				4, 192, 168, 1, 1, // key
-				0, 42, // value
+				0, 1, // value
 			},
 			nil,
 		},

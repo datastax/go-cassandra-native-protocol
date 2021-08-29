@@ -30,7 +30,7 @@ func TestRowsResult_Clone(t *testing.T) {
 			NewResultMetadataId:  nil,
 			ContinuousPageNumber: 1,
 			LastContinuousPage:   false,
-			Columns:              []*ColumnMetadata{
+			Columns: []*ColumnMetadata{
 				{
 					Keyspace: "ks1",
 					Table:    "tb1",
@@ -40,7 +40,7 @@ func TestRowsResult_Clone(t *testing.T) {
 				},
 			},
 		},
-		Data:     RowSet{
+		Data: RowSet{
 			{
 				{0x12, 0x23},
 			},
@@ -59,7 +59,7 @@ func TestRowsResult_Clone(t *testing.T) {
 		NewResultMetadataId:  []byte{0x33},
 		ContinuousPageNumber: 3,
 		LastContinuousPage:   true,
-		Columns:              []*ColumnMetadata{
+		Columns: []*ColumnMetadata{
 			{
 				Keyspace: "ks2",
 				Table:    "tb2",
@@ -94,7 +94,7 @@ func TestRowsResult_Clone(t *testing.T) {
 	assert.Equal(t, "c1", msg.Metadata.Columns[0].Name)
 	assert.EqualValues(t, 0, msg.Metadata.Columns[0].Index)
 	assert.Equal(t, datatype.Ascii, msg.Metadata.Columns[0].Type)
-	assert.Equal(t, RowSet{{{0x12, 0x23}},{{0x44, 0x55}}}, msg.Data)
+	assert.Equal(t, RowSet{{{0x12, 0x23}}, {{0x44, 0x55}}}, msg.Data)
 
 	assert.EqualValues(t, 1, cloned.Metadata.ColumnCount)
 	assert.Equal(t, []byte{0x22}, cloned.Metadata.PagingState)
@@ -146,7 +146,7 @@ func TestResultCodec_Encode_Rows(test *testing.T) {
 	}
 	codec := &resultCodec{}
 	// versions < 5
-	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion5) {
+	for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion5) {
 		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -681,7 +681,7 @@ func TestResultCodec_EncodedLength_Rows(test *testing.T) {
 	}
 	codec := &resultCodec{}
 	// versions < 5
-	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion5) {
+	for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion5) {
 		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -1132,7 +1132,7 @@ func TestResultCodec_Decode_Rows(test *testing.T) {
 	}
 	codec := &resultCodec{}
 	// versions < 5
-	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion5) {
+	for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion5) {
 		test.Run(version.String(), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{

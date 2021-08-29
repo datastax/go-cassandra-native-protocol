@@ -30,51 +30,54 @@ import (
 
 func TestLocalServer(t *testing.T) {
 
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 
 			for genName, generator := range streamIdGenerators {
 				t.Run(fmt.Sprintf("generator %v", genName), func(t *testing.T) {
 
-					for compressor, frameCodec := range codecs {
-						t.Run(fmt.Sprintf("compression %v", compressor), func(t *testing.T) {
+					for _, compression := range compressions {
 
-							server := client.NewCqlServer(
-								"127.0.0.1:9043",
-								&client.AuthCredentials{
-									Username: "cassandra",
-									Password: "cassandra",
-								},
-							)
-							server.Codec = frameCodec
+						if version.SupportsCompression(compression) {
+							t.Run(fmt.Sprintf("%v", compression), func(t *testing.T) {
 
-							clt := client.NewCqlClient(
-								"127.0.0.1:9043",
-								&client.AuthCredentials{
-									Username: "cassandra",
-									Password: "cassandra",
-								},
-							)
-							clt.Codec = frameCodec
+								server := client.NewCqlServer(
+									"127.0.0.1:9043",
+									&client.AuthCredentials{
+										Username: "cassandra",
+										Password: "cassandra",
+									},
+								)
 
-							ctx, cancelFn := context.WithCancel(context.Background())
+								clt := client.NewCqlClient(
+									"127.0.0.1:9043",
+									&client.AuthCredentials{
+										Username: "cassandra",
+										Password: "cassandra",
+									},
+								)
+								clt.Compression = compression
 
-							err := server.Start(ctx)
-							require.Nil(t, err)
+								ctx, cancelFn := context.WithCancel(context.Background())
+								defer cancelFn()
 
-							clientConn, serverConn, err := server.BindAndInit(clt, ctx, version, client.ManagedStreamId)
-							require.Nil(t, err)
+								err := server.Start(ctx)
+								require.NoError(t, err)
 
-							playServer(serverConn, version, compressor, ctx)
-							playClient(t, clientConn, version, compressor, generator)
+								clientConn, serverConn, err := server.BindAndInit(clt, ctx, version, client.ManagedStreamId)
+								require.NoError(t, err)
 
-							cancelFn()
+								playServer(serverConn, version, compression, ctx)
+								playClient(t, clientConn, version, compression, generator)
 
-							assert.Eventually(t, clientConn.IsClosed, time.Second*10, time.Millisecond*10)
-							assert.Eventually(t, serverConn.IsClosed, time.Second*10, time.Millisecond*10)
-							assert.Eventually(t, server.IsClosed, time.Second*10, time.Millisecond*10)
+								cancelFn()
 
-						})
+								assert.Eventually(t, clientConn.IsClosed, time.Second*10, time.Millisecond*10)
+								assert.Eventually(t, serverConn.IsClosed, time.Second*10, time.Millisecond*10)
+								assert.Eventually(t, server.IsClosed, time.Second*10, time.Millisecond*10)
+
+							})
+						}
 					}
 				})
 			}
@@ -85,7 +88,7 @@ func TestLocalServer(t *testing.T) {
 func playServer(
 	serverConn *client.CqlServerConnection,
 	version primitive.ProtocolVersion,
-	compressor string,
+	compression primitive.Compression,
 	ctx context.Context,
 ) {
 	go func() {
@@ -113,7 +116,7 @@ func playServer(
 						},
 					},
 				)
-				outgoing.SetCompress(compressor != "NONE")
+				outgoing.SetCompress(compression != primitive.CompressionNone)
 				err = serverConn.Send(outgoing)
 				if err != nil {
 					return
@@ -127,7 +130,7 @@ func playClient(
 	t *testing.T,
 	clientConn *client.CqlClientConnection,
 	version primitive.ProtocolVersion,
-	compressor string,
+	compression primitive.Compression,
 	generateStreamId func(int, primitive.ProtocolVersion) int16,
 ) {
 	wg := &sync.WaitGroup{}
@@ -144,9 +147,9 @@ func playClient(
 						Options: &message.QueryOptions{},
 					},
 				)
-				outgoing.SetCompress(compressor != "NONE")
+				outgoing.SetCompress(compression != primitive.CompressionNone)
 				incoming, err := clientConn.SendAndReceive(outgoing)
-				require.Nil(t, err)
+				require.NoError(t, err)
 				require.NotNil(t, incoming)
 			}
 

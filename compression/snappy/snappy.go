@@ -21,46 +21,44 @@ import (
 	"io"
 )
 
-// BodyCompressor satisfies frame.BodyCompressor for the SNAPPY algorithm.
-type BodyCompressor struct{}
+// Compressor satisfies frame.BodyCompressor for the SNAPPY algorithm.
+type Compressor struct{}
 
-func (l BodyCompressor) Algorithm() string {
-	return "SNAPPY"
+func (l Compressor) CompressWithLength(source io.Reader, dest io.Writer) error {
+	if uncompressedMessage, err := bufferFromReader(source); err != nil {
+		return fmt.Errorf("cannot read uncompressed message: %w", err)
+	} else {
+		compressedMessage := snappy.Encode(nil, uncompressedMessage.Bytes())
+		if _, err := dest.Write(compressedMessage); err != nil {
+			return fmt.Errorf("cannot write compressed message: %w", err)
+		}
+		return nil
+	}
 }
 
-func (l BodyCompressor) Compress(source io.Reader, dest io.Writer) error {
-	var uncompressedMessage *bytes.Buffer
-	switch s := source.(type) {
-	case *bytes.Buffer:
-		uncompressedMessage = s
-	default:
-		uncompressedMessage = &bytes.Buffer{}
-		if _, err := uncompressedMessage.ReadFrom(s); err != nil {
-			return fmt.Errorf("cannot read uncompressed body: %w", err)
+func (l Compressor) DecompressWithLength(source io.Reader, dest io.Writer) error {
+	if compressedMessage, err := bufferFromReader(source); err != nil {
+		return fmt.Errorf("cannot read compressed message: %w", err)
+	} else {
+		if decompressedMessage, err := snappy.Decode(nil, compressedMessage.Bytes()); err != nil {
+			return fmt.Errorf("cannot decompress message: %w", err)
+		} else if _, err := dest.Write(decompressedMessage); err != nil {
+			return fmt.Errorf("cannot write decompressed message: %w", err)
 		}
+		return nil
 	}
-	compressedMessage := snappy.Encode(nil, uncompressedMessage.Bytes())
-	if _, err := dest.Write(compressedMessage); err != nil {
-		return fmt.Errorf("cannot write compressed body: %w", err)
-	}
-	return nil
 }
 
-func (l BodyCompressor) Decompress(source io.Reader, dest io.Writer) error {
-	var compressedMessage *bytes.Buffer
+func bufferFromReader(source io.Reader) (*bytes.Buffer, error) {
+	var buf *bytes.Buffer
 	switch s := source.(type) {
 	case *bytes.Buffer:
-		compressedMessage = s
+		buf = s
 	default:
-		compressedMessage = &bytes.Buffer{}
-		if _, err := compressedMessage.ReadFrom(s); err != nil {
-			return fmt.Errorf("cannot read compressed body: %w", err)
+		buf = &bytes.Buffer{}
+		if _, err := buf.ReadFrom(s); err != nil {
+			return nil, err
 		}
 	}
-	if decompressedMessage, err := snappy.Decode(nil, compressedMessage.Bytes()); err != nil {
-		return fmt.Errorf("cannot decompress body: %w", err)
-	} else if _, err := dest.Write(decompressedMessage); err != nil {
-		return fmt.Errorf("cannot write decompressed body: %w", err)
-	}
-	return nil
+	return buf, nil
 }

@@ -22,13 +22,31 @@ import (
 )
 
 const (
-	StartupOptionCqlVersion         = "CQL_VERSION"
-	StartupOptionCompression        = "COMPRESSION"
+
+	// StartupOptionCqlVersion is the version of CQL to use. This option is mandatory and currently the only version
+	// supported is "3.0.0". Note that this is different from the protocol version.
+	StartupOptionCqlVersion = "CQL_VERSION"
+
+	// StartupOptionCompression is the compression algorithm to use.
+	StartupOptionCompression = "COMPRESSION"
+
 	StartupOptionClientId           = "CLIENT_ID"
 	StartupOptionApplicationName    = "APPLICATION_NAME"
 	StartupOptionApplicationVersion = "APPLICATION_VERSION"
-	StartupOptionDriverName         = "DRIVER_NAME"
-	StartupOptionDriverVersion      = "DRIVER_VERSION"
+
+	// StartupOptionDriverName allows clients to supply a free-form label representing the driver implementation.
+	// This is displayed in the output of `nodetool clientstats`.
+	StartupOptionDriverName = "DRIVER_NAME"
+
+	// StartupOptionDriverVersion allows clients to supply a free-form label representing the driver version. This is
+	// displayed in the output of `nodetool clientstats`.
+	StartupOptionDriverVersion = "DRIVER_VERSION"
+
+	// StartupOptionThrowOnOverload specifies server behaviour where the incoming message rate is too high.
+	// A [string] value of "1" instructs the server to respond with an Error when its resources are exhausted.
+	// Any other value, or if the key is not present, and the server will apply backpressure to the connection until it
+	// has cleared its backlog of inbound messages.
+	StartupOptionThrowOnOverload = "THROW_ON_OVERLOAD"
 )
 
 type Startup struct {
@@ -54,12 +72,20 @@ func NewStartup(keysAndValues ...string) *Startup {
 	return startup
 }
 
-func (m *Startup) GetCompression() string {
-	return m.Options[StartupOptionCompression]
+func (m *Startup) GetCompression() primitive.Compression {
+	if compressionStr, found := m.Options[StartupOptionCompression]; !found {
+		return primitive.CompressionNone
+	} else {
+		return primitive.Compression(compressionStr)
+	}
 }
 
-func (m *Startup) SetCompression(compression string) {
-	m.Options[StartupOptionCompression] = compression
+func (m *Startup) SetCompression(compression primitive.Compression) {
+	if compression == primitive.CompressionNone {
+		delete(m.Options, StartupOptionCompression)
+	} else {
+		m.Options[StartupOptionCompression] = string(compression)
+	}
 }
 
 func (m *Startup) GetClientId() string {
@@ -100,6 +126,19 @@ func (m *Startup) GetDriverVersion() string {
 
 func (m *Startup) SetDriverVersion(driverVersion string) {
 	m.Options[StartupOptionDriverVersion] = driverVersion
+}
+
+func (m *Startup) IsThrowOnOverload() bool {
+	v, found := m.Options[StartupOptionThrowOnOverload]
+	return found && v == "1"
+}
+
+func (m *Startup) SetThrowOnOverload(throwOnOverload bool) {
+	if throwOnOverload {
+		m.Options[StartupOptionDriverVersion] = "1"
+	} else {
+		delete(m.Options, StartupOptionDriverVersion)
+	}
 }
 
 func (m *Startup) IsResponse() bool {

@@ -24,11 +24,11 @@ import (
 
 func TestPreparedResult_Clone(t *testing.T) {
 	msg := &PreparedResult{
-		PreparedQueryId:   []byte{0x12},
-		ResultMetadataId:  []byte{0x23},
+		PreparedQueryId:  []byte{0x12},
+		ResultMetadataId: []byte{0x23},
 		VariablesMetadata: &VariablesMetadata{
 			PkIndices: []uint16{0},
-			Columns:   []*ColumnMetadata{
+			Columns: []*ColumnMetadata{
 				{
 					Keyspace: "ks1",
 					Table:    "tb1",
@@ -38,13 +38,13 @@ func TestPreparedResult_Clone(t *testing.T) {
 				},
 			},
 		},
-		ResultMetadata:    &RowsMetadata{
+		ResultMetadata: &RowsMetadata{
 			ColumnCount:          1,
 			PagingState:          nil,
 			NewResultMetadataId:  nil,
 			ContinuousPageNumber: 1,
 			LastContinuousPage:   false,
-			Columns:              []*ColumnMetadata{
+			Columns: []*ColumnMetadata{
 				{
 					Keyspace: "ks1",
 					Table:    "tb1",
@@ -63,7 +63,7 @@ func TestPreparedResult_Clone(t *testing.T) {
 	cloned.ResultMetadataId = []byte{0x51}
 	cloned.VariablesMetadata = &VariablesMetadata{
 		PkIndices: []uint16{1},
-		Columns:   []*ColumnMetadata{
+		Columns: []*ColumnMetadata{
 			{
 				Keyspace: "ks2",
 				Table:    "tb2",
@@ -86,7 +86,7 @@ func TestPreparedResult_Clone(t *testing.T) {
 		NewResultMetadataId:  []byte{0x33},
 		ContinuousPageNumber: 3,
 		LastContinuousPage:   true,
-		Columns:              []*ColumnMetadata{
+		Columns: []*ColumnMetadata{
 			{
 				Keyspace: "ks2",
 				Table:    "tb2",
@@ -159,7 +159,7 @@ func TestPreparedResult_Clone(t *testing.T) {
 func TestResultCodec_Encode_Prepared(test *testing.T) {
 	codec := &resultCodec{}
 	// versions < 4
-	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
+	for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
 		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -515,7 +515,7 @@ func TestResultCodec_Encode_Prepared(test *testing.T) {
 func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 	codec := &resultCodec{}
 	// versions < 4
-	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
+	for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
 		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -832,7 +832,7 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 func TestResultCodec_Decode_Prepared(test *testing.T) {
 	codec := &resultCodec{}
 	// versions < 4
-	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
+	for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
 		test.Run(version.String(), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{

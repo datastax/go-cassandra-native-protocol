@@ -16,6 +16,7 @@ package message
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"github.com/stretchr/testify/assert"
@@ -225,22 +226,22 @@ func TestWriteTimeout_Clone(t *testing.T) {
 
 func TestReadFailure_Clone(t *testing.T) {
 	msg := &ReadFailure{
-		ErrorMessage:   "msg",
-		Consistency:    primitive.ConsistencyLevelAll,
-		Received:       1,
-		BlockFor:       2,
-		NumFailures:    1,
+		ErrorMessage: "msg",
+		Consistency:  primitive.ConsistencyLevelAll,
+		Received:     1,
+		BlockFor:     2,
+		NumFailures:  1,
 		FailureReasons: []*primitive.FailureReason{
-			&primitive.FailureReason{
+			{
 				Endpoint: net.IP{0x01},
 				Code:     primitive.FailureCodeCdcSpaceFull,
 			},
-			&primitive.FailureReason{
+			{
 				Endpoint: net.IP{0x02},
 				Code:     primitive.FailureCodeCounterWrite,
 			},
 		},
-		DataPresent:    false,
+		DataPresent: false,
 	}
 	cloned := msg.Clone().(*ReadFailure)
 	assert.Equal(t, msg, cloned)
@@ -250,11 +251,11 @@ func TestReadFailure_Clone(t *testing.T) {
 	cloned.BlockFor = 3
 	cloned.NumFailures = 2
 	cloned.FailureReasons = []*primitive.FailureReason{
-		&primitive.FailureReason{
+		{
 			Endpoint: net.IP{0x05},
 			Code:     primitive.FailureCodeIndexNotAvailable,
 		},
-		&primitive.FailureReason{
+		{
 			Endpoint: net.IP{0x06},
 			Code:     primitive.FailureCodeKeyspaceNotFound,
 		},
@@ -291,11 +292,11 @@ func TestWriteFailure_Clone(t *testing.T) {
 		BlockFor:     2,
 		NumFailures:  1,
 		FailureReasons: []*primitive.FailureReason{
-			&primitive.FailureReason{
+			{
 				Endpoint: net.IP{0x01},
 				Code:     primitive.FailureCodeCdcSpaceFull,
 			},
-			&primitive.FailureReason{
+			{
 				Endpoint: net.IP{0x02},
 				Code:     primitive.FailureCodeCounterWrite,
 			},
@@ -310,11 +311,11 @@ func TestWriteFailure_Clone(t *testing.T) {
 	cloned.BlockFor = 3
 	cloned.NumFailures = 2
 	cloned.FailureReasons = []*primitive.FailureReason{
-		&primitive.FailureReason{
+		{
 			Endpoint: net.IP{0x05},
 			Code:     primitive.FailureCodeIndexNotAvailable,
 		},
-		&primitive.FailureReason{
+		{
 			Endpoint: net.IP{0x06},
 			Code:     primitive.FailureCodeKeyspaceNotFound,
 		},
@@ -406,7 +407,7 @@ func TestAlreadyExists_Clone(t *testing.T) {
 func TestErrorCodec_Encode(test *testing.T) {
 	codec := &errorCodec{}
 	// errors encoded the same in all versions
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -526,7 +527,7 @@ func TestErrorCodec_Encode(test *testing.T) {
 				},
 				{
 					"write timeout",
-					&WriteTimeout{"BOOM", primitive.ConsistencyLevelLocalQuorum, 1, 2, primitive.WriteTypeBatchLog},
+					&WriteTimeout{"BOOM", primitive.ConsistencyLevelLocalQuorum, 1, 2, primitive.WriteTypeBatchLog, 0},
 					[]byte{
 						0, 0, 0b_0001_0001, 0b_0000_0000,
 						0, 4, B, O, O, M,
@@ -584,7 +585,7 @@ func TestErrorCodec_Encode(test *testing.T) {
 		})
 	}
 	// num failures v2, v3, v4
-	for _, version := range primitive.AllProtocolVersionsLesserThanOrEqualTo(primitive.ProtocolVersion4) {
+	for _, version := range primitive.SupportedProtocolVersionsLesserThanOrEqualTo(primitive.ProtocolVersion4) {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -643,7 +644,7 @@ func TestErrorCodec_Encode(test *testing.T) {
 		})
 	}
 	// reason map in v5, DSE v1, DSE v2
-	for _, version := range primitive.AllProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion5) {
+	for _, version := range primitive.SupportedProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion5) {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -705,12 +706,52 @@ func TestErrorCodec_Encode(test *testing.T) {
 			}
 		})
 	}
+	// write timeout with contentions in v5
+	test.Run(fmt.Sprintf("write timeout with contentions version %v", primitive.ProtocolVersion5), func(test *testing.T) {
+		tests := []encodeTestCase{
+			{
+				"write timeout CAS with contentions",
+				&WriteTimeout{"BOOM", primitive.ConsistencyLevelLocalQuorum, 1, 2, primitive.WriteTypeCas, 5},
+				[]byte{
+					0, 0, 0b_0001_0001, 0b_0000_0000,
+					0, 4, B, O, O, M,
+					0, 6, // consistency
+					0, 0, 0, 1,
+					0, 0, 0, 2,
+					0, 3, C, A, S,
+					0, 5,
+				},
+				nil,
+			},
+			{
+				"write timeout not CAS",
+				&WriteTimeout{"BOOM", primitive.ConsistencyLevelLocalQuorum, 1, 2, primitive.WriteTypeBatchLog, 5},
+				[]byte{
+					0, 0, 0b_0001_0001, 0b_0000_0000,
+					0, 4, B, O, O, M,
+					0, 6, // consistency
+					0, 0, 0, 1,
+					0, 0, 0, 2,
+					0, 9, B, A, T, C, H, __, L, O, G,
+				},
+				nil,
+			},
+		}
+		for _, tt := range tests {
+			test.Run(tt.name, func(t *testing.T) {
+				dest := &bytes.Buffer{}
+				err := codec.Encode(tt.input, dest, primitive.ProtocolVersion5)
+				assert.Equal(t, tt.expected, dest.Bytes())
+				assert.Equal(t, tt.err, err)
+			})
+		}
+	})
 }
 
 func TestErrorCodec_EncodedLength(test *testing.T) {
 	codec := &errorCodec{}
 	// errors encoded the same in all versions
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -796,7 +837,7 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 				},
 				{
 					"write timeout",
-					&WriteTimeout{"BOOM", primitive.ConsistencyLevelLocalQuorum, 1, 2, primitive.WriteTypeBatchLog},
+					&WriteTimeout{"BOOM", primitive.ConsistencyLevelLocalQuorum, 1, 2, primitive.WriteTypeBatchLog, 0},
 					primitive.LengthOfInt +
 						primitive.LengthOfString("BOOM") +
 						primitive.LengthOfShort + // consistency
@@ -843,7 +884,7 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 		})
 	}
 	// num failures in v2, v3, v4
-	for _, version := range primitive.AllProtocolVersionsLesserThanOrEqualTo(primitive.ProtocolVersion4) {
+	for _, version := range primitive.SupportedProtocolVersionsLesserThanOrEqualTo(primitive.ProtocolVersion4) {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -897,7 +938,7 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 		})
 	}
 	// reason map in v5, DSE v1, DSE v2
-	for _, version := range primitive.AllProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion5) {
+	for _, version := range primitive.SupportedProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion5) {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -954,12 +995,36 @@ func TestErrorCodec_EncodedLength(test *testing.T) {
 			}
 		})
 	}
+	// write timeout with contentions in v5
+	test.Run(fmt.Sprintf("write timeout with contentions version %v", primitive.ProtocolVersion5), func(test *testing.T) {
+		tests := []encodedLengthTestCase{
+			{
+				"write timeout CAS with contentions",
+				&WriteTimeout{"BOOM", primitive.ConsistencyLevelLocalQuorum, 1, 2, primitive.WriteTypeCas, 5},
+				primitive.LengthOfInt +
+					primitive.LengthOfString("BOOM") +
+					primitive.LengthOfShort + // consistency
+					primitive.LengthOfInt + // received
+					primitive.LengthOfInt + // block for
+					primitive.LengthOfString(string(primitive.WriteTypeCas)) + // write type
+					primitive.LengthOfShort, // contentions
+				nil,
+			},
+		}
+		for _, tt := range tests {
+			test.Run(tt.name, func(t *testing.T) {
+				actual, err := codec.EncodedLength(tt.input, primitive.ProtocolVersion5)
+				assert.Equal(t, tt.expected, actual)
+				assert.Equal(t, tt.err, err)
+			})
+		}
+	})
 }
 
 func TestErrorCodec_Decode(test *testing.T) {
 	codec := &errorCodec{}
 	// errors encoded the same in all versions
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		test.Run(version.String(), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{
@@ -1087,7 +1152,7 @@ func TestErrorCodec_Decode(test *testing.T) {
 						0, 0, 0, 2,
 						0, 9, B, A, T, C, H, __, L, O, G,
 					},
-					&WriteTimeout{"BOOM", primitive.ConsistencyLevelLocalQuorum, 1, 2, primitive.WriteTypeBatchLog},
+					&WriteTimeout{"BOOM", primitive.ConsistencyLevelLocalQuorum, 1, 2, primitive.WriteTypeBatchLog, 0},
 					nil,
 				},
 				{
@@ -1137,7 +1202,7 @@ func TestErrorCodec_Decode(test *testing.T) {
 		})
 	}
 	// num failures in v3, v4
-	for _, version := range primitive.AllProtocolVersionsLesserThanOrEqualTo(primitive.ProtocolVersion4) {
+	for _, version := range primitive.SupportedProtocolVersionsLesserThanOrEqualTo(primitive.ProtocolVersion4) {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{
@@ -1196,7 +1261,7 @@ func TestErrorCodec_Decode(test *testing.T) {
 		})
 	}
 	// reason map in v5, DSE v1, DSE v2
-	for _, version := range primitive.AllProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion5) {
+	for _, version := range primitive.SupportedProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion5) {
 		test.Run(fmt.Sprintf("read/write failure version %v", version), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{
@@ -1258,4 +1323,57 @@ func TestErrorCodec_Decode(test *testing.T) {
 			}
 		})
 	}
+	// write timeout with contentions in v5
+	test.Run(fmt.Sprintf("write timeout wiht contentions version %v", primitive.ProtocolVersion5), func(test *testing.T) {
+		tests := []decodeTestCase{
+			{
+				"write timeout CAS with contentions",
+				[]byte{
+					0, 0, 0b_0001_0001, 0b_0000_0000,
+					0, 4, B, O, O, M,
+					0, 6, // consistency
+					0, 0, 0, 1,
+					0, 0, 0, 2,
+					0, 3, C, A, S,
+					0, 5,
+				},
+				&WriteTimeout{"BOOM", primitive.ConsistencyLevelLocalQuorum, 1, 2, primitive.WriteTypeCas, 5},
+				nil,
+			},
+			{
+				"write timeout not CAS",
+				[]byte{
+					0, 0, 0b_0001_0001, 0b_0000_0000,
+					0, 4, B, O, O, M,
+					0, 6, // consistency
+					0, 0, 0, 1,
+					0, 0, 0, 2,
+					0, 9, B, A, T, C, H, __, L, O, G,
+				},
+				&WriteTimeout{"BOOM", primitive.ConsistencyLevelLocalQuorum, 1, 2, primitive.WriteTypeBatchLog, 0},
+				nil,
+			},
+			{
+				"write timeout CAS missing contentions",
+				[]byte{
+					0, 0, 0b_0001_0001, 0b_0000_0000,
+					0, 4, B, O, O, M,
+					0, 6, // consistency
+					0, 0, 0, 1,
+					0, 0, 0, 2,
+					0, 3, C, A, S,
+				},
+				nil,
+				fmt.Errorf("cannot read ERROR WRITE TIMEOUT contentions: %w", fmt.Errorf("cannot read [short]: %w", errors.New("EOF"))),
+			},
+		}
+		for _, tt := range tests {
+			test.Run(tt.name, func(t *testing.T) {
+				source := bytes.NewBuffer(tt.input)
+				actual, err := codec.Decode(source, primitive.ProtocolVersion5)
+				assert.Equal(t, tt.expected, actual)
+				assert.Equal(t, tt.err, err)
+			})
+		}
+	})
 }

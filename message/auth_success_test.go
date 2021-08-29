@@ -38,7 +38,7 @@ func TestAuthSuccess_Clone(t *testing.T) {
 func TestAuthSuccessCodec_Encode(t *testing.T) {
 	token := []byte{0xca, 0xfe, 0xba, 0xbe}
 	codec := &authSuccessCodec{}
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -81,7 +81,7 @@ func TestAuthSuccessCodec_Encode(t *testing.T) {
 func TestAuthSuccessCodec_EncodedLength(t *testing.T) {
 	token := []byte{0xca, 0xfe, 0xba, 0xbe}
 	codec := &authSuccessCodec{}
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -117,7 +117,7 @@ func TestAuthSuccessCodec_EncodedLength(t *testing.T) {
 func TestAuthSuccessCodec_Decode(t *testing.T) {
 	token := []byte{0xca, 0xfe, 0xba, 0xbe}
 	codec := &authSuccessCodec{}
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []decodeTestCase{
 				{

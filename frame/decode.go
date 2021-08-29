@@ -62,7 +62,7 @@ func (c *codec) DecodeHeader(source io.Reader) (*Header, error) {
 		useBetaFlag := primitive.HeaderFlag(flags).Contains(primitive.HeaderFlagUseBeta)
 
 		var opCode uint8
-		if err = primitive.CheckValidProtocolVersion(version); err != nil {
+		if err = primitive.CheckSupportedProtocolVersion(version); err != nil {
 			return nil, NewProtocolVersionErr(err.Error(), version, useBetaFlag)
 		} else if version.IsBeta() && !useBetaFlag {
 			return nil, NewProtocolVersionErr("expected USE_BETA flag to be set", version, useBetaFlag)
@@ -75,6 +75,17 @@ func (c *codec) DecodeHeader(source io.Reader) (*Header, error) {
 		}
 		header.Flags = primitive.HeaderFlag(flags)
 		header.OpCode = primitive.OpCode(opCode)
+		if err := primitive.CheckValidOpCode(header.OpCode); err != nil {
+			return nil, err
+		} else if isResponse {
+			if err := primitive.CheckResponseOpCode(header.OpCode); err != nil {
+				return nil, err
+			}
+		} else {
+			if err := primitive.CheckRequestOpCode(header.OpCode); err != nil {
+				return nil, err
+			}
+		}
 		return header, err
 	}
 }
@@ -85,7 +96,7 @@ func (c *codec) DecodeBody(header *Header, source io.Reader) (body *Body, err er
 			return nil, errors.New("cannot decompress body: no compressor available")
 		} else {
 			decompressedBody := &bytes.Buffer{}
-			if err := c.compressor.Decompress(io.LimitReader(source, int64(header.BodyLength)), decompressedBody); err != nil {
+			if err := c.compressor.DecompressWithLength(io.LimitReader(source, int64(header.BodyLength)), decompressedBody); err != nil {
 				return nil, fmt.Errorf("cannot decompress body: %w", err)
 			} else {
 				source = decompressedBody

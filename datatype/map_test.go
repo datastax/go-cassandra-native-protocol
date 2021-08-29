@@ -45,7 +45,7 @@ func TestMapTypeClone(t *testing.T) {
 }
 
 func TestWriteMapType(t *testing.T) {
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -92,7 +92,7 @@ func TestWriteMapType(t *testing.T) {
 }
 
 func TestLengthOfMapType(t *testing.T) {
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -128,7 +128,7 @@ func TestLengthOfMapType(t *testing.T) {
 }
 
 func TestReadMapType(t *testing.T) {
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string

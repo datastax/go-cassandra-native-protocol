@@ -22,13 +22,15 @@ import (
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
-// A high-level representation of a frame, where the body is fully decoded.
+// Frame is a high-level representation of a frame, where the body is fully decoded.
+// Note that frames are called "envelopes" in protocol v5 specs.
 type Frame struct {
 	Header *Header
 	Body   *Body
 }
 
-// A low-level representation of a frame, where the body is not decoded.
+// RawFrame is a low-level representation of a frame, where the body is not decoded.
+// Note that frames are called "envelopes" in protocol v5 specs.
 type RawFrame struct {
 	Header *Header
 	Body   []byte
@@ -40,14 +42,14 @@ type Header struct {
 	Flags      primitive.HeaderFlag
 	// The stream id. A stream id is a signed byte (protocol versions 1 and 2) or a signed 16-bit integer (protocol
 	// versions 3 and higher). Note that the protocol specs refer to the stream id as a primitive [short] integer,
-	// but in fact stream ids are signed integers. Indeed server-initiated messages, such as EVENT messages, have
+	// but in fact stream ids are signed integers. Indeed, server-initiated messages, such as EVENT messages, have
 	// negative stream ids. For this reason, stream ids are represented as signed 16-bit integers in this library.
 	StreamId int16
 	// The OpCode is an unsigned byte that distinguishes the type of payload that a frame contains.
 	OpCode primitive.OpCode
-	// The encoded body length. When encoding a frame, this field is not read but is rather dynamically computed from
-	// the actual body length. When decoding a frame, this field is always correctly set to the exact decoded body
-	// length.
+	// The encoded body length. This is a computed value that users should not set themselves. When encoding a frame,
+	// this field is not read but is rather dynamically computed from the actual body length. When decoding a frame,
+	// this field is always correctly set to the exact decoded body length.
 	BodyLength int32
 }
 
@@ -63,7 +65,7 @@ type Body struct {
 	Message message.Message
 }
 
-// Creates a new Frame with the given version, stream id and message.
+// NewFrame Creates a new Frame with the given version, stream id and message.
 func NewFrame(version primitive.ProtocolVersion, streamId int16, message message.Message) *Frame {
 	var flags primitive.HeaderFlag
 	if version.IsBeta() {
@@ -84,7 +86,7 @@ func NewFrame(version primitive.ProtocolVersion, streamId int16, message message
 	}
 }
 
-// Sets a new custom payload on this frame, adjusting the header flags accordingly. If nil, the existing payload,
+// SetCustomPayload Sets a new custom payload on this frame, adjusting the header flags accordingly. If nil, the existing payload,
 // if any, will be removed along with the corresponding header flag.
 // Note: custom payloads cannot be used with protocol versions lesser than 4.
 func (f *Frame) SetCustomPayload(customPayload map[string][]byte) {
@@ -96,7 +98,7 @@ func (f *Frame) SetCustomPayload(customPayload map[string][]byte) {
 	f.Body.CustomPayload = customPayload
 }
 
-// Sets new query warnings on this frame, adjusting the header flags accordingly. If nil, the existing warnings,
+// SetWarnings Sets new query warnings on this frame, adjusting the header flags accordingly. If nil, the existing warnings,
 // if any, will be removed along with the corresponding header flag.
 // Note: query warnings cannot be used with protocol versions lesser than 4.
 func (f *Frame) SetWarnings(warnings []string) {
@@ -108,7 +110,7 @@ func (f *Frame) SetWarnings(warnings []string) {
 	f.Body.Warnings = warnings
 }
 
-// Sets a new tracing id on this frame, adjusting the header flags accordingly. If nil, the existing tracing id,
+// SetTracingId Sets a new tracing id on this frame, adjusting the header flags accordingly. If nil, the existing tracing id,
 // if any, will be removed along with the corresponding header flag.
 // Note: tracing ids can only be used with response frames.
 func (f *Frame) SetTracingId(tracingId *primitive.UUID) {
@@ -120,7 +122,7 @@ func (f *Frame) SetTracingId(tracingId *primitive.UUID) {
 	f.Body.TracingId = tracingId
 }
 
-// Configures this frame to request a tracing id from the server, adjusting the header flags accordingly.
+// RequestTracingId Configures this frame to request a tracing id from the server, adjusting the header flags accordingly.
 // Note: this method should only be used for request frames.
 func (f *Frame) RequestTracingId(tracing bool) {
 	if tracing {
@@ -130,7 +132,7 @@ func (f *Frame) RequestTracingId(tracing bool) {
 	}
 }
 
-// Configures this frame to use compression, adjusting the header flags accordingly.
+// SetCompress Configures this frame to use compression, adjusting the header flags accordingly.
 // Note: this method will not enable compression on frames that cannot be compressed.
 // Also, enabling compression on a frame does not guarantee that the frame will be properly compressed:
 // the frame codec must also be configured to use a BodyCompressor.
@@ -142,25 +144,21 @@ func (f *Frame) SetCompress(compress bool) {
 	}
 }
 
-func (f *Frame) String() string {
-	return fmt.Sprintf("{header: %v, body: %v}", f.Header, f.Body)
-}
-
-// Performs a deep copy of a frame object
-func (f* Frame) Clone() *Frame {
+// Clone Performs a deep copy of a frame object
+func (f *Frame) Clone() *Frame {
 	return &Frame{
 		Header: f.Header.Clone(),
 		Body:   f.Body.Clone(),
 	}
 }
 
-// Performs a deep copy of a header object and returns the new object.
+// Clone Performs a deep copy of a header object and returns the new object.
 func (h *Header) Clone() *Header {
 	newHeader := *h // it's only value types so this is fine
 	return &newHeader
 }
 
-// Performs a deep copy of a body object and returns the new object.
+// Clone Performs a deep copy of a body object and returns the new object.
 func (b *Body) Clone() *Body {
 	var customPayload map[string][]byte
 	if b.CustomPayload == nil {
@@ -188,6 +186,10 @@ func (b *Body) Clone() *Body {
 		Warnings:      warnings,
 		Message:       b.Message.Clone(),
 	}
+}
+
+func (f *Frame) String() string {
+	return fmt.Sprintf("{header: %v, body: %v}", f.Header, f.Body)
 }
 
 func (f *RawFrame) String() string {
@@ -224,7 +226,7 @@ func (f *RawFrame) Dump() (string, error) {
 	}
 }
 
-// Performs a deep copy of a RawFrame object
+// Clone Performs a deep copy of a RawFrame object
 func (f *RawFrame) Clone() *RawFrame {
 	return &RawFrame{
 		Header: f.Header.Clone(),
