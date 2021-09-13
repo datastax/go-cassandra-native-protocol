@@ -64,8 +64,6 @@ func (c *codec) DecodeHeader(source io.Reader) (*Header, error) {
 		var opCode uint8
 		if err = primitive.CheckValidProtocolVersion(version); err != nil {
 			return nil, NewProtocolVersionErr(err.Error(), version, useBetaFlag)
-		} else if flags, err = primitive.ReadByte(source); err != nil {
-			return nil, fmt.Errorf("cannot decode header flags: %w", err)
 		} else if version.IsBeta() && !useBetaFlag {
 			return nil, NewProtocolVersionErr("expected USE_BETA flag to be set", version, useBetaFlag)
 		} else if header.StreamId, err = primitive.ReadStreamId(source, version); err != nil {
