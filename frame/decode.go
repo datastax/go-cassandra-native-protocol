@@ -60,7 +60,7 @@ func (c *codec) DecodeHeader(source io.Reader) (*Header, error) {
 		} else if flags, err = primitive.ReadByte(source); err != nil {
 			return nil, fmt.Errorf("cannot decode header flags: %w", err)
 		} else if version.IsBeta() && !primitive.HeaderFlag(flags).Contains(primitive.HeaderFlagUseBeta) {
-			return nil, fmt.Errorf("expected USE_BETA flag to be set for protocol version %v", version)
+			return nil, NewProtocolVersionErr("expected USE_BETA flag to be set", version, false)
 		} else if header.StreamId, err = primitive.ReadStreamId(source, version); err != nil {
 			return nil, fmt.Errorf("cannot decode header stream id: %w", err)
 		} else if opCode, err = primitive.ReadByte(source); err != nil {
@@ -142,4 +142,22 @@ func (c *codec) DiscardBody(header *Header, source io.Reader) (err error) {
 		err = fmt.Errorf("cannot discard body; %w", err)
 	}
 	return err
+}
+
+type ProtocolVersionErr struct {
+	err     string
+	version primitive.ProtocolVersion
+	useBeta bool
+}
+
+func NewProtocolVersionErr(err string, version primitive.ProtocolVersion, useBeta bool) *ProtocolVersionErr {
+	return &ProtocolVersionErr{
+		err:     err,
+		version: version,
+		useBeta: useBeta,
+	}
+}
+
+func (e *ProtocolVersionErr) Error() string {
+	return fmt.Sprintf("%s (version=%s, useBeta=%v)", e.err, e.version, e.useBeta)
 }
