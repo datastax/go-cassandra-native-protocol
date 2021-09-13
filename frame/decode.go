@@ -145,19 +145,19 @@ func (c *codec) DiscardBody(header *Header, source io.Reader) (err error) {
 }
 
 type ProtocolVersionErr struct {
-	err     string
-	version primitive.ProtocolVersion
-	useBeta bool
+	Err     string
+	Version primitive.ProtocolVersion
+	UseBeta bool
 }
 
 func NewProtocolVersionErr(err string, version primitive.ProtocolVersion, useBeta bool) *ProtocolVersionErr {
 	return &ProtocolVersionErr{
-		err:     err,
-		version: version,
-		useBeta: useBeta,
+		Err:     err,
+		Version: version,
+		UseBeta: useBeta,
 	}
 }
 
 func (e *ProtocolVersionErr) Error() string {
-	return fmt.Sprintf("%s (version=%s, useBeta=%v)", e.err, e.version, e.useBeta)
+	return fmt.Sprintf("%s (version=%s, useBeta=%v)", e.Err, e.Version, e.UseBeta)
 }
