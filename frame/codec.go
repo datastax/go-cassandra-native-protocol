@@ -148,3 +148,21 @@ func (c *codec) findMessageCodec(opCode primitive.OpCode) (message.Codec, error)
 		return encoder, nil
 	}
 }
+
+type ProtocolVersionErr struct {
+	Err     string
+	Version primitive.ProtocolVersion
+	UseBeta bool
+}
+
+func NewProtocolVersionErr(err string, version primitive.ProtocolVersion, useBeta bool) *ProtocolVersionErr {
+	return &ProtocolVersionErr{
+		Err:     err,
+		Version: version,
+		UseBeta: useBeta,
+	}
+}
+
+func (e *ProtocolVersionErr) Error() string {
+	return fmt.Sprintf("unsupported protocol version (version=%s, useBeta=%v): %s", e.Version, e.UseBeta, e.Err)
+}

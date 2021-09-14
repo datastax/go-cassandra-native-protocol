@@ -74,9 +74,13 @@ func (c *codec) EncodeRawFrame(frame *RawFrame, dest io.Writer) error {
 }
 
 func (c *codec) EncodeHeader(header *Header, dest io.Writer) error {
+	useBetaFlag := header.Flags.Contains(primitive.HeaderFlagUseBeta)
 	if err := primitive.CheckValidProtocolVersion(header.Version); err != nil {
-		return err
+		return NewProtocolVersionErr(err.Error(), header.Version, useBetaFlag)
+	} else if header.Version.IsBeta() && !useBetaFlag {
+		return NewProtocolVersionErr("expected USE_BETA flag to be set", header.Version, useBetaFlag)
 	}
+
 	versionAndDirection := uint8(header.Version)
 	if header.IsResponse {
 		versionAndDirection |= 0b1000_0000
