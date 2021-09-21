@@ -118,7 +118,7 @@ func TestWriteTupleType(t *testing.T) {
 	}
 
 	t.Run("versions_with_tuple_support", func(t *testing.T) {
-		for _, version := range primitive.AllProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion3) {
+		for _, version := range primitive.SupportedProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion3) {
 			t.Run(version.String(), func(t *testing.T) {
 				for _, test := range tests {
 					t.Run(test.name, func(t *testing.T) {
@@ -135,7 +135,7 @@ func TestWriteTupleType(t *testing.T) {
 	})
 
 	t.Run("versions_without_tuple_support", func(t *testing.T) {
-		for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion3) {
+		for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion3) {
 			t.Run(version.String(), func(t *testing.T) {
 				for _, test := range tests {
 					t.Run(test.name, func(t *testing.T) {
@@ -159,7 +159,7 @@ func TestWriteTupleType(t *testing.T) {
 }
 
 func TestLengthOfTupleType(t *testing.T) {
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -241,7 +241,7 @@ func TestReadTupleType(t *testing.T) {
 	}
 
 	t.Run("versions_with_tuple_support", func(t *testing.T) {
-		for _, version := range primitive.AllProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion3) {
+		for _, version := range primitive.SupportedProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion3) {
 			t.Run(version.String(), func(t *testing.T) {
 
 				for _, test := range tests {
@@ -259,7 +259,7 @@ func TestReadTupleType(t *testing.T) {
 	})
 
 	t.Run("versions_without_tuple_support", func(t *testing.T) {
-		for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion3) {
+		for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion3) {
 			t.Run(version.String(), func(t *testing.T) {
 				for _, test := range tests {
 					t.Run(test.name, func(t *testing.T) {

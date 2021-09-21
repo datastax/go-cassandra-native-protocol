@@ -18,19 +18,29 @@ import "fmt"
 
 type ProtocolVersion uint8
 
+// Supported OSS versions
 const (
-
-	// Supported OSS versions
 	ProtocolVersion2 = ProtocolVersion(0x2)
 	ProtocolVersion3 = ProtocolVersion(0x3)
 	ProtocolVersion4 = ProtocolVersion(0x4)
-	ProtocolVersion5 = ProtocolVersion(0x5) // currently beta, should not be used in production
+	ProtocolVersion5 = ProtocolVersion(0x5)
+)
 
-	// Supported DSE versions
-	// Note: all DSE versions have the 7th bit set to 1
+// Supported DSE versions
+// Note: all DSE versions have the 7th bit set to 1
+const (
 	ProtocolVersionDse1 = ProtocolVersion(0b_1_000001) // 1 + DSE bit = 65
 	ProtocolVersionDse2 = ProtocolVersion(0b_1_000010) // 2 + DSE bit = 66
 )
+
+func (v ProtocolVersion) IsSupported() bool {
+	for _, supported := range SupportedProtocolVersions() {
+		if v == supported {
+			return true
+		}
+	}
+	return false
+}
 
 func (v ProtocolVersion) IsOss() bool {
 	switch v {
@@ -55,12 +65,7 @@ func (v ProtocolVersion) IsDse() bool {
 }
 
 func (v ProtocolVersion) IsBeta() bool {
-	switch v {
-	case ProtocolVersion5:
-	default:
-		return false
-	}
-	return true
+	return false // no beta version supported currently
 }
 
 func (v ProtocolVersion) String() string {
@@ -72,7 +77,7 @@ func (v ProtocolVersion) String() string {
 	case ProtocolVersion4:
 		return "ProtocolVersion OSS 4"
 	case ProtocolVersion5:
-		return "ProtocolVersion OSS 5 (beta)"
+		return "ProtocolVersion OSS 5"
 	case ProtocolVersionDse1:
 		return "ProtocolVersion DSE 1"
 	case ProtocolVersionDse2:
@@ -85,10 +90,178 @@ func (v ProtocolVersion) Uses4BytesCollectionLength() bool {
 	return v >= ProtocolVersion3
 }
 
-type OpCode uint8
+func (v ProtocolVersion) Uses4BytesQueryFlags() bool {
+	return v >= ProtocolVersion5
+}
+
+func (v ProtocolVersion) SupportsCompression(compression Compression) bool {
+	switch compression {
+	case CompressionNone:
+		return true
+	case CompressionLz4:
+		return true
+	case CompressionSnappy:
+		return v != ProtocolVersion5
+	}
+	return false // unknown compression
+}
+
+func (v ProtocolVersion) SupportsBatchQueryFlags() bool {
+	return v >= ProtocolVersion3
+}
+
+func (v ProtocolVersion) SupportsPrepareFlags() bool {
+	return v >= ProtocolVersion5 && v != ProtocolVersionDse1
+}
+
+func (v ProtocolVersion) SupportsQueryFlag(flag QueryFlag) bool {
+	switch flag {
+	case QueryFlagValues:
+		return v >= ProtocolVersion2
+	case QueryFlagSkipMetadata:
+		return v >= ProtocolVersion2
+	case QueryFlagPageSize:
+		return v >= ProtocolVersion2
+	case QueryFlagPagingState:
+		return v >= ProtocolVersion2
+	case QueryFlagSerialConsistency:
+		return v >= ProtocolVersion2
+	case QueryFlagDefaultTimestamp:
+		return v >= ProtocolVersion3
+	case QueryFlagValueNames:
+		return v >= ProtocolVersion3
+	case QueryFlagWithKeyspace:
+		return v >= ProtocolVersion5 && v != ProtocolVersionDse1
+	case QueryFlagNowInSeconds:
+		return v >= ProtocolVersion5 && v != ProtocolVersionDse1 && v != ProtocolVersionDse2
+	// DSE-specific flags
+	case QueryFlagDsePageSizeBytes:
+		return v.IsDse()
+	case QueryFlagDseWithContinuousPagingOptions:
+		return v.IsDse()
+	}
+	// Unknown flag
+	return false
+}
+
+func (v ProtocolVersion) SupportsResultMetadataId() bool {
+	return v >= ProtocolVersion5 && v != ProtocolVersionDse1
+}
+
+func (v ProtocolVersion) SupportsReadWriteFailureReasonMap() bool {
+	return v >= ProtocolVersion5
+}
+
+func (v ProtocolVersion) SupportsWriteTimeoutContentions() bool {
+	return v >= ProtocolVersion5 && v != ProtocolVersionDse1 && v != ProtocolVersionDse2
+}
+
+func (v ProtocolVersion) SupportsDataType(code DataTypeCode) bool {
+	switch code {
+	case DataTypeCodeCustom:
+	case DataTypeCodeAscii:
+	case DataTypeCodeBigint:
+	case DataTypeCodeBlob:
+	case DataTypeCodeBoolean:
+	case DataTypeCodeCounter:
+	case DataTypeCodeDecimal:
+	case DataTypeCodeDouble:
+	case DataTypeCodeFloat:
+	case DataTypeCodeInt:
+	case DataTypeCodeTimestamp:
+	case DataTypeCodeUuid:
+	case DataTypeCodeVarchar:
+	case DataTypeCodeVarint:
+	case DataTypeCodeTimeuuid:
+	case DataTypeCodeInet:
+	case DataTypeCodeList:
+	case DataTypeCodeMap:
+	case DataTypeCodeSet:
+	case DataTypeCodeText:
+		return v <= ProtocolVersion2 // removed in version 3
+	case DataTypeCodeUdt:
+		return v >= ProtocolVersion3
+	case DataTypeCodeTuple:
+		return v >= ProtocolVersion3
+	case DataTypeCodeDate:
+		return v >= ProtocolVersion4
+	case DataTypeCodeTime:
+		return v >= ProtocolVersion4
+	case DataTypeCodeSmallint:
+		return v >= ProtocolVersion4
+	case DataTypeCodeTinyint:
+		return v >= ProtocolVersion4
+	case DataTypeCodeDuration:
+		return v >= ProtocolVersion5
+	default:
+		// Unknown code
+		return false
+	}
+	return true
+}
+
+func (v ProtocolVersion) SupportsSchemaChangeTarget(target SchemaChangeTarget) bool {
+	switch target {
+	case SchemaChangeTargetKeyspace:
+		return true
+	case SchemaChangeTargetTable:
+		return true
+	case SchemaChangeTargetType:
+		return v >= ProtocolVersion3
+	case SchemaChangeTargetFunction:
+		return v >= ProtocolVersion4
+	case SchemaChangeTargetAggregate:
+		return v >= ProtocolVersion4
+	}
+	// Unknown target
+	return false
+}
+
+func (v ProtocolVersion) SupportsTopologyChangeType(t TopologyChangeType) bool {
+	switch t {
+	case TopologyChangeTypeNewNode:
+		return true
+	case TopologyChangeTypeRemovedNode:
+		return true
+	case TopologyChangeTypeMovedNode:
+		return v >= ProtocolVersion3
+	}
+	// Unknown type
+	return false
+}
+
+func (v ProtocolVersion) SupportsDseRevisionType(t DseRevisionType) bool {
+	switch t {
+	case DseRevisionTypeCancelContinuousPaging:
+		return v >= ProtocolVersionDse1
+	case DseRevisionTypeMoreContinuousPages:
+		return v >= ProtocolVersionDse2
+	}
+	// Unknown type
+	return false
+}
 
 const (
-	// requests
+	FrameHeaderLengthV3AndHigher = 9
+	FrameHeaderLengthV2AndLower  = 8
+)
+
+func (v ProtocolVersion) FrameHeaderLengthInBytes() int {
+	if v >= ProtocolVersion3 {
+		return FrameHeaderLengthV3AndHigher
+	} else {
+		return FrameHeaderLengthV2AndLower
+	}
+}
+
+func (v ProtocolVersion) SupportsModernFramingLayout() bool {
+	return v >= ProtocolVersion5 && v != ProtocolVersionDse1 && v != ProtocolVersionDse2
+}
+
+type OpCode uint8
+
+// requests
+const (
 	OpCodeStartup      = OpCode(0x01)
 	OpCodeOptions      = OpCode(0x05)
 	OpCodeQuery        = OpCode(0x07)
@@ -98,7 +271,10 @@ const (
 	OpCodeBatch        = OpCode(0x0D)
 	OpCodeAuthResponse = OpCode(0x0F)
 	OpCodeDseRevise    = OpCode(0xFF) // DSE v1
-	// responses
+)
+
+// responses
+const (
 	OpCodeError         = OpCode(0x00)
 	OpCodeReady         = OpCode(0x02)
 	OpCodeAuthenticate  = OpCode(0x03)
@@ -108,6 +284,31 @@ const (
 	OpCodeAuthChallenge = OpCode(0x0E)
 	OpCodeAuthSuccess   = OpCode(0x10)
 )
+
+func (c OpCode) IsValid() bool {
+	switch c {
+	case OpCodeStartup:
+	case OpCodeOptions:
+	case OpCodeQuery:
+	case OpCodePrepare:
+	case OpCodeExecute:
+	case OpCodeRegister:
+	case OpCodeBatch:
+	case OpCodeAuthResponse:
+	case OpCodeDseRevise:
+	case OpCodeError:
+	case OpCodeReady:
+	case OpCodeAuthenticate:
+	case OpCodeSupported:
+	case OpCodeResult:
+	case OpCodeEvent:
+	case OpCodeAuthChallenge:
+	case OpCodeAuthSuccess:
+	default:
+		return false
+	}
+	return true
+}
 
 func (c OpCode) IsRequest() bool {
 	switch c {
@@ -120,6 +321,22 @@ func (c OpCode) IsRequest() bool {
 	case OpCodeBatch:
 	case OpCodeAuthResponse:
 	case OpCodeDseRevise:
+	default:
+		return false
+	}
+	return true
+}
+
+func (c OpCode) IsResponse() bool {
+	switch c {
+	case OpCodeError:
+	case OpCodeReady:
+	case OpCodeAuthenticate:
+	case OpCodeSupported:
+	case OpCodeResult:
+	case OpCodeEvent:
+	case OpCodeAuthChallenge:
+	case OpCodeAuthSuccess:
 	default:
 		return false
 	}
@@ -186,8 +403,21 @@ const (
 	ResultTypeSchemaChange = ResultType(0x00000005)
 )
 
-func (r ResultType) String() string {
-	switch r {
+func (t ResultType) IsValid() bool {
+	switch t {
+	case ResultTypeVoid:
+	case ResultTypeRows:
+	case ResultTypeSetKeyspace:
+	case ResultTypePrepared:
+	case ResultTypeSchemaChange:
+	default:
+		return false
+	}
+	return true
+}
+
+func (t ResultType) String() string {
+	switch t {
 	case ResultTypeVoid:
 		return "ResultType Void [0x00000001]"
 	case ResultTypeRows:
@@ -199,17 +429,20 @@ func (r ResultType) String() string {
 	case ResultTypeSchemaChange:
 		return "ResultType SchemaChange [0x00000005]"
 	}
-	return fmt.Sprintf("ResultType ? [%#.8X]", uint32(r))
+	return fmt.Sprintf("ResultType ? [%#.8X]", uint32(t))
 }
 
 type ErrorCode uint32
 
+// 0xx: fatal errors
 const (
-	// 0xx: fatal errors
 	ErrorCodeServerError         = ErrorCode(0x00000000)
 	ErrorCodeProtocolError       = ErrorCode(0x0000000A)
 	ErrorCodeAuthenticationError = ErrorCode(0x00000100)
-	// 1xx: request execution
+)
+
+// 1xx: request execution
+const (
 	ErrorCodeUnavailable     = ErrorCode(0x00001000)
 	ErrorCodeOverloaded      = ErrorCode(0x00001001)
 	ErrorCodeIsBootstrapping = ErrorCode(0x00001002)
@@ -219,7 +452,10 @@ const (
 	ErrorCodeReadFailure     = ErrorCode(0x00001300)
 	ErrorCodeFunctionFailure = ErrorCode(0x00001400)
 	ErrorCodeWriteFailure    = ErrorCode(0x00001500)
-	// 2xx: query validation
+)
+
+// 2xx: query validation
+const (
 	ErrorCodeSyntaxError   = ErrorCode(0x00002000)
 	ErrorCodeUnauthorized  = ErrorCode(0x00002100)
 	ErrorCodeInvalid       = ErrorCode(0x00002200)
@@ -227,6 +463,32 @@ const (
 	ErrorCodeAlreadyExists = ErrorCode(0x00002400)
 	ErrorCodeUnprepared    = ErrorCode(0x00002500)
 )
+
+func (c ErrorCode) IsValid() bool {
+	switch c {
+	case ErrorCodeServerError:
+	case ErrorCodeProtocolError:
+	case ErrorCodeAuthenticationError:
+	case ErrorCodeUnavailable:
+	case ErrorCodeOverloaded:
+	case ErrorCodeIsBootstrapping:
+	case ErrorCodeTruncateError:
+	case ErrorCodeWriteTimeout:
+	case ErrorCodeReadTimeout:
+	case ErrorCodeReadFailure:
+	case ErrorCodeFunctionFailure:
+	case ErrorCodeWriteFailure:
+	case ErrorCodeSyntaxError:
+	case ErrorCodeUnauthorized:
+	case ErrorCodeInvalid:
+	case ErrorCodeConfigError:
+	case ErrorCodeAlreadyExists:
+	case ErrorCodeUnprepared:
+	default:
+		return false
+	}
+	return true
+}
 
 func (c ErrorCode) IsFatalError() bool {
 	switch c {
@@ -312,7 +574,7 @@ func (c ErrorCode) String() string {
 	return fmt.Sprintf("ErrorCode ? [%#.8X]", uint32(c))
 }
 
-// Corresponds to protocol section 3 [consistency]
+// ConsistencyLevel corresponds to protocol section 3 [consistency] data type.
 type ConsistencyLevel uint16
 
 const (
@@ -329,6 +591,25 @@ const (
 	ConsistencyLevelLocalOne    = ConsistencyLevel(0x000A)
 )
 
+func (c ConsistencyLevel) IsValid() bool {
+	switch c {
+	case ConsistencyLevelAny:
+	case ConsistencyLevelOne:
+	case ConsistencyLevelTwo:
+	case ConsistencyLevelThree:
+	case ConsistencyLevelQuorum:
+	case ConsistencyLevelAll:
+	case ConsistencyLevelLocalQuorum:
+	case ConsistencyLevelEachQuorum:
+	case ConsistencyLevelSerial:
+	case ConsistencyLevelLocalSerial:
+	case ConsistencyLevelLocalOne:
+	default:
+		return false
+	}
+	return true
+}
+
 func (c ConsistencyLevel) IsSerial() bool {
 	switch c {
 	case ConsistencyLevelSerial:
@@ -339,10 +620,44 @@ func (c ConsistencyLevel) IsSerial() bool {
 	return true
 }
 
+func (c ConsistencyLevel) IsNonSerial() bool {
+	switch c {
+	case ConsistencyLevelAny:
+	case ConsistencyLevelOne:
+	case ConsistencyLevelTwo:
+	case ConsistencyLevelThree:
+	case ConsistencyLevelQuorum:
+	case ConsistencyLevelAll:
+	case ConsistencyLevelLocalQuorum:
+	case ConsistencyLevelEachQuorum:
+	case ConsistencyLevelLocalOne:
+	default:
+		return false
+	}
+	return true
+}
+
 func (c ConsistencyLevel) IsLocal() bool {
 	switch c {
+	case ConsistencyLevelLocalQuorum:
 	case ConsistencyLevelLocalSerial:
 	case ConsistencyLevelLocalOne:
+	default:
+		return false
+	}
+	return true
+}
+
+func (c ConsistencyLevel) IsNonLocal() bool {
+	switch c {
+	case ConsistencyLevelAny:
+	case ConsistencyLevelOne:
+	case ConsistencyLevelTwo:
+	case ConsistencyLevelThree:
+	case ConsistencyLevelQuorum:
+	case ConsistencyLevelAll:
+	case ConsistencyLevelEachQuorum:
+	case ConsistencyLevelSerial:
 	default:
 		return false
 	}
@@ -385,9 +700,25 @@ const (
 	WriteTypeUnloggedBatch = WriteType("UNLOGGED_BATCH")
 	WriteTypeCounter       = WriteType("COUNTER")
 	WriteTypeBatchLog      = WriteType("BATCH_LOG")
+	WriteTypeCas           = WriteType("CAS")
 	WriteTypeView          = WriteType("VIEW")
 	WriteTypeCdc           = WriteType("CDC")
 )
+
+func (t WriteType) IsValid() bool {
+	switch t {
+	case WriteTypeSimple:
+	case WriteTypeBatch:
+	case WriteTypeUnloggedBatch:
+	case WriteTypeCounter:
+	case WriteTypeBatchLog:
+	case WriteTypeView:
+	case WriteTypeCdc:
+	default:
+		return false
+	}
+	return true
+}
 
 type DataTypeCode uint16
 
@@ -409,11 +740,11 @@ const (
 	DataTypeCodeVarint    = DataTypeCode(0x000E)
 	DataTypeCodeTimeuuid  = DataTypeCode(0x000F)
 	DataTypeCodeInet      = DataTypeCode(0x0010)
-	DataTypeCodeDate      = DataTypeCode(0x0011)
-	DataTypeCodeTime      = DataTypeCode(0x0012)
-	DataTypeCodeSmallint  = DataTypeCode(0x0013)
-	DataTypeCodeTinyint   = DataTypeCode(0x0014)
-	DataTypeCodeDuration  = DataTypeCode(0x0015) //v5, DSE v1 and DSE v2
+	DataTypeCodeDate      = DataTypeCode(0x0011) // v4+
+	DataTypeCodeTime      = DataTypeCode(0x0012) // v4+
+	DataTypeCodeSmallint  = DataTypeCode(0x0013) // v4+
+	DataTypeCodeTinyint   = DataTypeCode(0x0014) // v4+
+	DataTypeCodeDuration  = DataTypeCode(0x0015) // v5, DSE v1 and DSE v2
 	DataTypeCodeList      = DataTypeCode(0x0020)
 	DataTypeCodeMap       = DataTypeCode(0x0021)
 	DataTypeCodeSet       = DataTypeCode(0x0022)
@@ -421,8 +752,43 @@ const (
 	DataTypeCodeTuple     = DataTypeCode(0x0031) // v3+
 )
 
+func (c DataTypeCode) IsValid() bool {
+	switch c {
+	case DataTypeCodeAscii:
+	case DataTypeCodeBigint:
+	case DataTypeCodeBlob:
+	case DataTypeCodeBoolean:
+	case DataTypeCodeCounter:
+	case DataTypeCodeDecimal:
+	case DataTypeCodeDouble:
+	case DataTypeCodeFloat:
+	case DataTypeCodeInt:
+	case DataTypeCodeText:
+	case DataTypeCodeTimestamp:
+	case DataTypeCodeUuid:
+	case DataTypeCodeVarchar:
+	case DataTypeCodeVarint:
+	case DataTypeCodeTimeuuid:
+	case DataTypeCodeInet:
+	case DataTypeCodeDate:
+	case DataTypeCodeTime:
+	case DataTypeCodeSmallint:
+	case DataTypeCodeTinyint:
+	case DataTypeCodeDuration:
+	case DataTypeCodeList:
+	case DataTypeCodeMap:
+	case DataTypeCodeSet:
+	case DataTypeCodeUdt:
+	case DataTypeCodeTuple:
+	default:
+		return false
+	}
+	return true
+}
+
 func (c DataTypeCode) IsPrimitive() bool {
 	switch c {
+	case DataTypeCodeCustom:
 	case DataTypeCodeAscii:
 	case DataTypeCodeBigint:
 	case DataTypeCodeBlob:
@@ -518,6 +884,17 @@ const (
 	EventTypeSchemaChange   = EventType("SCHEMA_CHANGE")
 )
 
+func (e EventType) IsValid() bool {
+	switch e {
+	case EventTypeSchemaChange:
+	case EventTypeTopologyChange:
+	case EventTypeStatusChange:
+	default:
+		return false
+	}
+	return true
+}
+
 type SchemaChangeType string
 
 const (
@@ -525,6 +902,17 @@ const (
 	SchemaChangeTypeUpdated = SchemaChangeType("UPDATED")
 	SchemaChangeTypeDropped = SchemaChangeType("DROPPED")
 )
+
+func (t SchemaChangeType) IsValid() bool {
+	switch t {
+	case SchemaChangeTypeCreated:
+	case SchemaChangeTypeUpdated:
+	case SchemaChangeTypeDropped:
+	default:
+		return false
+	}
+	return true
+}
 
 type SchemaChangeTarget string
 
@@ -536,6 +924,19 @@ const (
 	SchemaChangeTargetAggregate = SchemaChangeTarget("AGGREGATE") // v3+
 )
 
+func (t SchemaChangeTarget) IsValid() bool {
+	switch t {
+	case SchemaChangeTargetKeyspace:
+	case SchemaChangeTargetTable:
+	case SchemaChangeTargetType:
+	case SchemaChangeTargetFunction:
+	case SchemaChangeTargetAggregate:
+	default:
+		return false
+	}
+	return true
+}
+
 type TopologyChangeType string
 
 const (
@@ -544,12 +945,33 @@ const (
 	TopologyChangeTypeMovedNode   = TopologyChangeType("MOVED_NODE") // v3+
 )
 
+func (t TopologyChangeType) IsValid() bool {
+	switch t {
+	case TopologyChangeTypeNewNode:
+	case TopologyChangeTypeRemovedNode:
+	case TopologyChangeTypeMovedNode:
+	default:
+		return false
+	}
+	return true
+}
+
 type StatusChangeType string
 
 const (
 	StatusChangeTypeUp   = StatusChangeType("UP")
 	StatusChangeTypeDown = StatusChangeType("DOWN")
 )
+
+func (t StatusChangeType) IsValid() bool {
+	switch t {
+	case StatusChangeTypeUp:
+	case StatusChangeTypeDown:
+	default:
+		return false
+	}
+	return true
+}
 
 type BatchType uint8
 
@@ -558,6 +980,17 @@ const (
 	BatchTypeUnlogged = BatchType(0x01)
 	BatchTypeCounter  = BatchType(0x02)
 )
+
+func (t BatchType) IsValid() bool {
+	switch t {
+	case BatchTypeLogged:
+	case BatchTypeUnlogged:
+	case BatchTypeCounter:
+	default:
+		return false
+	}
+	return true
+}
 
 func (t BatchType) String() string {
 	switch t {
@@ -577,6 +1010,16 @@ const (
 	BatchChildTypeQueryString = BatchChildType(0x00)
 	BatchChildTypePreparedId  = BatchChildType(0x01)
 )
+
+func (t BatchChildType) IsValid() bool {
+	switch t {
+	case BatchChildTypeQueryString:
+	case BatchChildTypePreparedId:
+	default:
+		return false
+	}
+	return true
+}
 
 func (t BatchChildType) String() string {
 	switch t {
@@ -626,7 +1069,7 @@ func (f HeaderFlag) String() string {
 	return fmt.Sprintf("HeaderFlag ? [%#.2X %#.8b]", uint8(f), uint8(f))
 }
 
-// Note: QueryFlag was encoded as [byte] in v3 and v4, but changed to [int] in v5
+// QueryFlag was encoded as [byte] in v3 and v4, but changed to [int] in v5.
 type QueryFlag uint32
 
 const (
@@ -639,7 +1082,10 @@ const (
 	QueryFlagValueNames        = QueryFlag(0x00000040)
 	QueryFlagWithKeyspace      = QueryFlag(0x00000080) // protocol v5+ and DSE v2
 	QueryFlagNowInSeconds      = QueryFlag(0x00000100) // protocol v5+
-	// DSE-specific flags
+)
+
+// DSE-specific query flags
+const (
 	QueryFlagDsePageSizeBytes               = QueryFlag(0x40000000) // DSE v1+
 	QueryFlagDseWithContinuousPagingOptions = QueryFlag(0x80000000) // DSE v1+
 )
@@ -691,7 +1137,10 @@ const (
 	RowsFlagHasMorePages     = RowsFlag(0x00000002)
 	RowsFlagNoMetadata       = RowsFlag(0x00000004)
 	RowsFlagMetadataChanged  = RowsFlag(0x00000008)
-	// DSE-specific flags
+)
+
+// DSE-specific rows flags
+const (
 	RowsFlagDseContinuousPaging   = RowsFlag(0x40000000) // DSE v1+
 	RowsFlagDseLastContinuousPage = RowsFlag(0x80000000) // DSE v1+
 )
@@ -786,6 +1235,16 @@ const (
 	DseRevisionTypeMoreContinuousPages    = DseRevisionType(0x00000002) // DSE v2+
 )
 
+func (t DseRevisionType) IsValid() bool {
+	switch t {
+	case DseRevisionTypeCancelContinuousPaging:
+	case DseRevisionTypeMoreContinuousPages:
+	default:
+		return false
+	}
+	return true
+}
+
 func (t DseRevisionType) String() string {
 	switch t {
 	case DseRevisionTypeCancelContinuousPaging:
@@ -808,6 +1267,21 @@ const (
 	FailureCodeKeyspaceNotFound      = FailureCode(0x0006)
 )
 
+func (c FailureCode) IsValid() bool {
+	switch c {
+	case FailureCodeUnknown:
+	case FailureCodeTooManyTombstonesRead:
+	case FailureCodeIndexNotAvailable:
+	case FailureCodeCdcSpaceFull:
+	case FailureCodeCounterWrite:
+	case FailureCodeTableNotFound:
+	case FailureCodeKeyspaceNotFound:
+	default:
+		return false
+	}
+	return true
+}
+
 func (c FailureCode) String() string {
 	switch c {
 	case FailureCodeUnknown:
@@ -826,4 +1300,23 @@ func (c FailureCode) String() string {
 		return "FailureCode KeyspaceNotFound [0x0006]"
 	}
 	return fmt.Sprintf("FailureCode ? [%#.4X]", uint16(c))
+}
+
+type Compression string
+
+const (
+	CompressionNone   Compression = "NONE"
+	CompressionLz4    Compression = "LZ4"
+	CompressionSnappy Compression = "SNAPPY"
+)
+
+func (c Compression) IsValid() bool {
+	switch c {
+	case CompressionNone:
+	case CompressionLz4:
+	case CompressionSnappy:
+	default:
+		return false
+	}
+	return true
 }

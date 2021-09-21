@@ -36,23 +36,25 @@ func TestRemoteServerNoAuth(t *testing.T) {
 	if !remoteAvailable {
 		t.Skip("No remote cluster available")
 	}
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 
 			for genName, generator := range streamIdGenerators {
 				t.Run(fmt.Sprintf("generator %v", genName), func(t *testing.T) {
 
-					for compressor, frameCodec := range codecs {
-						t.Run(fmt.Sprintf("compression %v", compressor), func(t *testing.T) {
+					for _, compression := range compressions {
+						if version.SupportsCompression(compression) {
+							t.Run(fmt.Sprintf("%v", compression), func(t *testing.T) {
 
-							clt := client.NewCqlClient("127.0.0.1:9042", nil)
-							clt.Codec = frameCodec
-							if version <= primitive.ProtocolVersion2 {
-								clt.MaxInFlight = math.MaxInt8
-							}
-							clientTest(t, clt, version, generator, compressor != "NONE", version.IsDse())
+								clt := client.NewCqlClient("127.0.0.1:9042", nil)
+								clt.Compression = compression
+								if version <= primitive.ProtocolVersion2 {
+									clt.MaxInFlight = math.MaxInt8
+								}
+								clientTest(t, clt, version, generator, compression != primitive.CompressionNone, version.IsDse())
 
-						})
+							})
+						}
 					}
 				})
 			}
@@ -65,23 +67,25 @@ func TestRemoteServerAuth(t *testing.T) {
 	if !remoteAvailable {
 		t.Skip("No remote cluster available")
 	}
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 
 			for genName, generator := range streamIdGenerators {
 				t.Run(fmt.Sprintf("generator %v", genName), func(t *testing.T) {
 
-					for compressor, frameCodec := range codecs {
-						t.Run(fmt.Sprintf("compression %v", compressor), func(t *testing.T) {
+					for _, compression := range compressions {
+						if version.SupportsCompression(compression) {
+							t.Run(fmt.Sprintf("%v", compression), func(t *testing.T) {
 
-							clt := client.NewCqlClient(
-								"127.0.0.1:9042",
-								&client.AuthCredentials{Username: "cassandra", Password: "cassandra"},
-							)
-							clt.Codec = frameCodec
+								clt := client.NewCqlClient(
+									"127.0.0.1:9042",
+									&client.AuthCredentials{Username: "cassandra", Password: "cassandra"},
+								)
+								clt.Compression = compression
 
-							clientTest(t, clt, version, generator, compressor != "NONE", version.IsDse())
-						})
+								clientTest(t, clt, version, generator, compression != primitive.CompressionNone, version.IsDse())
+							})
+						}
 					}
 				})
 			}
@@ -104,9 +108,10 @@ func clientTest(
 	clt.EventHandlers = []client.EventHandler{checkEventsReceived(t, &eventsCount, ks, table)}
 
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	clientConn, err := clt.ConnectAndInit(ctx, version, generator(1, version))
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.False(t, clientConn.IsClosed())
 
 	registerForSchemaChanges(t, clientConn, version, generator, compress)
@@ -124,6 +129,9 @@ func clientTest(
 	if continuousPaging {
 		retrieveDataContinuousPaging(t, clientConn, ks, table, version, generator, compress)
 	}
+
+	truncate(t, clientConn, ks, table, version, generator, compress)
+	insertAndRetrieveLargeData(t, clientConn, ks, table, version, generator, compress)
 
 	dropSchema(t, clientConn, ks, version, generator, compress)
 	checkEventsByChannel(t, clientConn)
@@ -165,7 +173,7 @@ func checkEventsByChannel(t *testing.T, clientConn *client.CqlClientConnection) 
 	table := 0
 	for i := 0; i < 4; i++ {
 		event, err := clientConn.ReceiveEvent()
-		require.Nil(t, err)
+		require.NoError(t, err)
 		assert.EqualValues(t, -1, event.Header.StreamId)
 		assert.IsType(t, &message.SchemaChangeEvent{}, event.Body.Message)
 		sce := event.Body.Message.(*message.SchemaChangeEvent)
@@ -202,7 +210,7 @@ func registerForSchemaChanges(
 	)
 	request.SetCompress(compress)
 	response, err := clientConn.SendAndReceive(request)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.IsType(t, &message.Ready{}, response.Body.Message)
 }
 
@@ -226,7 +234,7 @@ func createSchema(
 	)
 	request.SetCompress(compress)
 	response, err := clientConn.SendAndReceive(request)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.IsType(t, &message.SchemaChangeResult{}, response.Body.Message)
 	result := response.Body.Message.(*message.SchemaChangeResult)
 	require.Equal(t, result.ChangeType, primitive.SchemaChangeTypeCreated)
@@ -243,13 +251,35 @@ func createSchema(
 	)
 	request.SetCompress(compress)
 	response, err = clientConn.SendAndReceive(request)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.IsType(t, &message.SchemaChangeResult{}, response.Body.Message)
 	result = response.Body.Message.(*message.SchemaChangeResult)
 	require.Equal(t, result.ChangeType, primitive.SchemaChangeTypeCreated)
 	require.Equal(t, result.Target, primitive.SchemaChangeTargetTable)
 	require.Equal(t, result.Keyspace, ks)
 	require.Equal(t, result.Object, table)
+}
+
+func truncate(
+	t *testing.T,
+	clientConn *client.CqlClientConnection,
+	ks string,
+	table string,
+	version primitive.ProtocolVersion,
+	generator func(int, primitive.ProtocolVersion) int16,
+	compress bool,
+) {
+	request := frame.NewFrame(
+		version,
+		generator(1, version),
+		&message.Query{
+			Query: fmt.Sprintf("TRUNCATE %s.%s", ks, table),
+		},
+	)
+	request.SetCompress(compress)
+	response, err := clientConn.SendAndReceive(request)
+	require.NoError(t, err)
+	require.IsType(t, &message.VoidResult{}, response.Body.Message)
 }
 
 func dropSchema(
@@ -269,7 +299,7 @@ func dropSchema(
 	)
 	request.SetCompress(compress)
 	response, err := clientConn.SendAndReceive(request)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.IsType(t, &message.SchemaChangeResult{}, response.Body.Message)
 	result := response.Body.Message.(*message.SchemaChangeResult)
 	require.Equal(t, result.ChangeType, primitive.SchemaChangeTypeDropped)
@@ -316,7 +346,7 @@ func insertData(
 				)
 				request.SetCompress(compress)
 				response, err := clientConn.SendAndReceive(request)
-				require.Nil(t, err)
+				require.NoError(t, err)
 				require.IsType(t, &message.VoidResult{}, response.Body.Message)
 			}
 		}(i)
@@ -364,7 +394,7 @@ func insertDataPrepared(
 				)
 				request.SetCompress(compress)
 				response, err := clientConn.SendAndReceive(request)
-				require.Nil(t, err)
+				require.NoError(t, err)
 				require.IsType(t, &message.VoidResult{}, response.Body.Message)
 			}
 		}(i)
@@ -413,7 +443,7 @@ func insertDataBatch(
 			)
 			request.SetCompress(compress)
 			response, err := clientConn.SendAndReceive(request)
-			require.Nil(t, err)
+			require.NoError(t, err)
 			require.IsType(t, &message.VoidResult{}, response.Body.Message)
 		}(i)
 	}
@@ -462,7 +492,7 @@ func insertDataBatchPrepared(
 			)
 			request.SetCompress(compress)
 			response, err := clientConn.SendAndReceive(request)
-			require.Nil(t, err)
+			require.NoError(t, err)
 			require.IsType(t, &message.VoidResult{}, response.Body.Message)
 
 		}(i)
@@ -505,7 +535,7 @@ func retrieveData(
 				)
 				request.SetCompress(compress)
 				response, err := clientConn.SendAndReceive(request)
-				require.Nil(t, err)
+				require.NoError(t, err)
 				require.IsType(t, &message.RowsResult{}, response.Body.Message)
 				result := response.Body.Message.(*message.RowsResult)
 				require.Len(t, result.Data, 1)
@@ -558,7 +588,7 @@ func retrieveDataPrepared(
 				)
 				request.SetCompress(compress)
 				response, err := clientConn.SendAndReceive(request)
-				require.Nil(t, err)
+				require.NoError(t, err)
 				require.IsType(t, &message.RowsResult{}, response.Body.Message)
 				result := response.Body.Message.(*message.RowsResult)
 				require.Len(t, result.Data, 1)
@@ -598,11 +628,11 @@ func retrieveDataContinuousPaging(
 	request.SetCompress(compress)
 
 	ch, err := clientConn.Send(request)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	for i := 1; i <= 5; i++ {
 		f, err := clientConn.Receive(ch)
-		require.Nil(t, err)
+		require.NoError(t, err)
 		require.NotNil(t, f)
 		require.IsType(t, &message.RowsResult{}, f.Body.Message)
 		result := f.Body.Message.(*message.RowsResult)
@@ -622,7 +652,7 @@ func retrieveDataContinuousPaging(
 	request.SetCompress(compress)
 
 	response, err := clientConn.SendAndReceive(request)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.IsType(t, &message.RowsResult{}, response.Body.Message)
 	result := response.Body.Message.(*message.RowsResult)
 	require.Len(t, result.Data, 1)
@@ -650,7 +680,7 @@ func prepareInsert(
 	)
 	request.SetCompress(compress)
 	response, err := clientConn.SendAndReceive(request)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.IsType(t, &message.PreparedResult{}, response.Body.Message)
 	prepared := response.Body.Message.(*message.PreparedResult)
 	assert.Len(t, prepared.VariablesMetadata.Columns, 3)
@@ -692,7 +722,7 @@ func prepareSelect(
 	)
 	request.SetCompress(compress)
 	response, err := clientConn.SendAndReceive(request)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.IsType(t, &message.PreparedResult{}, response.Body.Message)
 	prepared := response.Body.Message.(*message.PreparedResult)
 	assert.Len(t, prepared.VariablesMetadata.Columns, 2)
@@ -714,4 +744,59 @@ func prepareSelect(
 	assert.Equal(t, "v", prepared.ResultMetadata.Columns[0].Name)
 	assert.Equal(t, datatype.Int, prepared.ResultMetadata.Columns[0].Type)
 	return prepared
+}
+
+func insertAndRetrieveLargeData(
+	t *testing.T,
+	clientConn *client.CqlClientConnection,
+	ks string,
+	table string,
+	version primitive.ProtocolVersion,
+	generator func(int, primitive.ProtocolVersion) int16,
+	compress bool,
+) {
+	// generate enough data to trigger a multi-segment response in protocol v5
+	for i := 1; i <= 10000; i++ {
+		pk := make([]byte, 4)
+		cc := make([]byte, 4)
+		v := make([]byte, 4)
+		binary.BigEndian.PutUint32(pk, uint32(i))
+		binary.BigEndian.PutUint32(cc, uint32(i))
+		binary.BigEndian.PutUint32(v, uint32(i))
+		request := frame.NewFrame(
+			version,
+			generator(i, version),
+			&message.Query{
+				Query: fmt.Sprintf("INSERT INTO %s.%s (pk, cc, v) VALUES (?,?,?)", ks, table),
+				Options: &message.QueryOptions{
+					Consistency: primitive.ConsistencyLevelOne,
+					PositionalValues: []*primitive.Value{
+						primitive.NewValue(pk),
+						primitive.NewValue(cc),
+						primitive.NewValue(v),
+					},
+				},
+			},
+		)
+		request.SetCompress(compress)
+		response, err := clientConn.SendAndReceive(request)
+		require.NoError(t, err)
+		require.IsType(t, &message.VoidResult{}, response.Body.Message)
+	}
+	request := frame.NewFrame(
+		version,
+		generator(1, version),
+		&message.Query{
+			Query: fmt.Sprintf("SELECT * FROM %s.%s", ks, table),
+			Options: &message.QueryOptions{
+				Consistency: primitive.ConsistencyLevelOne,
+			},
+		},
+	)
+	request.SetCompress(compress)
+	response, err := clientConn.SendAndReceive(request)
+	require.NoError(t, err)
+	require.IsType(t, &message.RowsResult{}, response.Body.Message)
+	result := response.Body.Message.(*message.RowsResult)
+	require.Len(t, result.Data, 10000)
 }

@@ -80,7 +80,7 @@ func testFullSystemLocal(t *testing.T, clientConn *client.CqlClientConnection) {
 
 	response, err := clientConn.SendAndReceive(fullSystemLocalQuery)
 	require.NotNil(t, response)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, primitive.OpCodeResult, response.Header.OpCode)
 	require.IsType(t, &message.RowsResult{}, response.Body.Message)
 
@@ -102,7 +102,7 @@ func testSchemaVersion(t *testing.T, clientConn *client.CqlClientConnection) {
 
 	response, err := clientConn.SendAndReceive(schemaVersionQuery)
 	require.NotNil(t, response)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, primitive.OpCodeResult, response.Header.OpCode)
 	require.IsType(t, &message.RowsResult{}, response.Body.Message)
 
@@ -112,7 +112,7 @@ func testSchemaVersion(t *testing.T, clientConn *client.CqlClientConnection) {
 
 	column := rowsResult.Data[0][0]
 	_, err = primitive.ReadUuid(bytes.NewBuffer(column))
-	require.Nil(t, err)
+	require.NoError(t, err)
 }
 
 func testClusterName(t *testing.T, clientConn *client.CqlClientConnection) {
@@ -126,7 +126,7 @@ func testClusterName(t *testing.T, clientConn *client.CqlClientConnection) {
 
 	response, err := clientConn.SendAndReceive(clusterNameQuery)
 	require.NotNil(t, response)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, primitive.OpCodeResult, response.Header.OpCode)
 	require.IsType(t, &message.RowsResult{}, response.Body.Message)
 
@@ -149,7 +149,7 @@ func testSystemPeers(t *testing.T, clientConn *client.CqlClientConnection) {
 
 	response, err := clientConn.SendAndReceive(systemPeersQuery)
 	require.NotNil(t, response)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, primitive.OpCodeResult, response.Header.OpCode)
 	require.IsType(t, &message.RowsResult{}, response.Body.Message)
 

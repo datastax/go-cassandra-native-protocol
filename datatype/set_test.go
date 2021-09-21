@@ -41,7 +41,7 @@ func TestSetTypeClone(t *testing.T) {
 }
 
 func TestWriteSetType(t *testing.T) {
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -80,7 +80,7 @@ func TestWriteSetType(t *testing.T) {
 }
 
 func TestLengthOfSetType(t *testing.T) {
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -106,7 +106,7 @@ func TestLengthOfSetType(t *testing.T) {
 }
 
 func TestReadSetType(t *testing.T) {
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string

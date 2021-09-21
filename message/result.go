@@ -305,7 +305,7 @@ func (c *resultCodec) Encode(msg Message, dest io.Writer, version primitive.Prot
 		} else if err = primitive.WriteShortBytes(p.PreparedQueryId, dest); err != nil {
 			return fmt.Errorf("cannot write RESULT Prepared prepared query id: %w", err)
 		}
-		if hasResultMetadataId(version) {
+		if version.SupportsResultMetadataId() {
 			if len(p.ResultMetadataId) == 0 {
 				return errors.New("cannot write empty RESULT Prepared result metadata id")
 			} else if err = primitive.WriteShortBytes(p.ResultMetadataId, dest); err != nil {
@@ -391,7 +391,7 @@ func (c *resultCodec) EncodedLength(msg Message, version primitive.ProtocolVersi
 			return -1, fmt.Errorf("expected *message.PreparedResult, got %T", msg)
 		}
 		length += primitive.LengthOfShortBytes(p.PreparedQueryId)
-		if hasResultMetadataId(version) {
+		if version.SupportsResultMetadataId() {
 			length += primitive.LengthOfShortBytes(p.ResultMetadataId)
 		}
 		if lengthOfMetadata, err := lengthOfVariablesMetadata(p.VariablesMetadata, version); err != nil {
@@ -502,7 +502,7 @@ func (c *resultCodec) Decode(source io.Reader, version primitive.ProtocolVersion
 		if p.PreparedQueryId, err = primitive.ReadShortBytes(source); err != nil {
 			return nil, fmt.Errorf("cannot read RESULT Prepared prepared query id: %w", err)
 		}
-		if hasResultMetadataId(version) {
+		if version.SupportsResultMetadataId() {
 			if p.ResultMetadataId, err = primitive.ReadShortBytes(source); err != nil {
 				return nil, fmt.Errorf("cannot read RESULT Prepared result metadata id: %w", err)
 			}
@@ -540,11 +540,6 @@ func (c *resultCodec) Decode(source io.Reader, version primitive.ProtocolVersion
 
 func (c *resultCodec) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeResult
-}
-
-func hasResultMetadataId(version primitive.ProtocolVersion) bool {
-	return version >= primitive.ProtocolVersion5 &&
-		version != primitive.ProtocolVersionDse1
 }
 
 func cloneRowSet(o RowSet) RowSet {

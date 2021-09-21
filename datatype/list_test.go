@@ -41,7 +41,7 @@ func TestListTypeClone(t *testing.T) {
 }
 
 func TestWriteListType(t *testing.T) {
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -80,7 +80,7 @@ func TestWriteListType(t *testing.T) {
 }
 
 func TestLengthOfListType(t *testing.T) {
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -106,7 +106,7 @@ func TestLengthOfListType(t *testing.T) {
 }
 
 func TestReadListType(t *testing.T) {
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string

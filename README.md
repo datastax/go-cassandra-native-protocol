@@ -8,8 +8,7 @@ Go.
 
 It currently supports:
 
-- Cassandra CQL protocol versions 3 and 4. Protocol version 5 is still in beta status at the time of writing,
-and support for it is provided as a preview (but it is very likely subject to future changes).
+- Cassandra CQL protocol versions 2 to 5.
 - DSE (DataStax Enterprise) protocol versions 1 and 2.
 
 This project originated as an attempt to port the DataStax Cassandra Java driver's 

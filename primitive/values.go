@@ -28,7 +28,7 @@ const (
 	ValueTypeUnset   = ValueType(-2)
 )
 
-// Models the [value] protocol primitive structure
+// Value models the [value] protocol primitive structure
 type Value struct {
 	Type     ValueType
 	Contents []byte

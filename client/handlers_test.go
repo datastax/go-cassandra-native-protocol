@@ -29,6 +29,7 @@ import (
 func TestHeartbeatHandler(t *testing.T) {
 
 	server, clientConn, cancelFn := createServerAndClient(t, client.HeartbeatHandler)
+	defer cancelFn()
 
 	testHeartbeat(t, clientConn)
 
@@ -45,6 +46,7 @@ func TestSetKeyspaceHandler(t *testing.T) {
 		onKeyspaceSetCalled = true
 	}
 	server, clientConn, cancelFn := createServerAndClient(t, client.NewSetKeyspaceHandler(onKeyspaceSet))
+	defer cancelFn()
 
 	testUseQuery(t, clientConn)
 	require.True(t, onKeyspaceSetCalled)
@@ -57,6 +59,7 @@ func TestSetKeyspaceHandler(t *testing.T) {
 func TestRegisterHandler(t *testing.T) {
 
 	server, clientConn, cancelFn := createServerAndClient(t, client.RegisterHandler)
+	defer cancelFn()
 
 	testRegister(t, clientConn)
 
@@ -69,6 +72,7 @@ func TestNewCompositeRequestHandler(t *testing.T) {
 
 	handler := client.NewCompositeRequestHandler(client.HeartbeatHandler, client.RegisterHandler)
 	server, clientConn, cancelFn := createServerAndClient(t, handler)
+	defer cancelFn()
 
 	testHeartbeat(t, clientConn)
 	testRegister(t, clientConn)
@@ -85,9 +89,10 @@ func TestNewDriverConnectionInitializationHandler(t *testing.T) {
 	}
 	handler := client.NewDriverConnectionInitializationHandler("cluster_test", "datacenter_test", onKeyspaceSet)
 	server, clientConn, cancelFn := createServerAndClient(t, handler)
+	defer cancelFn()
 
 	err := clientConn.InitiateHandshake(primitive.ProtocolVersion4, client.ManagedStreamId)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	testHeartbeat(t, clientConn)
 	testRegister(t, clientConn)
@@ -108,9 +113,9 @@ func createServerAndClient(t *testing.T, handlers ...client.RequestHandler) (*cl
 	clt := client.NewCqlClient("127.0.0.1:9043", nil)
 	ctx, cancelFn := context.WithCancel(context.Background())
 	err := server.Start(ctx)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	clientConn, err := clt.Connect(ctx)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, clientConn)
 	return server, clientConn, cancelFn
 }
@@ -128,8 +133,8 @@ func testHeartbeat(t *testing.T, clientConn *client.CqlClientConnection) {
 	)
 	for i := 0; i < 100; i++ {
 		response, err := clientConn.SendAndReceive(heartbeat)
+		require.NoError(t, err)
 		require.NotNil(t, response)
-		require.Nil(t, err)
 		require.Equal(t, primitive.OpCodeSupported, response.Header.OpCode)
 		require.IsType(t, &message.Supported{}, response.Body.Message)
 	}
@@ -142,8 +147,8 @@ func testUseQuery(t *testing.T, clientConn *client.CqlClientConnection) {
 		&message.Query{Query: " USE \n ks1 "},
 	)
 	response, err := clientConn.SendAndReceive(useQuery)
+	require.NoError(t, err)
 	require.NotNil(t, response)
-	require.Nil(t, err)
 	require.Equal(t, primitive.OpCodeResult, response.Header.OpCode)
 	require.IsType(t, &message.SetKeyspaceResult{}, response.Body.Message)
 	result := response.Body.Message.(*message.SetKeyspaceResult)
@@ -157,8 +162,8 @@ func testRegister(t *testing.T, clientConn *client.CqlClientConnection) {
 		&message.Register{EventTypes: []primitive.EventType{primitive.EventTypeSchemaChange, primitive.EventTypeTopologyChange}},
 	)
 	response, err := clientConn.SendAndReceive(register)
+	require.NoError(t, err)
 	require.NotNil(t, response)
-	require.Nil(t, err)
 	require.Equal(t, primitive.OpCodeReady, response.Header.OpCode)
 	require.IsType(t, &message.Ready{}, response.Body.Message)
 }

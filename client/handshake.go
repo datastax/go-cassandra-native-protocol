@@ -22,8 +22,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// Performs a handshake between the given client and server connections, using the provided protocol version. The
-// handshake will use stream id 1, unless the client connection is in managed mode.
+// PerformHandshake performs a handshake between the given client and server connections, using the provided protocol
+// version. The handshake will use stream id 1, unless the client connection is in managed mode.
 func PerformHandshake(clientConn *CqlClientConnection, serverConn *CqlServerConnection, version primitive.ProtocolVersion, streamId int16) error {
 	clientChan := make(chan error)
 	serverChan := make(chan error)
@@ -50,65 +50,68 @@ func PerformHandshake(clientConn *CqlClientConnection, serverConn *CqlServerConn
 	return nil
 }
 
-// Initiates the handshake procedure to initialize the client connection, using the given protocol version.
-// The handshake will use authentication if the connection was created with auth credentials; otherwise it will
+// InitiateHandshake initiates the handshake procedure to initialize the client connection, using the given protocol
+// version. The handshake will use authentication if the connection was created with auth credentials; otherwise it will
 // proceed without authentication. Use stream id zero to activate automatic stream id management.
 func (c *CqlClientConnection) InitiateHandshake(version primitive.ProtocolVersion, streamId int16) (err error) {
 	log.Debug().Msgf("%v: performing handshake", c)
-	startup := c.NewStartupRequest(version, streamId)
-	var response *frame.Frame
-	if response, err = c.SendAndReceive(startup); err == nil {
-		if c.credentials == nil {
-			if _, authSuccess := response.Body.Message.(*message.Ready); !authSuccess {
-				err = fmt.Errorf("expected READY, got %v", response.Body.Message)
-			}
-		} else {
-			switch msg := response.Body.Message.(type) {
-			case *message.Ready:
-				log.Warn().Msgf("%v: expected AUTHENTICATE, got READY – is authentication required?", c)
-				break
-			case *message.Authenticate:
-				authenticator := &PlainTextAuthenticator{c.credentials}
-				var initialResponse []byte
-				if initialResponse, err = authenticator.InitialResponse(msg.Authenticator); err == nil {
-					authResponse := frame.NewFrame(version, streamId, &message.AuthResponse{Token: initialResponse})
-					if response, err = c.SendAndReceive(authResponse); err != nil {
-						err = fmt.Errorf("could not send AUTH RESPONSE: %w", err)
-					} else {
-						switch msg := response.Body.Message.(type) {
-						case *message.AuthSuccess:
-							break
-						case *message.AuthChallenge:
-							var challenge []byte
-							if challenge, err = authenticator.EvaluateChallenge(msg.Token); err == nil {
-								authResponse := frame.NewFrame(version, streamId, &message.AuthResponse{Token: challenge})
-								if response, err = c.SendAndReceive(authResponse); err != nil {
-									err = fmt.Errorf("could not send AUTH RESPONSE: %w", err)
-								} else if _, authSuccess := response.Body.Message.(*message.AuthSuccess); !authSuccess {
-									err = fmt.Errorf("expected AUTH_SUCCESS, got %v", response.Body.Message)
+	if startup, err := c.NewStartupRequest(version, streamId); err != nil {
+		return err
+	} else {
+		var response *frame.Frame
+		if response, err = c.SendAndReceive(startup); err == nil {
+			if c.credentials == nil {
+				if _, authSuccess := response.Body.Message.(*message.Ready); !authSuccess {
+					err = fmt.Errorf("expected READY, got %v", response.Body.Message)
+				}
+			} else {
+				switch msg := response.Body.Message.(type) {
+				case *message.Ready:
+					log.Warn().Msgf("%v: expected AUTHENTICATE, got READY – is authentication required?", c)
+					break
+				case *message.Authenticate:
+					authenticator := &PlainTextAuthenticator{c.credentials}
+					var initialResponse []byte
+					if initialResponse, err = authenticator.InitialResponse(msg.Authenticator); err == nil {
+						authResponse := frame.NewFrame(version, streamId, &message.AuthResponse{Token: initialResponse})
+						if response, err = c.SendAndReceive(authResponse); err != nil {
+							err = fmt.Errorf("could not send AUTH RESPONSE: %w", err)
+						} else {
+							switch msg := response.Body.Message.(type) {
+							case *message.AuthSuccess:
+								break
+							case *message.AuthChallenge:
+								var challenge []byte
+								if challenge, err = authenticator.EvaluateChallenge(msg.Token); err == nil {
+									authResponse := frame.NewFrame(version, streamId, &message.AuthResponse{Token: challenge})
+									if response, err = c.SendAndReceive(authResponse); err != nil {
+										err = fmt.Errorf("could not send AUTH RESPONSE: %w", err)
+									} else if _, authSuccess := response.Body.Message.(*message.AuthSuccess); !authSuccess {
+										err = fmt.Errorf("expected AUTH_SUCCESS, got %v", response.Body.Message)
+									}
 								}
+							default:
+								err = fmt.Errorf("expected AUTH_CHALLENGE or AUTH_SUCCESS, got %v", response.Body.Message)
 							}
-						default:
-							err = fmt.Errorf("expected AUTH_CHALLENGE or AUTH_SUCCESS, got %v", response.Body.Message)
 						}
 					}
+				default:
+					err = fmt.Errorf("expected AUTHENTICATE or READY, got %v", response.Body.Message)
 				}
-			default:
-				err = fmt.Errorf("expected AUTHENTICATE or READY, got %v", response.Body.Message)
 			}
 		}
+		if err == nil {
+			log.Info().Msgf("%v: handshake successful", c)
+		} else {
+			log.Error().Err(err).Msgf("%v: handshake failed", c)
+		}
+		return err
 	}
-	if err == nil {
-		log.Info().Msgf("%v: handshake successful", c)
-	} else {
-		log.Error().Err(err).Msgf("%v: handshake failed", c)
-	}
-	return err
 }
 
-// Listens for a client STARTUP request and proceeds with the server-side handshake procedure. Authentication will be
-// required if the connection was created with auth credentials; otherwise the handshake will proceed without
-// authentication.
+// AcceptHandshake Listens for a client STARTUP request and proceeds with the server-side handshake procedure.
+// Authentication will be required if the connection was created with auth credentials; otherwise the handshake will
+// proceed without authentication.
 // This method is intended for use when server-side handshake should be triggered manually. For automatic server-side
 // handshake, consider using HandshakeHandler instead.
 func (c *CqlServerConnection) AcceptHandshake() (err error) {
@@ -175,8 +178,9 @@ const (
 	handshakeStateDone    = "DONE"
 )
 
-// A RequestHandler to handle server-side handshakes. This is an alternative to CqlServerConnection.AcceptHandshake
-// to make the server connection automatically handle all incoming handshake attempts.
+// HandshakeHandler is a RequestHandler to handle server-side handshakes. This is an alternative to
+// CqlServerConnection.AcceptHandshake to make the server connection automatically handle all incoming handshake
+// attempts.
 var HandshakeHandler RequestHandler = func(request *frame.Frame, conn *CqlServerConnection, ctx RequestHandlerContext) (response *frame.Frame) {
 	if ctx.GetAttribute(handshakeStateKey) == handshakeStateDone {
 		return
@@ -222,4 +226,14 @@ var HandshakeHandler RequestHandler = func(request *frame.Frame, conn *CqlServer
 		response = frame.NewFrame(version, id, &message.ProtocolError{ErrorMessage: "handshake failed"})
 	}
 	return
+}
+
+func isReady(f *frame.Frame) bool {
+	_, ok := f.Body.Message.(*message.Ready)
+	return ok
+}
+
+func isAuthenticate(f *frame.Frame) bool {
+	_, ok := f.Body.Message.(*message.Authenticate)
+	return ok
 }

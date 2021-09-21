@@ -148,13 +148,13 @@ func EncodeQueryOptions(options *QueryOptions, dest io.Writer, version primitive
 	if options == nil {
 		options = &QueryOptions{} // use defaults if nil provided
 	}
-	if err := primitive.CheckValidNonSerialConsistencyLevel(options.Consistency); err != nil {
+	if err := primitive.CheckValidConsistencyLevel(options.Consistency); err != nil {
 		return err
 	} else if err = primitive.WriteShort(uint16(options.Consistency), dest); err != nil {
 		return fmt.Errorf("cannot write consistency: %w", err)
 	}
 	flags := options.Flags()
-	if version >= primitive.ProtocolVersion5 {
+	if version.Uses4BytesQueryFlags() {
 		if err = primitive.WriteInt(int32(flags), dest); err != nil {
 			return fmt.Errorf("cannot write flags: %w", err)
 		}
@@ -185,7 +185,7 @@ func EncodeQueryOptions(options *QueryOptions, dest io.Writer, version primitive
 		}
 	}
 	if flags.Contains(primitive.QueryFlagSerialConsistency) {
-		if err := primitive.CheckValidSerialConsistencyLevel(options.SerialConsistency.Value); err != nil {
+		if err := primitive.CheckSerialConsistencyLevel(options.SerialConsistency.Value); err != nil {
 			return err
 		} else if err = primitive.WriteShort(uint16(options.SerialConsistency.Value), dest); err != nil {
 			return fmt.Errorf("cannot write serial consistency: %w", err)
@@ -221,7 +221,7 @@ func LengthOfQueryOptions(options *QueryOptions, version primitive.ProtocolVersi
 		options = &QueryOptions{} // use defaults if nil provided
 	}
 	length += primitive.LengthOfShort // consistency level
-	if version >= primitive.ProtocolVersion5 {
+	if version.Uses4BytesQueryFlags() {
 		length += primitive.LengthOfInt
 	} else {
 		length += primitive.LengthOfByte
@@ -278,7 +278,7 @@ func DecodeQueryOptions(source io.Reader, version primitive.ProtocolVersion) (op
 		return nil, err
 	}
 	var flags primitive.QueryFlag
-	if version >= primitive.ProtocolVersion5 {
+	if version.Uses4BytesQueryFlags() {
 		var f int32
 		f, err = primitive.ReadInt(source)
 		flags = primitive.QueryFlag(f)

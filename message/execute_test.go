@@ -26,31 +26,31 @@ func TestExecute_Clone(t *testing.T) {
 	msg := &Execute{
 		QueryId:          []byte{0x01},
 		ResultMetadataId: []byte{0x02},
-		Options:          &QueryOptions{
-			Consistency:             primitive.ConsistencyLevelAll,
-			PositionalValues:        []*primitive.Value{
+		Options: &QueryOptions{
+			Consistency: primitive.ConsistencyLevelAll,
+			PositionalValues: []*primitive.Value{
 				&primitive.Value{
 					Type:     primitive.ValueTypeRegular,
 					Contents: []byte{0x11},
 				},
 			},
-			NamedValues:             map[string]*primitive.Value{
+			NamedValues: map[string]*primitive.Value{
 				"1": &primitive.Value{
 					Type:     primitive.ValueTypeUnset,
 					Contents: []byte{0x21},
 				},
 			},
-			SkipMetadata:            false,
-			PageSize:                5,
-			PageSizeInBytes:         false,
-			PagingState:             []byte{0x33},
-			SerialConsistency:       &primitive.NillableConsistencyLevel{
+			SkipMetadata:    false,
+			PageSize:        5,
+			PageSizeInBytes: false,
+			PagingState:     []byte{0x33},
+			SerialConsistency: &primitive.NillableConsistencyLevel{
 				Value: primitive.ConsistencyLevelLocalSerial},
-			DefaultTimestamp:        &primitive.NillableInt64{
+			DefaultTimestamp: &primitive.NillableInt64{
 				Value: 1,
 			},
-			Keyspace:                "ks1",
-			NowInSeconds:            &primitive.NillableInt32{
+			Keyspace: "ks1",
+			NowInSeconds: &primitive.NillableInt32{
 				Value: 3,
 			},
 			ContinuousPagingOptions: &ContinuousPagingOptions{
@@ -67,29 +67,29 @@ func TestExecute_Clone(t *testing.T) {
 	cloned.QueryId = []byte{0x41}
 	cloned.ResultMetadataId = []byte{0x52}
 	cloned.Options = &QueryOptions{
-		Consistency:             primitive.ConsistencyLevelLocalOne,
-		PositionalValues:        []*primitive.Value{
+		Consistency: primitive.ConsistencyLevelLocalOne,
+		PositionalValues: []*primitive.Value{
 			&primitive.Value{
 				Type:     primitive.ValueTypeUnset,
 				Contents: []byte{0x21},
 			},
 		},
-		NamedValues:             map[string]*primitive.Value{
+		NamedValues: map[string]*primitive.Value{
 			"1": &primitive.Value{
 				Type:     primitive.ValueTypeNull,
 				Contents: []byte{0x31},
 			},
 		},
-		SkipMetadata:            true,
-		PageSize:                4,
-		PageSizeInBytes:         true,
-		PagingState:             []byte{0x23},
-		SerialConsistency:       nil,
-		DefaultTimestamp:        &primitive.NillableInt64{
+		SkipMetadata:      true,
+		PageSize:          4,
+		PageSizeInBytes:   true,
+		PagingState:       []byte{0x23},
+		SerialConsistency: nil,
+		DefaultTimestamp: &primitive.NillableInt64{
 			Value: 3,
 		},
-		Keyspace:                "ks2",
-		NowInSeconds:            nil,
+		Keyspace:     "ks2",
+		NowInSeconds: nil,
 		ContinuousPagingOptions: &ContinuousPagingOptions{
 			MaxPages:       6,
 			PagesPerSecond: 3,
@@ -141,7 +141,7 @@ func TestExecute_Clone(t *testing.T) {
 func TestExecuteCodec_Encode(t *testing.T) {
 	codec := &executeCodec{}
 	// tests for versions < 4
-	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
+	for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -654,7 +654,7 @@ func TestExecuteCodec_Encode(t *testing.T) {
 func TestExecuteCodec_EncodedLength(t *testing.T) {
 	codec := &executeCodec{}
 	// tests for versions < 4
-	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
+	for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -1088,7 +1088,7 @@ func TestExecuteCodec_EncodedLength(t *testing.T) {
 func TestExecuteCodec_Decode(t *testing.T) {
 	codec := &executeCodec{}
 	// tests for versions < 4
-	for _, version := range primitive.AllProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
+	for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []decodeTestCase{
 				{

@@ -24,7 +24,7 @@ import (
 
 func TestReadValue(t *testing.T) {
 	// versions < 4
-	for _, version := range AllProtocolVersionsLesserThan(ProtocolVersion4) {
+	for _, version := range SupportedProtocolVersionsLesserThan(ProtocolVersion4) {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -105,7 +105,7 @@ func TestReadValue(t *testing.T) {
 		})
 	}
 	// versions >= 4
-	for _, version := range AllProtocolVersionsGreaterThanOrEqualTo(ProtocolVersion4) {
+	for _, version := range SupportedProtocolVersionsGreaterThanOrEqualTo(ProtocolVersion4) {
 		t.Run(version.String(), func(t *testing.T) {
 			var tests = []struct {
 				name     string
@@ -189,7 +189,7 @@ func TestReadValue(t *testing.T) {
 
 func TestWriteValue(t *testing.T) {
 	// versions < 4
-	for _, version := range AllProtocolVersionsLesserThan(ProtocolVersion4) {
+	for _, version := range SupportedProtocolVersionsLesserThan(ProtocolVersion4) {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -266,7 +266,7 @@ func TestWriteValue(t *testing.T) {
 		})
 	}
 	// versions >= 4
-	for _, version := range AllProtocolVersionsGreaterThanOrEqualTo(ProtocolVersion4) {
+	for _, version := range SupportedProtocolVersionsGreaterThanOrEqualTo(ProtocolVersion4) {
 		t.Run(version.String(), func(t *testing.T) {
 			var tests = []struct {
 				name     string
@@ -416,7 +416,7 @@ func TestLengthOfValue(t *testing.T) {
 }
 
 func TestReadPositionalValues(t *testing.T) {
-	for _, version := range AllProtocolVersions() {
+	for _, version := range SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -511,7 +511,7 @@ func TestReadPositionalValues(t *testing.T) {
 
 func TestWritePositionalValues(t *testing.T) {
 	// versions < 4
-	for _, version := range AllProtocolVersionsLesserThan(ProtocolVersion4) {
+	for _, version := range SupportedProtocolVersionsLesserThan(ProtocolVersion4) {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -617,7 +617,7 @@ func TestWritePositionalValues(t *testing.T) {
 		})
 	}
 	// versions >= 4
-	for _, version := range AllProtocolVersionsGreaterThanOrEqualTo(ProtocolVersion4) {
+	for _, version := range SupportedProtocolVersionsGreaterThanOrEqualTo(ProtocolVersion4) {
 		t.Run(version.String(), func(t *testing.T) {
 			var tests = []struct {
 				name     string
@@ -823,7 +823,7 @@ func TestLengthOfPositionalValues(t *testing.T) {
 }
 
 func TestReadNamedValues(t *testing.T) {
-	for _, version := range AllProtocolVersions() {
+	for _, version := range SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -937,7 +937,7 @@ func TestReadNamedValues(t *testing.T) {
 }
 
 func TestWriteNamedValues(t *testing.T) {
-	for _, version := range AllProtocolVersions() {
+	for _, version := range SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string

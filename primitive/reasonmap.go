@@ -41,6 +41,8 @@ func ReadReasonMap(source io.Reader) ([]*FailureReason, error) {
 				return nil, fmt.Errorf("cannot read reason map key for element %d: %w", i, err)
 			} else if code, err := ReadShort(source); err != nil {
 				return nil, fmt.Errorf("cannot read reason map value for element %d: %w", i, err)
+			} else if err := CheckValidFailureCode(FailureCode(code)); err != nil {
+				return nil, err
 			} else {
 				reasonMap[i] = &FailureReason{addr, FailureCode(code)}
 			}
@@ -56,6 +58,8 @@ func WriteReasonMap(reasonMap []*FailureReason, dest io.Writer) error {
 	for i, reason := range reasonMap {
 		if err := WriteInetAddr(reason.Endpoint, dest); err != nil {
 			return fmt.Errorf("cannot write reason map key for element %d: %w", i, err)
+		} else if err := CheckValidFailureCode(reason.Code); err != nil {
+			return err
 		} else if err = WriteShort(uint16(reason.Code), dest); err != nil {
 			return fmt.Errorf("cannot write reason map value for element %d: %w", i, err)
 		}

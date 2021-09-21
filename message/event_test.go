@@ -57,7 +57,7 @@ func TestSchemaChangeEvent_Clone(t *testing.T) {
 func TestStatusChangeEvent_Clone(t *testing.T) {
 	msg := &StatusChangeEvent{
 		ChangeType: primitive.StatusChangeTypeDown,
-		Address:    &primitive.Inet{
+		Address: &primitive.Inet{
 			Addr: net.IP{0x01},
 			Port: 80,
 		},
@@ -84,7 +84,7 @@ func TestStatusChangeEvent_Clone(t *testing.T) {
 func TestTopologyChangeEvent_Clone(t *testing.T) {
 	msg := &TopologyChangeEvent{
 		ChangeType: primitive.TopologyChangeTypeNewNode,
-		Address:    &primitive.Inet{
+		Address: &primitive.Inet{
 			Addr: net.IP{0x01},
 			Port: 80,
 		},
@@ -359,7 +359,7 @@ func TestEventCodec_Encode(test *testing.T) {
 		}
 	})
 	// versions >= 4
-	for _, version := range primitive.AllProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion4) {
+	for _, version := range primitive.SupportedProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion4) {
 		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -681,7 +681,7 @@ func TestEventCodec_EncodedLength(test *testing.T) {
 		}
 	})
 	// versions >= 4
-	for _, version := range primitive.AllProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion4) {
+	for _, version := range primitive.SupportedProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion4) {
 		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -1002,7 +1002,7 @@ func TestEventCodec_Decode(test *testing.T) {
 		}
 	})
 	// versions >= 4
-	for _, version := range primitive.AllProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion4) {
+	for _, version := range primitive.SupportedProtocolVersionsGreaterThanOrEqualTo(primitive.ProtocolVersion4) {
 		test.Run(version.String(), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{

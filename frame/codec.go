@@ -33,7 +33,7 @@ type RawEncoder interface {
 	EncodeRawFrame(frame *RawFrame, dest io.Writer) error
 
 	// EncodeHeader encodes the given frame Header. This is a partial operation; after calling this method, one must
-	// call EncodeBody to encode the to fully encode the entire frame.
+	// call EncodeBody to fully encode the entire frame.
 	EncodeHeader(header *Header, dest io.Writer) error
 
 	// EncodeBody encodes the given frame Body. The body will be compressed depending on whether the Compressed flag is
@@ -87,18 +87,6 @@ type RawConverter interface {
 type Codec interface {
 	Encoder
 	Decoder
-
-	// Returns the BodyCompressor used to compress frame bodies, or nil if none is currently set.
-	GetBodyCompressor() BodyCompressor
-
-	// Sets the BodyCompressor to use to compress messages; passing nil disables compression.
-	// When encoding, in order for a frame body to be compressed, one needs to set a BodyCompressor here and then set
-	// the compression flag in the header of each individual frame to encode, before calling EncodeFrame.
-	// When decoding, the BodyCompressor will be automatically used to decode any frame that has the compression flag
-	// set in its header.
-	// Setting the body compressor may not be a thread-safe operation; it should only be done when initializing
-	// the application, not when the codec is already being used.
-	SetBodyCompressor(compressor BodyCompressor)
 }
 
 // RawCodec exposes advanced encoding and decoding operations for both Frame and RawFrame instances. It should be used
@@ -117,11 +105,20 @@ type codec struct {
 }
 
 func NewCodec(messageCodecs ...message.Codec) Codec {
-	return NewRawCodec(messageCodecs...)
+	return NewCodecWithCompression(nil, messageCodecs...)
+}
+
+func NewCodecWithCompression(compressor BodyCompressor, messageCodecs ...message.Codec) Codec {
+	return NewRawCodecWithCompression(compressor, messageCodecs...)
 }
 
 func NewRawCodec(messageCodecs ...message.Codec) RawCodec {
+	return NewRawCodecWithCompression(nil, messageCodecs...)
+}
+
+func NewRawCodecWithCompression(compressor BodyCompressor, messageCodecs ...message.Codec) RawCodec {
 	frameCodec := &codec{
+		compressor:    compressor,
 		messageCodecs: make(map[primitive.OpCode]message.Codec, len(message.DefaultMessageCodecs)+len(messageCodecs)),
 	}
 	for _, messageCodec := range message.DefaultMessageCodecs {

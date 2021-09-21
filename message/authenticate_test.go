@@ -36,7 +36,7 @@ func TestAuthenticate_Clone(t *testing.T) {
 
 func TestAuthenticateCodec_Encode(t *testing.T) {
 	codec := &authenticateCodec{}
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -72,7 +72,7 @@ func TestAuthenticateCodec_Encode(t *testing.T) {
 
 func TestAuthenticateCodec_EncodedLength(t *testing.T) {
 	codec := &authenticateCodec{}
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -107,7 +107,7 @@ func TestAuthenticateCodec_EncodedLength(t *testing.T) {
 
 func TestAuthenticateCodec_Decode(t *testing.T) {
 	codec := &authenticateCodec{}
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []decodeTestCase{
 				{

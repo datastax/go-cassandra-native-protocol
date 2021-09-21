@@ -15,10 +15,13 @@
 package client
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/datastax/go-cassandra-native-protocol/message"
+	"github.com/datastax/go-cassandra-native-protocol/segment"
 	"io"
 	"math"
 	"net"
@@ -83,8 +86,6 @@ type CqlServer struct {
 	// Credentials is the AuthCredentials to use. If nil, no authentication will be used; otherwise, clients will be
 	// required to authenticate with plain-text auth using the same credentials.
 	Credentials *AuthCredentials
-	// Codec is the frame.Codec to use; if none provided, a default codec will be used.
-	Codec frame.Codec
 	// MaxConnections is the maximum number of open client connections to accept. Must be strictly positive.
 	MaxConnections int
 	// MaxInFlight is the maximum number of in-flight requests to apply for each connection created with Accept. Must
@@ -217,7 +218,6 @@ func (server *CqlServer) acceptLoop() {
 					conn,
 					server.ctx,
 					server.Credentials,
-					server.Codec,
 					server.MaxInFlight,
 					server.IdleTimeout,
 					server.RequestHandlers,
@@ -337,26 +337,29 @@ func (server *CqlServer) BindAndInit(
 // CqlServerConnection encapsulates a TCP server connection to a remote CQL client.
 // CqlServerConnection instances should be created by calling CqlServer.Accept or CqlServer.Bind.
 type CqlServerConnection struct {
-	conn        net.Conn
-	credentials *AuthCredentials
-	codec       frame.Codec
-	idleTimeout time.Duration
-	handlers    []RequestHandler
-	handlerCtx  []RequestHandlerContext
-	incoming    chan *frame.Frame
-	outgoing    chan *frame.Frame
-	waitGroup   *sync.WaitGroup
-	closed      int32
-	onClose     func(*CqlServerConnection)
-	ctx         context.Context
-	cancel      context.CancelFunc
+	conn               net.Conn
+	credentials        *AuthCredentials
+	frameCodec         frame.Codec
+	segmentCodec       segment.Codec
+	compression        primitive.Compression
+	modernLayout       bool
+	idleTimeout        time.Duration
+	handlers           []RequestHandler
+	handlerCtx         []RequestHandlerContext
+	incoming           chan *frame.Frame
+	outgoing           chan *frame.Frame
+	waitGroup          *sync.WaitGroup
+	closed             int32
+	onClose            func(*CqlServerConnection)
+	ctx                context.Context
+	cancel             context.CancelFunc
+	payloadAccumulator *payloadAccumulator
 }
 
 func newCqlServerConnection(
 	conn net.Conn,
 	ctx context.Context,
 	credentials *AuthCredentials,
-	codec frame.Codec,
 	maxInFlight int,
 	idleTimeout time.Duration,
 	handlers []RequestHandler,
@@ -370,20 +373,21 @@ func newCqlServerConnection(
 	} else if maxInFlight > math.MaxInt16 {
 		return nil, fmt.Errorf("max in-flight: expecting <= %v, got: %v", math.MaxInt16, maxInFlight)
 	}
-	if codec == nil {
-		codec = frame.NewCodec()
-	}
+	frameCodec := frame.NewCodec()
+	segmentCodec := segment.NewCodec()
 	connection := &CqlServerConnection{
-		conn:        conn,
-		codec:       codec,
-		credentials: credentials,
-		idleTimeout: idleTimeout,
-		handlers:    handlers,
-		handlerCtx:  make([]RequestHandlerContext, len(handlers)),
-		incoming:    make(chan *frame.Frame, maxInFlight),
-		outgoing:    make(chan *frame.Frame, maxInFlight),
-		waitGroup:   &sync.WaitGroup{},
-		onClose:     onClose,
+		conn:         conn,
+		frameCodec:   frameCodec,
+		segmentCodec: segmentCodec,
+		compression:  primitive.CompressionNone,
+		credentials:  credentials,
+		idleTimeout:  idleTimeout,
+		handlers:     handlers,
+		handlerCtx:   make([]RequestHandlerContext, len(handlers)),
+		incoming:     make(chan *frame.Frame, maxInFlight),
+		outgoing:     make(chan *frame.Frame, maxInFlight),
+		waitGroup:    &sync.WaitGroup{},
+		onClose:      onClose,
 	}
 	for i := range handlers {
 		connection.handlerCtx[i] = requestHandlerContext{}
@@ -426,33 +430,14 @@ func (c *CqlServerConnection) incomingLoop() {
 	c.waitGroup.Add(1)
 	go func() {
 		abort := false
-		for !c.IsClosed() {
-			if err := c.conn.SetReadDeadline(time.Now().Add(c.idleTimeout)); err != nil {
-				if !c.IsClosed() {
-					log.Error().Err(err).Msgf("%v: error setting idle timeout, closing connection", c)
-					abort = true
-				}
-				break
-			} else if incoming, err := c.codec.DecodeFrame(c.conn); err != nil {
-				if !c.IsClosed() {
-					if errors.Is(err, io.EOF) {
-						log.Info().Msgf("%v: connection reset by peer, closing", c)
-					} else {
-						log.Error().Err(err).Msgf("%v: error reading, closing connection", c)
-					}
-					abort = true
-				}
-				break
-			} else {
-				log.Debug().Msgf("%v: received incoming frame: %v", c, incoming)
-				select {
-				case c.incoming <- incoming:
-					log.Debug().Msgf("%v: incoming frame successfully delivered: %v", c, incoming)
-				default:
-					log.Error().Msgf("%v: incoming frames queue is full, discarding frame: %v", c, incoming)
-				}
-				if len(c.handlers) > 0 {
-					c.invokeRequestHandlers(incoming)
+		for !abort && !c.IsClosed() {
+			if abort = c.setIdleTimeout(); !abort {
+				if source, err := c.waitForIncomingData(); err != nil {
+					abort = c.reportConnectionFailure(err, true)
+				} else if c.modernLayout {
+					abort = c.readSegment(source)
+				} else {
+					abort = c.readFrame(source)
 				}
 			}
 		}
@@ -476,19 +461,15 @@ func (c *CqlServerConnection) outgoingLoop() {
 				}
 				break
 			} else {
+				if c.compression != primitive.CompressionNone {
+					outgoing.Header.Flags = outgoing.Header.Flags.Add(primitive.HeaderFlagCompressed)
+				}
 				log.Debug().Msgf("%v: sending outgoing frame: %v", c, outgoing)
-				if err := c.codec.EncodeFrame(outgoing, c.conn); err != nil {
-					if !c.IsClosed() {
-						if errors.Is(err, io.EOF) {
-							log.Info().Msgf("%v: connection reset by peer, closing", c)
-						} else {
-							log.Error().Err(err).Msgf("%v: error writing, closing connection", c)
-						}
-						abort = true
-					}
-					break
+				if c.modernLayout {
+					// TODO write coalescer
+					abort = c.writeSegment(outgoing, c.conn)
 				} else {
-					log.Debug().Msgf("%v: outgoing frame successfully written: %v", c, outgoing)
+					abort = c.writeFrame(outgoing, c.conn)
 				}
 			}
 		}
@@ -497,6 +478,153 @@ func (c *CqlServerConnection) outgoingLoop() {
 			c.abort()
 		}
 	}()
+}
+
+func (c *CqlServerConnection) waitForIncomingData() (io.Reader, error) {
+	buf := make([]byte, 1)
+	if _, err := c.conn.Read(buf); err != nil {
+		return nil, err
+	} else {
+		return io.MultiReader(bytes.NewReader(buf), c.conn), nil
+	}
+}
+
+func (c *CqlServerConnection) setIdleTimeout() (abort bool) {
+	if err := c.conn.SetReadDeadline(time.Now().Add(c.idleTimeout)); err != nil {
+		if !c.IsClosed() {
+			log.Error().Err(err).Msgf("%v: error setting idle timeout, closing connection", c)
+			abort = true
+		}
+	}
+	return abort
+}
+
+func (c *CqlServerConnection) readSegment(source io.Reader) (abort bool) {
+	if incoming, err := c.segmentCodec.DecodeSegment(source); err != nil {
+		abort = c.reportConnectionFailure(err, true)
+	} else if incoming.Header.IsSelfContained {
+		log.Debug().Msgf("%v: received incoming self-contained segment: %v", c, incoming)
+		abort = c.readSelfContainedSegment(incoming, abort)
+	} else {
+		log.Debug().Msgf("%v: received incoming multi-segment part: %v", c, incoming)
+		abort = c.addMultiSegmentPayload(incoming.Payload)
+	}
+	return abort
+}
+
+func (c *CqlServerConnection) readSelfContainedSegment(incoming *segment.Segment, abort bool) bool {
+	payloadReader := bytes.NewReader(incoming.Payload.UncompressedData)
+	for payloadReader.Len() > 0 {
+		if abort = c.readFrame(payloadReader); abort {
+			break
+		}
+	}
+	return abort
+}
+
+func (c *CqlServerConnection) addMultiSegmentPayload(payload *segment.Payload) (abort bool) {
+	accumulator := c.payloadAccumulator
+	if accumulator.targetLength == 0 {
+		// First reader, read ahead to find the target length
+		if header, err := accumulator.frameCodec.DecodeHeader(bytes.NewReader(payload.UncompressedData)); err != nil {
+			log.Error().Err(err).Msgf("%v: error decoding first frame header in multi-segment payload, closing connection", c)
+			return true
+		} else {
+			accumulator.targetLength = int(primitive.FrameHeaderLengthV3AndHigher + header.BodyLength)
+		}
+	}
+	accumulator.accumulatedData = append(accumulator.accumulatedData, payload.UncompressedData...)
+	if accumulator.targetLength == len(accumulator.accumulatedData) {
+		// We've received enough data to reassemble the whole frame
+		encodedFrame := bytes.NewReader(accumulator.accumulatedData)
+		accumulator.reset()
+		return c.readFrame(encodedFrame)
+	}
+	return false
+}
+
+func (c *CqlServerConnection) writeSegment(outgoing *frame.Frame, dest io.Writer) (abort bool) {
+	// never compress frames individually when included in a segment
+	outgoing.Header.Flags.Remove(primitive.HeaderFlagCompressed)
+	encodedFrame := &bytes.Buffer{}
+	if abort = c.writeFrame(outgoing, encodedFrame); abort {
+		abort = true
+	} else {
+		seg := &segment.Segment{
+			Header:  &segment.Header{IsSelfContained: true},
+			Payload: &segment.Payload{UncompressedData: encodedFrame.Bytes()},
+		}
+		if err := c.segmentCodec.EncodeSegment(seg, dest); err != nil {
+			abort = c.reportConnectionFailure(err, false)
+		} else {
+			log.Debug().Msgf("%v: outgoing segment successfully written: %v (frame: %v)", c, seg, outgoing)
+		}
+	}
+	return abort
+}
+
+func (c *CqlServerConnection) readFrame(source io.Reader) (abort bool) {
+	if incoming, err := c.frameCodec.DecodeFrame(source); err != nil {
+		abort = c.reportConnectionFailure(err, true)
+	} else {
+		if startup, ok := incoming.Body.Message.(*message.Startup); ok {
+			c.compression = startup.GetCompression()
+			c.frameCodec = frame.NewCodecWithCompression(NewBodyCompressor(c.compression))
+			c.segmentCodec = segment.NewCodecWithCompression(NewPayloadCompressor(c.compression))
+		}
+		c.processIncomingFrame(incoming)
+	}
+	return abort
+}
+
+func (c *CqlServerConnection) writeFrame(outgoing *frame.Frame, dest io.Writer) (abort bool) {
+	c.maybeSwitchToModernLayout(outgoing)
+	if err := c.frameCodec.EncodeFrame(outgoing, dest); err != nil {
+		abort = c.reportConnectionFailure(err, false)
+	} else {
+		log.Debug().Msgf("%v: outgoing frame successfully written: %v", c, outgoing)
+	}
+	return abort
+}
+
+func (c *CqlServerConnection) maybeSwitchToModernLayout(outgoing *frame.Frame) {
+	if !c.modernLayout &&
+		outgoing.Header.Version.SupportsModernFramingLayout() &&
+		(isReady(outgoing) || isAuthenticate(outgoing)) {
+		// Changing this value could be racy if some incoming frame is being processed;
+		// but in theory, this should never happen during handshake.
+		log.Debug().Msgf("%v: switching to modern framing layout", c)
+		c.modernLayout = true
+	}
+}
+
+func (c *CqlServerConnection) reportConnectionFailure(err error, read bool) (abort bool) {
+	if !c.IsClosed() {
+		if errors.Is(err, io.EOF) {
+			log.Info().Msgf("%v: connection reset by peer, closing", c)
+		} else {
+			if read {
+				log.Error().Err(err).Msgf("%v: error reading, closing connection", c)
+			} else {
+				log.Error().Err(err).Msgf("%v: error writing, closing connection", c)
+			}
+		}
+		abort = true
+	}
+	return abort
+}
+
+func (c *CqlServerConnection) processIncomingFrame(incoming *frame.Frame) {
+	log.Debug().Msgf("%v: received incoming frame: %v", c, incoming)
+	select {
+	case c.incoming <- incoming:
+		log.Debug().Msgf("%v: incoming frame successfully delivered: %v", c, incoming)
+	default:
+		log.Error().Msgf("%v: incoming frames queue is full, discarding frame: %v", c, incoming)
+	}
+	if len(c.handlers) > 0 {
+		c.invokeRequestHandlers(incoming)
+	}
 }
 
 func (c *CqlServerConnection) awaitDone() {
@@ -531,7 +659,7 @@ func (c *CqlServerConnection) invokeRequestHandlers(request *frame.Frame) {
 	}()
 }
 
-// Send Sends the given response frame.
+// Send sends the given response frame.
 func (c *CqlServerConnection) Send(f *frame.Frame) error {
 	if c.IsClosed() {
 		return fmt.Errorf("%v: connection closed", c)
@@ -546,8 +674,8 @@ func (c *CqlServerConnection) Send(f *frame.Frame) error {
 	}
 }
 
-// Receive Waits  until the next request frame is received, or the configured idle timeout is triggered, or the connection
-// itself is closed, whichever happens first.
+// Receive waits until the next request frame is received, or the configured idle timeout is triggered, or the
+// connection itself is closed, whichever happens first.
 func (c *CqlServerConnection) Receive() (*frame.Frame, error) {
 	if c.IsClosed() {
 		return nil, fmt.Errorf("%v: connection closed", c)

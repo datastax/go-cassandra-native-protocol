@@ -34,14 +34,14 @@ func TestHandshakeHandler_NoAuth(t *testing.T) {
 	ctx, cancelFn := context.WithCancel(context.Background())
 
 	err := server.Start(ctx)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	clientConn, err := clt.Connect(ctx)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, clientConn)
 
 	err = clientConn.InitiateHandshake(primitive.ProtocolVersion4, client.ManagedStreamId)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	cancelFn()
 
@@ -66,14 +66,14 @@ func TestHandshakeHandler_Auth(t *testing.T) {
 	ctx, cancelFn := context.WithCancel(context.Background())
 
 	err := server.Start(ctx)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	clientConn, err := clt.Connect(ctx)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.NotNil(t, clientConn)
 
 	err = clientConn.InitiateHandshake(primitive.ProtocolVersion4, client.ManagedStreamId)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	cancelFn()
 

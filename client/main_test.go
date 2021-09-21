@@ -17,9 +17,6 @@ package client_test
 import (
 	"flag"
 	"github.com/datastax/go-cassandra-native-protocol/client"
-	"github.com/datastax/go-cassandra-native-protocol/compression/lz4"
-	"github.com/datastax/go-cassandra-native-protocol/compression/snappy"
-	"github.com/datastax/go-cassandra-native-protocol/frame"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -35,7 +32,6 @@ var logLevel int
 func TestMain(m *testing.M) {
 	parseFlags()
 	setLogLevel()
-	createCodecs()
 	createStreamIdGenerators()
 	os.Exit(m.Run())
 }
@@ -44,7 +40,7 @@ func parseFlags() {
 	flag.IntVar(
 		&logLevel,
 		"logLevel",
-		int(zerolog.InfoLevel),
+		int(zerolog.ErrorLevel),
 		"the log level to use (default: info)",
 	)
 	flag.BoolVar(
@@ -64,21 +60,9 @@ func setLogLevel() {
 	})
 }
 
-var codecs map[string]frame.Codec
+var compressions = []primitive.Compression{primitive.CompressionNone, primitive.CompressionLz4, primitive.CompressionSnappy}
 
 var streamIdGenerators map[string]func(int, primitive.ProtocolVersion) int16
-
-func createCodecs() {
-	lz4Codec := frame.NewCodec()
-	lz4Codec.SetBodyCompressor(&lz4.BodyCompressor{})
-	snappyCodec := frame.NewCodec()
-	snappyCodec.SetBodyCompressor(&snappy.BodyCompressor{})
-	codecs = map[string]frame.Codec{
-		"LZ4":    lz4Codec,
-		"SNAPPY": snappyCodec,
-		"NONE":   frame.NewCodec(),
-	}
-}
 
 func createStreamIdGenerators() {
 	var managed = func(clientId int, version primitive.ProtocolVersion) int16 {

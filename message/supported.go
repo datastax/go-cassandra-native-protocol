@@ -21,6 +21,14 @@ import (
 	"io"
 )
 
+const (
+	// SupportedProtocolVersions is a Supported.Options multimap key returned by Cassandra from protocol v5 onwards.
+	// It holds the list of native protocol versions that are supported, encoded as the version number followed by a
+	// slash and the version description. For example: 3/v3, 4/v4, 5/v5-beta. If a version is in beta, it will have the
+	// word "beta" in its description.
+	SupportedProtocolVersions = "PROTOCOL_VERSIONS"
+)
+
 type Supported struct {
 	// This multimap gives for each of the supported Startup options, the list of supported values.
 	// See Startup.Options for details about supported option keys.

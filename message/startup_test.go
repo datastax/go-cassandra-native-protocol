@@ -48,7 +48,7 @@ func TestStartup_Clone(t *testing.T) {
 
 func TestStartupCodec_Encode(t *testing.T) {
 	codec := &startupCodec{}
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -207,7 +207,7 @@ func TestStartupCodec_EncodedLength(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			for _, version := range primitive.AllProtocolVersions() {
+			for _, version := range primitive.SupportedProtocolVersions() {
 				t.Run(version.String(), func(t *testing.T) {
 					actual, err := codec.EncodedLength(tt.input, version)
 					assert.Equal(t, tt.expected, actual)
@@ -220,7 +220,7 @@ func TestStartupCodec_EncodedLength(t *testing.T) {
 
 func TestStartupCodec_Decode(t *testing.T) {
 	codec := &startupCodec{}
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []decodeTestCase{
 				{

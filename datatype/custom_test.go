@@ -30,7 +30,7 @@ func TestCustomType(t *testing.T) {
 }
 
 func TestWriteCustomType(t *testing.T) {
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -56,7 +56,7 @@ func TestWriteCustomType(t *testing.T) {
 }
 
 func TestLengthOfCustomType(t *testing.T) {
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
@@ -81,7 +81,7 @@ func TestLengthOfCustomType(t *testing.T) {
 }
 
 func TestReadCustomType(t *testing.T) {
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string

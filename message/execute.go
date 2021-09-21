@@ -62,7 +62,7 @@ func (c *executeCodec) Encode(msg Message, dest io.Writer, version primitive.Pro
 	} else if err := primitive.WriteShortBytes(execute.QueryId, dest); err != nil {
 		return fmt.Errorf("cannot write EXECUTE query id: %w", err)
 	}
-	if hasResultMetadataId(version) {
+	if version.SupportsResultMetadataId() {
 		if len(execute.ResultMetadataId) == 0 {
 			return errors.New("EXECUTE missing result metadata id")
 		} else if err := primitive.WriteShortBytes(execute.ResultMetadataId, dest); err != nil {
@@ -81,7 +81,7 @@ func (c *executeCodec) EncodedLength(msg Message, version primitive.ProtocolVers
 		return -1, errors.New(fmt.Sprintf("expected *message.Execute, got %T", msg))
 	}
 	size += primitive.LengthOfShortBytes(execute.QueryId)
-	if hasResultMetadataId(version) {
+	if version.SupportsResultMetadataId() {
 		size += primitive.LengthOfShortBytes(execute.ResultMetadataId)
 	}
 	if lengthOfQueryOptions, err := LengthOfQueryOptions(execute.Options, version); err == nil {
@@ -100,7 +100,7 @@ func (c *executeCodec) Decode(source io.Reader, version primitive.ProtocolVersio
 	} else if len(execute.QueryId) == 0 {
 		return nil, errors.New("EXECUTE missing query id")
 	}
-	if hasResultMetadataId(version) {
+	if version.SupportsResultMetadataId() {
 		if execute.ResultMetadataId, err = primitive.ReadShortBytes(source); err != nil {
 			return nil, fmt.Errorf("cannot read EXECUTE result metadata id: %w", err)
 		} else if len(execute.ResultMetadataId) == 0 {

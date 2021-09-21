@@ -39,7 +39,7 @@ func TestSetKeyspaceResult_Clone(t *testing.T) {
 
 func TestResultCodec_Encode_Other(test *testing.T) {
 	codec := &resultCodec{}
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodeTestCase{
 				{
@@ -74,7 +74,7 @@ func TestResultCodec_Encode_Other(test *testing.T) {
 
 func TestResultCodec_EncodedLength_Other(test *testing.T) {
 	codec := &resultCodec{}
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		test.Run(version.String(), func(test *testing.T) {
 			tests := []encodedLengthTestCase{
 				{
@@ -103,7 +103,7 @@ func TestResultCodec_EncodedLength_Other(test *testing.T) {
 
 func TestResultCodec_Decode_Other(test *testing.T) {
 	codec := &resultCodec{}
-	for _, version := range primitive.AllProtocolVersions() {
+	for _, version := range primitive.SupportedProtocolVersions() {
 		test.Run(version.String(), func(test *testing.T) {
 			tests := []decodeTestCase{
 				{

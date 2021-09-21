@@ -25,7 +25,7 @@ func TestProtocolVersion_String(t *testing.T) {
 		{"v2", ProtocolVersion2, "ProtocolVersion OSS 2"},
 		{"v3", ProtocolVersion3, "ProtocolVersion OSS 3"},
 		{"v4", ProtocolVersion4, "ProtocolVersion OSS 4"},
-		{"v5", ProtocolVersion5, "ProtocolVersion OSS 5 (beta)"},
+		{"v5", ProtocolVersion5, "ProtocolVersion OSS 5"},
 		{"DSE v1", ProtocolVersionDse1, "ProtocolVersion DSE 1"},
 		{"DSE v2", ProtocolVersionDse2, "ProtocolVersion DSE 2"},
 		{"unknown", ProtocolVersion(6), "ProtocolVersion ? [0X06]"},
