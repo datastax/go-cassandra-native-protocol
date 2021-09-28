@@ -96,8 +96,12 @@ func TestBatchCodec_Encode(t *testing.T) {
 			{
 				"empty batch",
 				&Batch{},
-				[]byte{byte(primitive.BatchTypeLogged)},
-				errors.New("BATCH messages must contain at least one child query"),
+				[]byte{
+					byte(primitive.BatchTypeLogged),
+					0, 0, // children count
+					0, 0, // consistency level
+				},
+				nil,
 			},
 			{
 				"batch with 2 children",
@@ -157,8 +161,13 @@ func TestBatchCodec_Encode(t *testing.T) {
 				{
 					"empty batch",
 					&Batch{},
-					[]byte{byte(primitive.BatchTypeLogged)},
-					errors.New("BATCH messages must contain at least one child query"),
+					[]byte{
+						byte(primitive.BatchTypeLogged),
+						0, 0, // children count
+						0, 0, // consistency level
+						0, // flags
+					},
+					nil,
 				},
 				{
 					"batch with 2 children",
@@ -247,8 +256,13 @@ func TestBatchCodec_Encode(t *testing.T) {
 			{
 				"empty batch",
 				&Batch{},
-				[]byte{byte(primitive.BatchTypeLogged)},
-				errors.New("BATCH messages must contain at least one child query"),
+				[]byte{
+					byte(primitive.BatchTypeLogged),
+					0, 0, // children count
+					0, 0, // consistency level
+					0, 0, 0, 0, // flags
+				},
+				nil,
 			},
 			{
 				"batch with 2 children",
@@ -343,8 +357,13 @@ func TestBatchCodec_Encode(t *testing.T) {
 			{
 				"empty batch",
 				&Batch{},
-				[]byte{byte(primitive.BatchTypeLogged)},
-				errors.New("BATCH messages must contain at least one child query"),
+				[]byte{
+					byte(primitive.BatchTypeLogged),
+					0, 0, // children count
+					0, 0, // consistency level
+					0, 0, 0, 0, // flags
+				},
+				nil,
 			},
 			{
 				"batch with 2 children",
@@ -432,8 +451,13 @@ func TestBatchCodec_Encode(t *testing.T) {
 			{
 				"empty batch",
 				&Batch{},
-				[]byte{byte(primitive.BatchTypeLogged)},
-				errors.New("BATCH messages must contain at least one child query"),
+				[]byte{
+					byte(primitive.BatchTypeLogged),
+					0, 0, // children count
+					0, 0, // consistency level
+					0, 0, 0, 0, // flags
+				},
+				nil,
 			},
 			{
 				"batch with 2 children",

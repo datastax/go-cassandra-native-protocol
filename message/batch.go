@@ -139,9 +139,7 @@ func (c *batchCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 		return fmt.Errorf("cannot write BATCH type: %w", err)
 	}
 	childrenCount := len(batch.Children)
-	if childrenCount == 0 {
-		return errors.New("BATCH messages must contain at least one child query")
-	} else if childrenCount > 0xFFFF {
+	if childrenCount > 0xFFFF {
 		return errors.New(fmt.Sprintf("BATCH messages can contain at most %d child queries", 0xFFFF))
 	} else if err = primitive.WriteShort(uint16(childrenCount), dest); err != nil {
 		return fmt.Errorf("cannot write BATCH query count: %w", err)
