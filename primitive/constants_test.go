@@ -38,3 +38,48 @@ func TestProtocolVersion_String(t *testing.T) {
 		})
 	}
 }
+
+func TestDataTypeCode_IsValid(t *testing.T) {
+	tests := []struct {
+		name			string
+		dtc 			DataTypeCode
+		shouldBeValid	bool
+	}{
+		{"DataTypeCodeCustom", DataTypeCodeCustom, true},
+		{"DataTypeCodeAscii", DataTypeCodeAscii, true},
+		{"DataTypeCodeBigint", DataTypeCodeBigint, true},
+		{"DataTypeCodeBlob", DataTypeCodeBlob, true},
+		{"DataTypeCodeBoolean", DataTypeCodeBoolean, true},
+		{"DataTypeCodeCounter", DataTypeCodeCounter, true},
+		{"DataTypeCodeDecimal", DataTypeCodeDecimal, true},
+		{"DataTypeCodeDouble", DataTypeCodeDouble, true},
+		{"DataTypeCodeFloat", DataTypeCodeFloat, true},
+		{"DataTypeCodeInt", DataTypeCodeInt, true},
+		{"DataTypeCodeText", DataTypeCodeText, true},
+		{"DataTypeCodeTimestamp", DataTypeCodeTimestamp, true},
+		{"DataTypeCodeUuid", DataTypeCodeUuid, true},
+		{"DataTypeCodeVarchar", DataTypeCodeVarchar, true},
+		{"DataTypeCodeVarint", DataTypeCodeVarint, true},
+		{"DataTypeCodeTimeuuid", DataTypeCodeTimeuuid, true},
+		{"DataTypeCodeInet", DataTypeCodeInet, true},
+		{"DataTypeCodeDate", DataTypeCodeDate, true},
+		{"DataTypeCodeTime", DataTypeCodeTime, true},
+		{"DataTypeCodeSmallint", DataTypeCodeSmallint, true},
+		{"DataTypeCodeTinyint", DataTypeCodeTinyint, true},
+		{"DataTypeCodeDuration", DataTypeCodeDuration, true},
+		{"DataTypeCodeList", DataTypeCodeList, true},
+		{"DataTypeCodeMap", DataTypeCodeMap, true},
+		{"DataTypeCodeSet", DataTypeCodeSet, true},
+		{"DataTypeCodeUdt", DataTypeCodeUdt, true},
+		{"DataTypeCodeTuple", DataTypeCodeTuple, true},
+		{"Nonsense", DataTypeCode(0x0023), false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if isValid := tt.dtc.IsValid(); isValid != tt.shouldBeValid {
+				t.Errorf("IsValid() = %v, shouldBeValid %v", isValid, tt.shouldBeValid)
+			}
+		})
+	}
+}

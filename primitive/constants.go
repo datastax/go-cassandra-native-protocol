@@ -754,6 +754,7 @@ const (
 
 func (c DataTypeCode) IsValid() bool {
 	switch c {
+	case DataTypeCodeCustom:
 	case DataTypeCodeAscii:
 	case DataTypeCodeBigint:
 	case DataTypeCodeBlob:
