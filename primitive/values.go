@@ -99,7 +99,7 @@ func WriteValue(value *Value, dest io.Writer, version ProtocolVersion) error {
 	case ValueTypeNull:
 		return WriteInt(ValueTypeNull, dest)
 	case ValueTypeUnset:
-		if version < ProtocolVersion4 {
+		if !version.SupportsUnsetValues() {
 			return fmt.Errorf("cannot use unset value with %v", version)
 		}
 		return WriteInt(ValueTypeUnset, dest)

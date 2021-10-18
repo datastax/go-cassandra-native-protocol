@@ -258,6 +258,10 @@ func (v ProtocolVersion) SupportsModernFramingLayout() bool {
 	return v >= ProtocolVersion5 && v != ProtocolVersionDse1 && v != ProtocolVersionDse2
 }
 
+func (v ProtocolVersion) SupportsUnsetValues() bool {
+	return v >= ProtocolVersion4
+}
+
 type OpCode uint8
 
 // requests
