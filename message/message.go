@@ -21,8 +21,8 @@ import (
 
 type Message interface {
 	IsResponse() bool
-	GetOpCode()  primitive.OpCode
-	Clone()      Message
+	GetOpCode() primitive.OpCode
+	Clone() Message
 }
 
 type Encoder interface {

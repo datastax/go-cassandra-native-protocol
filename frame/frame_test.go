@@ -47,7 +47,7 @@ func TestRawFrame_Clone(t *testing.T) {
 			OpCode:     primitive.OpCodeError,
 			BodyLength: 1,
 		},
-		Body:   []byte{0x01},
+		Body: []byte{0x01},
 	}
 
 	cloned := f.Clone()
@@ -100,13 +100,13 @@ func TestHeader_Clone(t *testing.T) {
 
 func TestBody_Clone(t *testing.T) {
 	b := &Body{
-		TracingId:     &primitive.UUID{0x01},
+		TracingId: &primitive.UUID{0x01},
 		CustomPayload: map[string][]byte{
 			"opt1": {0x05},
 		},
-		Warnings:      []string{"warn"},
-		Message:       &message.Query{
-			Query:   "q1",
+		Warnings: []string{"warn"},
+		Message: &message.Query{
+			Query: "q1",
 		},
 	}
 
@@ -143,8 +143,8 @@ func TestBody_Clone_WithNils(t *testing.T) {
 		TracingId:     nil,
 		CustomPayload: nil,
 		Warnings:      nil,
-		Message:       &message.Query{
-			Query:   "q1",
+		Message: &message.Query{
+			Query: "q1",
 		},
 	}
 

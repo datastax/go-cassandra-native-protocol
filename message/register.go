@@ -41,7 +41,7 @@ func (m *Register) Clone() Message {
 	} else {
 		newEventTypes = nil
 	}
-	
+
 	return &Register{
 		EventTypes: newEventTypes,
 	}

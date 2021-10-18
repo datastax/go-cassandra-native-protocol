@@ -24,28 +24,28 @@ import (
 
 func TestBatch_Clone(t *testing.T) {
 	msg := &Batch{
-		Type:              primitive.BatchTypeLogged,
-		Children:          []*BatchChild{&BatchChild{
+		Type: primitive.BatchTypeLogged,
+		Children: []*BatchChild{&BatchChild{
 			QueryOrId: "query",
-			Values:    []*primitive.Value{&primitive.Value{
+			Values: []*primitive.Value{&primitive.Value{
 				Type:     primitive.ValueTypeRegular,
 				Contents: []byte{0x0a},
 			}},
 		}},
-		Consistency:       primitive.ConsistencyLevelLocalOne,
+		Consistency: primitive.ConsistencyLevelLocalOne,
 		SerialConsistency: &primitive.NillableConsistencyLevel{
 			Value: primitive.ConsistencyLevelSerial,
 		},
-		DefaultTimestamp:  &primitive.NillableInt64{Value: 1},
-		Keyspace:          "ks1",
-		NowInSeconds:      &primitive.NillableInt32{Value: 2},
+		DefaultTimestamp: &primitive.NillableInt64{Value: 1},
+		Keyspace:         "ks1",
+		NowInSeconds:     &primitive.NillableInt32{Value: 2},
 	}
 	cloned := msg.Clone().(*Batch)
 	assert.Equal(t, msg, cloned)
 	cloned.Type = primitive.BatchTypeUnlogged
 	cloned.Children = []*BatchChild{&BatchChild{
 		QueryOrId: "query2",
-		Values:    []*primitive.Value{&primitive.Value{
+		Values: []*primitive.Value{&primitive.Value{
 			Type:     primitive.ValueTypeNull,
 			Contents: []byte{0x0b},
 		}},

@@ -28,13 +28,13 @@ func TestQuery_Clone(t *testing.T) {
 		Options: &QueryOptions{
 			Consistency: primitive.ConsistencyLevelAll,
 			PositionalValues: []*primitive.Value{
-				&primitive.Value{
+				{
 					Type:     primitive.ValueTypeRegular,
 					Contents: []byte{0x11},
 				},
 			},
 			NamedValues: map[string]*primitive.Value{
-				"1": &primitive.Value{
+				"1": {
 					Type:     primitive.ValueTypeUnset,
 					Contents: []byte{0x21},
 				},
@@ -65,29 +65,29 @@ func TestQuery_Clone(t *testing.T) {
 
 	cloned.Query = "query 2"
 	cloned.Options = &QueryOptions{
-		Consistency:             primitive.ConsistencyLevelLocalOne,
-		PositionalValues:        []*primitive.Value{
-			&primitive.Value{
+		Consistency: primitive.ConsistencyLevelLocalOne,
+		PositionalValues: []*primitive.Value{
+			{
 				Type:     primitive.ValueTypeUnset,
 				Contents: []byte{0x21},
 			},
 		},
-		NamedValues:             map[string]*primitive.Value{
-			"1": &primitive.Value{
+		NamedValues: map[string]*primitive.Value{
+			"1": {
 				Type:     primitive.ValueTypeNull,
 				Contents: []byte{0x31},
 			},
 		},
-		SkipMetadata:            true,
-		PageSize:                4,
-		PageSizeInBytes:         true,
-		PagingState:             []byte{0x23},
-		SerialConsistency:       nil,
-		DefaultTimestamp:        &primitive.NillableInt64{
+		SkipMetadata:      true,
+		PageSize:          4,
+		PageSizeInBytes:   true,
+		PagingState:       []byte{0x23},
+		SerialConsistency: nil,
+		DefaultTimestamp: &primitive.NillableInt64{
 			Value: 3,
 		},
-		Keyspace:                "ks2",
-		NowInSeconds:            nil,
+		Keyspace:     "ks2",
+		NowInSeconds: nil,
 		ContinuousPagingOptions: &ContinuousPagingOptions{
 			MaxPages:       6,
 			PagesPerSecond: 3,
