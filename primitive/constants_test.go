@@ -41,9 +41,9 @@ func TestProtocolVersion_String(t *testing.T) {
 
 func TestDataTypeCode_IsValid(t *testing.T) {
 	tests := []struct {
-		name			string
-		dtc 			DataTypeCode
-		shouldBeValid	bool
+		name          string
+		dtc           DataTypeCode
+		shouldBeValid bool
 	}{
 		{"DataTypeCodeCustom", DataTypeCodeCustom, true},
 		{"DataTypeCodeAscii", DataTypeCodeAscii, true},
