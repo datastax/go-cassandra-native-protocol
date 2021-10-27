@@ -77,7 +77,7 @@ func NewCodec(dt datatype.DataType) (Codec, error) {
 	case primitive.DataTypeCodeTime:
 		return Time, nil
 	case primitive.DataTypeCodeTimestamp:
-		return TimestampUTC, nil
+		return Timestamp, nil
 	case primitive.DataTypeCodeTimeuuid:
 		return Timeuuid, nil
 	case primitive.DataTypeCodeTinyint:

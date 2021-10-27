@@ -28,13 +28,13 @@ var (
 	// TimestampMin is the minimum representable CQL timestamp: -292275055-05-16 16:47:04.192 UTC.
 	TimestampMin = time.Unix(-9223372036854776, 192_000_000).UTC()
 
-	// TimestampMax is the maximum representable CQL date: +292278994-08-17 07:12:55.807 UTC.
+	// TimestampMax is the maximum representable CQL timestamp: +292278994-08-17 07:12:55.807 UTC.
 	TimestampMax = time.Unix(9223372036854775, 807_000_000).UTC()
 )
 
 // ConvertTimeToEpochMillis is a function that converts from a time.Time into milliseconds since the Epoch. An error is
 // returned if the given time value cannot be converted to milliseconds since the Epoch; convertible values range from
-// -292275055-05-16 16:47:04.192 UTC to +292278994-08-17 07:12:55.807 UTC inclusive.
+// TimestampMin to TimestampMax inclusive.
 func ConvertTimeToEpochMillis(t time.Time) (int64, error) {
 	// Implementation note: we avoid t.UnixNano() because it has a limited range of [1678,2262];
 	// values outside this range overflow.
@@ -67,29 +67,18 @@ func ConvertEpochMillisToTime(millis int64) time.Time {
 	return time.Unix(seconds, nanos).UTC()
 }
 
-// TimestampLocal is a codec for the CQL timestamp type that uses the system's time zone when encoding and
-// decoding strings.
+// Timestamp is the default codec for the CQL timestamp type.
 // Its preferred Go type is time.Time, but it can encode from and decode to string and to most numeric types as well.
 // Note that not all time.Time values can be converted to CQL timestamp: the valid range is from
-// -292275055-05-16 16:47:04.192 UTC to +292278994-08-17 07:12:55.807 UTC inclusive. Furthermore, the CQL timestamp
-// type has milliseconds precision; any sub-millisecond value will be lost when encoded.
+// TimestampMin to TimestampMax inclusive.
 // When encoding from and decoding to numeric types, the numeric value is supposed to be the number of milliseconds
 // since the Epoch.
 // The layout is Cassandra's preferred layout for CQL timestamp literals and is ISO-8601-compatible.
-var TimestampLocal = NewTimestamp(TimestampLayoutDefault, time.Local)
+var Timestamp = NewTimestamp(TimestampLayoutDefault, time.UTC)
 
-// TimestampUTC is a codec for the CQL timestamp type that uses UTC when encoding and decoding strings.
-// Its preferred Go type is time.Time, but it can encode from and decode to string and to most numeric types as well.
-// Note that not all time.Time values can be converted to CQL timestamp: the valid range is from
-// -292275055-05-16 16:47:04.192 UTC to +292278994-08-17 07:12:55.807 UTC inclusive.
-// When encoding from and decoding to numeric types, the numeric value is supposed to be the number of milliseconds
-// since the Epoch.
-// The layout is Cassandra's preferred layout for CQL timestamp literals and is ISO-8601-compatible.
-var TimestampUTC = NewTimestamp(TimestampLayoutDefault, time.UTC)
-
-// NewTimestamp creates a new codec for CQL timestamp values, with the given layout. The Layout is
-// used only when encoding from or decoding to string; it is ignored otherwise. The location is used when encoding
-// strings, and when decoding values into time.Time and string; it is ignored otherwise.
+// NewTimestamp creates a new codec for CQL timestamp values, with the given layout and location. The Layout is
+// used only when encoding from or decoding to string; it is ignored otherwise. The location is only useful if the
+// layout does not include any time zone, in which case the time zone is assumed to be in the given location.
 func NewTimestamp(layout string, location *time.Location) Codec {
 	return &timestampCodec{
 		layout:     layout,

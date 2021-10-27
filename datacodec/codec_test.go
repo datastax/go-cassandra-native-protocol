@@ -54,7 +54,7 @@ func TestNewCodec(t *testing.T) {
 		{"Int", datatype.Int, Int, ""},
 		{"Smallint", datatype.Smallint, Smallint, ""},
 		{"Time", datatype.Time, Time, ""},
-		{"Timestamp", datatype.Timestamp, TimestampUTC, ""},
+		{"Timestamp", datatype.Timestamp, Timestamp, ""},
 		{"Timeuuid", datatype.Timeuuid, Timeuuid, ""},
 		{"Tinyint", datatype.Tinyint, Tinyint, ""},
 		{"Uuid", datatype.Uuid, Uuid, ""},

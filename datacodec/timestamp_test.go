@@ -84,28 +84,23 @@ func TestConvertEpochMillisToTime(t *testing.T) {
 }
 
 func Test_timestampCodec_Encode(t *testing.T) {
-	codecs := map[string]Codec{"UTC": TimestampUTC, "Local": TimestampLocal}
-	for locationName, codec := range codecs {
-		t.Run(locationName, func(t *testing.T) {
-			for _, version := range primitive.SupportedProtocolVersions() {
-				t.Run(version.String(), func(t *testing.T) {
-					tests := []struct {
-						name     string
-						source   interface{}
-						expected []byte
-						err      string
-					}{
-						{"nil", nil, nil, ""},
-						{"non nil", timestampPosUTC, timestampPosBytes, ""},
-						{"conversion failed", timestampOufOfRangePos, nil, fmt.Sprintf("cannot encode time.Time as CQL timestamp with %v: cannot convert from time.Time to int64: value out of range: 292278994-08-17 07:12:55.808 +0000 UTC", version)},
-					}
-					for _, tt := range tests {
-						t.Run(tt.name, func(t *testing.T) {
-							actual, err := codec.Encode(tt.source, version)
-							assert.Equal(t, tt.expected, actual)
-							assertErrorMessage(t, tt.err, err)
-						})
-					}
+	for _, version := range primitive.SupportedProtocolVersions() {
+		t.Run(version.String(), func(t *testing.T) {
+			tests := []struct {
+				name     string
+				source   interface{}
+				expected []byte
+				err      string
+			}{
+				{"nil", nil, nil, ""},
+				{"non nil", timestampPosUTC, timestampPosBytes, ""},
+				{"conversion failed", timestampOufOfRangePos, nil, fmt.Sprintf("cannot encode time.Time as CQL timestamp with %v: cannot convert from time.Time to int64: value out of range: 292278994-08-17 07:12:55.808 +0000 UTC", version)},
+			}
+			for _, tt := range tests {
+				t.Run(tt.name, func(t *testing.T) {
+					actual, err := Timestamp.Encode(tt.source, version)
+					assert.Equal(t, tt.expected, actual)
+					assertErrorMessage(t, tt.err, err)
 				})
 			}
 		})
@@ -113,34 +108,27 @@ func Test_timestampCodec_Encode(t *testing.T) {
 }
 
 func Test_timestampCodec_Decode(t *testing.T) {
-	codecs := map[string]Codec{"UTC": TimestampUTC, "Local": TimestampLocal}
-	for locationName, codec := range codecs {
-		location, _ := time.LoadLocation(locationName)
-		t.Run(locationName, func(t *testing.T) {
-			for _, version := range primitive.SupportedProtocolVersions() {
-				t.Run(version.String(), func(t *testing.T) {
-					ts := timestampPosUTC.In(location)
-					tests := []struct {
-						name     string
-						source   []byte
-						dest     interface{}
-						expected interface{}
-						wasNull  bool
-						err      string
-					}{
-						{"null", nil, new(int64), new(int64), true, ""},
-						{"non null", timestampPosBytes, new(time.Time), &ts, false, ""},
-						{"read failed", []byte{1}, new(int64), new(int64), false, fmt.Sprintf("cannot decode CQL timestamp as *int64 with %v: cannot read int64: expected 8 bytes but got: 1", version)},
-						{"conversion failed", timestampPosBytes, new(float64), new(float64), false, fmt.Sprintf("cannot decode CQL timestamp as *float64 with %v: cannot convert from int64 to *float64: conversion not supported", version)},
-					}
-					for _, tt := range tests {
-						t.Run(tt.name, func(t *testing.T) {
-							wasNull, err := codec.Decode(tt.source, tt.dest, version)
-							assert.Equal(t, tt.expected, tt.dest)
-							assert.Equal(t, tt.wasNull, wasNull)
-							assertErrorMessage(t, tt.err, err)
-						})
-					}
+	for _, version := range primitive.SupportedProtocolVersions() {
+		t.Run(version.String(), func(t *testing.T) {
+			tests := []struct {
+				name     string
+				source   []byte
+				dest     interface{}
+				expected interface{}
+				wasNull  bool
+				err      string
+			}{
+				{"null", nil, new(int64), new(int64), true, ""},
+				{"non null", timestampPosBytes, new(time.Time), &timestampPosUTC, false, ""},
+				{"read failed", []byte{1}, new(int64), new(int64), false, fmt.Sprintf("cannot decode CQL timestamp as *int64 with %v: cannot read int64: expected 8 bytes but got: 1", version)},
+				{"conversion failed", timestampPosBytes, new(float64), new(float64), false, fmt.Sprintf("cannot decode CQL timestamp as *float64 with %v: cannot convert from int64 to *float64: conversion not supported", version)},
+			}
+			for _, tt := range tests {
+				t.Run(tt.name, func(t *testing.T) {
+					wasNull, err := Timestamp.Decode(tt.source, tt.dest, version)
+					assert.Equal(t, tt.expected, tt.dest)
+					assert.Equal(t, tt.wasNull, wasNull)
+					assertErrorMessage(t, tt.err, err)
 				})
 			}
 		})
@@ -169,7 +157,7 @@ func Test_convertToInt64Timestamp(t *testing.T) {
 						{"from string malformed", "not a timestamp", 0, false, "cannot convert from string to int64: parsing time \"not a timestamp\" as \"" + layout + "\""},
 						{"from *string nil", stringNilPtr(), 0, true, ""},
 						{"from *string non nil", stringPtr(ts.Format(layout)), 1633993200999, false, ""},
-						{"from *string malformed", stringPtr("not a time"), 0, false, "cannot convert from *string to int64: parsing time \"not a time\" as \"" + layout + "\""},
+						{"from *string malformed", stringPtr("not a timestamp"), 0, false, "cannot convert from *string to int64: parsing time \"not a timestamp\" as \"" + layout + "\""},
 						{"from untyped nil", nil, 0, true, ""},
 						{"from numeric", 1633993200999, 1633993200999, false, ""},
 					}

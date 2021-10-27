@@ -1059,7 +1059,8 @@ func Test_stringToEpochMillis(t *testing.T) {
 		wantErr  string
 	}{
 		{"invalid", "invalid", TimestampLayoutDefault, time.UTC, 0, "cannot parse \"invalid\" as \"2006\""},
-		{"ok", "2021-10-12 00:00:00.999 +01:00", "2006-01-02 15:04:05 -07:00", time.UTC, 1633993200999, ""},
+		{"layout with TZ", "2021-10-12 00:00:00.999 +01:00", "2006-01-02 15:04:05 -07:00", paris, 1633993200999, ""},
+		{"layout without TZ", "2021-10-12 01:00:00.999", "2006-01-02 15:04:05", paris, 1633993200999, ""},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
