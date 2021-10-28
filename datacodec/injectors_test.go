@@ -53,7 +53,11 @@ func Test_newSliceInjector(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotValue, gotErr := newSliceInjector(tt.dest)
-			assert.True(t, tt.wantValue || gotValue == nil)
+			if tt.wantValue {
+				assert.NotNil(t, gotValue)
+			} else {
+				assert.Nil(t, gotValue)
+			}
 			assertErrorMessage(t, tt.wantErr, gotErr)
 		})
 	}
@@ -67,13 +71,17 @@ func Test_newStructInjector(t *testing.T) {
 	}{
 		{"nil", reflect.Value{}, false, "destination type not supported"},
 		{"not struct", reflect.ValueOf(&map[string]int{}).Elem(), false, "expected struct, got: map[string]int"},
-		{"unaddressable", reflect.ValueOf(testStruct{}), true, "destination of type datacodec.testStruct is not addressable"},
+		{"unaddressable", reflect.ValueOf(testStruct{}), false, "destination of type datacodec.testStruct is not addressable"},
 		{"success", reflect.ValueOf(&testStruct{}).Elem(), true, ""},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotValue, gotErr := newStructInjector(tt.dest)
-			assert.True(t, tt.wantValue || gotValue == nil)
+			if tt.wantValue {
+				assert.NotNil(t, gotValue)
+			} else {
+				assert.Nil(t, gotValue)
+			}
 			assertErrorMessage(t, tt.wantErr, gotErr)
 		})
 	}
@@ -95,7 +103,11 @@ func Test_newMapInjector(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotValue, gotErr := newMapInjector(tt.dest)
-			assert.True(t, tt.wantValue || gotValue == nil)
+			if tt.wantValue {
+				assert.NotNil(t, gotValue)
+			} else {
+				assert.Nil(t, gotValue)
+			}
 			assertErrorMessage(t, tt.wantErr, gotErr)
 		})
 	}
