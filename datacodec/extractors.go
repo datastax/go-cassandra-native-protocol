@@ -36,8 +36,7 @@ type keyValueExtractor interface {
 }
 
 type sliceExtractor struct {
-	source        reflect.Value
-	containerType string
+	source reflect.Value
 }
 
 type mapExtractor struct {
@@ -55,12 +54,7 @@ func newSliceExtractor(source reflect.Value) (extractor, error) {
 	} else if source.Kind() == reflect.Slice && source.IsNil() {
 		return nil, errors.New("slice is nil")
 	}
-	containerType := "slice"
-	if source.Kind() == reflect.Array {
-		containerType = "array"
-	}
-	return &sliceExtractor{source, containerType}, nil
-
+	return &sliceExtractor{source}, nil
 }
 
 func newStructExtractor(source reflect.Value) (keyValueExtractor, error) {
@@ -81,7 +75,11 @@ func newMapExtractor(source reflect.Value) (keyValueExtractor, error) {
 
 func (e *sliceExtractor) getElem(index int, _ interface{}) (interface{}, error) {
 	if index < 0 || index >= e.source.Len() {
-		return nil, errSliceIndexOutOfRange(e.containerType, index)
+		if e.source.Kind() == reflect.Slice {
+			return nil, errSliceIndexOutOfRange("slice", index)
+		} else {
+			return nil, errSliceIndexOutOfRange("array", index)
+		}
 	}
 	return e.source.Index(index).Interface(), nil
 }

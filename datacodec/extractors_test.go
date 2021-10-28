@@ -169,8 +169,8 @@ func Test_newSliceExtractor(t *testing.T) {
 	}{
 		{"wrong type", reflect.ValueOf(123), nil, "expected slice or array, got: int"},
 		{"nil slice", reflect.ValueOf([]byte(nil)), nil, "slice is nil"},
-		{"slice", reflect.ValueOf([]byte{1, 2, 3}), &sliceExtractor{reflect.ValueOf([]byte{1, 2, 3}), "slice"}, ""},
-		{"array", reflect.ValueOf([3]byte{1, 2, 3}), &sliceExtractor{reflect.ValueOf([3]byte{1, 2, 3}), "array"}, ""},
+		{"slice", reflect.ValueOf([]byte{1, 2, 3}), &sliceExtractor{reflect.ValueOf([]byte{1, 2, 3})}, ""},
+		{"array", reflect.ValueOf([3]byte{1, 2, 3}), &sliceExtractor{reflect.ValueOf([3]byte{1, 2, 3})}, ""},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -179,7 +179,6 @@ func Test_newSliceExtractor(t *testing.T) {
 				assert.Nil(t, tt.want)
 			} else {
 				assert.Equal(t, tt.want.source.Interface(), got.(*sliceExtractor).source.Interface())
-				assert.Equal(t, tt.want.containerType, got.(*sliceExtractor).containerType)
 			}
 			assertErrorMessage(t, tt.wantErr, err)
 		})
