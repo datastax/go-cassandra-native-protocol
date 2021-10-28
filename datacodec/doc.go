@@ -120,7 +120,7 @@
 // Encoding data
 //
 // Sources can be passed by value or by reference, unless specified otherwise in the table above. Nils are encoded as
-// CQL NULLs; encoding such a value is generally a no-op.
+// CQL NULLs; encoding such a value is generally a no-op and returns a nil []byte
 //
 // Decoding data
 //
