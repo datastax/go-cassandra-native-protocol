@@ -176,13 +176,13 @@ func readMap(source []byte, injectorFactory func(int) (keyValueInjector, error),
 				return errCannotReadMapValue(i, err)
 			} else if decodedKey, err := inj.zeroKey(i); err != nil {
 				return errCannotCreateMapKey(i, err)
-			} else if _, err := keyCodec.Decode(encodedKey, decodedKey, version); err != nil {
+			} else if keyWasNull, err := keyCodec.Decode(encodedKey, decodedKey, version); err != nil {
 				return errCannotDecodeMapKey(i, err)
 			} else if decodedValue, err := inj.zeroElem(i, decodedKey); err != nil {
 				return errCannotCreateMapValue(i, err)
-			} else if _, err := valueCodec.Decode(encodedValue, decodedValue, version); err != nil {
+			} else if valueWasNull, err := valueCodec.Decode(encodedValue, decodedValue, version); err != nil {
 				return errCannotDecodeMapValue(i, err)
-			} else if err = inj.setElem(i, decodedKey, decodedValue, false, false); err != nil {
+			} else if err = inj.setElem(i, decodedKey, decodedValue, keyWasNull, valueWasNull); err != nil {
 				return errCannotInjectMapEntry(i, err)
 			}
 		}

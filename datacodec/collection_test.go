@@ -105,6 +105,23 @@ var (
 		0, 0, 0, 4, // length of outer collection 2nd element
 		0, 0, 0, 0, // length of 2nd inner collection
 	}
+	// lists with null elements can happen when retrieving the TTLs of some collection
+	listOneTwoNullBytes4 = []byte{
+		0, 0, 0, 3,
+		0, 0, 0, 4,
+		0, 0, 0, 1,
+		0, 0, 0, 4,
+		0, 0, 0, 2,
+		255, 255, 255, 255,
+	}
+	listOneTwoNullBytes2 = []byte{
+		0, 3,
+		0, 0, 0, 4,
+		0, 0, 0, 1,
+		0, 0, 0, 4,
+		0, 0, 0, 2,
+		255, 255, 255, 255,
+	}
 )
 
 func TestNewList(t *testing.T) {
@@ -313,6 +330,7 @@ func Test_collectionCodec_Decode(t *testing.T) {
 				{"list<int> many elems pointers", listOfInt, listOneTwoThreeBytes4, new([]*int), &[]*int{intPtr(1), intPtr(2), intPtr(3)}, false, ""},
 				{"list<int> many elems []interface{}", listOfInt, listOneTwoThreeBytes4, new([]interface{}), &[]interface{}{int32(1), int32(2), int32(3)}, false, ""},
 				{"list<int> many elems interface{}", listOfInt, listOneTwoThreeBytes4, new(interface{}), interfacePtr([]int32{1, 2, 3}), false, ""},
+				{"list<int> nil elem", listOfInt, listOneTwoNullBytes4, new([]*int), &[]*int{intPtr(1), intPtr(2), nil}, false, ""},
 				{"list<int> pointer required", listOfInt, nil, []interface{}{}, []interface{}{}, true, fmt.Sprintf("cannot decode CQL %s as []interface {} with %s: destination is not pointer", listOfInt.DataType(), version)},
 				{"list<int> wrong destination type", listOfInt, nil, &map[string]int{}, new(map[string]int), true, fmt.Sprintf("cannot decode CQL %s as *map[string]int with %s: destination type not supported", listOfInt.DataType(), version)},
 				{"list<set<text>> nil untyped", listOfSetOfVarchar, nil, nil, nil, true, fmt.Sprintf("cannot decode CQL list<set<varchar>> as <nil> with %v: destination is nil", version)},
@@ -356,6 +374,7 @@ func Test_collectionCodec_Decode(t *testing.T) {
 				{"list<int> many elems pointers", listOfInt, listOneTwoThreeBytes2, new([]*int), &[]*int{intPtr(1), intPtr(2), intPtr(3)}, false, ""},
 				{"list<int> many elems []interface{}", listOfInt, listOneTwoThreeBytes2, new([]interface{}), &[]interface{}{int32(1), int32(2), int32(3)}, false, ""},
 				{"list<int> many elems interface{}", listOfInt, listOneTwoThreeBytes2, new(interface{}), interfacePtr([]int32{int32(1), int32(2), int32(3)}), false, ""},
+				{"list<int> nil elem", listOfInt, listOneTwoNullBytes2, new([]*int), &[]*int{intPtr(1), intPtr(2), nil}, false, ""},
 				{"list<int> pointer required", listOfInt, nil, []int{}, []int{}, true, fmt.Sprintf("cannot decode CQL %s as []int with %v: destination is not pointer", listOfInt.DataType(), version)},
 				{"list<int> destination type not supported", listOfInt, nil, &map[string]int{}, new(map[string]int), true, fmt.Sprintf("cannot decode CQL %s as *map[string]int with %v: destination type not supported", listOfInt.DataType(), version)},
 				{"list<set<text>> nil untyped", listOfSetOfVarchar, nil, nil, nil, true, "cannot decode CQL list<set<varchar>> as <nil> with ProtocolVersion OSS 2: destination is nil"},

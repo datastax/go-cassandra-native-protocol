@@ -162,9 +162,9 @@ func readCollection(source []byte, injectorFactory func(int) (injector, error), 
 				return errCannotReadElement(i, err)
 			} else if decodedElem, err := inj.zeroElem(i, i); err != nil {
 				return errCannotCreateElement(i, err)
-			} else if _, err = elementCodec.Decode(encodedElem, decodedElem, version); err != nil {
+			} else if elementWasNull, err := elementCodec.Decode(encodedElem, decodedElem, version); err != nil {
 				return errCannotDecodeElement(i, err)
-			} else if err = inj.setElem(i, i, decodedElem, false, false); err != nil {
+			} else if err = inj.setElem(i, i, decodedElem, false, elementWasNull); err != nil {
 				return errCannotInjectElement(i, err)
 			}
 		}
