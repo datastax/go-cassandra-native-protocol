@@ -44,8 +44,7 @@ type keyValueInjector interface {
 }
 
 type sliceInjector struct {
-	dest          reflect.Value
-	containerType string
+	dest reflect.Value
 }
 
 type structInjector struct {
@@ -64,11 +63,7 @@ func newSliceInjector(dest reflect.Value) (injector, error) {
 	} else if dest.Kind() != reflect.Slice && dest.Kind() != reflect.Array {
 		return nil, errWrongContainerType("slice or array", dest.Type())
 	}
-	containerType := "slice"
-	if dest.Kind() == reflect.Array {
-		containerType = "array"
-	}
-	return &sliceInjector{dest, containerType}, nil
+	return &sliceInjector{dest}, nil
 
 }
 func newStructInjector(dest reflect.Value) (keyValueInjector, error) {
@@ -98,7 +93,11 @@ func (i *sliceInjector) zeroElem(_ int, _ interface{}) (value interface{}, err e
 
 func (i *sliceInjector) setElem(index int, _, value interface{}, _, valueWasNull bool) error {
 	if index < 0 || index >= i.dest.Len() {
-		return errSliceIndexOutOfRange(i.containerType, index)
+		if i.dest.Kind() == reflect.Slice {
+			return errSliceIndexOutOfRange("slice", index)
+		} else {
+			return errSliceIndexOutOfRange("array", index)
+		}
 	}
 	elementType := i.dest.Type().Elem()
 	if valueWasNull {
@@ -107,7 +106,11 @@ func (i *sliceInjector) setElem(index int, _, value interface{}, _, valueWasNull
 	} else {
 		newValue := maybeIndirect(elementType, reflect.ValueOf(value))
 		if !newValue.Type().AssignableTo(elementType) {
-			return errWrongElementType(i.containerType+" element", elementType, newValue.Type())
+			if i.dest.Kind() == reflect.Slice {
+				return errWrongElementType("slice element", elementType, newValue.Type())
+			} else {
+				return errWrongElementType("array element", elementType, newValue.Type())
+			}
 		}
 		i.dest.Index(index).Set(newValue)
 	}
