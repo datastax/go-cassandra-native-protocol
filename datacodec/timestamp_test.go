@@ -121,6 +121,7 @@ func Test_timestampCodec_Decode(t *testing.T) {
 			}{
 				{"null", nil, new(int64), new(int64), true, ""},
 				{"non null", timestampPosBytes, new(time.Time), &timestampPosUTC, false, ""},
+				{"non null interface", timestampPosBytes, new(interface{}), interfacePtr(timestampPosUTC), false, ""},
 				{"read failed", []byte{1}, new(int64), new(int64), false, fmt.Sprintf("cannot decode CQL timestamp as *int64 with %v: cannot read int64: expected 8 bytes but got: 1", version)},
 				{"conversion failed", timestampPosBytes, new(float64), new(float64), false, fmt.Sprintf("cannot decode CQL timestamp as *float64 with %v: cannot convert from int64 to *float64: conversion not supported", version)},
 			}

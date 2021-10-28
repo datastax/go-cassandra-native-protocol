@@ -24,11 +24,11 @@ import (
 )
 
 var (
-	tinyintZero     = []byte{0x00}
-	tinyintOne      = []byte{0x01}
-	tinyintMinusOne = []byte{0xff}
-	tinyintMaxInt8  = []byte{0x7f}
-	tinyintMinInt8  = []byte{0x80}
+	tinyintZeroBytes     = []byte{0x00}
+	tinyintOneBytes      = []byte{0x01}
+	tinyintMinusOneBytes = []byte{0xff}
+	tinyintMaxInt8Bytes  = []byte{0x7f}
+	tinyintMinInt8Bytes  = []byte{0x80}
 )
 
 func Test_tinyintCodec_Encode(t *testing.T) {
@@ -42,7 +42,7 @@ func Test_tinyintCodec_Encode(t *testing.T) {
 			}{
 				{"nil", nil, nil, ""},
 				{"nil pointer", int8NilPtr(), nil, ""},
-				{"non nil", 1, tinyintOne, ""},
+				{"non nil", 1, tinyintOneBytes, ""},
 				{"conversion failed", uint8(math.MaxUint8), nil, fmt.Sprintf("cannot encode uint8 as CQL tinyint with %v: cannot convert from uint8 to int8: value out of range: 255", version)},
 			}
 			for _, tt := range tests {
@@ -88,9 +88,10 @@ func Test_tinyintCodec_Decode(t *testing.T) {
 				err      string
 			}{
 				{"null", nil, new(int8), new(int8), true, ""},
-				{"non null", tinyintOne, new(int8), int8Ptr(1), false, ""},
+				{"non null", tinyintOneBytes, new(int8), int8Ptr(1), false, ""},
+				{"non null interface", tinyintOneBytes, new(interface{}), interfacePtr(int8(1)), false, ""},
 				{"read failed", []byte{1, 2}, new(int8), new(int8), false, fmt.Sprintf("cannot decode CQL tinyint as *int8 with %v: cannot read int8: expected 1 bytes but got: 2", version)},
-				{"conversion failed", tinyintOne, new(float64), new(float64), false, fmt.Sprintf("cannot decode CQL tinyint as *float64 with %v: cannot convert from int8 to *float64: conversion not supported", version)},
+				{"conversion failed", tinyintOneBytes, new(float64), new(float64), false, fmt.Sprintf("cannot decode CQL tinyint as *float64 with %v: cannot convert from int8 to *float64: conversion not supported", version)},
 			}
 			for _, tt := range tests {
 				t.Run(tt.name, func(t *testing.T) {
@@ -113,7 +114,7 @@ func Test_tinyintCodec_Decode(t *testing.T) {
 				err      string
 			}{
 				{"null", nil, new(int8), new(int8), true, "data type tinyint not supported"},
-				{"non null", tinyintOne, new(int8), new(int8), false, "data type tinyint not supported"},
+				{"non null", tinyintOneBytes, new(int8), new(int8), false, "data type tinyint not supported"},
 			}
 			for _, tt := range tests {
 				t.Run(tt.name, func(t *testing.T) {
@@ -277,11 +278,11 @@ func Test_writeInt8(t *testing.T) {
 		val      int8
 		expected []byte
 	}{
-		{"zero", 0, tinyintZero},
-		{"positive", 1, tinyintOne},
-		{"negative", -1, tinyintMinusOne},
-		{"max", math.MaxInt8, tinyintMaxInt8},
-		{"min", math.MinInt8, tinyintMinInt8},
+		{"zero", 0, tinyintZeroBytes},
+		{"positive", 1, tinyintOneBytes},
+		{"negative", -1, tinyintMinusOneBytes},
+		{"max", math.MaxInt8, tinyintMaxInt8Bytes},
+		{"min", math.MinInt8, tinyintMinInt8Bytes},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -302,11 +303,11 @@ func Test_readInt8(t *testing.T) {
 		{"nil", nil, 0, true, ""},
 		{"empty", []byte{}, 0, true, ""},
 		{"wrong length", []byte{1, 2}, 0, false, "cannot read int8: expected 1 bytes but got: 2"},
-		{"zero", tinyintZero, 0, false, ""},
-		{"positive", tinyintOne, 1, false, ""},
-		{"negative", tinyintMinusOne, -1, false, ""},
-		{"max", tinyintMaxInt8, math.MaxInt8, false, ""},
-		{"min", tinyintMinInt8, math.MinInt8, false, ""},
+		{"zero", tinyintZeroBytes, 0, false, ""},
+		{"positive", tinyintOneBytes, 1, false, ""},
+		{"negative", tinyintMinusOneBytes, -1, false, ""},
+		{"max", tinyintMaxInt8Bytes, math.MaxInt8, false, ""},
+		{"min", tinyintMinInt8Bytes, math.MinInt8, false, ""},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

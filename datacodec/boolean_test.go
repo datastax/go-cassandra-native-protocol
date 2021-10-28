@@ -68,6 +68,7 @@ func Test_booleanCodec_Decode(t *testing.T) {
 				{"true", []byte{1}, new(bool), boolPtr(true), false, ""},
 				{"true 255", []byte{255}, new(bool), boolPtr(true), false, ""},
 				{"false", []byte{0}, new(bool), boolPtr(false), false, ""},
+				{"non null interface", []byte{1}, new(interface{}), interfacePtr(true), false, ""},
 				{"read failed", []byte{1, 2, 3}, new(bool), new(bool), false, fmt.Sprintf("cannot decode CQL boolean as *bool with %v: cannot read bool: expected 1 bytes but got: 3", version)},
 				{"conversion failed", []byte{1}, new(float64), new(float64), false, fmt.Sprintf("cannot decode CQL boolean as *float64 with %v: cannot convert from bool to *float64: conversion not supported", version)},
 			}

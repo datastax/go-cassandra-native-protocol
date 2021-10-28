@@ -24,11 +24,11 @@ import (
 )
 
 var (
-	smallintZero     = encodeUint16(0x0000)
-	smallintOne      = encodeUint16(0x0001)
-	smallintMinusOne = encodeUint16(0xffff)
-	smallintMaxInt16 = encodeUint16(0x7fff)
-	smallintMinInt16 = encodeUint16(0x8000)
+	smallintZeroBytes     = encodeUint16(0x0000)
+	smallintOneBytes      = encodeUint16(0x0001)
+	smallintMinusOneBytes = encodeUint16(0xffff)
+	smallintMaxInt16Bytes = encodeUint16(0x7fff)
+	smallintMinInt16Bytes = encodeUint16(0x8000)
 )
 
 func Test_smallintCodec_Encode(t *testing.T) {
@@ -42,7 +42,7 @@ func Test_smallintCodec_Encode(t *testing.T) {
 			}{
 				{"nil", nil, nil, ""},
 				{"nil pointer", int16NilPtr(), nil, ""},
-				{"non nil", 1, smallintOne, ""},
+				{"non nil", 1, smallintOneBytes, ""},
 				{"conversion failed", uint16(math.MaxUint16), nil, fmt.Sprintf("cannot encode uint16 as CQL smallint with %v: cannot convert from uint16 to int16: value out of range: 65535", version)},
 			}
 			for _, tt := range tests {
@@ -88,9 +88,10 @@ func Test_smallintCodec_Decode(t *testing.T) {
 				err      string
 			}{
 				{"null", nil, new(int16), new(int16), true, ""},
-				{"non null", smallintOne, new(int16), int16Ptr(1), false, ""},
+				{"non null", smallintOneBytes, new(int16), int16Ptr(1), false, ""},
+				{"non null interface", smallintOneBytes, new(interface{}), interfacePtr(int16(1)), false, ""},
 				{"read failed", []byte{1}, new(int16), new(int16), false, fmt.Sprintf("cannot decode CQL smallint as *int16 with %v: cannot read int16: expected 2 bytes but got: 1", version)},
-				{"conversion failed", smallintOne, new(float64), new(float64), false, fmt.Sprintf("cannot decode CQL smallint as *float64 with %v: cannot convert from int16 to *float64: conversion not supported", version)},
+				{"conversion failed", smallintOneBytes, new(float64), new(float64), false, fmt.Sprintf("cannot decode CQL smallint as *float64 with %v: cannot convert from int16 to *float64: conversion not supported", version)},
 			}
 			for _, tt := range tests {
 				t.Run(tt.name, func(t *testing.T) {
@@ -113,7 +114,7 @@ func Test_smallintCodec_Decode(t *testing.T) {
 				err      string
 			}{
 				{"null", nil, new(int16), new(int16), true, "data type smallint not supported"},
-				{"non null", smallintOne, new(int16), new(int16), false, "data type smallint not supported"},
+				{"non null", smallintOneBytes, new(int16), new(int16), false, "data type smallint not supported"},
 			}
 			for _, tt := range tests {
 				t.Run(tt.name, func(t *testing.T) {
@@ -278,11 +279,11 @@ func Test_writeInt16(t *testing.T) {
 		val      int16
 		expected []byte
 	}{
-		{"zero", 0, smallintZero},
-		{"positive", 1, smallintOne},
-		{"negative", -1, smallintMinusOne},
-		{"max", math.MaxInt16, smallintMaxInt16},
-		{"min", math.MinInt16, smallintMinInt16},
+		{"zero", 0, smallintZeroBytes},
+		{"positive", 1, smallintOneBytes},
+		{"negative", -1, smallintMinusOneBytes},
+		{"max", math.MaxInt16, smallintMaxInt16Bytes},
+		{"min", math.MinInt16, smallintMinInt16Bytes},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -303,11 +304,11 @@ func Test_readInt16(t *testing.T) {
 		{"nil", nil, 0, true, ""},
 		{"empty", []byte{}, 0, true, ""},
 		{"wrong length", []byte{1}, 0, false, "cannot read int16: expected 2 bytes but got: 1"},
-		{"zero", smallintZero, 0, false, ""},
-		{"positive", smallintOne, 1, false, ""},
-		{"negative", smallintMinusOne, -1, false, ""},
-		{"max", smallintMaxInt16, math.MaxInt16, false, ""},
-		{"min", smallintMinInt16, math.MinInt16, false, ""},
+		{"zero", smallintZeroBytes, 0, false, ""},
+		{"positive", smallintOneBytes, 1, false, ""},
+		{"negative", smallintMinusOneBytes, -1, false, ""},
+		{"max", smallintMaxInt16Bytes, math.MaxInt16, false, ""},
+		{"min", smallintMinInt16Bytes, math.MinInt16, false, ""},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

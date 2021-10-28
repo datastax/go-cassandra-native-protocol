@@ -100,6 +100,7 @@ func Test_durationCodec_Decode(t *testing.T) {
 			}{
 				{"null", nil, new(CqlDuration), new(CqlDuration), true, ""},
 				{"non null", cqlDurationPosBytes, new(CqlDuration), &cqlDurationPos, false, ""},
+				{"non null interface", cqlDurationPosBytes, new(interface{}), interfacePtr(cqlDurationPos), false, ""},
 				{"read failed", []byte{1}, new(CqlDuration), new(CqlDuration), false, fmt.Sprintf("cannot decode CQL duration as *datacodec.CqlDuration with %v: cannot read datacodec.CqlDuration: cannot read duration days: cannot read [vint]: cannot read [unsigned vint]: EOF", version)},
 				{"conversion failed", cqlDurationPosBytes, new(float64), new(float64), false, fmt.Sprintf("cannot decode CQL duration as *float64 with %v: cannot convert from datacodec.CqlDuration to *float64: conversion not supported", version)},
 			}

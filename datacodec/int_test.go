@@ -24,11 +24,11 @@ import (
 )
 
 var (
-	intZero     = encodeUint32(0x00000000)
-	intOne      = encodeUint32(0x00000001)
-	intMinusOne = encodeUint32(0xffffffff)
-	intMaxInt32 = encodeUint32(0x7fffffff)
-	intMinInt32 = encodeUint32(0x80000000)
+	intZeroBytes     = encodeUint32(0x00000000)
+	intOneBytes      = encodeUint32(0x00000001)
+	intMinusOneBytes = encodeUint32(0xffffffff)
+	intMaxInt32Bytes = encodeUint32(0x7fffffff)
+	intMinInt32Bytes = encodeUint32(0x80000000)
 )
 
 func Test_intCodec_Encode(t *testing.T) {
@@ -42,7 +42,7 @@ func Test_intCodec_Encode(t *testing.T) {
 			}{
 				{"nil", nil, nil, ""},
 				{"nil pointer", int32NilPtr(), nil, ""},
-				{"non nil", 1, intOne, ""},
+				{"non nil", 1, intOneBytes, ""},
 				{"conversion failed", uint32(math.MaxUint32), nil, fmt.Sprintf("cannot encode uint32 as CQL int with %v: cannot convert from uint32 to int32: value out of range: 4294967295", version)},
 			}
 			for _, tt := range tests {
@@ -68,9 +68,10 @@ func Test_intCodec_Decode(t *testing.T) {
 				err      string
 			}{
 				{"null", nil, new(int32), new(int32), true, ""},
-				{"non null", intOne, new(int32), int32Ptr(1), false, ""},
+				{"non null", intOneBytes, new(int32), int32Ptr(1), false, ""},
+				{"non null interface", intOneBytes, new(interface{}), interfacePtr(int32(1)), false, ""},
 				{"read failed", []byte{1}, new(int32), new(int32), false, fmt.Sprintf("cannot decode CQL int as *int32 with %v: cannot read int32: expected 4 bytes but got: 1", version)},
-				{"conversion failed", intOne, new(float64), new(float64), false, fmt.Sprintf("cannot decode CQL int as *float64 with %v: cannot convert from int32 to *float64: conversion not supported", version)},
+				{"conversion failed", intOneBytes, new(float64), new(float64), false, fmt.Sprintf("cannot decode CQL int as *float64 with %v: cannot convert from int32 to *float64: conversion not supported", version)},
 			}
 			for _, tt := range tests {
 				t.Run(tt.name, func(t *testing.T) {
@@ -232,11 +233,11 @@ func Test_writeInt32(t *testing.T) {
 		val      int32
 		expected []byte
 	}{
-		{"zero", 0, intZero},
-		{"positive", 1, intOne},
-		{"negative", -1, intMinusOne},
-		{"max", math.MaxInt32, intMaxInt32},
-		{"min", math.MinInt32, intMinInt32},
+		{"zero", 0, intZeroBytes},
+		{"positive", 1, intOneBytes},
+		{"negative", -1, intMinusOneBytes},
+		{"max", math.MaxInt32, intMaxInt32Bytes},
+		{"min", math.MinInt32, intMinInt32Bytes},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -257,11 +258,11 @@ func Test_readInt32(t *testing.T) {
 		{"nil", nil, 0, true, ""},
 		{"empty", []byte{}, 0, true, ""},
 		{"wrong length", []byte{1}, 0, false, "cannot read int32: expected 4 bytes but got: 1"},
-		{"zero", intZero, 0, false, ""},
-		{"positive", intOne, 1, false, ""},
-		{"negative", intMinusOne, -1, false, ""},
-		{"max", intMaxInt32, math.MaxInt32, false, ""},
-		{"min", intMinInt32, math.MinInt32, false, ""},
+		{"zero", intZeroBytes, 0, false, ""},
+		{"positive", intOneBytes, 1, false, ""},
+		{"negative", intMinusOneBytes, -1, false, ""},
+		{"max", intMaxInt32Bytes, math.MaxInt32, false, ""},
+		{"min", intMinInt32Bytes, math.MinInt32, false, ""},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -84,6 +84,7 @@ func Test_bigintCodec_Decode(t *testing.T) {
 					}{
 						{"null", nil, new(int64), new(int64), true, ""},
 						{"non null", bigIntOneBytes, new(int64), int64Ptr(1), false, ""},
+						{"non null interface", bigIntOneBytes, new(interface{}), interfacePtr(int64(1)), false, ""},
 						{"read failed", []byte{1}, new(int64), new(int64), false, fmt.Sprintf("cannot decode CQL %v as *int64 with %v: cannot read int64: expected 8 bytes but got: 1", codec.DataType(), version)},
 						{"conversion failed", bigIntOneBytes, new(float64), new(float64), false, fmt.Sprintf("cannot decode CQL %v as *float64 with %v: cannot convert from int64 to *float64: conversion not supported", codec.DataType(), version)},
 					}

@@ -181,6 +181,7 @@ func Test_timeCodec_Decode(t *testing.T) {
 			}{
 				{"null", nil, new(int64), new(int64), true, ""},
 				{"non null", timeSimpleBytes, new(time.Time), &timeSimple, false, ""},
+				{"non null interface", timeSimpleBytes, new(interface{}), interfacePtr(durationSimple), false, ""},
 				{"read failed", []byte{1}, new(int64), new(int64), false, fmt.Sprintf("cannot decode CQL time as *int64 with %v: cannot read int64: expected 8 bytes but got: 1", version)},
 				{"conversion failed", timeSimpleBytes, new(float64), new(float64), false, fmt.Sprintf("cannot decode CQL time as *float64 with %v: cannot convert from int64 to *float64: conversion not supported", version)},
 			}

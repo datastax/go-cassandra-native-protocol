@@ -68,6 +68,7 @@ func Test_blobCodec_Decode(t *testing.T) {
 			}{
 				{"null", nil, new([]byte), new([]byte), true, ""},
 				{"non null", []byte{1, 2, 3}, new([]byte), &[]byte{1, 2, 3}, false, ""},
+				{"non null interface", []byte{1, 2, 3}, new(interface{}), interfacePtr([]byte{1, 2, 3}), false, ""},
 				{"conversion failed", []byte{1, 2, 3}, new(float64), new(float64), false, fmt.Sprintf("cannot decode CQL blob as *float64 with %v: cannot convert from []uint8 to *float64: conversion not supported", version)},
 			}
 			for _, tt := range tests {

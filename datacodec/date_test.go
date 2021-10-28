@@ -135,6 +135,7 @@ func Test_dateCodec_Decode(t *testing.T) {
 			}{
 				{"null", nil, new(int32), new(int32), true, ""},
 				{"non null", datePosBytes, new(time.Time), &datePos, false, ""},
+				{"non null interface", datePosBytes, new(interface{}), interfacePtr(datePos), false, ""},
 				{"read failed", []byte{1}, new(int32), new(int32), false, fmt.Sprintf("cannot decode CQL date as *int32 with %v: cannot read int32: expected 4 bytes but got: 1", version)},
 				{"conversion failed", datePosBytes, new(float64), new(float64), false, fmt.Sprintf("cannot decode CQL date as *float64 with %v: cannot convert from int32 to *float64: conversion not supported", version)},
 			}

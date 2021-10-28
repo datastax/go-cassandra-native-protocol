@@ -93,6 +93,7 @@ func Test_decimalCodec_Decode(t *testing.T) {
 			}{
 				{"null", nil, new(CqlDecimal), new(CqlDecimal), true, ""},
 				{"non null", decimalSimpleBytes, new(CqlDecimal), &decimalSimple, false, ""},
+				{"non null interface", decimalSimpleBytes, new(interface{}), interfacePtr(decimalSimple), false, ""},
 				{"read failed", []byte{1, 2, 3}, new(CqlDecimal), new(CqlDecimal), false, fmt.Sprintf("cannot decode CQL decimal as *datacodec.CqlDecimal with %v: cannot read datacodec.CqlDecimal: expected at least 4 bytes but got: 3", version)},
 				{"conversion failed", decimalSimpleBytes, new(float64), new(float64), false, fmt.Sprintf("cannot decode CQL decimal as *float64 with %v: cannot convert from datacodec.CqlDecimal to *float64: conversion not supported", version)},
 			}

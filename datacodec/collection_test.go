@@ -687,7 +687,7 @@ func Test_writeCollectionSize(t *testing.T) {
 				wantErr  string
 			}{
 				{"4 bytes zero", 0, []byte{0, 0, 0, 0}, ""},
-				{"4 bytes max", math.MaxInt32, intMaxInt32, ""},
+				{"4 bytes max", math.MaxInt32, intMaxInt32Bytes, ""},
 				{"4 bytes out of range neg", -1, nil, "expected collection size >= 0, got: -1"},
 			}
 			if strconv.IntSize == 64 {

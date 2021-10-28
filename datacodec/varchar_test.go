@@ -81,6 +81,7 @@ func Test_stringCodec_Decode(t *testing.T) {
 					}{
 						{"null", nil, new(string), new(string), true, ""},
 						{"non null", abcBytes, new(string), stringPtr("abc"), false, ""},
+						{"non null interface", abcBytes, new(interface{}), interfacePtr("abc"), false, ""},
 						{"conversion failed", abcBytes, new(float64), new(float64), false, fmt.Sprintf("cannot decode CQL %v as *float64 with %v: cannot convert from []uint8 to *float64: conversion not supported", codec.DataType(), version)},
 					}
 					for _, tt := range tests {

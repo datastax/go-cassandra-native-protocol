@@ -71,6 +71,7 @@ func Test_varintCodec_Decode(t *testing.T) {
 			}{
 				{"null", nil, new(big.Int), new(big.Int), true, ""},
 				{"non null", []byte{1}, new(big.Int), oneBigInt, false, ""},
+				{"non null interface", []byte{1}, new(interface{}), interfacePtr(oneBigInt), false, ""},
 				{"conversion failed", []byte{1}, new(float64), new(float64), false, fmt.Sprintf("cannot decode CQL varint as *float64 with %v: cannot convert from *big.Int to *float64: conversion not supported", version)},
 			}
 			for _, tt := range tests {

@@ -24,10 +24,10 @@ import (
 )
 
 var (
-	floatZero       = encodeUint32(0x00000000)
-	floatOne        = encodeUint32(0x3f800000)
-	floatMinusOne   = encodeUint32(0xbf800000)
-	floatMaxFloat32 = encodeUint32(0x7f7fffff)
+	floatZeroBytes       = encodeUint32(0x00000000)
+	floatOneBytes        = encodeUint32(0x3f800000)
+	floatMinusOneBytes   = encodeUint32(0xbf800000)
+	floatMaxFloat32Bytes = encodeUint32(0x7f7fffff)
 )
 
 func Test_floatCodec_DataType(t *testing.T) {
@@ -45,7 +45,7 @@ func Test_floatCodec_Encode(t *testing.T) {
 			}{
 				{"nil", nil, nil, ""},
 				{"nil pointer", float32NilPtr(), nil, ""},
-				{"non nil", 1.0, floatOne, ""},
+				{"non nil", 1.0, floatOneBytes, ""},
 				{"conversion failed", int32(42), nil, fmt.Sprintf("cannot encode int32 as CQL float with %v: cannot convert from int32 to float32: conversion not supported", version)},
 			}
 			for _, tt := range tests {
@@ -71,9 +71,10 @@ func Test_floatCodec_Decode(t *testing.T) {
 				err      string
 			}{
 				{"null", nil, new(float32), new(float32), true, ""},
-				{"non null", floatOne, new(float32), float32Ptr(1), false, ""},
+				{"non null", floatOneBytes, new(float32), float32Ptr(1), false, ""},
+				{"non null interface", floatOneBytes, new(interface{}), interfacePtr(float32(1.0)), false, ""},
 				{"read failed", []byte{1}, new(float32), new(float32), false, fmt.Sprintf("cannot decode CQL float as *float32 with %v: cannot read float32: expected 4 bytes but got: 1", version)},
-				{"conversion failed", floatOne, new(int64), new(int64), false, fmt.Sprintf("cannot decode CQL float as *int64 with %v: cannot convert from float32 to *int64: conversion not supported", version)},
+				{"conversion failed", floatOneBytes, new(int64), new(int64), false, fmt.Sprintf("cannot decode CQL float as *int64 with %v: cannot convert from float32 to *int64: conversion not supported", version)},
 			}
 			for _, tt := range tests {
 				t.Run(tt.name, func(t *testing.T) {
@@ -154,12 +155,12 @@ func Test_writeFloat32(t *testing.T) {
 		val      float32
 		expected []byte
 	}{
-		{"zero", 0, floatZero},
-		{"1", 1, floatOne},
-		{"-1", -1, floatMinusOne},
+		{"zero", 0, floatZeroBytes},
+		{"1", 1, floatOneBytes},
+		{"-1", -1, floatMinusOneBytes},
 		{"simple pos", 123.4, encodeUint32(0x42f6cccd)},
 		{"simple neg", -123.4, encodeUint32(0xc2f6cccd)},
-		{"max", math.MaxFloat32, floatMaxFloat32},
+		{"max", math.MaxFloat32, floatMaxFloat32Bytes},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -180,12 +181,12 @@ func Test_readFloat32(t *testing.T) {
 		{"nil", nil, 0, true, ""},
 		{"empty", []byte{}, 0, true, ""},
 		{"wrong length", []byte{1}, 0, false, "cannot read float32: expected 4 bytes but got: 1"},
-		{"zero", floatZero, 0, false, ""},
-		{"1", floatOne, 1, false, ""},
-		{"-1", floatMinusOne, -1, false, ""},
+		{"zero", floatZeroBytes, 0, false, ""},
+		{"1", floatOneBytes, 1, false, ""},
+		{"-1", floatMinusOneBytes, -1, false, ""},
 		{"simple pos", encodeUint32(0x42f6cccd), 123.4, false, ""},
 		{"simple neg", encodeUint32(0xc2f6cccd), -123.4, false, ""},
-		{"max", floatMaxFloat32, math.MaxFloat32, false, ""},
+		{"max", floatMaxFloat32Bytes, math.MaxFloat32, false, ""},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

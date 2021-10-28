@@ -73,6 +73,7 @@ func Test_doubleCodec_Decode(t *testing.T) {
 			}{
 				{"null", nil, new(float64), new(float64), true, ""},
 				{"non null", doubleOneBytes, new(float64), float64Ptr(1), false, ""},
+				{"non null interface", doubleOneBytes, new(interface{}), interfacePtr(1.0), false, ""},
 				{"read failed", []byte{1}, new(float64), new(float64), false, fmt.Sprintf("cannot decode CQL double as *float64 with %v: cannot read float64: expected 8 bytes but got: 1", version)},
 				{"conversion failed", doubleOneBytes, new(int64), new(int64), false, fmt.Sprintf("cannot decode CQL double as *int64 with %v: cannot convert from float64 to *int64: conversion not supported", version)},
 			}

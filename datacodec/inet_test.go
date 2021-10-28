@@ -82,6 +82,7 @@ func Test_inetCodec_Decode(t *testing.T) {
 				{"zero", []byte{}, new(net.IP), new(net.IP), true, ""},
 				{"non null v4", inetAddr4Bytes, new(net.IP), &inetAddr4, false, ""},
 				{"non null v6", inetAddr6Bytes, new(net.IP), &inetAddr6, false, ""},
+				{"non null interface", inetAddr4Bytes, new(interface{}), interfacePtr(inetAddr4), false, ""},
 				{"invalid", []byte{1, 2, 3}, new(net.IP), new(net.IP), false, fmt.Sprintf("cannot decode CQL inet as *net.IP with %v: cannot read net.IP: expected 4 or 16 bytes but got: 3", version)},
 				{"conversion failed", inetAddr4Bytes, new(float64), new(float64), false, fmt.Sprintf("cannot decode CQL inet as *float64 with %v: cannot convert from net.IP to *float64: conversion not supported", version)},
 			}

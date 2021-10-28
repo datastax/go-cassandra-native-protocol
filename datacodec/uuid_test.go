@@ -81,6 +81,7 @@ func Test_uuidCodec_Decode(t *testing.T) {
 						{"null", nil, new(primitive.UUID), new(primitive.UUID), true, ""},
 						{"zero", []byte{}, new(primitive.UUID), new(primitive.UUID), true, ""},
 						{"non null", uuidBytes, new(primitive.UUID), &uuid, false, ""},
+						{"non null interface", uuidBytes, new(interface{}), interfacePtr(uuid), false, ""},
 						{"invalid", []byte{1, 2, 3}, new(primitive.UUID), new(primitive.UUID), false, fmt.Sprintf("cannot decode CQL %v as *primitive.UUID with %v: cannot read []uint8: expected 16 bytes but got: 3", codec.DataType(), version)},
 						{"conversion failed", uuidBytes, new(float64), new(float64), false, fmt.Sprintf("cannot decode CQL %v as *float64 with %v: cannot convert from []uint8 to *float64: conversion not supported", codec.DataType(), version)},
 					}
