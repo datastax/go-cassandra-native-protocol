@@ -101,7 +101,7 @@ func convertToUuidBytes(source interface{}) (val []byte, err error) {
 		}
 	case nil:
 	default:
-		err = errConversionNotSupported
+		err = ErrConversionNotSupported
 	}
 	if err != nil {
 		err = errSourceConversionFailed(source, val, err)
@@ -113,7 +113,7 @@ func convertFromUuidBytes(val []byte, wasNull bool, dest interface{}) (err error
 	switch d := dest.(type) {
 	case *interface{}:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = nil
 		} else {
@@ -123,7 +123,7 @@ func convertFromUuidBytes(val []byte, wasNull bool, dest interface{}) (err error
 		}
 	case *primitive.UUID:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = primitive.UUID{}
 		} else {
@@ -131,7 +131,7 @@ func convertFromUuidBytes(val []byte, wasNull bool, dest interface{}) (err error
 		}
 	case *[]byte:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = nil
 		} else {
@@ -139,7 +139,7 @@ func convertFromUuidBytes(val []byte, wasNull bool, dest interface{}) (err error
 		}
 	case *[16]byte:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = [16]byte{}
 		} else {
@@ -148,7 +148,7 @@ func convertFromUuidBytes(val []byte, wasNull bool, dest interface{}) (err error
 		}
 	case *string:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = ""
 		} else {

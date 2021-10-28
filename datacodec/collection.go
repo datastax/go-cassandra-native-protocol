@@ -26,7 +26,7 @@ import (
 
 func NewList(dataType datatype.ListType) (Codec, error) {
 	if dataType == nil {
-		return nil, errNilDataType
+		return nil, ErrNilDataType
 	}
 	codec, err := NewCodec(dataType.GetElementType())
 	if err != nil {
@@ -37,7 +37,7 @@ func NewList(dataType datatype.ListType) (Codec, error) {
 
 func NewSet(dataType datatype.SetType) (Codec, error) {
 	if dataType == nil {
-		return nil, errNilDataType
+		return nil, ErrNilDataType
 	}
 	codec, err := NewCodec(dataType.GetElementType())
 	if err != nil {
@@ -88,7 +88,7 @@ func (c *collectionCodec) createExtractor(source interface{}) (ext extractor, si
 				size = sourceValue.Len()
 			}
 		default:
-			err = errSourceTypeNotSupported
+			err = ErrSourceTypeNotSupported
 		}
 	}
 	return
@@ -122,7 +122,7 @@ func (c *collectionCodec) createInjector(dest interface{}, wasNull bool) (inject
 				}
 			}
 		default:
-			err = errDestinationTypeNotSupported
+			err = ErrDestinationTypeNotSupported
 		}
 	}
 	return

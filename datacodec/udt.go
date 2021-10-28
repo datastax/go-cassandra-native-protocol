@@ -24,7 +24,7 @@ import (
 
 func NewUserDefined(dataType datatype.UserDefinedType) (Codec, error) {
 	if dataType == nil {
-		return nil, errNilDataType
+		return nil, ErrNilDataType
 	}
 	fieldCodecs := make([]Codec, len(dataType.GetFieldTypes()))
 	for i, fieldType := range dataType.GetFieldTypes() {
@@ -99,7 +99,7 @@ func (c *udtCodec) createExtractor(source interface{}) (ext extractor, err error
 				ext, err = newSliceExtractor(sourceValue)
 			}
 		default:
-			err = errSourceTypeNotSupported
+			err = ErrSourceTypeNotSupported
 		}
 	}
 	return
@@ -139,7 +139,7 @@ func (c *udtCodec) createInjector(dest interface{}, wasNull bool) (inj injector,
 				inj, err = newMapInjector(reflect.ValueOf(target))
 			}
 		default:
-			err = errDestinationTypeNotSupported
+			err = ErrDestinationTypeNotSupported
 		}
 	}
 	return

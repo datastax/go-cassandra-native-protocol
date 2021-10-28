@@ -79,7 +79,7 @@ func convertToDecimal(source interface{}) (val CqlDecimal, wasNil bool, err erro
 	case nil:
 		wasNil = true
 	default:
-		err = errConversionNotSupported
+		err = ErrConversionNotSupported
 	}
 	if err != nil {
 		err = errSourceConversionFailed(source, val, err)
@@ -91,7 +91,7 @@ func convertFromDecimal(val CqlDecimal, wasNull bool, dest interface{}) (err err
 	switch d := dest.(type) {
 	case *interface{}:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = nil
 		} else {
@@ -99,7 +99,7 @@ func convertFromDecimal(val CqlDecimal, wasNull bool, dest interface{}) (err err
 		}
 	case *CqlDecimal:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = CqlDecimal{}
 		} else {

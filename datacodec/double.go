@@ -77,7 +77,7 @@ func convertToFloat64(source interface{}) (val float64, wasNil bool, err error) 
 	case nil:
 		wasNil = true
 	default:
-		err = errConversionNotSupported
+		err = ErrConversionNotSupported
 	}
 	if err != nil {
 		err = errSourceConversionFailed(source, val, err)
@@ -89,7 +89,7 @@ func convertFromFloat64(val float64, wasNull bool, dest interface{}) (err error)
 	switch d := dest.(type) {
 	case *interface{}:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = nil
 		} else {
@@ -97,7 +97,7 @@ func convertFromFloat64(val float64, wasNull bool, dest interface{}) (err error)
 		}
 	case *float64:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = 0
 		} else {
@@ -105,7 +105,7 @@ func convertFromFloat64(val float64, wasNull bool, dest interface{}) (err error)
 		}
 	case *float32:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = 0
 		} else {
@@ -113,7 +113,7 @@ func convertFromFloat64(val float64, wasNull bool, dest interface{}) (err error)
 		}
 	case *big.Float:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = big.Float{}
 		} else {

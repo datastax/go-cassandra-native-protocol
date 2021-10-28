@@ -24,7 +24,7 @@ import (
 
 func NewMap(dataType datatype.MapType) (Codec, error) {
 	if dataType == nil {
-		return nil, errNilDataType
+		return nil, ErrNilDataType
 	}
 	keyCodec, err := NewCodec(dataType.GetKeyType())
 	if err != nil {
@@ -89,7 +89,7 @@ func (c *mapCodec) createExtractor(source interface{}) (ext keyValueExtractor, s
 				}
 			}
 		default:
-			err = errSourceTypeNotSupported
+			err = ErrSourceTypeNotSupported
 		}
 	}
 	return
@@ -127,7 +127,7 @@ func (c *mapCodec) createInjector(dest interface{}, wasNull bool) (injectorFacto
 				}
 			}
 		default:
-			err = errDestinationTypeNotSupported
+			err = ErrDestinationTypeNotSupported
 		}
 	}
 	return

@@ -97,7 +97,7 @@ func convertToIP(source interface{}) (val net.IP, err error) {
 		}
 	case nil:
 	default:
-		err = errConversionNotSupported
+		err = ErrConversionNotSupported
 	}
 	if err != nil {
 		err = errSourceConversionFailed(source, val, err)
@@ -109,7 +109,7 @@ func convertFromIP(val net.IP, wasNull bool, dest interface{}) (err error) {
 	switch d := dest.(type) {
 	case *interface{}:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = nil
 		} else {
@@ -117,7 +117,7 @@ func convertFromIP(val net.IP, wasNull bool, dest interface{}) (err error) {
 		}
 	case *net.IP:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = nil
 		} else {
@@ -125,7 +125,7 @@ func convertFromIP(val net.IP, wasNull bool, dest interface{}) (err error) {
 		}
 	case *[]byte:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = nil
 		} else {
@@ -133,7 +133,7 @@ func convertFromIP(val net.IP, wasNull bool, dest interface{}) (err error) {
 		}
 	case *string:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = ""
 		} else {

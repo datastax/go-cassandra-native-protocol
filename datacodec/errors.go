@@ -22,14 +22,14 @@ import (
 	"reflect"
 )
 
-var errNilDestination = errors.New("destination is nil")
-var errNilDataType = errors.New("data type is nil")
+var ErrNilDestination = errors.New("destination is nil")
+var ErrNilDataType = errors.New("data type is nil")
 
-var errConversionNotSupported = errors.New("conversion not supported")
-var errSourceTypeNotSupported = errors.New("source type not supported")
-var errDestinationTypeNotSupported = errors.New("destination type not supported")
+var ErrConversionNotSupported = errors.New("conversion not supported")
+var ErrSourceTypeNotSupported = errors.New("source type not supported")
+var ErrDestinationTypeNotSupported = errors.New("destination type not supported")
 
-var errPointerTypeExpected = errors.New("destination is not pointer")
+var ErrPointerTypeExpected = errors.New("destination is not pointer")
 
 func errCannotEncode(source interface{}, dataType datatype.DataType, version primitive.ProtocolVersion, err error) error {
 	return fmt.Errorf("cannot encode %T as CQL %s with %v: %w", source, dataType, version, err)
@@ -249,10 +249,10 @@ func errCannotFindGoType(dt datatype.DataType) error {
 
 func errDestinationInvalid(dest interface{}) error {
 	if dest == nil {
-		return errNilDestination
+		return ErrNilDestination
 	} else if reflect.TypeOf(dest).Kind() != reflect.Ptr {
-		return errPointerTypeExpected
+		return ErrPointerTypeExpected
 	} else {
-		return errConversionNotSupported
+		return ErrConversionNotSupported
 	}
 }

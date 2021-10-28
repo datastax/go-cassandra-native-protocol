@@ -24,7 +24,7 @@ import (
 
 func NewTuple(tupleType datatype.TupleType) (Codec, error) {
 	if tupleType == nil {
-		return nil, errNilDataType
+		return nil, ErrNilDataType
 	}
 	elementCodecs := make([]Codec, len(tupleType.GetFieldTypes()))
 	for i, elementType := range tupleType.GetFieldTypes() {
@@ -90,7 +90,7 @@ func (c *tupleCodec) createExtractor(source interface{}) (ext extractor, err err
 				ext, err = newSliceExtractor(sourceValue)
 			}
 		default:
-			err = errSourceTypeNotSupported
+			err = ErrSourceTypeNotSupported
 		}
 	}
 	return
@@ -120,7 +120,7 @@ func (c *tupleCodec) createInjector(dest interface{}, wasNull bool) (inj injecto
 				inj, err = newSliceInjector(reflect.ValueOf(target))
 			}
 		default:
-			err = errDestinationTypeNotSupported
+			err = ErrDestinationTypeNotSupported
 		}
 	}
 	return

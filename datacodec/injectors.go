@@ -60,7 +60,7 @@ type mapInjector struct {
 
 func newSliceInjector(dest reflect.Value) (injector, error) {
 	if !dest.IsValid() {
-		return nil, errDestinationTypeNotSupported
+		return nil, ErrDestinationTypeNotSupported
 	} else if dest.Kind() != reflect.Slice && dest.Kind() != reflect.Array {
 		return nil, errWrongContainerType("slice or array", dest.Type())
 	}
@@ -73,7 +73,7 @@ func newSliceInjector(dest reflect.Value) (injector, error) {
 }
 func newStructInjector(dest reflect.Value) (keyValueInjector, error) {
 	if !dest.IsValid() {
-		return nil, errDestinationTypeNotSupported
+		return nil, ErrDestinationTypeNotSupported
 	} else if dest.Kind() != reflect.Struct {
 		return nil, errWrongContainerType("struct", dest.Type())
 	} else if !dest.CanSet() {
@@ -84,7 +84,7 @@ func newStructInjector(dest reflect.Value) (keyValueInjector, error) {
 
 func newMapInjector(dest reflect.Value) (keyValueInjector, error) {
 	if !dest.IsValid() {
-		return nil, errDestinationTypeNotSupported
+		return nil, ErrDestinationTypeNotSupported
 	} else if dest.Kind() != reflect.Map {
 		return nil, errWrongContainerType("map", dest.Type())
 	}

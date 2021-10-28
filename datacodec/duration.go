@@ -87,7 +87,7 @@ func convertToDuration(source interface{}) (val CqlDuration, wasNil bool, err er
 	case nil:
 		wasNil = true
 	default:
-		err = errConversionNotSupported
+		err = ErrConversionNotSupported
 	}
 	if err != nil {
 		err = errSourceConversionFailed(source, val, err)
@@ -99,7 +99,7 @@ func convertFromDuration(val CqlDuration, wasNull bool, dest interface{}) (err e
 	switch d := dest.(type) {
 	case *interface{}:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = nil
 		} else {
@@ -107,7 +107,7 @@ func convertFromDuration(val CqlDuration, wasNull bool, dest interface{}) (err e
 		}
 	case *CqlDuration:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = CqlDuration{}
 		} else {

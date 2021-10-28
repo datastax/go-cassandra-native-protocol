@@ -123,7 +123,7 @@ func convertToBoolean(source interface{}) (val bool, wasNil bool, err error) {
 	case nil:
 		wasNil = true
 	default:
-		err = errConversionNotSupported
+		err = ErrConversionNotSupported
 	}
 	if err != nil {
 		err = errSourceConversionFailed(source, val, err)
@@ -135,7 +135,7 @@ func convertFromBoolean(val bool, wasNull bool, dest interface{}) (err error) {
 	switch d := dest.(type) {
 	case *interface{}:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = nil
 		} else {
@@ -143,7 +143,7 @@ func convertFromBoolean(val bool, wasNull bool, dest interface{}) (err error) {
 		}
 	case *bool:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = false
 		} else {
@@ -151,7 +151,7 @@ func convertFromBoolean(val bool, wasNull bool, dest interface{}) (err error) {
 		}
 	case *int64:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull || !val {
 			*d = 0
 		} else {
@@ -159,7 +159,7 @@ func convertFromBoolean(val bool, wasNull bool, dest interface{}) (err error) {
 		}
 	case *int:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull || !val {
 			*d = 0
 		} else {
@@ -167,7 +167,7 @@ func convertFromBoolean(val bool, wasNull bool, dest interface{}) (err error) {
 		}
 	case *int32:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull || !val {
 			*d = 0
 		} else {
@@ -175,7 +175,7 @@ func convertFromBoolean(val bool, wasNull bool, dest interface{}) (err error) {
 		}
 	case *int16:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull || !val {
 			*d = 0
 		} else {
@@ -183,7 +183,7 @@ func convertFromBoolean(val bool, wasNull bool, dest interface{}) (err error) {
 		}
 	case *int8:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull || !val {
 			*d = 0
 		} else {
@@ -191,7 +191,7 @@ func convertFromBoolean(val bool, wasNull bool, dest interface{}) (err error) {
 		}
 	case *uint64:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull || !val {
 			*d = 0
 		} else {
@@ -199,7 +199,7 @@ func convertFromBoolean(val bool, wasNull bool, dest interface{}) (err error) {
 		}
 	case *uint:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull || !val {
 			*d = 0
 		} else {
@@ -207,7 +207,7 @@ func convertFromBoolean(val bool, wasNull bool, dest interface{}) (err error) {
 		}
 	case *uint32:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull || !val {
 			*d = 0
 		} else {
@@ -215,7 +215,7 @@ func convertFromBoolean(val bool, wasNull bool, dest interface{}) (err error) {
 		}
 	case *uint16:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull || !val {
 			*d = 0
 		} else {
@@ -223,7 +223,7 @@ func convertFromBoolean(val bool, wasNull bool, dest interface{}) (err error) {
 		}
 	case *uint8:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull || !val {
 			*d = 0
 		} else {

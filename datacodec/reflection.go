@@ -72,13 +72,13 @@ func reflectSource(source interface{}) (sourceValue reflect.Value, sourceType re
 // value.
 func reflectDest(dest interface{}, wasNull bool) (destValue reflect.Value, err error) {
 	if dest == nil {
-		err = errNilDestination
+		err = ErrNilDestination
 	} else {
 		destValue = reflect.ValueOf(dest)
 		if destValue.Kind() != reflect.Ptr {
-			err = errPointerTypeExpected
+			err = ErrPointerTypeExpected
 		} else if destValue.IsNil() {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else {
 			if wasNull {
 				zero := reflect.Zero(destValue.Elem().Type())

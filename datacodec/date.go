@@ -144,7 +144,7 @@ func convertFromInt32Date(val int32, wasNull bool, layout string, dest interface
 	switch d := dest.(type) {
 	case *interface{}:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = nil
 		} else {
@@ -152,7 +152,7 @@ func convertFromInt32Date(val int32, wasNull bool, layout string, dest interface
 		}
 	case *time.Time:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = time.Time{}
 		} else {
@@ -160,7 +160,7 @@ func convertFromInt32Date(val int32, wasNull bool, layout string, dest interface
 		}
 	case *string:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = ""
 		} else {

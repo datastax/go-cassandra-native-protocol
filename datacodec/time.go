@@ -164,7 +164,7 @@ func convertFromInt64Time(val int64, wasNull bool, dest interface{}, layout stri
 	switch d := dest.(type) {
 	case *interface{}:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = nil
 		} else {
@@ -172,7 +172,7 @@ func convertFromInt64Time(val int64, wasNull bool, dest interface{}, layout stri
 		}
 	case *time.Duration:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = 0
 		} else {
@@ -180,7 +180,7 @@ func convertFromInt64Time(val int64, wasNull bool, dest interface{}, layout stri
 		}
 	case *time.Time:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = time.Time{}
 		} else {
@@ -188,7 +188,7 @@ func convertFromInt64Time(val int64, wasNull bool, dest interface{}, layout stri
 		}
 	case *string:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = ""
 		} else {

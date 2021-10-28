@@ -71,7 +71,7 @@ func convertToBytes(source interface{}) (val []byte, err error) {
 		}
 	case nil:
 	default:
-		err = errConversionNotSupported
+		err = ErrConversionNotSupported
 	}
 	if err != nil {
 		err = errSourceConversionFailed(source, val, err)
@@ -84,7 +84,7 @@ func convertFromBytes(val []byte, dest interface{}) (wasNull bool, err error) {
 	switch d := dest.(type) {
 	case *interface{}:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = nil
 		} else {
@@ -92,7 +92,7 @@ func convertFromBytes(val []byte, dest interface{}) (wasNull bool, err error) {
 		}
 	case *string:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = ""
 		} else {
@@ -100,7 +100,7 @@ func convertFromBytes(val []byte, dest interface{}) (wasNull bool, err error) {
 		}
 	case *[]byte:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = nil
 		} else {

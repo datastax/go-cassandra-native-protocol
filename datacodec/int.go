@@ -125,7 +125,7 @@ func convertToInt32(source interface{}) (val int32, wasNil bool, err error) {
 	case nil:
 		wasNil = true
 	default:
-		err = errConversionNotSupported
+		err = ErrConversionNotSupported
 	}
 	if err != nil {
 		err = errSourceConversionFailed(source, val, err)
@@ -137,7 +137,7 @@ func convertFromInt32(val int32, wasNull bool, dest interface{}) (err error) {
 	switch d := dest.(type) {
 	case *interface{}:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = nil
 		} else {
@@ -145,7 +145,7 @@ func convertFromInt32(val int32, wasNull bool, dest interface{}) (err error) {
 		}
 	case *int:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = 0
 		} else {
@@ -153,7 +153,7 @@ func convertFromInt32(val int32, wasNull bool, dest interface{}) (err error) {
 		}
 	case *int64:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = 0
 		} else {
@@ -161,7 +161,7 @@ func convertFromInt32(val int32, wasNull bool, dest interface{}) (err error) {
 		}
 	case *int32:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = 0
 		} else {
@@ -169,7 +169,7 @@ func convertFromInt32(val int32, wasNull bool, dest interface{}) (err error) {
 		}
 	case *int16:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = 0
 		} else {
@@ -177,7 +177,7 @@ func convertFromInt32(val int32, wasNull bool, dest interface{}) (err error) {
 		}
 	case *int8:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = 0
 		} else {
@@ -185,7 +185,7 @@ func convertFromInt32(val int32, wasNull bool, dest interface{}) (err error) {
 		}
 	case *uint:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = 0
 		} else {
@@ -193,7 +193,7 @@ func convertFromInt32(val int32, wasNull bool, dest interface{}) (err error) {
 		}
 	case *uint64:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = 0
 		} else {
@@ -201,7 +201,7 @@ func convertFromInt32(val int32, wasNull bool, dest interface{}) (err error) {
 		}
 	case *uint32:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = 0
 		} else {
@@ -209,7 +209,7 @@ func convertFromInt32(val int32, wasNull bool, dest interface{}) (err error) {
 		}
 	case *uint16:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = 0
 		} else {
@@ -217,7 +217,7 @@ func convertFromInt32(val int32, wasNull bool, dest interface{}) (err error) {
 		}
 	case *uint8:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = 0
 		} else {
@@ -225,7 +225,7 @@ func convertFromInt32(val int32, wasNull bool, dest interface{}) (err error) {
 		}
 	case *string:
 		if d == nil {
-			err = errNilDestination
+			err = ErrNilDestination
 		} else if wasNull {
 			*d = ""
 		} else {
