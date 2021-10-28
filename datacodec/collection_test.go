@@ -122,6 +122,24 @@ var (
 		0, 0, 0, 2,
 		255, 255, 255, 255,
 	}
+	listAbcNullNullBytes4 = []byte{
+		0, 0, 0, 2, // length of outer collection
+		0, 0, 0, 15, // length of outer collection 1st element
+		0, 0, 0, 2, // length of 1st inner collection
+		0, 0, 0, 3, // length of 1st inner collection 1st element
+		a, b, c, // element
+		255, 255, 255, 255, // inner collection 2nd element (null)
+		255, 255, 255, 255, // outer collection 2nd element (null)
+	}
+	listAbcNullNullBytes2 = []byte{
+		0, 2, // length of outer collection
+		0, 0, 0, 13, // length of outer collection 1st element
+		0, 2, // length of 1st inner collection
+		0, 0, 0, 3, // length of 1st inner collection 1st element
+		a, b, c, // element
+		255, 255, 255, 255, // inner collection 2nd element (null)
+		255, 255, 255, 255, // outer collection 2nd element (null)
+	}
 )
 
 func TestNewList(t *testing.T) {
@@ -330,7 +348,10 @@ func Test_collectionCodec_Decode(t *testing.T) {
 				{"list<int> many elems pointers", listOfInt, listOneTwoThreeBytes4, new([]*int), &[]*int{intPtr(1), intPtr(2), intPtr(3)}, false, ""},
 				{"list<int> many elems []interface{}", listOfInt, listOneTwoThreeBytes4, new([]interface{}), &[]interface{}{int32(1), int32(2), int32(3)}, false, ""},
 				{"list<int> many elems interface{}", listOfInt, listOneTwoThreeBytes4, new(interface{}), interfacePtr([]int32{1, 2, 3}), false, ""},
-				{"list<int> nil elem", listOfInt, listOneTwoNullBytes4, new([]*int), &[]*int{intPtr(1), intPtr(2), nil}, false, ""},
+				{"list<int> nil elem", listOfInt, listOneTwoNullBytes4, new([]int), &[]int{1, 2, 0}, false, ""},
+				{"list<int> nil elem pointers", listOfInt, listOneTwoNullBytes4, new([]*int), &[]*int{intPtr(1), intPtr(2), nil}, false, ""},
+				{"list<int> nil elem []interface{}", listOfInt, listOneTwoNullBytes4, new([]interface{}), &[]interface{}{int32(1), int32(2), nil}, false, ""},
+				{"list<int> nil elem interface{}", listOfInt, listOneTwoNullBytes4, new(interface{}), interfacePtr([]int32{1, 2, 0}), false, ""},
 				{"list<int> pointer required", listOfInt, nil, []interface{}{}, []interface{}{}, true, fmt.Sprintf("cannot decode CQL %s as []interface {} with %s: destination is not pointer", listOfInt.DataType(), version)},
 				{"list<int> wrong destination type", listOfInt, nil, &map[string]int{}, new(map[string]int), true, fmt.Sprintf("cannot decode CQL %s as *map[string]int with %s: destination type not supported", listOfInt.DataType(), version)},
 				{"list<set<text>> nil untyped", listOfSetOfVarchar, nil, nil, nil, true, fmt.Sprintf("cannot decode CQL list<set<varchar>> as <nil> with %v: destination is nil", version)},
@@ -341,6 +362,10 @@ func Test_collectionCodec_Decode(t *testing.T) {
 				{"list<set<text>> pointers", listOfSetOfVarchar, listAbcDefEmptyBytes4, new([][]*string), &[][]*string{{stringPtr("abc"), stringPtr("def")}, {}}, false, ""},
 				{"list<set<text>> many elems [][]interface{}", listOfSetOfVarchar, listAbcDefEmptyBytes4, new([][]interface{}), &[][]interface{}{{"abc", "def"}, {}}, false, ""},
 				{"list<set<text>> many elems interface{}", listOfSetOfVarchar, listAbcDefEmptyBytes4, new(interface{}), interfacePtr([][]string{{"abc", "def"}, {}}), false, ""},
+				{"list<set<text>> nil elem", listOfSetOfVarchar, listAbcNullNullBytes4, new([][]string), &[][]string{{"abc", ""}, nil}, false, ""},
+				{"list<set<text>> nil elem pointers", listOfSetOfVarchar, listAbcNullNullBytes4, new([][]*string), &[][]*string{{stringPtr("abc"), nil}, nil}, false, ""},
+				{"list<set<text>> nil elem [][]interface{}", listOfSetOfVarchar, listAbcNullNullBytes4, new([][]interface{}), &[][]interface{}{{"abc", nil}, nil}, false, ""},
+				{"list<set<text>> nil elem interface{}", listOfSetOfVarchar, listAbcNullNullBytes4, new(interface{}), interfacePtr([][]string{{"abc", ""}, nil}), false, ""},
 				{"pointer required", listOfSetOfVarchar, nil, [][]interface{}{}, [][]interface{}{}, true, fmt.Sprintf("cannot decode CQL %s as [][]interface {} with %s: destination is not pointer", listOfSetOfVarchar.DataType(), version)},
 				{"list<set<text>> wrong destination type", listOfSetOfVarchar, nil, &map[string]int{}, new(map[string]int), true, fmt.Sprintf("cannot decode CQL %s as *map[string]int with %s: destination type not supported", listOfSetOfVarchar.DataType(), version)},
 			}
@@ -374,7 +399,10 @@ func Test_collectionCodec_Decode(t *testing.T) {
 				{"list<int> many elems pointers", listOfInt, listOneTwoThreeBytes2, new([]*int), &[]*int{intPtr(1), intPtr(2), intPtr(3)}, false, ""},
 				{"list<int> many elems []interface{}", listOfInt, listOneTwoThreeBytes2, new([]interface{}), &[]interface{}{int32(1), int32(2), int32(3)}, false, ""},
 				{"list<int> many elems interface{}", listOfInt, listOneTwoThreeBytes2, new(interface{}), interfacePtr([]int32{int32(1), int32(2), int32(3)}), false, ""},
-				{"list<int> nil elem", listOfInt, listOneTwoNullBytes2, new([]*int), &[]*int{intPtr(1), intPtr(2), nil}, false, ""},
+				{"list<int> nil elem", listOfInt, listOneTwoNullBytes2, new([]int), &[]int{1, 2, 0}, false, ""},
+				{"list<int> nil elem pointers", listOfInt, listOneTwoNullBytes2, new([]*int), &[]*int{intPtr(1), intPtr(2), nil}, false, ""},
+				{"list<int> nil elem []interface{}", listOfInt, listOneTwoNullBytes2, new([]interface{}), &[]interface{}{int32(1), int32(2), nil}, false, ""},
+				{"list<int> nil elem interface{}", listOfInt, listOneTwoNullBytes2, new(interface{}), interfacePtr([]int32{1, 2, 0}), false, ""},
 				{"list<int> pointer required", listOfInt, nil, []int{}, []int{}, true, fmt.Sprintf("cannot decode CQL %s as []int with %v: destination is not pointer", listOfInt.DataType(), version)},
 				{"list<int> destination type not supported", listOfInt, nil, &map[string]int{}, new(map[string]int), true, fmt.Sprintf("cannot decode CQL %s as *map[string]int with %v: destination type not supported", listOfInt.DataType(), version)},
 				{"list<set<text>> nil untyped", listOfSetOfVarchar, nil, nil, nil, true, "cannot decode CQL list<set<varchar>> as <nil> with ProtocolVersion OSS 2: destination is nil"},
@@ -385,6 +413,10 @@ func Test_collectionCodec_Decode(t *testing.T) {
 				{"list<set<text>> pointers", listOfSetOfVarchar, listAbcDefEmptyBytes2, new([][]*string), &[][]*string{{stringPtr("abc"), stringPtr("def")}, {}}, false, ""},
 				{"list<set<text>> many elems [][]interface{}", listOfSetOfVarchar, listAbcDefEmptyBytes2, new([][]interface{}), &[][]interface{}{{"abc", "def"}, {}}, false, ""},
 				{"list<set<text>> many elems interface{}", listOfSetOfVarchar, listAbcDefEmptyBytes2, new(interface{}), interfacePtr([][]string{{"abc", "def"}, {}}), false, ""},
+				{"list<set<text>> nil elem", listOfSetOfVarchar, listAbcNullNullBytes2, new([][]string), &[][]string{{"abc", ""}, nil}, false, ""},
+				{"list<set<text>> nil elem pointers", listOfSetOfVarchar, listAbcNullNullBytes2, new([][]*string), &[][]*string{{stringPtr("abc"), nil}, nil}, false, ""},
+				{"list<set<text>> nil elem [][]interface{}", listOfSetOfVarchar, listAbcNullNullBytes2, new([][]interface{}), &[][]interface{}{{"abc", nil}, nil}, false, ""},
+				{"list<set<text>> nil elem interface{}", listOfSetOfVarchar, listAbcNullNullBytes2, new(interface{}), interfacePtr([][]string{{"abc", ""}, nil}), false, ""},
 				{"list<set<text>> pointer required", listOfSetOfVarchar, nil, [][]string{}, [][]string{}, true, fmt.Sprintf("cannot decode CQL %s as [][]string with %s: destination is not pointer", listOfSetOfVarchar.DataType(), version)},
 				{"list<set<text>> wrong destination type", listOfSetOfVarchar, nil, &map[string]string{}, new(map[string]string), true, fmt.Sprintf("cannot decode CQL %s as *map[string]string with %s: destination type not supported", listOfSetOfVarchar.DataType(), version)},
 			}
