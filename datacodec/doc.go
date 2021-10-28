@@ -115,7 +115,7 @@
 // In addition to the accepted types above, all codecs also accept interface{} when encoding and *interface{} when
 // decoding. When encoding an interface{} value, the actual runtime value stored in the variable must be of an
 // accepted type. When decoding to *interface{}, the codec will use the preferred type to decode, then store its value
-// in the target variable.
+// in the target variable; if the decoded value was NULL, the target will be set to nil.
 //
 // Encoding data
 //
