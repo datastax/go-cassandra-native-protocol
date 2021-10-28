@@ -43,7 +43,8 @@ func Test_floatCodec_Encode(t *testing.T) {
 				expected []byte
 				err      string
 			}{
-				{"nil", float32NilPtr(), nil, ""},
+				{"nil", nil, nil, ""},
+				{"nil pointer", float32NilPtr(), nil, ""},
 				{"non nil", 1.0, floatOne, ""},
 				{"conversion failed", int32(42), nil, fmt.Sprintf("cannot encode int32 as CQL float with %v: cannot convert from int32 to float32: conversion not supported", version)},
 			}

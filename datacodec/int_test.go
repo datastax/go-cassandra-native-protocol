@@ -40,7 +40,8 @@ func Test_intCodec_Encode(t *testing.T) {
 				expected []byte
 				err      string
 			}{
-				{"nil", int32NilPtr(), nil, ""},
+				{"nil", nil, nil, ""},
+				{"nil pointer", int32NilPtr(), nil, ""},
 				{"non nil", 1, intOne, ""},
 				{"conversion failed", uint32(math.MaxUint32), nil, fmt.Sprintf("cannot encode uint32 as CQL int with %v: cannot convert from uint32 to int32: value out of range: 4294967295", version)},
 			}

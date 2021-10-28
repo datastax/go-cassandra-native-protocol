@@ -42,7 +42,8 @@ func Test_varintCodec_Encode(t *testing.T) {
 				expected []byte
 				err      string
 			}{
-				{"nil", bigIntNilPtr(), nil, ""},
+				{"nil", nil, nil, ""},
+				{"nil pointer", bigIntNilPtr(), nil, ""},
 				{"non nil", oneBigInt, []byte{1}, ""},
 				{"conversion failed", float64(0), nil, fmt.Sprintf("cannot encode float64 as CQL varint with %v: cannot convert from float64 to *big.Int: conversion not supported", version)},
 			}

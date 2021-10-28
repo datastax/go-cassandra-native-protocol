@@ -40,7 +40,8 @@ func Test_smallintCodec_Encode(t *testing.T) {
 				expected []byte
 				err      string
 			}{
-				{"nil", int16NilPtr(), nil, ""},
+				{"nil", nil, nil, ""},
+				{"nil pointer", int16NilPtr(), nil, ""},
 				{"non nil", 1, smallintOne, ""},
 				{"conversion failed", uint16(math.MaxUint16), nil, fmt.Sprintf("cannot encode uint16 as CQL smallint with %v: cannot convert from uint16 to int16: value out of range: 65535", version)},
 			}

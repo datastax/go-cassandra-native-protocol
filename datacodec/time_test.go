@@ -132,6 +132,7 @@ func Test_timeCodec_Encode(t *testing.T) {
 				err      string
 			}{
 				{"nil", nil, nil, ""},
+				{"nil pointer", timeNilPtr(), nil, ""},
 				{"non nil", timeSimple, timeSimpleBytes, ""},
 				{"conversion failed", TimeMaxDuration + 1, nil, fmt.Sprintf("cannot encode time.Duration as CQL time with %v: cannot convert from time.Duration to int64: value out of range: 24h0m0s", version)},
 			}

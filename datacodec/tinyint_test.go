@@ -40,7 +40,8 @@ func Test_tinyintCodec_Encode(t *testing.T) {
 				expected []byte
 				err      string
 			}{
-				{"nil", int8NilPtr(), nil, ""},
+				{"nil", nil, nil, ""},
+				{"nil pointer", int8NilPtr(), nil, ""},
 				{"non nil", 1, tinyintOne, ""},
 				{"conversion failed", uint8(math.MaxUint8), nil, fmt.Sprintf("cannot encode uint8 as CQL tinyint with %v: cannot convert from uint8 to int8: value out of range: 255", version)},
 			}

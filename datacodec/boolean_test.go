@@ -37,7 +37,7 @@ func Test_booleanCodec_Encode(t *testing.T) {
 				err      string
 			}{
 				{"nil", nil, nil, ""},
-				{"true", true, []byte{1}, ""},
+				{"nil pointer", boolNilPtr(), nil, ""},
 				{"true", true, []byte{1}, ""},
 				{"false", false, []byte{0}, ""},
 				{"conversion failed", time.Nanosecond, nil, fmt.Sprintf("cannot encode time.Duration as CQL boolean with %v: cannot convert from time.Duration to bool: conversion not supported", version)},

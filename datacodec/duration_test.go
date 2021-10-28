@@ -51,6 +51,7 @@ func Test_durationCodec_Encode(t *testing.T) {
 				err      string
 			}{
 				{"nil", nil, nil, ""},
+				{"nil pointer", cqlDurationNilPtr(), nil, ""},
 				{"non nil", cqlDurationPos, cqlDurationPosBytes, ""},
 				{"non nil pointer", &cqlDurationPos, cqlDurationPosBytes, ""},
 				{"conversion failed", 123, nil, fmt.Sprintf("cannot encode int as CQL duration with %v: cannot convert from int to datacodec.CqlDuration: conversion not supported", version)},

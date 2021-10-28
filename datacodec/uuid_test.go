@@ -45,6 +45,7 @@ func Test_uuidCodec_Encode(t *testing.T) {
 						err      string
 					}{
 						{"nil", nil, nil, ""},
+						{"nil pointer", uuidNilPtr(), nil, ""},
 						{"zero", primitive.UUID{}, (&primitive.UUID{}).Bytes(), ""},
 						{"non nil", uuid, uuidBytes, ""},
 						{"non nil pointer", &uuid, uuidBytes, ""},

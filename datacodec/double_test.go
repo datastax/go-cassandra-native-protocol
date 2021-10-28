@@ -25,10 +25,10 @@ import (
 )
 
 var (
-	doubleZero       = encodeUint64(0x0000000000000000)
-	doubleOne        = encodeUint64(0x3ff0000000000000)
-	doubleMinusOne   = encodeUint64(0xbff0000000000000)
-	doubleMaxFloat64 = encodeUint64(0x7fefffffffffffff)
+	doubleZeroBytes       = encodeUint64(0x0000000000000000)
+	doubleOneBytes        = encodeUint64(0x3ff0000000000000)
+	doubleMinusOneBytes   = encodeUint64(0xbff0000000000000)
+	doubleMaxFloat64Bytes = encodeUint64(0x7fefffffffffffff)
 )
 
 func Test_doubleCodec_DataType(t *testing.T) {
@@ -44,8 +44,9 @@ func Test_doubleCodec_Encode(t *testing.T) {
 				expected []byte
 				err      string
 			}{
-				{"nil", float64NilPtr(), nil, ""},
-				{"non nil", 1.0, doubleOne, ""},
+				{"nil", nil, nil, ""},
+				{"nil pointer", float64NilPtr(), nil, ""},
+				{"non nil", 1.0, doubleOneBytes, ""},
 				{"conversion failed", int32(42), nil, fmt.Sprintf("cannot encode int32 as CQL double with %v: cannot convert from int32 to float64: conversion not supported", version)},
 			}
 			for _, tt := range tests {
@@ -71,9 +72,9 @@ func Test_doubleCodec_Decode(t *testing.T) {
 				err      string
 			}{
 				{"null", nil, new(float64), new(float64), true, ""},
-				{"non null", doubleOne, new(float64), float64Ptr(1), false, ""},
+				{"non null", doubleOneBytes, new(float64), float64Ptr(1), false, ""},
 				{"read failed", []byte{1}, new(float64), new(float64), false, fmt.Sprintf("cannot decode CQL double as *float64 with %v: cannot read float64: expected 8 bytes but got: 1", version)},
-				{"conversion failed", doubleOne, new(int64), new(int64), false, fmt.Sprintf("cannot decode CQL double as *int64 with %v: cannot convert from float64 to *int64: conversion not supported", version)},
+				{"conversion failed", doubleOneBytes, new(int64), new(int64), false, fmt.Sprintf("cannot decode CQL double as *int64 with %v: cannot convert from float64 to *int64: conversion not supported", version)},
 			}
 			for _, tt := range tests {
 				t.Run(tt.name, func(t *testing.T) {
@@ -159,12 +160,12 @@ func Test_writeFloat64(t *testing.T) {
 		val      float64
 		expected []byte
 	}{
-		{"zero", 0, doubleZero},
-		{"1", 1, doubleOne},
-		{"-1", -1, doubleMinusOne},
+		{"zero", 0, doubleZeroBytes},
+		{"1", 1, doubleOneBytes},
+		{"-1", -1, doubleMinusOneBytes},
 		{"simple pos", 123.4, encodeUint64(0x405ed9999999999a)},
 		{"simple neg", -123.4, encodeUint64(0xc05ed9999999999a)},
-		{"max", math.MaxFloat64, doubleMaxFloat64},
+		{"max", math.MaxFloat64, doubleMaxFloat64Bytes},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -185,12 +186,12 @@ func Test_readFloat64(t *testing.T) {
 		{"nil", nil, 0, true, ""},
 		{"empty", []byte{}, 0, true, ""},
 		{"wrong length", []byte{1}, 0, false, "cannot read float64: expected 8 bytes but got: 1"},
-		{"zero", doubleZero, 0, false, ""},
-		{"1", doubleOne, 1, false, ""},
-		{"-1", doubleMinusOne, -1, false, ""},
+		{"zero", doubleZeroBytes, 0, false, ""},
+		{"1", doubleOneBytes, 1, false, ""},
+		{"-1", doubleMinusOneBytes, -1, false, ""},
 		{"simple pos", encodeUint64(0x405ed9999999999a), 123.4, false, ""},
 		{"simple neg", encodeUint64(0xc05ed9999999999a), -123.4, false, ""},
-		{"max", doubleMaxFloat64, math.MaxFloat64, false, ""},
+		{"max", doubleMaxFloat64Bytes, math.MaxFloat64, false, ""},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

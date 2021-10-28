@@ -39,6 +39,7 @@ func Test_blobCodec_Encode(t *testing.T) {
 				err      string
 			}{
 				{"nil", nil, nil, ""},
+				{"nil pointer", byteSliceNilPtr(), nil, ""},
 				{"empty", []byte{}, []byte{}, ""},
 				{"non nil", []byte{1, 2, 3}, []byte{1, 2, 3}, ""},
 				{"conversion failed", 123, nil, fmt.Sprintf("cannot encode int as CQL blob with %v: cannot convert from int to []uint8: conversion not supported", version)},

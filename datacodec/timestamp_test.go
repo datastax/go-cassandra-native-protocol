@@ -93,6 +93,7 @@ func Test_timestampCodec_Encode(t *testing.T) {
 				err      string
 			}{
 				{"nil", nil, nil, ""},
+				{"nil pointer", timeNilPtr(), nil, ""},
 				{"non nil", timestampPosUTC, timestampPosBytes, ""},
 				{"conversion failed", timestampOufOfRangePos, nil, fmt.Sprintf("cannot encode time.Time as CQL timestamp with %v: cannot convert from time.Time to int64: value out of range: 292278994-08-17 07:12:55.808 +0000 UTC", version)},
 			}

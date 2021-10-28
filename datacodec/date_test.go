@@ -87,6 +87,7 @@ func Test_dateCodec_Encode(t *testing.T) {
 				err      string
 			}{
 				{"nil", nil, nil, ""},
+				{"nil pointer", timeNilPtr(), nil, ""},
 				{"non nil", datePos, datePosBytes, ""},
 				{"conversion failed", dateOutOfRange, nil, fmt.Sprintf("cannot encode time.Time as CQL date with %v: cannot convert from time.Time to int32: value out of range: 5881580-07-12 00:00:00 +0000 UTC", version)},
 			}

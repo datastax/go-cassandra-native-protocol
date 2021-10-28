@@ -48,6 +48,7 @@ func Test_inetCodec_Encode(t *testing.T) {
 				err      string
 			}{
 				{"nil", nil, nil, ""},
+				{"nil pointer", new(net.IP), nil, ""},
 				{"zero", inetZero, nil, ""},
 				{"non nil v4", inetAddr4, inetAddr4Bytes, ""},
 				{"non nil v6", inetAddr6, inetAddr6Bytes, ""},

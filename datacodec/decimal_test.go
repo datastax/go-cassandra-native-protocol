@@ -64,6 +64,7 @@ func Test_decimalCodec_Encode(t *testing.T) {
 				err      string
 			}{
 				{"nil", nil, nil, ""},
+				{"nil pointer", cqlDecimalNilPtr(), nil, ""},
 				{"non nil", decimalSimple, decimalSimpleBytes, ""},
 				{"non nil pointer", &decimalSimple, decimalSimpleBytes, ""},
 				{"conversion failed", 123, nil, fmt.Sprintf("cannot encode int as CQL decimal with %v: cannot convert from int to datacodec.CqlDecimal: conversion not supported", version)},

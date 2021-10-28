@@ -47,6 +47,7 @@ func Test_stringCodec_Encode(t *testing.T) {
 						err      string
 					}{
 						{"nil", nil, nil, ""},
+						{"nil pointer", stringNilPtr(), nil, ""},
 						{"empty", "", []byte{}, ""},
 						{"non nil", "abc", abcBytes, ""},
 						{"conversion failed", 123, nil, fmt.Sprintf("cannot encode int as CQL %v with %v: cannot convert from int to []uint8: conversion not supported", codec.DataType(), version)},

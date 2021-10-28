@@ -50,7 +50,8 @@ func Test_bigintCodec_Encode(t *testing.T) {
 						expected []byte
 						err      string
 					}{
-						{"nil", int64NilPtr(), nil, ""},
+						{"nil", nil, nil, ""},
+						{"nil pointer", int64NilPtr(), nil, ""},
 						{"non nil", 1, bigIntOneBytes, ""},
 						{"conversion failed", uint64(math.MaxUint64), nil, fmt.Sprintf("cannot encode uint64 as CQL %v with %v: cannot convert from uint64 to int64: value out of range: 18446744073709551615", codec.DataType(), version)},
 					}
