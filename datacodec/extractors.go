@@ -75,11 +75,7 @@ func newMapExtractor(source reflect.Value) (keyValueExtractor, error) {
 
 func (e *sliceExtractor) getElem(index int, _ interface{}) (interface{}, error) {
 	if index < 0 || index >= e.source.Len() {
-		if e.source.Kind() == reflect.Slice {
-			return nil, errSliceIndexOutOfRange("slice", index)
-		} else {
-			return nil, errSliceIndexOutOfRange("array", index)
-		}
+		return nil, errSliceIndexOutOfRange(e.source.Type().Kind() == reflect.Slice, index)
 	}
 	return e.source.Index(index).Interface(), nil
 }

@@ -882,7 +882,7 @@ func Test_writeTuple(t *testing.T) {
 			args{
 				func() extractor {
 					ext := &mockExtractor{}
-					ext.On("getElem", 0, 0).Return(nil, errSliceIndexOutOfRange("slice", 0))
+					ext.On("getElem", 0, 0).Return(nil, errSliceIndexOutOfRange(true, 0))
 					return ext
 				}(),
 				[]Codec{nil},

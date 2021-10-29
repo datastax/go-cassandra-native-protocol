@@ -67,8 +67,11 @@ func errValueOutOfRange(val interface{}) error {
 	return fmt.Errorf("value out of range: %v", val)
 }
 
-func errSliceIndexOutOfRange(desc string, index int) error {
-	return fmt.Errorf("%s index out of range: %v", desc, index)
+func errSliceIndexOutOfRange(slice bool, index int) error {
+	if slice {
+		return fmt.Errorf("slice index out of range: %v", index)
+	}
+	return fmt.Errorf("array index out of range: %v", index)
 }
 
 func errWrongFixedLength(expected, actual int) error {
@@ -115,18 +118,6 @@ func errCannotEncodeUdtField(i int, name string, err error) error {
 	return fmt.Errorf("cannot encode field %d (%s): %w", i, name, err)
 }
 
-func errNilElement(i int) error {
-	return fmt.Errorf("element %d is nil", i)
-}
-
-func errNilMapKey(i int) error {
-	return fmt.Errorf("entry %d key is nil", i)
-}
-
-func errNilMapValue(i int) error {
-	return fmt.Errorf("entry %d value is nil", i)
-}
-
 func errCannotEncodeElement(i int, err error) error {
 	return fmt.Errorf("cannot encode element %d: %w", i, err)
 }
@@ -137,18 +128,6 @@ func errCannotEncodeMapKey(i int, err error) error {
 
 func errCannotEncodeMapValue(i int, err error) error {
 	return fmt.Errorf("cannot encode entry %d value: %w", i, err)
-}
-
-func errElementEncodedToNil(i int) error {
-	return fmt.Errorf("element %d was encoded to nil", i)
-}
-
-func errMapKeyEncodedToNil(i int) error {
-	return fmt.Errorf("entry %d key was encoded to nil", i)
-}
-
-func errMapValueEncodedToNil(i int) error {
-	return fmt.Errorf("entry %d value was encoded to nil", i)
 }
 
 func errCannotDecodeElement(i int, err error) error {

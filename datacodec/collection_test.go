@@ -457,7 +457,7 @@ func Test_writeCollection(t *testing.T) {
 			"cannot extract elem",
 			args{func() extractor {
 				ext := &mockExtractor{}
-				ext.On("getElem", 0, 0).Return(nil, errSliceIndexOutOfRange("slice", 0))
+				ext.On("getElem", 0, 0).Return(nil, errSliceIndexOutOfRange(true, 0))
 				return ext
 			}(), nil, 1, primitive.ProtocolVersion5},
 			nil,

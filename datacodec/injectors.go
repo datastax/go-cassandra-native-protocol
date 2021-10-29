@@ -93,11 +93,7 @@ func (i *sliceInjector) zeroElem(_ int, _ interface{}) (value interface{}, err e
 
 func (i *sliceInjector) setElem(index int, _, value interface{}, _, valueWasNull bool) error {
 	if index < 0 || index >= i.dest.Len() {
-		if i.dest.Kind() == reflect.Slice {
-			return errSliceIndexOutOfRange("slice", index)
-		} else {
-			return errSliceIndexOutOfRange("array", index)
-		}
+		return errSliceIndexOutOfRange(i.dest.Type().Kind() == reflect.Slice, index)
 	}
 	elementType := i.dest.Type().Elem()
 	if valueWasNull {
