@@ -330,31 +330,31 @@ func Test_mapCodec_Decode(t *testing.T) {
 					assertErrorMessage(t, tt.err, err)
 				})
 			}
+			testsNull := []struct {
+				name      string
+				source    []byte
+				wantKey   *int32
+				wantValue *string
+			}{
+				{"map<int,text> nil key", mapNullAbcBytes4, nil, stringPtr("abc")},
+				{"map<int,text> nil value", mapOneTwoNullBytes4, int32Ptr(12), nil},
+				{"map<int,text> non nil", mapOneTwoAbcBytes4, int32Ptr(12), stringPtr("abc")},
+			}
+			for _, tt := range testsNull {
+				t.Run(tt.name, func(t *testing.T) {
+					var dest interface{}
+					wasNull, err := mapSimple.Decode(tt.source, &dest, version)
+					assert.NoError(t, err)
+					assert.Len(t, dest, 1)
+					assert.IsType(t, map[*int32]*string{}, dest)
+					for k, v := range dest.(map[*int32]*string) {
+						assert.Equal(t, tt.wantKey, k)
+						assert.Equal(t, tt.wantValue, v)
+					}
+					assert.False(t, wasNull)
+				})
+			}
 		})
-		tests := []struct {
-			name      string
-			source    []byte
-			wantKey   *int32
-			wantValue *string
-		}{
-			{"map<int,text> nil key", mapNullAbcBytes4, nil, stringPtr("abc")},
-			{"map<int,text> nil value", mapOneTwoNullBytes4, int32Ptr(12), nil},
-			{"map<int,text> non nil", mapOneTwoAbcBytes4, int32Ptr(12), stringPtr("abc")},
-		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				var dest interface{}
-				wasNull, err := mapSimple.Decode(tt.source, &dest, version)
-				assert.NoError(t, err)
-				assert.Len(t, dest, 1)
-				assert.IsType(t, map[*int32]*string{}, dest)
-				for k, v := range dest.(map[*int32]*string) {
-					assert.Equal(t, tt.wantKey, k)
-					assert.Equal(t, tt.wantValue, v)
-				}
-				assert.False(t, wasNull)
-			})
-		}
 	}
 	for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion3) {
 		t.Run(version.String(), func(t *testing.T) {
@@ -396,31 +396,31 @@ func Test_mapCodec_Decode(t *testing.T) {
 					assertErrorMessage(t, tt.err, err)
 				})
 			}
+			testsNull := []struct {
+				name      string
+				source    []byte
+				wantKey   *int32
+				wantValue *string
+			}{
+				{"map<int,text> nil key", mapNullAbcBytes2, nil, stringPtr("abc")},
+				{"map<int,text> nil value", mapOneTwoNullBytes2, int32Ptr(12), nil},
+				{"map<int,text> non nil", mapOneTwoAbcBytes2, int32Ptr(12), stringPtr("abc")},
+			}
+			for _, tt := range testsNull {
+				t.Run(tt.name, func(t *testing.T) {
+					var dest interface{}
+					wasNull, err := mapSimple.Decode(tt.source, &dest, version)
+					assert.NoError(t, err)
+					assert.Len(t, dest, 1)
+					assert.IsType(t, map[*int32]*string{}, dest)
+					for k, v := range dest.(map[*int32]*string) {
+						assert.Equal(t, tt.wantKey, k)
+						assert.Equal(t, tt.wantValue, v)
+					}
+					assert.False(t, wasNull)
+				})
+			}
 		})
-		tests := []struct {
-			name      string
-			source    []byte
-			wantKey   *int32
-			wantValue *string
-		}{
-			{"map<int,text> nil key", mapNullAbcBytes2, nil, stringPtr("abc")},
-			{"map<int,text> nil value", mapOneTwoNullBytes2, int32Ptr(12), nil},
-			{"map<int,text> non nil", mapOneTwoAbcBytes2, int32Ptr(12), stringPtr("abc")},
-		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				var dest interface{}
-				wasNull, err := mapSimple.Decode(tt.source, &dest, version)
-				assert.NoError(t, err)
-				assert.Len(t, dest, 1)
-				assert.IsType(t, map[*int32]*string{}, dest)
-				for k, v := range dest.(map[*int32]*string) {
-					assert.Equal(t, tt.wantKey, k)
-					assert.Equal(t, tt.wantValue, v)
-				}
-				assert.False(t, wasNull)
-			})
-		}
 	}
 }
 
