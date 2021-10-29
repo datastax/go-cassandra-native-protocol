@@ -147,6 +147,19 @@ func pointerTo(target reflect.Value) reflect.Value {
 	return ptr
 }
 
+// if the given type is nillable (that is, it's an interface, pointer, map or slice), returns the type as is;
+// otherwise, returns a pointer type having the original type as its target.
+func ensureNillable(targetType reflect.Type) reflect.Type {
+	kind := targetType.Kind()
+	if kind != reflect.Interface &&
+		kind != reflect.Ptr &&
+		kind != reflect.Slice &&
+		kind != reflect.Map {
+		targetType = reflect.PtrTo(targetType)
+	}
+	return targetType
+}
+
 // Locates a struct field given a UDT field name. If no field can be located, this function returns a zero
 // reflect.Value. If the struct field has a "cassandra" tag, then the tag must match the UDT field name exactly;
 // otherwise, the UDT field name must match the struct field name, but case insensitively.

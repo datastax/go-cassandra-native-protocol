@@ -393,9 +393,9 @@ func Test_injectors_zeroDecodeAndSet(t *testing.T) {
 		datatype.Uuid:                      primitive.UUID{0xC0, 0xD1, 0xD2, 0x1E, 0xBB, 0x01, 0x41, 0x96, 0x86, 0xDB, 0xBC, 0x31, 0x7B, 0xC1, 0x79, 0x6A},
 		datatype.Varchar:                   "UTF-8",
 		datatype.Varint:                    big.NewInt(123456),
-		datatype.NewListType(datatype.Int): []int32{1, 2, 3},
-		datatype.NewSetType(datatype.Int):  []int32{1, 2, 3},
-		datatype.NewMapType(datatype.Int, datatype.Int):       map[int32]int32{123: 456},
+		datatype.NewListType(datatype.Int): []*int32{int32Ptr(1), int32Ptr(2), int32Ptr(3)},
+		datatype.NewSetType(datatype.Int):  []*int32{int32Ptr(1), int32Ptr(2), int32Ptr(3)},
+		datatype.NewMapType(datatype.Int, datatype.Varchar):   map[*int32]*string{int32Ptr(123): stringPtr("abc")},
 		datatype.NewTupleType(datatype.Int, datatype.Varchar): []interface{}{int32(123), "abc"},
 		udt: map[string]interface{}{"f1": int32(123)},
 	}
@@ -405,28 +405,25 @@ func Test_injectors_zeroDecodeAndSet(t *testing.T) {
 				dest := make([]interface{}, 1)
 				inj, err := newSliceInjector(reflect.ValueOf(dest))
 				require.NoError(t, err)
-				testInjectorAndDataType(t, source, inj, dataType)
-				assert.Equal(t, source, dest[0])
+				testInjectorAndDataType(t, source, inj, dataType, func() interface{} { return dest[0] })
 			})
 			t.Run("map value", func(t *testing.T) {
 				dest := make(map[int]interface{}, 1)
 				inj, err := newMapInjector(reflect.ValueOf(dest))
 				require.NoError(t, err)
-				testInjectorAndDataType(t, source, inj, dataType)
-				assert.Equal(t, source, dest[0])
+				testInjectorAndDataType(t, source, inj, dataType, func() interface{} { return dest[0] })
 			})
 			t.Run("struct field", func(t *testing.T) {
 				dest := struct{ Field interface{} }{}
 				inj, err := newStructInjector(reflect.ValueOf(&dest).Elem())
 				require.NoError(t, err)
-				testInjectorAndDataType(t, source, inj, dataType)
-				assert.Equal(t, source, dest.Field)
+				testInjectorAndDataType(t, source, inj, dataType, func() interface{} { return dest.Field })
 			})
 		})
 	}
 }
 
-func testInjectorAndDataType(t *testing.T, source interface{}, inj injector, dataType datatype.DataType) {
+func testInjectorAndDataType(t *testing.T, source interface{}, inj injector, dataType datatype.DataType, actual func() interface{}) {
 	zero, err := inj.zeroElem(0, 0)
 	require.NoError(t, err)
 	elementCodec, err := NewCodec(dataType)
@@ -438,4 +435,16 @@ func testInjectorAndDataType(t *testing.T, source interface{}, inj injector, dat
 	assert.False(t, wasNull)
 	err = inj.setElem(0, 0, zero, false, false)
 	require.NoError(t, err)
+	a := actual()
+	if _, ok := dataType.(datatype.MapType); ok {
+		assert.Len(t, a, 1)
+		assert.IsType(t, map[*int32]*string{}, a)
+		for k, v := range a.(map[*int32]*string) {
+			assert.Equal(t, int32(123), *k)
+			assert.Equal(t, "abc", *v)
+		}
+		assert.False(t, wasNull)
+	} else {
+		assert.Equal(t, source, a)
+	}
 }

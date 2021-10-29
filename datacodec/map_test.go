@@ -175,6 +175,30 @@ var (
 		0, 0, 0, 4,
 		0, 0, 0, 0,
 	}
+	mapNullAbcBytes2 = []byte{
+		0, 1,
+		255, 255, 255, 255,
+		0, 0, 0, 3,
+		a, b, c,
+	}
+	mapNullAbcBytes4 = []byte{
+		0, 0, 0, 1,
+		255, 255, 255, 255,
+		0, 0, 0, 3,
+		a, b, c,
+	}
+	mapOneTwoNullBytes2 = []byte{
+		0, 1,
+		0, 0, 0, 4,
+		0, 0, 0, 12,
+		255, 255, 255, 255,
+	}
+	mapOneTwoNullBytes4 = []byte{
+		0, 0, 0, 1,
+		0, 0, 0, 4,
+		0, 0, 0, 12,
+		255, 255, 255, 255,
+	}
 )
 
 func Test_mapCodec_Encode(t *testing.T) {
@@ -287,7 +311,6 @@ func Test_mapCodec_Decode(t *testing.T) {
 				{"map<int,text> non-empty", mapSimple, mapOneTwoAbcBytes4, new(map[int]string), &map[int]string{12: "abc"}, false, ""},
 				{"map<int,text> non-empty pointers", mapSimple, mapOneTwoAbcBytes4, new(map[int]*string), &map[int]*string{12: stringPtr("abc")}, false, ""},
 				{"map<int,text> non-empty map[interface]", mapSimple, mapOneTwoAbcBytes4, new(map[interface{}]interface{}), &map[interface{}]interface{}{int32(12): "abc"}, false, ""},
-				{"map<int,text> non-empty interface{}", mapSimple, mapOneTwoAbcBytes4, new(interface{}), interfacePtr(map[int32]string{12: "abc"}), false, ""},
 				{"map<int,text> pointer required", mapSimple, nil, map[int]string{}, map[int]string{}, true, fmt.Sprintf("cannot decode CQL %s as map[int]string with %v: destination is not pointer", mapSimple.DataType(), version)},
 				{"map<int,text> destination type not supported", mapSimple, nil, new([]int), new([]int), true, fmt.Sprintf("cannot decode CQL %s as *[]int with %v: destination type not supported", mapSimple.DataType(), version)},
 				{"map<int,map<int,varchar>> nil untyped", mapComplex, nil, nil, nil, true, fmt.Sprintf("cannot decode CQL map<int,map<int,varchar>> as <nil> with %s: destination is nil", version)},
@@ -296,7 +319,6 @@ func Test_mapCodec_Decode(t *testing.T) {
 				{"map<int,map<int,varchar>> non-empty", mapComplex, mapZeroOneTwoAbcBytes4, new(map[int]map[int]string), &map[int]map[int]string{0: {12: "abc"}}, false, ""},
 				{"map<int,map<int,varchar>> non-empty pointers", mapComplex, mapZeroOneTwoAbcBytes4, new(map[int]map[int]*string), &map[int]map[int]*string{0: {12: stringPtr("abc")}}, false, ""},
 				{"map<int,map<int,varchar>> non-empty map[interface]", mapComplex, mapZeroOneTwoAbcBytes4, new(map[interface{}]map[interface{}]interface{}), &map[interface{}]map[interface{}]interface{}{int32(0): {int32(12): "abc"}}, false, ""},
-				{"map<int,map<int,varchar>> non-empty interface{}", mapComplex, mapZeroOneTwoAbcBytes4, new(interface{}), interfacePtr(map[int32]map[int32]string{0: {12: "abc"}}), false, ""},
 				{"map<int,map<int,varchar>> pointer required", mapComplex, nil, map[int]map[int]string{}, map[int]map[int]string{}, true, fmt.Sprintf("cannot decode CQL %s as map[int]map[int]string with %s: destination is not pointer", mapComplex.DataType(), version)},
 				{"map<int,map<int,varchar>> wrong destination type", mapComplex, nil, new([]string), new([]string), true, fmt.Sprintf("cannot decode CQL %s as *[]string with %s: destination type not supported", mapComplex.DataType(), version)},
 				{"coordinates nil", mapCoordinates, nil, &coordinates{}, &coordinates{}, true, ""},
@@ -313,6 +335,30 @@ func Test_mapCodec_Decode(t *testing.T) {
 				})
 			}
 		})
+		tests := []struct {
+			name      string
+			source    []byte
+			wantKey   *int32
+			wantValue *string
+		}{
+			{"map<int,text> nil key", mapNullAbcBytes4, nil, stringPtr("abc")},
+			{"map<int,text> nil value", mapOneTwoNullBytes4, int32Ptr(12), nil},
+			{"map<int,text> non nil", mapOneTwoAbcBytes4, int32Ptr(12), stringPtr("abc")},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				var dest interface{}
+				wasNull, err := mapSimple.Decode(tt.source, &dest, version)
+				assert.NoError(t, err)
+				assert.Len(t, dest, 1)
+				assert.IsType(t, map[*int32]*string{}, dest)
+				for k, v := range dest.(map[*int32]*string) {
+					assert.Equal(t, tt.wantKey, k)
+					assert.Equal(t, tt.wantValue, v)
+				}
+				assert.False(t, wasNull)
+			})
+		}
 	}
 	for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion3) {
 		t.Run(version.String(), func(t *testing.T) {
@@ -331,7 +377,6 @@ func Test_mapCodec_Decode(t *testing.T) {
 				{"map<int,text> non-empty", mapSimple, mapOneTwoAbcBytes2, new(map[int]string), &map[int]string{12: "abc"}, false, ""},
 				{"map<int,text> non-empty pointers", mapSimple, mapOneTwoAbcBytes2, new(map[int]*string), &map[int]*string{12: stringPtr("abc")}, false, ""},
 				{"map<int,text> non-empty map[interface]", mapSimple, mapOneTwoAbcBytes2, new(map[interface{}]interface{}), &map[interface{}]interface{}{int32(12): "abc"}, false, ""},
-				{"map<int,text> non-empty interface{}", mapSimple, mapOneTwoAbcBytes2, new(interface{}), interfacePtr(map[int32]string{12: "abc"}), false, ""},
 				{"map<int,text> pointer required", mapSimple, nil, map[int]string{}, map[int]string{}, true, fmt.Sprintf("cannot decode CQL %s as map[int]string with %v: destination is not pointer", mapSimple.DataType(), version)},
 				{"map<int,text> destination type not supported", mapSimple, nil, new([]int), new([]int), true, fmt.Sprintf("cannot decode CQL %s as *[]int with %v: destination type not supported", mapSimple.DataType(), version)},
 				{"map<int,map<int,varchar>> nil untyped", mapComplex, nil, nil, nil, true, fmt.Sprintf("cannot decode CQL map<int,map<int,varchar>> as <nil> with %s: destination is nil", version)},
@@ -340,7 +385,6 @@ func Test_mapCodec_Decode(t *testing.T) {
 				{"map<int,map<int,varchar>> non-empty", mapComplex, mapZeroOneTwoAbcBytes2, new(map[int]map[int]string), &map[int]map[int]string{0: {12: "abc"}}, false, ""},
 				{"map<int,map<int,varchar>> non-empty pointers", mapComplex, mapZeroOneTwoAbcBytes2, new(map[int]map[int]*string), &map[int]map[int]*string{0: {12: stringPtr("abc")}}, false, ""},
 				{"map<int,map<int,varchar>> non-empty map[interface]", mapComplex, mapZeroOneTwoAbcBytes2, new(map[interface{}]map[interface{}]interface{}), &map[interface{}]map[interface{}]interface{}{int32(0): {int32(12): "abc"}}, false, ""},
-				{"map<int,map<int,varchar>> non-empty interface{}", mapComplex, mapZeroOneTwoAbcBytes2, new(interface{}), interfacePtr(map[int32]map[int32]string{0: {12: "abc"}}), false, ""},
 				{"map<int,map<int,varchar>> pointer required", mapComplex, nil, map[int]map[int]string{}, map[int]map[int]string{}, true, fmt.Sprintf("cannot decode CQL %s as map[int]map[int]string with %s: destination is not pointer", mapComplex.DataType(), version)},
 				{"map<int,map<int,varchar>> wrong destination type", mapComplex, nil, new([]string), new([]string), true, fmt.Sprintf("cannot decode CQL %s as *[]string with %s: destination type not supported", mapComplex.DataType(), version)},
 				{"coordinates nil", mapCoordinates, nil, &coordinates{}, &coordinates{}, true, ""},
@@ -357,6 +401,30 @@ func Test_mapCodec_Decode(t *testing.T) {
 				})
 			}
 		})
+		tests := []struct {
+			name      string
+			source    []byte
+			wantKey   *int32
+			wantValue *string
+		}{
+			{"map<int,text> nil key", mapNullAbcBytes2, nil, stringPtr("abc")},
+			{"map<int,text> nil value", mapOneTwoNullBytes2, int32Ptr(12), nil},
+			{"map<int,text> non nil", mapOneTwoAbcBytes2, int32Ptr(12), stringPtr("abc")},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				var dest interface{}
+				wasNull, err := mapSimple.Decode(tt.source, &dest, version)
+				assert.NoError(t, err)
+				assert.Len(t, dest, 1)
+				assert.IsType(t, map[*int32]*string{}, dest)
+				for k, v := range dest.(map[*int32]*string) {
+					assert.Equal(t, tt.wantKey, k)
+					assert.Equal(t, tt.wantValue, v)
+				}
+				assert.False(t, wasNull)
+			})
+		}
 	}
 }
 

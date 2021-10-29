@@ -156,27 +156,20 @@ func PreferredGoType(dt datatype.DataType) (reflect.Type, error) {
 		return typeOfString, nil
 	case primitive.DataTypeCodeVarint:
 		return typeOfBigIntPointer, nil
-
-	// Note: we could enforce a pointer element type to
-	// make it easier to spot NULL elements in collections;
-	// e.g. list<int> would yield []*int32 instead of []int32.
-	// But in practice, collections will never contain NULL elements.
-	// The only rare exception is when decoding a list<int> resulting
-	// from a TTL() function call.
 	case primitive.DataTypeCodeList:
 		listType := dt.(datatype.ListType)
 		elemType, err := PreferredGoType(listType.GetElementType())
 		if err != nil {
 			return nil, err
 		}
-		return reflect.SliceOf(elemType), nil
+		return reflect.SliceOf(ensureNillable(elemType)), nil
 	case primitive.DataTypeCodeSet:
 		setType := dt.(datatype.SetType)
 		elemType, err := PreferredGoType(setType.GetElementType())
 		if err != nil {
 			return nil, err
 		}
-		return reflect.SliceOf(elemType), nil
+		return reflect.SliceOf(ensureNillable(elemType)), nil
 	case primitive.DataTypeCodeMap:
 		mapType := dt.(datatype.MapType)
 		keyType, err := PreferredGoType(mapType.GetKeyType())
@@ -187,7 +180,7 @@ func PreferredGoType(dt datatype.DataType) (reflect.Type, error) {
 		if err != nil {
 			return nil, err
 		}
-		return reflect.MapOf(keyType, valueType), nil
+		return reflect.MapOf(ensureNillable(keyType), ensureNillable(valueType)), nil
 	}
 	return nil, errCannotFindGoType(dt)
 }
