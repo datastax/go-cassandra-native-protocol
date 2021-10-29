@@ -112,9 +112,13 @@ func (e *mapExtractor) getKey(index int) interface{} {
 }
 
 func (e *mapExtractor) getElem(_ int, key interface{}) (interface{}, error) {
+	keyType := e.source.Type().Key()
 	keyValue := reflect.ValueOf(key)
-	if !keyValue.Type().AssignableTo(e.source.Type().Key()) {
-		return nil, errWrongElementType("map key", e.source.Type().Key(), keyValue.Type())
+	if key == nil {
+		keyValue = reflect.Zero(keyType)
+	}
+	if !keyValue.Type().AssignableTo(keyType) {
+		return nil, errWrongElementType("map key", keyType, keyValue.Type())
 	}
 	value := e.source.MapIndex(keyValue)
 	if !value.IsValid() || !value.CanInterface() {

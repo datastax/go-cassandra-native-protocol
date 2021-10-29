@@ -139,20 +139,13 @@ func writeMap(ext keyValueExtractor, size int, keyCodec Codec, valueCodec Codec,
 		return nil, err
 	}
 	for i := 0; i < size; i++ {
-		if key := ext.getKey(i); key == nil {
-			return nil, errNilMapKey(i)
-		} else if value, err := ext.getElem(i, key); err != nil {
+		key := ext.getKey(i)
+		if value, err := ext.getElem(i, key); err != nil {
 			return nil, errCannotExtractMapValue(i, err)
-		} else if value == nil {
-			return nil, errNilMapValue(i)
 		} else if encodedKey, err := keyCodec.Encode(key, version); err != nil {
 			return nil, errCannotEncodeMapKey(i, err)
 		} else if encodedValue, err := valueCodec.Encode(value, version); err != nil {
 			return nil, errCannotEncodeMapValue(i, err)
-		} else if encodedKey == nil {
-			return nil, errMapKeyEncodedToNil(i)
-		} else if encodedValue == nil {
-			return nil, errMapValueEncodedToNil(i)
 		} else {
 			_ = primitive.WriteBytes(encodedKey, buf)
 			_ = primitive.WriteBytes(encodedValue, buf)
@@ -163,7 +156,7 @@ func writeMap(ext keyValueExtractor, size int, keyCodec Codec, valueCodec Codec,
 
 func readMap(source []byte, injectorFactory func(int) (keyValueInjector, error), keyCodec Codec, valueCodec Codec, version primitive.ProtocolVersion) error {
 	reader := bytes.NewReader(source)
-	total := reader.Len()
+	total := len(source)
 	if size, err := readCollectionSize(reader, version); err != nil {
 		return err
 	} else if inj, err := injectorFactory(size); err != nil {

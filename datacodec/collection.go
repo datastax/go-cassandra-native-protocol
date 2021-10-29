@@ -136,12 +136,8 @@ func writeCollection(ext extractor, elementCodec Codec, size int, version primit
 	for i := 0; i < size; i++ {
 		if elem, err := ext.getElem(i, i); err != nil {
 			return nil, errCannotExtractElement(i, err)
-		} else if elem == nil {
-			return nil, errNilElement(i)
 		} else if encodedElem, err := elementCodec.Encode(elem, version); err != nil {
 			return nil, errCannotEncodeElement(i, err)
-		} else if encodedElem == nil {
-			return nil, errElementEncodedToNil(i)
 		} else {
 			_ = primitive.WriteBytes(encodedElem, buf)
 		}
@@ -151,7 +147,7 @@ func writeCollection(ext extractor, elementCodec Codec, size int, version primit
 
 func readCollection(source []byte, injectorFactory func(int) (injector, error), elementCodec Codec, version primitive.ProtocolVersion) error {
 	reader := bytes.NewReader(source)
-	total := reader.Len()
+	total := len(source)
 	if size, err := readCollectionSize(reader, version); err != nil {
 		return err
 	} else if inj, err := injectorFactory(size); err != nil {

@@ -263,7 +263,7 @@ func Test_collectionCodec_Encode(t *testing.T) {
 				{"list<int> pointer slice pointer elems", listOfInt, &[]*int{intPtr(1), intPtr(2), intPtr(3)}, listOneTwoThreeBytes4, ""},
 				{"list<int> many elems []interface{}", listOfInt, []interface{}{1, 2, 3}, listOneTwoThreeBytes4, ""},
 				{"list<int> many elems interface{}", listOfInt, interface{}([]interface{}{1, 2, 3}), listOneTwoThreeBytes4, ""},
-				{"list<int> nil element", listOfInt, []interface{}{nil}, nil, fmt.Sprintf("cannot encode []interface {} as CQL %s with %s: element 0 is nil", listOfInt.DataType(), version)},
+				{"list<int> nil element", listOfInt, []interface{}{nil}, []byte{0x0, 0x0, 0x0, 0x1, 0xff, 0xff, 0xff, 0xff}, ""},
 				{"list<int> wrong source type", listOfInt, 123, nil, fmt.Sprintf("cannot encode int as CQL %s with %s: source type not supported", listOfInt.DataType(), version)},
 				{"list<int> wrong source type nil", listOfInt, map[string]int(nil), nil, fmt.Sprintf("cannot encode map[string]int as CQL %s with %s: source type not supported", listOfInt.DataType(), version)},
 				{"list<int> wrong source type nil pointer", listOfInt, new(map[string]int), nil, fmt.Sprintf("cannot encode *map[string]int as CQL %s with %s: source type not supported", listOfInt.DataType(), version)},
@@ -274,7 +274,8 @@ func Test_collectionCodec_Encode(t *testing.T) {
 				{"list<set<text>> pointer array", listOfSetOfVarchar, &[2][1]string{{"abc"}, {"def"}}, listAbcDefBytes4, ""},
 				{"list<set<text>> pointers", listOfSetOfVarchar, &[][]*string{{stringPtr("abc"), stringPtr("def")}, {}}, listAbcDefEmptyBytes4, ""},
 				{"list<set<text>> many elems interface{}", listOfSetOfVarchar, [][]interface{}{{"abc", "def"}, {}}, listAbcDefEmptyBytes4, ""},
-				{"list<set<text>> nil element", listOfSetOfVarchar, []interface{}{nil}, nil, fmt.Sprintf("cannot encode []interface {} as CQL %s with %s: element 0 is nil", listOfSetOfVarchar.DataType(), version)},
+				{"list<set<text>> nil element", listOfSetOfVarchar, []interface{}{nil}, []byte{0x0, 0x0, 0x0, 0x1, 0xff, 0xff, 0xff, 0xff}, ""},
+				{"list<set<text>> nil inner element", listOfSetOfVarchar, []interface{}{[]interface{}{nil}}, []byte{0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0x8, 0x0, 0x0, 0x0, 0x1, 0xff, 0xff, 0xff, 0xff}, ""},
 				{"list<set<text>> wrong source type", listOfSetOfVarchar, 123, nil, fmt.Sprintf("cannot encode int as CQL %s with %s: source type not supported", listOfSetOfVarchar.DataType(), version)},
 			}
 			for _, tt := range tests {
@@ -303,7 +304,7 @@ func Test_collectionCodec_Encode(t *testing.T) {
 				{"list<int> many elems", listOfInt, []int{1, 2, 3}, listOneTwoThreeBytes2, ""},
 				{"list<int> many elems pointers", listOfInt, []*int{intPtr(1), intPtr(2), intPtr(3)}, listOneTwoThreeBytes2, ""},
 				{"list<int> many elems interface{}", listOfInt, []interface{}{1, 2, 3}, listOneTwoThreeBytes2, ""},
-				{"list<int> nil element", listOfInt, []interface{}{nil}, nil, fmt.Sprintf("cannot encode []interface {} as CQL %s with %s: element 0 is nil", listOfInt.DataType(), version)},
+				{"list<int> nil element", listOfInt, []interface{}{nil}, []byte{0x0, 0x1, 0xff, 0xff, 0xff, 0xff}, ""},
 				{"list<int> wrong source type", listOfInt, 123, nil, fmt.Sprintf("cannot encode int as CQL %s with %s: source type not supported", listOfInt.DataType(), version)},
 				{"list<int> wrong source type nil", listOfInt, map[string]int(nil), nil, fmt.Sprintf("cannot encode map[string]int as CQL %s with %s: source type not supported", listOfInt.DataType(), version)},
 				{"list<set<text>> nil untyped", listOfSetOfVarchar, nil, nil, ""},
@@ -313,7 +314,8 @@ func Test_collectionCodec_Encode(t *testing.T) {
 				{"list<set<text>> array", listOfSetOfVarchar, [2][1]string{{"abc"}, {"def"}}, listAbcDefBytes2, ""},
 				{"list<set<text>> pointers", listOfSetOfVarchar, [][]*string{{stringPtr("abc"), stringPtr("def")}, {}}, listAbcDefEmptyBytes2, ""},
 				{"list<set<text>> many elems interface{}", listOfSetOfVarchar, [][]interface{}{{"abc", "def"}, {}}, listAbcDefEmptyBytes2, ""},
-				{"list<set<text>> nil element", listOfSetOfVarchar, []interface{}{nil}, nil, fmt.Sprintf("cannot encode []interface {} as CQL %s with %s: element 0 is nil", listOfSetOfVarchar.DataType(), version)},
+				{"list<set<text>> nil element", listOfSetOfVarchar, []interface{}{nil}, []byte{0x0, 0x1, 0xff, 0xff, 0xff, 0xff}, ""},
+				{"list<set<text>> nil inner element", listOfSetOfVarchar, []interface{}{[]interface{}{nil}}, []byte{0x0, 0x1, 0x0, 0x0, 0x0, 0x6, 0x0, 0x1, 0xff, 0xff, 0xff, 0xff}, ""},
 				{"list<set<text>> wrong source type", listOfSetOfVarchar, 123, nil, fmt.Sprintf("cannot encode int as CQL %s with %s: source type not supported", listOfSetOfVarchar.DataType(), version)},
 			}
 			for _, tt := range tests {
@@ -462,16 +464,6 @@ func Test_writeCollection(t *testing.T) {
 			"cannot extract element 0: slice index out of range: 0",
 		},
 		{
-			"extracted elem is nil",
-			args{func() extractor {
-				ext := &mockExtractor{}
-				ext.On("getElem", 0, 0).Return(nil, nil)
-				return ext
-			}(), nil, 1, primitive.ProtocolVersion5},
-			nil,
-			"element 0 is nil",
-		},
-		{
 			"cannot encode",
 			args{
 				func() extractor {
@@ -489,25 +481,6 @@ func Test_writeCollection(t *testing.T) {
 			},
 			nil,
 			"cannot encode element 0: write failed",
-		},
-		{
-			"encoded to nil",
-			args{
-				func() extractor {
-					ext := &mockExtractor{}
-					ext.On("getElem", 0, 0).Return(1, nil)
-					return ext
-				}(),
-				func() Codec {
-					codec := &mockCodec{}
-					codec.On("Encode", 1, primitive.ProtocolVersion5).Return(nil, nil)
-					return codec
-				}(),
-				1,
-				primitive.ProtocolVersion5,
-			},
-			nil,
-			"element 0 was encoded to nil",
 		},
 		{"success", args{
 			func() extractor {

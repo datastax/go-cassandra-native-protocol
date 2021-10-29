@@ -220,10 +220,8 @@ func Test_mapCodec_Encode(t *testing.T) {
 				{"map<int,text> non-empty elems pointesr", mapSimple, map[*int]*string{intPtr(12): stringPtr("abc")}, mapOneTwoAbcBytes4, ""},
 				{"map<int,text> non-empty map pointer elems pointers", mapSimple, &map[*int]*string{intPtr(12): stringPtr("abc")}, mapOneTwoAbcBytes4, ""},
 				{"map<int,text> non-empty interface{}", mapSimple, map[int]interface{}{12: "abc"}, mapOneTwoAbcBytes4, ""},
-				{"map<int,text> nil key", mapSimple, map[interface{}]interface{}{nil: "abc"}, nil, fmt.Sprintf("cannot encode map[interface {}]interface {} as CQL %s with %s: entry 0 key is nil", mapSimple.DataType(), version)},
-				{"map<int,text> key encoded to nil", mapSimple, map[*int]interface{}{nil: "abc"}, nil, fmt.Sprintf("cannot encode map[*int]interface {} as CQL %s with %s: entry 0 key was encoded to nil", mapSimple.DataType(), version)},
-				{"map<int,text> nil value", mapSimple, map[int]interface{}{12: nil}, nil, fmt.Sprintf("cannot encode map[int]interface {} as CQL %s with %s: entry 0 value is nil", mapSimple.DataType(), version)},
-				{"map<int,text> value encoded to nil", mapSimple, map[int]*string{12: nil}, nil, fmt.Sprintf("cannot encode map[int]*string as CQL %s with %s: entry 0 value was encoded to nil", mapSimple.DataType(), version)},
+				{"map<int,text> nil key", mapSimple, map[interface{}]interface{}{nil: "abc"}, []byte{0x0, 0x0, 0x0, 0x1, 0xff, 0xff, 0xff, 0xff, 0x0, 0x0, 0x0, 0x3, a, b, c}, ""},
+				{"map<int,text> nil value", mapSimple, map[int]interface{}{12: nil}, []byte{0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0x4, 0x0, 0x0, 0x0, 0xc, 0xff, 0xff, 0xff, 0xff}, ""},
 				{"map<int,text> wrong source type", mapSimple, 123, nil, fmt.Sprintf("cannot encode int as CQL %s with %s: source type not supported", mapSimple.DataType(), version)},
 				{"map<int,text> wrong source type nil", mapSimple, []int(nil), nil, fmt.Sprintf("cannot encode []int as CQL %s with %s: source type not supported", mapSimple.DataType(), version)},
 				{"map<int,text> wrong source type nil pointer", mapSimple, new([]int), nil, fmt.Sprintf("cannot encode *[]int as CQL %s with %s: source type not supported", mapSimple.DataType(), version)},
@@ -264,10 +262,8 @@ func Test_mapCodec_Encode(t *testing.T) {
 				{"map<int,text> non-empty elems pointers", mapSimple, map[*int]*string{intPtr(12): stringPtr("abc")}, mapOneTwoAbcBytes2, ""},
 				{"map<int,text> non-empty map pointer elems pointers", mapSimple, &map[*int]*string{intPtr(12): stringPtr("abc")}, mapOneTwoAbcBytes2, ""},
 				{"map<int,text> non-empty interface{}", mapSimple, map[int]interface{}{12: "abc"}, mapOneTwoAbcBytes2, ""},
-				{"map<int,text> nil key", mapSimple, map[interface{}]interface{}{nil: "abc"}, nil, fmt.Sprintf("cannot encode map[interface {}]interface {} as CQL %s with %s: entry 0 key is nil", mapSimple.DataType(), version)},
-				{"map<int,text> key encoded to nil", mapSimple, map[*int]interface{}{nil: "abc"}, nil, fmt.Sprintf("cannot encode map[*int]interface {} as CQL %s with %s: entry 0 key was encoded to nil", mapSimple.DataType(), version)},
-				{"map<int,text> nil value", mapSimple, map[int]interface{}{12: nil}, nil, fmt.Sprintf("cannot encode map[int]interface {} as CQL %s with %s: entry 0 value is nil", mapSimple.DataType(), version)},
-				{"map<int,text> value encoded to nil", mapSimple, map[int]*string{12: nil}, nil, fmt.Sprintf("cannot encode map[int]*string as CQL %s with %s: entry 0 value was encoded to nil", mapSimple.DataType(), version)},
+				{"map<int,text> nil key", mapSimple, map[interface{}]interface{}{nil: "abc"}, []byte{0x0, 0x1, 0xff, 0xff, 0xff, 0xff, 0x0, 0x0, 0x0, 0x3, a, b, c}, ""},
+				{"map<int,text> nil value", mapSimple, map[int]interface{}{12: nil}, []byte{0x0, 0x1, 0x0, 0x0, 0x0, 0x4, 0x0, 0x0, 0x0, 0xc, 0xff, 0xff, 0xff, 0xff}, ""},
 				{"map<int,text> wrong source type", mapSimple, 123, nil, fmt.Sprintf("cannot encode int as CQL %s with %s: source type not supported", mapSimple.DataType(), version)},
 				{"map<int,text> wrong source type nil", mapSimple, []int(nil), nil, fmt.Sprintf("cannot encode []int as CQL %s with %s: source type not supported", mapSimple.DataType(), version)},
 				{"map<int,text> wrong source type nil pointer", mapSimple, new([]int), nil, fmt.Sprintf("cannot encode *[]int as CQL %s with %s: source type not supported", mapSimple.DataType(), version)},
@@ -449,16 +445,6 @@ func Test_writeMap(t *testing.T) {
 			"cannot write collection size: expected collection size >= 0, got: -1",
 		},
 		{
-			"nil key",
-			args{func() keyValueExtractor {
-				ext := &mockKeyValueExtractor{}
-				ext.On("getKey", 0).Return(nil, nil)
-				return ext
-			}(), nil, nil, 1, primitive.ProtocolVersion5},
-			nil,
-			"entry 0 key is nil",
-		},
-		{
 			"cannot extract value",
 			args{func() keyValueExtractor {
 				ext := &mockKeyValueExtractor{}
@@ -468,17 +454,6 @@ func Test_writeMap(t *testing.T) {
 			}(), nil, nil, 1, primitive.ProtocolVersion5},
 			nil,
 			"cannot extract entry 0 value: cannot extract elem",
-		},
-		{
-			"extracted value is nil",
-			args{func() keyValueExtractor {
-				ext := &mockKeyValueExtractor{}
-				ext.On("getKey", 0).Return(123, nil)
-				ext.On("getElem", 0, 123).Return(nil, nil)
-				return ext
-			}(), nil, nil, 1, primitive.ProtocolVersion5},
-			nil,
-			"entry 0 value is nil",
 		},
 		{
 			"cannot encode key",
@@ -525,56 +500,6 @@ func Test_writeMap(t *testing.T) {
 			},
 			nil,
 			"cannot encode entry 0 value: write value failed",
-		},
-		{
-			"encoded key nil",
-			args{
-				func() keyValueExtractor {
-					ext := &mockKeyValueExtractor{}
-					ext.On("getKey", 0).Return(123, nil)
-					ext.On("getElem", 0, 123).Return("abc", nil)
-					return ext
-				}(),
-				func() Codec {
-					codec := &mockCodec{}
-					codec.On("Encode", 123, primitive.ProtocolVersion5).Return(nil, nil)
-					return codec
-				}(),
-				func() Codec {
-					codec := &mockCodec{}
-					codec.On("Encode", "abc", primitive.ProtocolVersion5).Return([]byte{1}, nil)
-					return codec
-				}(),
-				1,
-				primitive.ProtocolVersion5,
-			},
-			nil,
-			"entry 0 key was encoded to nil",
-		},
-		{
-			"encoded value nil",
-			args{
-				func() keyValueExtractor {
-					ext := &mockKeyValueExtractor{}
-					ext.On("getKey", 0).Return(123, nil)
-					ext.On("getElem", 0, 123).Return("abc", nil)
-					return ext
-				}(),
-				func() Codec {
-					codec := &mockCodec{}
-					codec.On("Encode", 123, primitive.ProtocolVersion5).Return([]byte{1}, nil)
-					return codec
-				}(),
-				func() Codec {
-					codec := &mockCodec{}
-					codec.On("Encode", "abc", primitive.ProtocolVersion5).Return(nil, nil)
-					return codec
-				}(),
-				1,
-				primitive.ProtocolVersion5,
-			},
-			nil,
-			"entry 0 value was encoded to nil",
 		},
 		{"success",
 			args{
