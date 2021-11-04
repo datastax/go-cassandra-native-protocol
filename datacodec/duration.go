@@ -23,18 +23,18 @@ import (
 	"time"
 )
 
-// CqlDuration is a CQL type introduced in protocol v5.
-// A duration can either be positive or negative. If a duration is positive
-// all the integers must be positive or zero. If a duration is
-// negative all the numbers must be negative or zero.
+// CqlDuration is a CQL type introduced in protocol v5. A duration can either be positive or negative. If a duration is
+// positive all the integers must be positive or zero. If a duration is negative all the numbers must be negative or
+// zero.
 type CqlDuration struct {
 	Months int32
 	Days   int32
 	Nanos  time.Duration
 }
 
-// Duration is a codec for the CQL duration type, introduced in protocol v5. There is no built-in representation of arbitrary-precision
-// duration values in Go's standard library. This is why this codec can only encode from and decode to CqlDuration.
+// Duration is a codec for the CQL duration type, introduced in protocol v5. There is no built-in representation of
+// arbitrary-precision duration values in Go's standard library. This is why this codec can only encode from and decode
+// to CqlDuration.
 var Duration Codec = &durationCodec{}
 
 type durationCodec struct {

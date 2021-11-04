@@ -1,6 +1,6 @@
 ### Generating mocks
 
-Mocks where generating using Mockery.
+Mocks were generated using Mockery.
 
     brew install mockery
 
