@@ -63,7 +63,7 @@ func TestReadReasonMap(t *testing.T) {
 				4, 192, 168, 1,
 			},
 			nil,
-			fmt.Errorf("cannot read reason map key for element 0: %w", fmt.Errorf("not enough bytes to read [inetaddr] IPv4 content")),
+			fmt.Errorf("cannot read reason map key for element 0: %w", fmt.Errorf("cannot read [inetaddr] IPv4 content: %w", errors.New("unexpected EOF"))),
 		},
 		{
 			"cannot read reason map value",

@@ -58,7 +58,7 @@ func TestReadStringList(t *testing.T) {
 			[]byte{0, 1, 0, 5, h, e, l, l},
 			nil,
 			[]byte{},
-			fmt.Errorf("cannot read [string list] element 0: %w", errors.New("not enough bytes to read [string] content")),
+			fmt.Errorf("cannot read [string list] element 0: %w", fmt.Errorf("cannot read [string] content: %w", errors.New("unexpected EOF"))),
 		},
 	}
 	for _, tt := range tests {
