@@ -88,10 +88,8 @@ func ParseUuid(input string) (*UUID, error) {
 
 func ReadUuid(source io.Reader) (*UUID, error) {
 	decoded := new(UUID)
-	if read, err := source.Read(decoded[:]); err != nil {
+	if _, err := io.ReadFull(source, decoded[:]); err != nil {
 		return nil, fmt.Errorf("cannot read [uuid] content: %w", err)
-	} else if read != LengthOfUuid {
-		return nil, errors.New("not enough bytes to read [uuid] content")
 	}
 	return decoded, nil
 }

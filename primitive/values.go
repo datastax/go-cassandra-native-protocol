@@ -82,10 +82,8 @@ func ReadValue(source io.Reader, version ProtocolVersion) (*Value, error) {
 		return NewValue([]byte{}), nil
 	} else {
 		decoded := make([]byte, length)
-		if read, err := source.Read(decoded); err != nil {
+		if _, err := io.ReadFull(source, decoded); err != nil {
 			return nil, fmt.Errorf("cannot read [value] content: %w", err)
-		} else if read != int(length) {
-			return nil, errors.New("not enough bytes to read [value] content")
 		}
 		return NewValue(decoded), nil
 	}

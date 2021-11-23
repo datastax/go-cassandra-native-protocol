@@ -295,7 +295,7 @@ func (c *CqlClientConnection) outgoingLoop() {
 
 func (c *CqlClientConnection) waitForIncomingData() (io.Reader, error) {
 	buf := make([]byte, 1)
-	if _, err := c.conn.Read(buf); err != nil {
+	if _, err := io.ReadFull(c.conn, buf); err != nil {
 		return nil, err
 	} else {
 		return io.MultiReader(bytes.NewReader(buf), c.conn), nil

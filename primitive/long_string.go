@@ -29,10 +29,8 @@ func ReadLongString(source io.Reader) (string, error) {
 		return "", nil
 	} else {
 		decoded := make([]byte, length)
-		if read, err := source.Read(decoded); err != nil {
+		if _, err := io.ReadFull(source, decoded); err != nil {
 			return "", fmt.Errorf("cannot read [long string] content: %w", err)
-		} else if read != int(length) {
-			return "", errors.New("not enough bytes to read [long string] content")
 		}
 		return string(decoded), nil
 	}
