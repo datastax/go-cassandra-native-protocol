@@ -47,7 +47,7 @@ func TestReadUnsignedVint(t *testing.T) {
 		{"min int64", vintMinInt64Bytes, encodeZigZag(math.MinInt64), 9, ""},
 		{"empty", []byte{}, 0, 0, "cannot read [unsigned vint]: EOF"},
 		{"wrong length", []byte{255}, 0, 1, "cannot read [unsigned vint]: EOF"},
-		{"wrong length 2", []byte{255, 0, 0, 0, 0, 0, 0, 0}, 0, 8, "cannot read [unsigned vint]: EOF"},
+		{"wrong length 2", []byte{255, 0, 0, 0, 0, 0, 0, 0}, 0, 8, "cannot read [unsigned vint]: unexpected EOF"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -131,7 +131,7 @@ func TestReadVint(t *testing.T) {
 		{"min int64", vintMinInt64Bytes, math.MinInt64, 9, ""},
 		{"empty", []byte{}, 0, 0, "cannot read [vint]: cannot read [unsigned vint]: EOF"},
 		{"wrong length", []byte{255}, 0, 1, "cannot read [vint]: cannot read [unsigned vint]: EOF"},
-		{"wrong length 2", []byte{255, 0, 0, 0, 0, 0, 0, 0}, 0, 8, "cannot read [vint]: cannot read [unsigned vint]: EOF"},
+		{"wrong length 2", []byte{255, 0, 0, 0, 0, 0, 0, 0}, 0, 8, "cannot read [vint]: cannot read [unsigned vint]: unexpected EOF"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
