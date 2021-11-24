@@ -42,28 +42,23 @@ import (
 // while varints, in the functions above, are encoded in little-endian order.
 
 func ReadUnsignedVint(source io.Reader) (val uint64, read int, err error) {
-	data, err := io.ReadAll(source)
+	var head [1]byte
+	read, err = io.ReadFull(source, head[:])
 	if err == nil {
-		length := len(data)
-		if length == 0 {
-			err = io.EOF
+		firstByte := head[0]
+		if firstByte&0x80 == 0 {
+			val = uint64(firstByte)
 		} else {
-			firstByte := data[0]
-			read = 1
-			if firstByte&0x80 == 0 {
-				val = uint64(firstByte)
-			} else {
-				numBytes := bits.LeadingZeros32(uint32(^firstByte)) - 24
-				if length < numBytes+1 {
-					read = length
-					err = io.EOF
-				} else {
-					read += numBytes
-					val = uint64(firstByte & (0xff >> uint(numBytes)))
-					for i := 0; i < numBytes; i++ {
-						val <<= 8
-						val |= uint64(data[i+1] & 0xff)
-					}
+			remainingBytes := bits.LeadingZeros32(uint32(^firstByte)) - 24
+			tail := make([]byte, remainingBytes)
+			var n int
+			n, err = io.ReadFull(source, tail)
+			read += n
+			if err == nil {
+				val = uint64(firstByte & (0xff >> uint(remainingBytes)))
+				for i := 0; i < remainingBytes; i++ {
+					val <<= 8
+					val |= uint64(tail[i] & 0xff)
 				}
 			}
 		}
