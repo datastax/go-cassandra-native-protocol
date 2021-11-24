@@ -73,7 +73,8 @@ func TestReadStringMap(t *testing.T) {
 			nil,
 			[]byte{},
 			fmt.Errorf("cannot read [string map] entry 0 key: %w",
-				errors.New("not enough bytes to read [string] content")),
+				fmt.Errorf("cannot read [string] content: %w",
+					errors.New("unexpected EOF"))),
 		},
 		{
 			"cannot read value length",
@@ -91,7 +92,7 @@ func TestReadStringMap(t *testing.T) {
 			[]byte{},
 			fmt.Errorf(
 				"cannot read [string map] entry 0 value: %w",
-				errors.New("not enough bytes to read [string] content"),
+				fmt.Errorf("cannot read [string] content: %w", errors.New("unexpected EOF")),
 			),
 		},
 	}

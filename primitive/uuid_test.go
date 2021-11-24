@@ -17,6 +17,7 @@ package primitive
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -39,7 +40,7 @@ func TestReadUuid(t *testing.T) {
 			uuidBytes[:15],
 			nil,
 			[]byte{},
-			errors.New("not enough bytes to read [uuid] content"),
+			fmt.Errorf("cannot read [uuid] content: %w", errors.New("unexpected EOF")),
 		},
 	}
 	for _, tt := range tests {

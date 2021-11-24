@@ -29,18 +29,14 @@ func ReadInetAddr(source io.Reader) (net.IP, error) {
 	} else {
 		if length == net.IPv4len {
 			decoded := make([]byte, net.IPv4len)
-			if read, err := source.Read(decoded); err != nil {
+			if _, err := io.ReadFull(source, decoded); err != nil {
 				return nil, fmt.Errorf("cannot read [inetaddr] IPv4 content: %w", err)
-			} else if read < net.IPv4len {
-				return nil, errors.New("not enough bytes to read [inetaddr] IPv4 content")
 			}
 			return net.IPv4(decoded[0], decoded[1], decoded[2], decoded[3]), nil
 		} else if length == net.IPv6len {
 			decoded := make([]byte, net.IPv6len)
-			if read, err := source.Read(decoded); err != nil {
+			if _, err := io.ReadFull(source, decoded); err != nil {
 				return nil, fmt.Errorf("cannot read [inetaddr] IPv6 content: %w", err)
-			} else if read < net.IPv6len {
-				return nil, errors.New("not enough bytes to read [inetaddr] IPv6 content")
 			}
 			return decoded, nil
 		} else {

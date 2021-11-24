@@ -47,7 +47,7 @@ func TestReadBytes(t *testing.T) {
 			[]byte{0, 0, 0, 2, 1},
 			nil,
 			[]byte{},
-			fmt.Errorf("not enough bytes to read [bytes] content"),
+			fmt.Errorf("cannot read [bytes] content: %w", errors.New("unexpected EOF")),
 		},
 	}
 	for _, tt := range tests {

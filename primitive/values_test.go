@@ -91,7 +91,8 @@ func TestReadValue(t *testing.T) {
 						1, // contents
 					},
 					nil,
-					errors.New("not enough bytes to read [value] content"),
+					fmt.Errorf("cannot read [value] content: %w",
+						errors.New("unexpected EOF")),
 				},
 			}
 			for _, tt := range tests {
@@ -172,7 +173,8 @@ func TestReadValue(t *testing.T) {
 						1, // contents
 					},
 					nil,
-					errors.New("not enough bytes to read [value] content"),
+					fmt.Errorf("cannot read [value] content: %w",
+						errors.New("unexpected EOF")),
 				},
 			}
 			for _, tt := range tests {

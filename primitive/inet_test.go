@@ -64,14 +64,14 @@ func TestReadInet(t *testing.T) {
 			[]byte{4, 192, 168, 1},
 			nil,
 			[]byte{},
-			fmt.Errorf("cannot read [inet] address: %w", errors.New("not enough bytes to read [inetaddr] IPv4 content")),
+			fmt.Errorf("cannot read [inet] address: %w", fmt.Errorf("cannot read [inetaddr] IPv4 content: %w", errors.New("unexpected EOF"))),
 		},
 		{
 			"not enough bytes to read [inet] IPv6 content",
 			[]byte{16, 0x20, 0x01, 0x0d, 0xb8, 0x85, 0xa3, 0x00, 0x00, 0x00, 0x00, 0x8a, 0x2e, 0x03, 0x70, 0x73},
 			nil,
 			[]byte{},
-			fmt.Errorf("cannot read [inet] address: %w", errors.New("not enough bytes to read [inetaddr] IPv6 content")),
+			fmt.Errorf("cannot read [inet] address: %w", fmt.Errorf("cannot read [inetaddr] IPv6 content: %w", errors.New("unexpected EOF"))),
 		},
 		{
 			"cannot read [inet] port number",

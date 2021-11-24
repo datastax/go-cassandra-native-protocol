@@ -92,10 +92,8 @@ func (c *codec) decodeSegmentPayload(header *Header, source io.Reader) (*Payload
 		length = header.CompressedPayloadLength
 	}
 	encodedPayload := make([]byte, length)
-	if read, err := source.Read(encodedPayload); err != nil {
+	if _, err := io.ReadFull(source, encodedPayload); err != nil {
 		return nil, fmt.Errorf("cannot read encoded payload: %w", err)
-	} else if read != int(length) {
-		return nil, fmt.Errorf("not enough bytes to read, expected %v, got %v", length, read)
 	}
 	// Read and check CRC
 	var expectedPayloadCrc uint32

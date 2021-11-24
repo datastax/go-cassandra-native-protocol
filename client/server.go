@@ -482,7 +482,7 @@ func (c *CqlServerConnection) outgoingLoop() {
 
 func (c *CqlServerConnection) waitForIncomingData() (io.Reader, error) {
 	buf := make([]byte, 1)
-	if _, err := c.conn.Read(buf); err != nil {
+	if _, err := io.ReadFull(c.conn, buf); err != nil {
 		return nil, err
 	} else {
 		return io.MultiReader(bytes.NewReader(buf), c.conn), nil
