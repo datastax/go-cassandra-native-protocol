@@ -16,8 +16,9 @@ package datatype
 
 import (
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 type DataType interface {
@@ -102,6 +103,8 @@ func ReadDataType(source io.Reader, version primitive.ProtocolVersion) (decoded 
 			return Float, nil
 		case primitive.DataTypeCodeInt:
 			return Int, nil
+		case primitive.DataTypeCodeText:
+			return Varchar, nil
 		case primitive.DataTypeCodeTimestamp:
 			return Timestamp, nil
 		case primitive.DataTypeCodeUuid:
