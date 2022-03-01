@@ -226,7 +226,7 @@ func TestQueryCodec_Encode(t *testing.T) {
 				nil,
 			},
 			{
-				"missing query",
+				"query with empty query string",
 				&Query{},
 				nil,
 				errors.New("cannot write QUERY empty query string"),
@@ -337,7 +337,7 @@ func TestQueryCodec_Encode(t *testing.T) {
 				nil,
 			},
 			{
-				"missing query",
+				"query with empty query string",
 				&Query{},
 				nil,
 				errors.New("cannot write QUERY empty query string"),
@@ -457,7 +457,7 @@ func TestQueryCodec_Encode(t *testing.T) {
 				nil,
 			},
 			{
-				"missing query",
+				"query with empty query string",
 				&Query{},
 				nil,
 				errors.New("cannot write QUERY empty query string"),
@@ -652,7 +652,7 @@ func TestQueryCodec_Encode(t *testing.T) {
 				nil,
 			},
 			{
-				"missing query",
+				"query with empty query string",
 				&Query{},
 				nil,
 				errors.New("cannot write QUERY empty query string"),
@@ -1393,14 +1393,17 @@ func TestQueryCodec_Decode(t *testing.T) {
 				nil,
 			},
 			{
-				"missing query",
+				"query with empty query string",
 				[]byte{
 					0, 0, 0, 0, // empty query
 					0, 0, // consistency level
 					0, // flags
 				},
+				&Query{
+					Query: "",
+					Options: &QueryOptions{},
+				},
 				nil,
-				errors.New("cannot read QUERY empty query string"),
 			},
 		}
 		for _, tt := range tests {
@@ -1502,14 +1505,17 @@ func TestQueryCodec_Decode(t *testing.T) {
 				nil,
 			},
 			{
-				"missing query",
+				"query with empty query string",
 				[]byte{
 					0, 0, 0, 0, // empty query
 					0, 0, // consistency level
 					0, // flags
 				},
+				&Query{
+					Query: "",
+					Options: &QueryOptions{},
+				},
 				nil,
-				errors.New("cannot read QUERY empty query string"),
 			},
 		}
 		for _, tt := range tests {
@@ -1620,14 +1626,17 @@ func TestQueryCodec_Decode(t *testing.T) {
 				nil,
 			},
 			{
-				"missing query",
+				"query with empty query string",
 				[]byte{
 					0, 0, 0, 0, // empty query
 					0, 0, // consistency level
 					0, // flags
 				},
+				&Query{
+					Query: "",
+					Options: &QueryOptions{},
+				},
 				nil,
-				errors.New("cannot read QUERY empty query string"),
 			},
 		}
 		for _, tt := range tests {
@@ -1813,14 +1822,17 @@ func TestQueryCodec_Decode(t *testing.T) {
 				nil,
 			},
 			{
-				"missing query",
+				"query with empty query string",
 				[]byte{
 					0, 0, 0, 0, // empty query
 					0, 0, // consistency level
 					0, 0, 0, 0, // flags
 				},
+				&Query{
+					Query: "",
+					Options: &QueryOptions{},
+				},
 				nil,
-				errors.New("cannot read QUERY empty query string"),
 			},
 		}
 		for _, tt := range tests {
