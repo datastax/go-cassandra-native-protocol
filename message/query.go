@@ -59,9 +59,7 @@ func (c *queryCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.Query, got %T", msg))
 	}
-	if query.Query == "" {
-		return errors.New("cannot write QUERY empty query string")
-	} else if err := primitive.WriteLongString(query.Query, dest); err != nil {
+	if err := primitive.WriteLongString(query.Query, dest); err != nil {
 		return fmt.Errorf("cannot write QUERY query string: %w", err)
 	}
 	if err := EncodeQueryOptions(query.Options, dest, version); err != nil {

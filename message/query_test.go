@@ -228,8 +228,12 @@ func TestQueryCodec_Encode(t *testing.T) {
 			{
 				"query with empty query string",
 				&Query{},
+				[]byte{
+					0, 0, 0, 0, // empty query
+					0, 0, // consistency level
+					0, // flags
+				},
 				nil,
-				errors.New("cannot write QUERY empty query string"),
 			},
 			{
 				"not a query",
@@ -339,8 +343,12 @@ func TestQueryCodec_Encode(t *testing.T) {
 			{
 				"query with empty query string",
 				&Query{},
+				[]byte{
+					0, 0, 0, 0, // empty query
+					0, 0, // consistency level
+					0, // flags
+				},
 				nil,
-				errors.New("cannot write QUERY empty query string"),
 			},
 			{
 				"not a query",
@@ -459,8 +467,12 @@ func TestQueryCodec_Encode(t *testing.T) {
 			{
 				"query with empty query string",
 				&Query{},
+				[]byte{
+					0, 0, 0, 0, // empty query
+					0, 0, // consistency level
+					0, // flags
+				},
 				nil,
-				errors.New("cannot write QUERY empty query string"),
 			},
 			{
 				"not a query",
@@ -654,8 +666,12 @@ func TestQueryCodec_Encode(t *testing.T) {
 			{
 				"query with empty query string",
 				&Query{},
+				[]byte{
+					0, 0, 0, 0, // empty query
+					0, 0, // consistency level
+					0, 0, 0, 0, // flags
+				},
 				nil,
-				errors.New("cannot write QUERY empty query string"),
 			},
 			{
 				"not a query",
