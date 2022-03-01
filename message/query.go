@@ -86,9 +86,6 @@ func (c *queryCodec) EncodedLength(msg Message, version primitive.ProtocolVersio
 func (c *queryCodec) Decode(source io.Reader, version primitive.ProtocolVersion) (Message, error) {
 	if query, err := primitive.ReadLongString(source); err != nil {
 		return nil, err
-	// TODO commenting out to test fix - to be removed
-	//} else if query == "" {
-	//	return nil, fmt.Errorf("cannot read QUERY empty query string")
 	} else if options, err := DecodeQueryOptions(source, version); err != nil {
 		return nil, err
 	} else {
