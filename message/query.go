@@ -59,9 +59,7 @@ func (c *queryCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 	if !ok {
 		return errors.New(fmt.Sprintf("expected *message.Query, got %T", msg))
 	}
-	if query.Query == "" {
-		return errors.New("cannot write QUERY empty query string")
-	} else if err := primitive.WriteLongString(query.Query, dest); err != nil {
+	if err := primitive.WriteLongString(query.Query, dest); err != nil {
 		return fmt.Errorf("cannot write QUERY query string: %w", err)
 	}
 	if err := EncodeQueryOptions(query.Options, dest, version); err != nil {
@@ -86,8 +84,6 @@ func (c *queryCodec) EncodedLength(msg Message, version primitive.ProtocolVersio
 func (c *queryCodec) Decode(source io.Reader, version primitive.ProtocolVersion) (Message, error) {
 	if query, err := primitive.ReadLongString(source); err != nil {
 		return nil, err
-	} else if query == "" {
-		return nil, fmt.Errorf("cannot read QUERY empty query string")
 	} else if options, err := DecodeQueryOptions(source, version); err != nil {
 		return nil, err
 	} else {
