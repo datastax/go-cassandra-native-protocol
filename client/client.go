@@ -17,6 +17,7 @@ package client
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"github.com/datastax/go-cassandra-native-protocol/frame"
@@ -70,6 +71,8 @@ type CqlClient struct {
 	ReadTimeout time.Duration
 	// An optional list of handlers to handle incoming events.
 	EventHandlers []EventHandler
+	// TLSConfig is the TLS configuration to use.
+	TLSConfig *tls.Config
 }
 
 // NewCqlClient Creates a new CqlClient with default options. Leave credentials nil to opt out from authentication.
@@ -94,10 +97,18 @@ func (client *CqlClient) String() string {
 // CqlClientConnection.InitiateHandshake. Alternatively, use ConnectAndInit to get a fully-initialized connection.
 func (client *CqlClient) Connect(ctx context.Context) (*CqlClientConnection, error) {
 	log.Debug().Msgf("%v: connecting", client)
-	dialer := net.Dialer{}
+	var conn net.Conn
+	var err error
 	connectCtx, connectCancel := context.WithTimeout(ctx, client.ConnectTimeout)
 	defer connectCancel()
-	if conn, err := dialer.DialContext(connectCtx, "tcp", client.RemoteAddress); err != nil {
+	if client.TLSConfig != nil {
+		dialer := tls.Dialer{Config: client.TLSConfig}
+		conn, err = dialer.DialContext(connectCtx, "tcp", client.RemoteAddress)
+	} else {
+		dialer := net.Dialer{}
+		conn, err = dialer.DialContext(connectCtx, "tcp", client.RemoteAddress)
+	}
+	if err != nil {
 		return nil, fmt.Errorf("%v: cannot establish TCP connection: %w", client, err)
 	} else {
 		log.Debug().Msgf("%v: new TCP connection established", client)
