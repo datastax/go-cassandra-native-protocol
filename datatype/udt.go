@@ -21,10 +21,10 @@ import (
 	"io"
 )
 
-// UserDefinedType is a data type that represents a CQL user-defined type.
+// UserDefined is a data type that represents a CQL user-defined type.
 // +k8s:deepcopy-gen=true
 // +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/datatype.DataType
-type UserDefinedType struct {
+type UserDefined struct {
 	Keyspace   string
 	Name       string
 	FieldNames []string
@@ -32,20 +32,20 @@ type UserDefinedType struct {
 	// Note: field names and field types are not modeled as a map because iteration order matters.
 }
 
-func NewUserDefinedType(keyspace string, name string, fieldNames []string, fieldTypes []DataType) (*UserDefinedType, error) {
+func NewUserDefined(keyspace string, name string, fieldNames []string, fieldTypes []DataType) (*UserDefined, error) {
 	fieldNamesLength := len(fieldNames)
 	fieldTypesLength := len(fieldTypes)
 	if fieldNamesLength != fieldTypesLength {
 		return nil, fmt.Errorf("field names and field types length mismatch: %d != %d", fieldNamesLength, fieldTypesLength)
 	}
-	return &UserDefinedType{Keyspace: keyspace, Name: name, FieldNames: fieldNames, FieldTypes: fieldTypes}, nil
+	return &UserDefined{Keyspace: keyspace, Name: name, FieldNames: fieldNames, FieldTypes: fieldTypes}, nil
 }
 
-func (t *UserDefinedType) GetDataTypeCode() primitive.DataTypeCode {
+func (t *UserDefined) GetDataTypeCode() primitive.DataTypeCode {
 	return primitive.DataTypeCodeUdt
 }
 
-func (t *UserDefinedType) String() string {
+func (t *UserDefined) String() string {
 	buf := &bytes.Buffer{}
 	buf.WriteString(t.Keyspace)
 	buf.WriteString(".")
@@ -63,14 +63,14 @@ func (t *UserDefinedType) String() string {
 	return buf.String()
 }
 
-func (t *UserDefinedType) MarshalJSON() ([]byte, error) {
+func (t *UserDefined) MarshalJSON() ([]byte, error) {
 	return []byte("\"" + t.String() + "\""), nil
 }
 
 func writeUserDefinedType(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error) {
-	userDefinedType, ok := t.(*UserDefinedType)
+	userDefinedType, ok := t.(*UserDefined)
 	if !ok {
-		return fmt.Errorf("expected *UserDefinedType, got %T", t)
+		return fmt.Errorf("expected *UserDefined, got %T", t)
 	} else if err = primitive.WriteString(userDefinedType.Keyspace, dest); err != nil {
 		return fmt.Errorf("cannot write udt keyspace: %w", err)
 	} else if err = primitive.WriteString(userDefinedType.Name, dest); err != nil {
@@ -93,9 +93,9 @@ func writeUserDefinedType(t DataType, dest io.Writer, version primitive.Protocol
 }
 
 func lengthOfUserDefinedType(t DataType, version primitive.ProtocolVersion) (length int, err error) {
-	userDefinedType, ok := t.(*UserDefinedType)
+	userDefinedType, ok := t.(*UserDefined)
 	if !ok {
-		return -1, fmt.Errorf("expected *UserDefinedType, got %T", t)
+		return -1, fmt.Errorf("expected *UserDefined, got %T", t)
 	}
 	length += primitive.LengthOfString(userDefinedType.Keyspace)
 	length += primitive.LengthOfString(userDefinedType.Name)
@@ -116,7 +116,7 @@ func lengthOfUserDefinedType(t DataType, version primitive.ProtocolVersion) (len
 }
 
 func readUserDefinedType(source io.Reader, version primitive.ProtocolVersion) (decoded DataType, err error) {
-	userDefinedType := &UserDefinedType{}
+	userDefinedType := &UserDefined{}
 	if userDefinedType.Keyspace, err = primitive.ReadString(source); err != nil {
 		return nil, fmt.Errorf("cannot read udt keyspace: %w", err)
 	} else if userDefinedType.Name, err = primitive.ReadString(source); err != nil {

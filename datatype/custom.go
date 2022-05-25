@@ -20,32 +20,32 @@ import (
 	"io"
 )
 
-// CustomType is a data type that represents a CQL custom type.
+// Custom is a data type that represents a CQL custom type.
 // +k8s:deepcopy-gen=true
 // +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/datatype.DataType
-type CustomType struct {
+type Custom struct {
 	ClassName string
 }
 
-func NewCustomType(className string) *CustomType {
-	return &CustomType{ClassName: className}
+func NewCustom(className string) *Custom {
+	return &Custom{ClassName: className}
 }
 
-func (t *CustomType) GetDataTypeCode() primitive.DataTypeCode {
+func (t *Custom) GetDataTypeCode() primitive.DataTypeCode {
 	return primitive.DataTypeCodeCustom
 }
 
-func (t *CustomType) String() string {
+func (t *Custom) String() string {
 	return fmt.Sprintf("custom(%v)", t.ClassName)
 }
 
-func (t *CustomType) MarshalJSON() ([]byte, error) {
+func (t *Custom) MarshalJSON() ([]byte, error) {
 	return []byte("\"" + t.String() + "\""), nil
 }
 
 func writeCustomType(t DataType, dest io.Writer, _ primitive.ProtocolVersion) (err error) {
-	if customType, ok := t.(*CustomType); !ok {
-		return fmt.Errorf("expected *CustomType, got %T", t)
+	if customType, ok := t.(*Custom); !ok {
+		return fmt.Errorf("expected *Custom, got %T", t)
 	} else if err = primitive.WriteString(customType.ClassName, dest); err != nil {
 		return fmt.Errorf("cannot write custom type class name: %w", err)
 	}
@@ -53,8 +53,8 @@ func writeCustomType(t DataType, dest io.Writer, _ primitive.ProtocolVersion) (e
 }
 
 func lengthOfCustomType(t DataType, _ primitive.ProtocolVersion) (length int, err error) {
-	if customType, ok := t.(*CustomType); !ok {
-		return -1, fmt.Errorf("expected *CustomType, got %T", t)
+	if customType, ok := t.(*Custom); !ok {
+		return -1, fmt.Errorf("expected *Custom, got %T", t)
 	} else {
 		length += primitive.LengthOfString(customType.ClassName)
 	}
@@ -62,7 +62,7 @@ func lengthOfCustomType(t DataType, _ primitive.ProtocolVersion) (length int, er
 }
 
 func readCustomType(source io.Reader, _ primitive.ProtocolVersion) (t DataType, err error) {
-	customType := &CustomType{}
+	customType := &Custom{}
 	if customType.ClassName, err = primitive.ReadString(source); err != nil {
 		return nil, fmt.Errorf("cannot read custom type class name: %w", err)
 	}

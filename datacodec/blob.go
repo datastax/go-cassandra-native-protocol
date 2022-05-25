@@ -29,7 +29,7 @@ var PassThrough = Blob
 
 // NewCustom returns a codec for the CQL custom type. Its preferred Go type is []byte, but it can encode from and decode
 // to string as well. This codec is identical to the Blob codec.
-func NewCustom(customType *datatype.CustomType) Codec {
+func NewCustom(customType *datatype.Custom) Codec {
 	return &blobCodec{dataType: customType}
 }
 

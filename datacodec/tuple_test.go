@@ -46,10 +46,10 @@ type (
 )
 
 var (
-	tupleCodecEmpty, _   = NewTuple(datatype.NewTupleType())
-	tupleCodecSimple, _  = NewTuple(datatype.NewTupleType(datatype.Int, datatype.Boolean, datatype.Varchar))
-	tupleCodecInts, _    = NewTuple(datatype.NewTupleType(datatype.Int, datatype.Int, datatype.Int)) // can be mapped to []int
-	tupleCodecComplex, _ = NewTuple(datatype.NewTupleType(tupleCodecSimple.DataType(), tupleCodecSimple.DataType()))
+	tupleCodecEmpty, _   = NewTuple(datatype.NewTuple())
+	tupleCodecSimple, _  = NewTuple(datatype.NewTuple(datatype.Int, datatype.Boolean, datatype.Varchar))
+	tupleCodecInts, _    = NewTuple(datatype.NewTuple(datatype.Int, datatype.Int, datatype.Int)) // can be mapped to []int
+	tupleCodecComplex, _ = NewTuple(datatype.NewTuple(tupleCodecSimple.DataType(), tupleCodecSimple.DataType()))
 )
 
 var (
@@ -168,26 +168,26 @@ var (
 func TestNewTupleCodec(t *testing.T) {
 	tests := []struct {
 		name     string
-		dataType *datatype.TupleType
+		dataType *datatype.Tuple
 		expected Codec
 		err      string
 	}{
 		{
 			"simple",
-			datatype.NewTupleType(datatype.Int, datatype.Varchar),
+			datatype.NewTuple(datatype.Int, datatype.Varchar),
 			&tupleCodec{
-				dataType:      datatype.NewTupleType(datatype.Int, datatype.Varchar),
+				dataType:      datatype.NewTuple(datatype.Int, datatype.Varchar),
 				elementCodecs: []Codec{Int, Varchar},
 			},
 			"",
 		},
 		{
 			"complex",
-			datatype.NewTupleType(datatype.Int, datatype.NewTupleType(datatype.Int, datatype.Varchar)),
+			datatype.NewTuple(datatype.Int, datatype.NewTuple(datatype.Int, datatype.Varchar)),
 			&tupleCodec{
-				dataType: datatype.NewTupleType(datatype.Int, datatype.NewTupleType(datatype.Int, datatype.Varchar)),
+				dataType: datatype.NewTuple(datatype.Int, datatype.NewTuple(datatype.Int, datatype.Varchar)),
 				elementCodecs: []Codec{Int, &tupleCodec{
-					dataType:      datatype.NewTupleType(datatype.Int, datatype.Varchar),
+					dataType:      datatype.NewTuple(datatype.Int, datatype.Varchar),
 					elementCodecs: []Codec{Int, Varchar},
 				}},
 			},
@@ -195,16 +195,16 @@ func TestNewTupleCodec(t *testing.T) {
 		},
 		{
 			"empty",
-			datatype.NewTupleType(),
+			datatype.NewTuple(),
 			&tupleCodec{
-				dataType:      datatype.NewTupleType(),
+				dataType:      datatype.NewTuple(),
 				elementCodecs: []Codec{},
 			},
 			"",
 		},
 		{
 			"wrong child",
-			datatype.NewTupleType(wrongDataType{}),
+			datatype.NewTuple(wrongDataType{}),
 			nil,
 			"cannot create codec for tuple element 0: cannot create data codec for CQL type 666",
 		},
@@ -525,7 +525,7 @@ func Test_tupleCodec_Encode(t *testing.T) {
 	}
 	for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion3) {
 		t.Run(version.String(), func(t *testing.T) {
-			codec, _ := NewTuple(datatype.NewTupleType(datatype.Int))
+			codec, _ := NewTuple(datatype.NewTuple(datatype.Int))
 			dest, err := codec.Encode(nil, version)
 			assert.Nil(t, dest)
 			assertErrorMessage(t, "data type tuple<int> not supported in "+version.String(), err)
@@ -853,7 +853,7 @@ func Test_tupleCodec_Decode(t *testing.T) {
 	}
 	for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion3) {
 		t.Run(version.String(), func(t *testing.T) {
-			codec, _ := NewTuple(datatype.NewTupleType(datatype.Int))
+			codec, _ := NewTuple(datatype.NewTuple(datatype.Int))
 			_, err := codec.Decode(nil, nil, version)
 			assertErrorMessage(t, "data type tuple<int> not supported in "+version.String(), err)
 		})

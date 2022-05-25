@@ -27,7 +27,7 @@ import (
 func TestNewMap(t *testing.T) {
 	tests := []struct {
 		name     string
-		dataType *datatype.MapType
+		dataType *datatype.Map
 		want     Codec
 		wantErr  string
 	}{
@@ -39,9 +39,9 @@ func TestNewMap(t *testing.T) {
 		},
 		{
 			"simple",
-			datatype.NewMapType(datatype.Int, datatype.Varchar),
+			datatype.NewMap(datatype.Int, datatype.Varchar),
 			&mapCodec{
-				dataType:   datatype.NewMapType(datatype.Int, datatype.Varchar),
+				dataType:   datatype.NewMap(datatype.Int, datatype.Varchar),
 				keyCodec:   &intCodec{},
 				valueCodec: &stringCodec{dataType: datatype.Varchar},
 			},
@@ -49,12 +49,12 @@ func TestNewMap(t *testing.T) {
 		},
 		{
 			"complex",
-			datatype.NewMapType(datatype.Int, datatype.NewMapType(datatype.Int, datatype.Varchar)),
+			datatype.NewMap(datatype.Int, datatype.NewMap(datatype.Int, datatype.Varchar)),
 			&mapCodec{
-				dataType: datatype.NewMapType(datatype.Int, datatype.NewMapType(datatype.Int, datatype.Varchar)),
+				dataType: datatype.NewMap(datatype.Int, datatype.NewMap(datatype.Int, datatype.Varchar)),
 				keyCodec: &intCodec{},
 				valueCodec: &mapCodec{
-					dataType:   datatype.NewMapType(datatype.Int, datatype.Varchar),
+					dataType:   datatype.NewMap(datatype.Int, datatype.Varchar),
 					keyCodec:   &intCodec{},
 					valueCodec: &stringCodec{dataType: datatype.Varchar},
 				},
@@ -63,13 +63,13 @@ func TestNewMap(t *testing.T) {
 		},
 		{
 			"wrong key type",
-			datatype.NewMapType(wrongDataType{}, datatype.Int),
+			datatype.NewMap(wrongDataType{}, datatype.Int),
 			nil,
 			"cannot create codec for map keys: cannot create data codec for CQL type 666",
 		},
 		{
 			"wrong value type",
-			datatype.NewMapType(datatype.Int, wrongDataType{}),
+			datatype.NewMap(datatype.Int, wrongDataType{}),
 			nil,
 			"cannot create codec for map values: cannot create data codec for CQL type 666",
 		},
@@ -84,9 +84,9 @@ func TestNewMap(t *testing.T) {
 }
 
 var (
-	mapSimple, _      = NewMap(datatype.NewMapType(datatype.Int, datatype.Varchar))
-	mapComplex, _     = NewMap(datatype.NewMapType(datatype.Int, datatype.NewMapType(datatype.Int, datatype.Varchar)))
-	mapCoordinates, _ = NewMap(datatype.NewMapType(datatype.Varchar, datatype.Float))
+	mapSimple, _      = NewMap(datatype.NewMap(datatype.Int, datatype.Varchar))
+	mapComplex, _     = NewMap(datatype.NewMap(datatype.Int, datatype.NewMap(datatype.Int, datatype.Varchar)))
+	mapCoordinates, _ = NewMap(datatype.NewMap(datatype.Varchar, datatype.Float))
 )
 
 type coordinates struct {

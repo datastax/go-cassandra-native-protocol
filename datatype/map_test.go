@@ -24,14 +24,14 @@ import (
 )
 
 func TestMapType(t *testing.T) {
-	mapType := NewMapType(Varchar, Int)
+	mapType := NewMap(Varchar, Int)
 	assert.Equal(t, primitive.DataTypeCodeMap, mapType.GetDataTypeCode())
 	assert.Equal(t, Varchar, mapType.KeyType)
 	assert.Equal(t, Int, mapType.ValueType)
 }
 
 func TestMapTypeDeepCopy(t *testing.T) {
-	mt := NewMapType(Varchar, Int)
+	mt := NewMap(Varchar, Int)
 	cloned := mt.DeepCopy()
 	assert.Equal(t, mt, cloned)
 	cloned.KeyType = Inet
@@ -55,7 +55,7 @@ func TestWriteMapType(t *testing.T) {
 			}{
 				{
 					"simple map",
-					NewMapType(Varchar, Int),
+					NewMap(Varchar, Int),
 					[]byte{
 						0, byte(primitive.DataTypeCodeVarchar & 0xFF),
 						0, byte(primitive.DataTypeCodeInt & 0xFF),
@@ -64,7 +64,7 @@ func TestWriteMapType(t *testing.T) {
 				},
 				{
 					"complex map",
-					NewMapType(NewMapType(Varchar, Int), NewMapType(Boolean, Float)),
+					NewMap(NewMap(Varchar, Int), NewMap(Boolean, Float)),
 					[]byte{
 						0, byte(primitive.DataTypeCodeMap & 0xFF),
 						0, byte(primitive.DataTypeCodeVarchar & 0xFF),
@@ -75,7 +75,7 @@ func TestWriteMapType(t *testing.T) {
 					},
 					nil,
 				},
-				{"nil map", nil, nil, errors.New("expected *MapType, got <nil>")},
+				{"nil map", nil, nil, errors.New("expected *Map, got <nil>")},
 			}
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
@@ -102,17 +102,17 @@ func TestLengthOfMapType(t *testing.T) {
 			}{
 				{
 					"simple map",
-					NewMapType(Varchar, Int),
+					NewMap(Varchar, Int),
 					primitive.LengthOfShort * 2,
 					nil,
 				},
 				{
 					"complex map",
-					NewMapType(NewMapType(Varchar, Int), NewMapType(Boolean, Float)),
+					NewMap(NewMap(Varchar, Int), NewMap(Boolean, Float)),
 					primitive.LengthOfShort * 6,
 					nil,
 				},
-				{"nil map", nil, -1, errors.New("expected *MapType, got <nil>")},
+				{"nil map", nil, -1, errors.New("expected *Map, got <nil>")},
 			}
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
@@ -142,7 +142,7 @@ func TestReadMapType(t *testing.T) {
 						0, byte(primitive.DataTypeCodeVarchar & 0xFF),
 						0, byte(primitive.DataTypeCodeInt & 0xFF),
 					},
-					NewMapType(Varchar, Int),
+					NewMap(Varchar, Int),
 					nil,
 				},
 				{
@@ -155,7 +155,7 @@ func TestReadMapType(t *testing.T) {
 						0, byte(primitive.DataTypeCodeBoolean & 0xFF),
 						0, byte(primitive.DataTypeCodeFloat & 0xFF),
 					},
-					NewMapType(NewMapType(Varchar, Int), NewMapType(Boolean, Float)),
+					NewMap(NewMap(Varchar, Int), NewMap(Boolean, Float)),
 					nil,
 				},
 				{

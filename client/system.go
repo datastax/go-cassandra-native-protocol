@@ -62,7 +62,7 @@ var (
 	releaseVersionColumn   = &message.ColumnMetadata{Keyspace: "system", Table: "local", Name: "release_version", Type: datatype.Varchar}
 	rpcAddressColumn       = &message.ColumnMetadata{Keyspace: "system", Table: "local", Name: "rpc_address", Type: datatype.Inet}
 	schemaVersionColumn    = &message.ColumnMetadata{Keyspace: "system", Table: "local", Name: "schema_version", Type: datatype.Uuid}
-	tokensColumn           = &message.ColumnMetadata{Keyspace: "system", Table: "local", Name: "tokens", Type: datatype.NewSetType(datatype.Varchar)}
+	tokensColumn           = &message.ColumnMetadata{Keyspace: "system", Table: "local", Name: "tokens", Type: datatype.NewSet(datatype.Varchar)}
 )
 
 // These columns are a subset of the total columns returned by OSS C* 3.11.2, and contain all the information that

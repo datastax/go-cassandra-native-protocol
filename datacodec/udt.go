@@ -22,7 +22,7 @@ import (
 	"reflect"
 )
 
-func NewUserDefined(dataType *datatype.UserDefinedType) (Codec, error) {
+func NewUserDefined(dataType *datatype.UserDefined) (Codec, error) {
 	if dataType == nil {
 		return nil, ErrNilDataType
 	}
@@ -38,7 +38,7 @@ func NewUserDefined(dataType *datatype.UserDefinedType) (Codec, error) {
 }
 
 type udtCodec struct {
-	dataType    *datatype.UserDefinedType
+	dataType    *datatype.UserDefined
 	fieldCodecs []Codec
 }
 
