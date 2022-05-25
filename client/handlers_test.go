@@ -109,7 +109,7 @@ func TestNewDriverConnectionInitializationHandler(t *testing.T) {
 }
 
 func TestRawHandler(t *testing.T) {
-	var rawHandler client.RequestRawHandler
+	var rawHandler client.RawRequestHandler
 	rawHandler = func(request *frame.Frame, conn *client.CqlServerConnection, ctx client.RequestHandlerContext) (rawResponse []byte) {
 		bytesBuf := bytes.Buffer{}
 		err := frame.NewCodec().EncodeFrame(frame.NewFrame(primitive.ProtocolVersion4, 1, &message.Ready{}), &bytesBuf)
@@ -120,7 +120,7 @@ func TestRawHandler(t *testing.T) {
 		}
 	}
 	server, clientConn, cancelFn := createServerAndClient(
-		t, []client.RequestHandler{client.HeartbeatHandler}, []client.RequestRawHandler{rawHandler})
+		t, []client.RequestHandler{client.HeartbeatHandler}, []client.RawRequestHandler{rawHandler})
 	defer cancelFn()
 
 	testRawRequestHandler(t, clientConn)
@@ -130,7 +130,7 @@ func TestRawHandler(t *testing.T) {
 
 }
 
-func createServerAndClient(t *testing.T, handlers []client.RequestHandler, rawHandlers []client.RequestRawHandler) (*client.CqlServer, *client.CqlClientConnection, context.CancelFunc) {
+func createServerAndClient(t *testing.T, handlers []client.RequestHandler, rawHandlers []client.RawRequestHandler) (*client.CqlServer, *client.CqlClientConnection, context.CancelFunc) {
 	server := client.NewCqlServer("127.0.0.1:9043", nil)
 	server.RequestHandlers = handlers
 	server.RequestRawHandlers = rawHandlers
