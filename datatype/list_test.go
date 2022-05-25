@@ -24,13 +24,13 @@ import (
 )
 
 func TestListType(t *testing.T) {
-	ListType := NewListType(Varchar)
+	ListType := NewList(Varchar)
 	assert.Equal(t, primitive.DataTypeCodeList, ListType.GetDataTypeCode())
 	assert.Equal(t, Varchar, ListType.ElementType)
 }
 
 func TestListTypeDeepCopy(t *testing.T) {
-	lt := NewListType(Varchar)
+	lt := NewList(Varchar)
 	clonedObj := lt.DeepCopy()
 	assert.Equal(t, lt, clonedObj)
 	clonedObj.ElementType = Int
@@ -51,19 +51,19 @@ func TestWriteListType(t *testing.T) {
 			}{
 				{
 					"simple list",
-					NewListType(Varchar),
+					NewList(Varchar),
 					[]byte{0, byte(primitive.DataTypeCodeVarchar & 0xFF)},
 					nil,
 				},
 				{
 					"complex list",
-					NewListType(NewListType(Varchar)),
+					NewList(NewList(Varchar)),
 					[]byte{
 						0, byte(primitive.DataTypeCodeList & 0xFF),
 						0, byte(primitive.DataTypeCodeVarchar & 0xFF)},
 					nil,
 				},
-				{"nil list", nil, nil, errors.New("expected *ListType, got <nil>")},
+				{"nil list", nil, nil, errors.New("expected *List, got <nil>")},
 			}
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
@@ -88,9 +88,9 @@ func TestLengthOfListType(t *testing.T) {
 				expected int
 				err      error
 			}{
-				{"simple list", NewListType(Varchar), primitive.LengthOfShort, nil},
-				{"complex list", NewListType(NewListType(Varchar)), primitive.LengthOfShort + primitive.LengthOfShort, nil},
-				{"nil list", nil, -1, errors.New("expected *ListType, got <nil>")},
+				{"simple list", NewList(Varchar), primitive.LengthOfShort, nil},
+				{"complex list", NewList(NewList(Varchar)), primitive.LengthOfShort + primitive.LengthOfShort, nil},
+				{"nil list", nil, -1, errors.New("expected *List, got <nil>")},
 			}
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
@@ -117,7 +117,7 @@ func TestReadListType(t *testing.T) {
 				{
 					"simple list",
 					[]byte{0, byte(primitive.DataTypeCodeVarchar & 0xff)},
-					NewListType(Varchar),
+					NewList(Varchar),
 					nil,
 				},
 				{
@@ -125,7 +125,7 @@ func TestReadListType(t *testing.T) {
 					[]byte{
 						0, byte(primitive.DataTypeCodeList & 0xff),
 						0, byte(primitive.DataTypeCodeVarchar & 0xff)},
-					NewListType(NewListType(Varchar)),
+					NewList(NewList(Varchar)),
 					nil,
 				},
 				{

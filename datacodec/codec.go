@@ -89,17 +89,17 @@ func NewCodec(dt datatype.DataType) (Codec, error) {
 	case primitive.DataTypeCodeVarint:
 		return Varint, nil
 	case primitive.DataTypeCodeCustom:
-		return NewCustom(dt.(*datatype.CustomType)), nil
+		return NewCustom(dt.(*datatype.Custom)), nil
 	case primitive.DataTypeCodeList:
-		return NewList(dt.(*datatype.ListType))
+		return NewList(dt.(*datatype.List))
 	case primitive.DataTypeCodeSet:
-		return NewSet(dt.(*datatype.SetType))
+		return NewSet(dt.(*datatype.Set))
 	case primitive.DataTypeCodeMap:
-		return NewMap(dt.(*datatype.MapType))
+		return NewMap(dt.(*datatype.Map))
 	case primitive.DataTypeCodeTuple:
-		return NewTuple(dt.(*datatype.TupleType))
+		return NewTuple(dt.(*datatype.Tuple))
 	case primitive.DataTypeCodeUdt:
-		return NewUserDefined(dt.(*datatype.UserDefinedType))
+		return NewUserDefined(dt.(*datatype.UserDefined))
 	}
 	return nil, errCannotCreateCodec(dt)
 }
@@ -157,21 +157,21 @@ func PreferredGoType(dt datatype.DataType) (reflect.Type, error) {
 	case primitive.DataTypeCodeVarint:
 		return typeOfBigIntPointer, nil
 	case primitive.DataTypeCodeList:
-		listType := dt.(*datatype.ListType)
+		listType := dt.(*datatype.List)
 		elemType, err := PreferredGoType(listType.ElementType)
 		if err != nil {
 			return nil, err
 		}
 		return reflect.SliceOf(ensureNillable(elemType)), nil
 	case primitive.DataTypeCodeSet:
-		setType := dt.(*datatype.SetType)
+		setType := dt.(*datatype.Set)
 		elemType, err := PreferredGoType(setType.ElementType)
 		if err != nil {
 			return nil, err
 		}
 		return reflect.SliceOf(ensureNillable(elemType)), nil
 	case primitive.DataTypeCodeMap:
-		mapType := dt.(*datatype.MapType)
+		mapType := dt.(*datatype.Map)
 		keyType, err := PreferredGoType(mapType.KeyType)
 		if err != nil {
 			return nil, err

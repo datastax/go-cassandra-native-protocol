@@ -24,7 +24,7 @@ import (
 	"reflect"
 )
 
-func NewList(dataType *datatype.ListType) (Codec, error) {
+func NewList(dataType *datatype.List) (Codec, error) {
 	if dataType == nil {
 		return nil, ErrNilDataType
 	}
@@ -35,7 +35,7 @@ func NewList(dataType *datatype.ListType) (Codec, error) {
 	return &collectionCodec{dataType, codec}, nil
 }
 
-func NewSet(dataType *datatype.SetType) (Codec, error) {
+func NewSet(dataType *datatype.Set) (Codec, error) {
 	if dataType == nil {
 		return nil, ErrNilDataType
 	}

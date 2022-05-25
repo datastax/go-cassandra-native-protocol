@@ -20,32 +20,28 @@ import (
 	"io"
 )
 
-// ListType is a data type that represents a CQL list type.
+// List is a data type that represents a CQL list type.
 // +k8s:deepcopy-gen=true
 // +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/datatype.DataType
-type ListType struct {
+type List struct {
 	ElementType DataType
 }
 
-func NewListType(elementType DataType) *ListType {
-	return &ListType{ElementType: elementType}
+func NewList(elementType DataType) *List {
+	return &List{ElementType: elementType}
 }
 
-func (t *ListType) GetDataTypeCode() primitive.DataTypeCode {
+func (t *List) GetDataTypeCode() primitive.DataTypeCode {
 	return primitive.DataTypeCodeList
 }
 
-func (t *ListType) String() string {
+func (t *List) String() string {
 	return fmt.Sprintf("list<%v>", t.ElementType)
 }
 
-func (t *ListType) MarshalJSON() ([]byte, error) {
-	return []byte("\"" + t.String() + "\""), nil
-}
-
 func writeListType(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error) {
-	if listType, ok := t.(*ListType); !ok {
-		return fmt.Errorf("expected *ListType, got %T", t)
+	if listType, ok := t.(*List); !ok || listType == nil {
+		return fmt.Errorf("expected *List, got %T", t)
 	} else if err = WriteDataType(listType.ElementType, dest, version); err != nil {
 		return fmt.Errorf("cannot write list element type: %w", err)
 	}
@@ -53,8 +49,8 @@ func writeListType(t DataType, dest io.Writer, version primitive.ProtocolVersion
 }
 
 func lengthOfListType(t DataType, version primitive.ProtocolVersion) (length int, err error) {
-	if listType, ok := t.(*ListType); !ok {
-		return -1, fmt.Errorf("expected *ListType, got %T", t)
+	if listType, ok := t.(*List); !ok {
+		return -1, fmt.Errorf("expected *List, got %T", t)
 	} else if elementLength, err := LengthOfDataType(listType.ElementType, version); err != nil {
 		return -1, fmt.Errorf("cannot compute length of list element type: %w", err)
 	} else {
@@ -64,7 +60,7 @@ func lengthOfListType(t DataType, version primitive.ProtocolVersion) (length int
 }
 
 func readListType(source io.Reader, version primitive.ProtocolVersion) (decoded DataType, err error) {
-	listType := &ListType{}
+	listType := &List{}
 	if listType.ElementType, err = ReadDataType(source, version); err != nil {
 		return nil, fmt.Errorf("cannot read list element type: %w", err)
 	}

@@ -22,7 +22,7 @@ import (
 	"reflect"
 )
 
-func NewTuple(tupleType *datatype.TupleType) (Codec, error) {
+func NewTuple(tupleType *datatype.Tuple) (Codec, error) {
 	if tupleType == nil {
 		return nil, ErrNilDataType
 	}
@@ -38,7 +38,7 @@ func NewTuple(tupleType *datatype.TupleType) (Codec, error) {
 }
 
 type tupleCodec struct {
-	dataType      *datatype.TupleType
+	dataType      *datatype.Tuple
 	elementCodecs []Codec
 }
 

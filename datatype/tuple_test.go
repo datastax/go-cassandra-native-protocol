@@ -25,13 +25,13 @@ import (
 )
 
 func TestTupleType(t *testing.T) {
-	tupleType := NewTupleType(Varchar, Int)
+	tupleType := NewTuple(Varchar, Int)
 	assert.Equal(t, primitive.DataTypeCodeTuple, tupleType.GetDataTypeCode())
 	assert.Equal(t, []DataType{Varchar, Int}, tupleType.FieldTypes)
 }
 
 func TestTupleTypeDeepCopy(t *testing.T) {
-	tt := NewTupleType(Varchar, Int)
+	tt := NewTuple(Varchar, Int)
 	cloned := tt.DeepCopy()
 	assert.Equal(t, tt, cloned)
 	cloned.FieldTypes = []DataType{Int, Uuid, Float}
@@ -43,7 +43,7 @@ func TestTupleTypeDeepCopy(t *testing.T) {
 }
 
 func TestTupleTypeDeepCopy_NilFieldTypesSlice(t *testing.T) {
-	tt := NewTupleType(Varchar, Int)
+	tt := NewTuple(Varchar, Int)
 	tt.FieldTypes = nil
 	cloned := tt.DeepCopy()
 	assert.Equal(t, tt, cloned)
@@ -56,7 +56,7 @@ func TestTupleTypeDeepCopy_NilFieldTypesSlice(t *testing.T) {
 }
 
 func TestTupleTypeDeepCopy_NilFieldType(t *testing.T) {
-	tt := NewTupleType(nil, Int)
+	tt := NewTuple(nil, Int)
 	cloned := tt.DeepCopy()
 	assert.Equal(t, tt, cloned)
 	cloned.FieldTypes = []DataType{Int, Uuid, Float}
@@ -68,15 +68,15 @@ func TestTupleTypeDeepCopy_NilFieldType(t *testing.T) {
 }
 
 func TestTupleTypeDeepCopy_ComplexFieldTypes(t *testing.T) {
-	tt := NewTupleType(NewListType(NewTupleType(Varchar)), Int)
+	tt := NewTuple(NewList(NewTuple(Varchar)), Int)
 	cloned := tt.DeepCopy()
 	assert.Equal(t, tt, cloned)
-	cloned.FieldTypes[0].(*ListType).ElementType = NewTupleType(Int)
+	cloned.FieldTypes[0].(*List).ElementType = NewTuple(Int)
 	assert.NotEqual(t, tt, cloned)
 	assert.Equal(t, primitive.DataTypeCodeTuple, tt.GetDataTypeCode())
-	assert.Equal(t, []DataType{NewListType(NewTupleType(Varchar)), Int}, tt.FieldTypes)
+	assert.Equal(t, []DataType{NewList(NewTuple(Varchar)), Int}, tt.FieldTypes)
 	assert.Equal(t, primitive.DataTypeCodeTuple, cloned.GetDataTypeCode())
-	assert.Equal(t, []DataType{NewListType(NewTupleType(Int)), Int}, cloned.FieldTypes)
+	assert.Equal(t, []DataType{NewList(NewTuple(Int)), Int}, cloned.FieldTypes)
 }
 
 func TestWriteTupleType(t *testing.T) {
@@ -88,7 +88,7 @@ func TestWriteTupleType(t *testing.T) {
 	}{
 		{
 			"simple tuple",
-			NewTupleType(Varchar, Int),
+			NewTuple(Varchar, Int),
 			[]byte{
 				0, byte(primitive.DataTypeCodeTuple & 0xFF),
 				0, 2, // field count
@@ -99,7 +99,7 @@ func TestWriteTupleType(t *testing.T) {
 		},
 		{
 			"complex tuple",
-			NewTupleType(NewTupleType(Varchar, Int), NewTupleType(Boolean, Float)),
+			NewTuple(NewTuple(Varchar, Int), NewTuple(Boolean, Float)),
 			[]byte{
 				0, byte(primitive.DataTypeCodeTuple & 0xFF),
 				0, 2, // field count
@@ -169,17 +169,17 @@ func TestLengthOfTupleType(t *testing.T) {
 			}{
 				{
 					"simple tuple",
-					NewTupleType(Varchar, Int),
+					NewTuple(Varchar, Int),
 					primitive.LengthOfShort * 3,
 					nil,
 				},
 				{
 					"complex tuple",
-					NewTupleType(NewTupleType(Varchar, Int), NewTupleType(Boolean, Float)),
+					NewTuple(NewTuple(Varchar, Int), NewTuple(Boolean, Float)),
 					primitive.LengthOfShort * 9,
 					nil,
 				},
-				{"nil tuple", nil, -1, errors.New("expected *TupleType, got <nil>")},
+				{"nil tuple", nil, -1, errors.New("expected *Tuple, got <nil>")},
 			}
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
@@ -209,7 +209,7 @@ func TestReadTupleType(t *testing.T) {
 				0, byte(primitive.DataTypeCodeVarchar & 0xFF),
 				0, byte(primitive.DataTypeCodeInt & 0xFF),
 			},
-			NewTupleType(Varchar, Int),
+			NewTuple(Varchar, Int),
 			nil,
 		},
 		{
@@ -226,7 +226,7 @@ func TestReadTupleType(t *testing.T) {
 				0, byte(primitive.DataTypeCodeBoolean & 0xFF),
 				0, byte(primitive.DataTypeCodeFloat & 0xFF),
 			},
-			NewTupleType(NewTupleType(Varchar, Int), NewTupleType(Boolean, Float)),
+			NewTuple(NewTuple(Varchar, Int), NewTuple(Boolean, Float)),
 			nil,
 		},
 		{
@@ -286,11 +286,11 @@ func Test_tupleType_String(t1 *testing.T) {
 	}{
 		{"empty", []DataType{}, "tuple<>"},
 		{"simple", []DataType{Int, Varchar, Boolean}, "tuple<int,varchar,boolean>"},
-		{"complex", []DataType{Int, NewTupleType(Varchar, Boolean)}, "tuple<int,tuple<varchar,boolean>>"},
+		{"complex", []DataType{Int, NewTuple(Varchar, Boolean)}, "tuple<int,tuple<varchar,boolean>>"},
 	}
 	for _, tt := range tests {
 		t1.Run(tt.name, func(t *testing.T) {
-			tuple := NewTupleType(tt.fieldTypes...)
+			tuple := NewTuple(tt.fieldTypes...)
 			got := tuple.String()
 			assert.Equal(t, tt.want, got)
 		})

@@ -22,7 +22,7 @@ import (
 	"reflect"
 )
 
-func NewMap(dataType *datatype.MapType) (Codec, error) {
+func NewMap(dataType *datatype.Map) (Codec, error) {
 	if dataType == nil {
 		return nil, ErrNilDataType
 	}
@@ -38,7 +38,7 @@ func NewMap(dataType *datatype.MapType) (Codec, error) {
 }
 
 type mapCodec struct {
-	dataType   *datatype.MapType
+	dataType   *datatype.Map
 	keyCodec   Codec
 	valueCodec Codec
 }

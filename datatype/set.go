@@ -20,32 +20,32 @@ import (
 	"io"
 )
 
-// SetType is a data type that represents a CQL set type.
+// Set is a data type that represents a CQL set type.
 // +k8s:deepcopy-gen=true
 // +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/datatype.DataType
-type SetType struct {
+type Set struct {
 	ElementType DataType
 }
 
-func (t *SetType) GetDataTypeCode() primitive.DataTypeCode {
+func (t *Set) GetDataTypeCode() primitive.DataTypeCode {
 	return primitive.DataTypeCodeSet
 }
 
-func (t *SetType) String() string {
+func (t *Set) String() string {
 	return fmt.Sprintf("set<%v>", t.ElementType)
 }
 
-func (t *SetType) MarshalJSON() ([]byte, error) {
+func (t *Set) MarshalJSON() ([]byte, error) {
 	return []byte("\"" + t.String() + "\""), nil
 }
 
-func NewSetType(elementType DataType) *SetType {
-	return &SetType{ElementType: elementType}
+func NewSet(elementType DataType) *Set {
+	return &Set{ElementType: elementType}
 }
 
 func writeSetType(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error) {
-	if setType, ok := t.(*SetType); !ok {
-		return fmt.Errorf("expected *SetType, got %T", t)
+	if setType, ok := t.(*Set); !ok {
+		return fmt.Errorf("expected *Set, got %T", t)
 	} else if err = WriteDataType(setType.ElementType, dest, version); err != nil {
 		return fmt.Errorf("cannot write set element type: %w", err)
 	}
@@ -53,8 +53,8 @@ func writeSetType(t DataType, dest io.Writer, version primitive.ProtocolVersion)
 }
 
 func lengthOfSetType(t DataType, version primitive.ProtocolVersion) (length int, err error) {
-	if setType, ok := t.(*SetType); !ok {
-		return -1, fmt.Errorf("expected *SetType, got %T", t)
+	if setType, ok := t.(*Set); !ok {
+		return -1, fmt.Errorf("expected *Set, got %T", t)
 	} else if elementLength, err := LengthOfDataType(setType.ElementType, version); err != nil {
 		return -1, fmt.Errorf("cannot compute length of set element type: %w", err)
 	} else {
@@ -64,7 +64,7 @@ func lengthOfSetType(t DataType, version primitive.ProtocolVersion) (length int,
 }
 
 func readSetType(source io.Reader, version primitive.ProtocolVersion) (decoded DataType, err error) {
-	setType := &SetType{}
+	setType := &Set{}
 	if setType.ElementType, err = ReadDataType(source, version); err != nil {
 		return nil, fmt.Errorf("cannot read set element type: %w", err)
 	}

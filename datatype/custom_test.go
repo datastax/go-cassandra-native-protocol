@@ -24,7 +24,7 @@ import (
 )
 
 func TestCustomType(t *testing.T) {
-	customType := NewCustomType("foo.bar.qix")
+	customType := NewCustom("foo.bar.qix")
 	assert.Equal(t, primitive.DataTypeCodeCustom, customType.GetDataTypeCode())
 	assert.Equal(t, "foo.bar.qix", customType.ClassName)
 }
@@ -38,8 +38,8 @@ func TestWriteCustomType(t *testing.T) {
 				expected []byte
 				err      error
 			}{
-				{"simple custom", NewCustomType("hello"), []byte{0, 5, byte('h'), byte('e'), byte('l'), byte('l'), byte('o')}, nil},
-				{"nil custom", nil, nil, errors.New("expected *CustomType, got <nil>")},
+				{"simple custom", NewCustom("hello"), []byte{0, 5, byte('h'), byte('e'), byte('l'), byte('l'), byte('o')}, nil},
+				{"nil custom", nil, nil, errors.New("expected *Custom, got <nil>")},
 			}
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
@@ -64,8 +64,8 @@ func TestLengthOfCustomType(t *testing.T) {
 				expected int
 				err      error
 			}{
-				{"simple custom", NewCustomType("hello"), primitive.LengthOfString("hello"), nil},
-				{"nil custom", nil, -1, errors.New("expected *CustomType, got <nil>")},
+				{"simple custom", NewCustom("hello"), primitive.LengthOfString("hello"), nil},
+				{"nil custom", nil, -1, errors.New("expected *Custom, got <nil>")},
 			}
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
@@ -89,7 +89,7 @@ func TestReadCustomType(t *testing.T) {
 				expected DataType
 				err      error
 			}{
-				{"simple custom", []byte{0, 5, byte('h'), byte('e'), byte('l'), byte('l'), byte('o')}, NewCustomType("hello"), nil},
+				{"simple custom", []byte{0, 5, byte('h'), byte('e'), byte('l'), byte('l'), byte('o')}, NewCustom("hello"), nil},
 				{
 					"cannot read custom",
 					[]byte{},
@@ -115,7 +115,7 @@ func TestReadCustomType(t *testing.T) {
 }
 
 func TestCustomTypeDeepCopy(t *testing.T) {
-	ct := NewCustomType("foo.bar.qix")
+	ct := NewCustom("foo.bar.qix")
 	clonedCustomType := ct.DeepCopy()
 	assert.Equal(t, ct, clonedCustomType)
 	clonedCustomType.ClassName = "123"

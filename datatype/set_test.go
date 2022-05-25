@@ -24,13 +24,13 @@ import (
 )
 
 func TestSetType(t *testing.T) {
-	setType := NewSetType(Varchar)
+	setType := NewSet(Varchar)
 	assert.Equal(t, primitive.DataTypeCodeSet, setType.GetDataTypeCode())
 	assert.Equal(t, Varchar, setType.ElementType)
 }
 
 func TestSetTypeDeepCopy(t *testing.T) {
-	st := NewSetType(Varchar)
+	st := NewSet(Varchar)
 	cloned := st.DeepCopy()
 	assert.Equal(t, st, cloned)
 	cloned.ElementType = Int
@@ -51,19 +51,19 @@ func TestWriteSetType(t *testing.T) {
 			}{
 				{
 					"simple set",
-					NewSetType(Varchar),
+					NewSet(Varchar),
 					[]byte{0, byte(primitive.DataTypeCodeVarchar & 0xFF)},
 					nil,
 				},
 				{
 					"complex set",
-					NewSetType(NewSetType(Varchar)),
+					NewSet(NewSet(Varchar)),
 					[]byte{
 						0, byte(primitive.DataTypeCodeSet & 0xFF),
 						0, byte(primitive.DataTypeCodeVarchar & 0xFF)},
 					nil,
 				},
-				{"nil set", nil, nil, errors.New("expected *SetType, got <nil>")},
+				{"nil set", nil, nil, errors.New("expected *Set, got <nil>")},
 			}
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
@@ -88,9 +88,9 @@ func TestLengthOfSetType(t *testing.T) {
 				expected int
 				err      error
 			}{
-				{"simple set", NewSetType(Varchar), primitive.LengthOfShort, nil},
-				{"complex set", NewSetType(NewSetType(Varchar)), primitive.LengthOfShort + primitive.LengthOfShort, nil},
-				{"nil set", nil, -1, errors.New("expected *SetType, got <nil>")},
+				{"simple set", NewSet(Varchar), primitive.LengthOfShort, nil},
+				{"complex set", NewSet(NewSet(Varchar)), primitive.LengthOfShort + primitive.LengthOfShort, nil},
+				{"nil set", nil, -1, errors.New("expected *Set, got <nil>")},
 			}
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
@@ -117,7 +117,7 @@ func TestReadSetType(t *testing.T) {
 				{
 					"simple set",
 					[]byte{0, byte(primitive.DataTypeCodeVarchar & 0xff)},
-					NewSetType(Varchar),
+					NewSet(Varchar),
 					nil,
 				},
 				{
@@ -125,7 +125,7 @@ func TestReadSetType(t *testing.T) {
 					[]byte{
 						0, byte(primitive.DataTypeCodeSet & 0xff),
 						0, byte(primitive.DataTypeCodeVarchar & 0xff)},
-					NewSetType(NewSetType(Varchar)),
+					NewSet(NewSet(Varchar)),
 					nil,
 				},
 				{
