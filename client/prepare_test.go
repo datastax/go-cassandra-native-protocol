@@ -70,7 +70,7 @@ func TestNewPreparedStatementHandler(t *testing.T) {
 
 	handler := client.NewPreparedStatementHandler(query, variables, columns, rows)
 
-	server, clientConn, cancelFn := createServerAndClient(t, handler)
+	server, clientConn, cancelFn := createServerAndClient(t, []client.RequestHandler{handler}, nil)
 
 	testUnprepared(t, clientConn, query)
 	testPrepare(t, clientConn, query, variables, columns)

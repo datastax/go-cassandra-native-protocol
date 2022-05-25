@@ -15,6 +15,7 @@
 package client_test
 
 import (
+	"bytes"
 	"context"
 	"github.com/datastax/go-cassandra-native-protocol/client"
 	"github.com/datastax/go-cassandra-native-protocol/frame"
@@ -28,7 +29,7 @@ import (
 
 func TestHeartbeatHandler(t *testing.T) {
 
-	server, clientConn, cancelFn := createServerAndClient(t, client.HeartbeatHandler)
+	server, clientConn, cancelFn := createServerAndClient(t, []client.RequestHandler{client.HeartbeatHandler}, nil)
 	defer cancelFn()
 
 	testHeartbeat(t, clientConn)
@@ -45,7 +46,7 @@ func TestSetKeyspaceHandler(t *testing.T) {
 		require.Equal(t, "ks1", keyspace)
 		onKeyspaceSetCalled = true
 	}
-	server, clientConn, cancelFn := createServerAndClient(t, client.NewSetKeyspaceHandler(onKeyspaceSet))
+	server, clientConn, cancelFn := createServerAndClient(t, []client.RequestHandler{client.NewSetKeyspaceHandler(onKeyspaceSet)}, nil)
 	defer cancelFn()
 
 	testUseQuery(t, clientConn)
@@ -58,7 +59,7 @@ func TestSetKeyspaceHandler(t *testing.T) {
 
 func TestRegisterHandler(t *testing.T) {
 
-	server, clientConn, cancelFn := createServerAndClient(t, client.RegisterHandler)
+	server, clientConn, cancelFn := createServerAndClient(t, []client.RequestHandler{client.RegisterHandler}, nil)
 	defer cancelFn()
 
 	testRegister(t, clientConn)
@@ -71,7 +72,7 @@ func TestRegisterHandler(t *testing.T) {
 func TestNewCompositeRequestHandler(t *testing.T) {
 
 	handler := client.NewCompositeRequestHandler(client.HeartbeatHandler, client.RegisterHandler)
-	server, clientConn, cancelFn := createServerAndClient(t, handler)
+	server, clientConn, cancelFn := createServerAndClient(t, []client.RequestHandler{handler}, nil)
 	defer cancelFn()
 
 	testHeartbeat(t, clientConn)
@@ -88,7 +89,7 @@ func TestNewDriverConnectionInitializationHandler(t *testing.T) {
 		require.Equal(t, "ks1", keyspace)
 	}
 	handler := client.NewDriverConnectionInitializationHandler("cluster_test", "datacenter_test", onKeyspaceSet)
-	server, clientConn, cancelFn := createServerAndClient(t, handler)
+	server, clientConn, cancelFn := createServerAndClient(t, []client.RequestHandler{handler}, nil)
 	defer cancelFn()
 
 	err := clientConn.InitiateHandshake(primitive.ProtocolVersion4, client.ManagedStreamId)
@@ -107,9 +108,32 @@ func TestNewDriverConnectionInitializationHandler(t *testing.T) {
 
 }
 
-func createServerAndClient(t *testing.T, handlers ...client.RequestHandler) (*client.CqlServer, *client.CqlClientConnection, context.CancelFunc) {
+func TestRawHandler(t *testing.T) {
+	var rawHandler client.RawRequestHandler
+	rawHandler = func(request *frame.Frame, conn *client.CqlServerConnection, ctx client.RequestHandlerContext) (rawResponse []byte) {
+		bytesBuf := bytes.Buffer{}
+		err := frame.NewCodec().EncodeFrame(frame.NewFrame(primitive.ProtocolVersion4, 1, &message.Ready{}), &bytesBuf)
+		if err == nil {
+			return bytesBuf.Bytes()
+		} else {
+			return nil
+		}
+	}
+	server, clientConn, cancelFn := createServerAndClient(
+		t, []client.RequestHandler{client.HeartbeatHandler}, []client.RawRequestHandler{rawHandler})
+	defer cancelFn()
+
+	testRawRequestHandler(t, clientConn)
+
+	cancelFn()
+	checkClosed(t, clientConn, server)
+
+}
+
+func createServerAndClient(t *testing.T, handlers []client.RequestHandler, rawHandlers []client.RawRequestHandler) (*client.CqlServer, *client.CqlClientConnection, context.CancelFunc) {
 	server := client.NewCqlServer("127.0.0.1:9043", nil)
 	server.RequestHandlers = handlers
+	server.RequestRawHandlers = rawHandlers
 	clt := client.NewCqlClient("127.0.0.1:9043", nil)
 	ctx, cancelFn := context.WithCancel(context.Background())
 	err := server.Start(ctx)
@@ -123,6 +147,21 @@ func createServerAndClient(t *testing.T, handlers ...client.RequestHandler) (*cl
 func checkClosed(t *testing.T, clientConn *client.CqlClientConnection, server *client.CqlServer) {
 	assert.Eventually(t, clientConn.IsClosed, time.Second*10, time.Millisecond*10)
 	assert.Eventually(t, server.IsClosed, time.Second*10, time.Millisecond*10)
+}
+
+func testRawRequestHandler(t *testing.T, clientConn *client.CqlClientConnection) {
+	heartbeat := frame.NewFrame(
+		primitive.ProtocolVersion4,
+		client.ManagedStreamId,
+		&message.Options{},
+	)
+	for i := 0; i < 100; i++ {
+		response, err := clientConn.SendAndReceive(heartbeat)
+		require.NoError(t, err)
+		require.NotNil(t, response)
+		require.Equal(t, primitive.OpCodeReady, response.Header.OpCode)
+		require.IsType(t, &message.Ready{}, response.Body.Message)
+	}
 }
 
 func testHeartbeat(t *testing.T, clientConn *client.CqlClientConnection) {

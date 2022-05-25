@@ -27,7 +27,7 @@ import (
 func TestNewSystemTablesHandler_FullSystemLocal(t *testing.T) {
 
 	handler := client.NewSystemTablesHandler("cluster_test", "datacenter_test")
-	server, clientConn, cancelFunc := createServerAndClient(t, handler)
+	server, clientConn, cancelFunc := createServerAndClient(t, []client.RequestHandler{handler}, nil)
 
 	testFullSystemLocal(t, clientConn)
 
@@ -39,7 +39,7 @@ func TestNewSystemTablesHandler_FullSystemLocal(t *testing.T) {
 func TestNewSystemTablesHandler_SchemaVersion(t *testing.T) {
 
 	handler := client.NewSystemTablesHandler("cluster_test", "datacenter_test")
-	server, clientConn, cancelFunc := createServerAndClient(t, handler)
+	server, clientConn, cancelFunc := createServerAndClient(t, []client.RequestHandler{handler}, nil)
 
 	testSchemaVersion(t, clientConn)
 
@@ -50,7 +50,7 @@ func TestNewSystemTablesHandler_SchemaVersion(t *testing.T) {
 func TestNewSystemTablesHandler_ClusterName(t *testing.T) {
 
 	handler := client.NewSystemTablesHandler("cluster_test", "datacenter_test")
-	server, clientConn, cancelFunc := createServerAndClient(t, handler)
+	server, clientConn, cancelFunc := createServerAndClient(t, []client.RequestHandler{handler}, nil)
 
 	testClusterName(t, clientConn)
 
@@ -61,7 +61,7 @@ func TestNewSystemTablesHandler_ClusterName(t *testing.T) {
 func TestNewSystemTablesHandler_EmptySystemPeers(t *testing.T) {
 
 	handler := client.NewSystemTablesHandler("cluster_test", "datacenter_test")
-	server, clientConn, cancelFunc := createServerAndClient(t, handler)
+	server, clientConn, cancelFunc := createServerAndClient(t, []client.RequestHandler{handler}, nil )
 
 	testSystemPeers(t, clientConn)
 

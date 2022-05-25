@@ -77,6 +77,10 @@ func (ctx requestHandlerContext) GetAttribute(name string) interface{} {
 // if any, may be tried.
 type RequestHandler func(request *frame.Frame, conn *CqlServerConnection, ctx RequestHandlerContext) (response *frame.Frame)
 
+// RawRequestHandler is similar to RequestHandler but returns an already encoded response in byte slice format, this can be used to return responses that the
+// embedded codecs can't encode
+type RawRequestHandler func(request *frame.Frame, conn *CqlServerConnection, ctx RequestHandlerContext) (encodedResponse []byte)
+
 // CqlServer is a minimalistic server stub that can be used to mimic CQL-compatible backends. It is preferable to
 // create CqlServer instances using the constructor function NewCqlServer. Once the server is properly created and
 // configured, use Start to start the server, then call Accept or AcceptAny to accept incoming client connections.
@@ -97,6 +101,8 @@ type CqlServer struct {
 	IdleTimeout time.Duration
 	// RequestHandlers is an optional list of handlers to handle incoming requests.
 	RequestHandlers []RequestHandler
+	// RequestRawHandlers is an optional list of handlers to handle incoming requests and return a response in a byte slice format.
+	RequestRawHandlers []RawRequestHandler
 	// TLSConfig is the TLS configuration to use.
 	TLSConfig *tls.Config
 
@@ -221,6 +227,7 @@ func (server *CqlServer) acceptLoop() {
 					server.MaxInFlight,
 					server.IdleTimeout,
 					server.RequestHandlers,
+					server.RequestRawHandlers,
 					server.connectionsHandler.onConnectionClosed,
 				); err != nil {
 					log.Error().Msgf("%v: failed to accept incoming CQL client connection: %v", server, connection)
@@ -334,6 +341,23 @@ func (server *CqlServer) BindAndInit(
 	}
 }
 
+type response struct {
+	responseFrame *frame.Frame
+	rawResponse   []byte
+}
+
+func newFrameResponse(frameResponse *frame.Frame) *response {
+	return &response{
+		responseFrame: frameResponse,
+	}
+}
+
+func newRawResponse(rawResponse []byte) *response {
+	return &response{
+		rawResponse: rawResponse,
+	}
+}
+
 // CqlServerConnection encapsulates a TCP server connection to a remote CQL client.
 // CqlServerConnection instances should be created by calling CqlServer.Accept or CqlServer.Bind.
 type CqlServerConnection struct {
@@ -345,9 +369,10 @@ type CqlServerConnection struct {
 	modernLayout       bool
 	idleTimeout        time.Duration
 	handlers           []RequestHandler
+	rawHandlers        []RawRequestHandler
 	handlerCtx         []RequestHandlerContext
 	incoming           chan *frame.Frame
-	outgoing           chan *frame.Frame
+	outgoing           chan *response
 	waitGroup          *sync.WaitGroup
 	closed             int32
 	onClose            func(*CqlServerConnection)
@@ -363,6 +388,7 @@ func newCqlServerConnection(
 	maxInFlight int,
 	idleTimeout time.Duration,
 	handlers []RequestHandler,
+	rawHandlers []RawRequestHandler,
 	onClose func(*CqlServerConnection),
 ) (*CqlServerConnection, error) {
 	if conn == nil {
@@ -383,9 +409,10 @@ func newCqlServerConnection(
 		credentials:  credentials,
 		idleTimeout:  idleTimeout,
 		handlers:     handlers,
+		rawHandlers:  rawHandlers,
 		handlerCtx:   make([]RequestHandlerContext, len(handlers)),
 		incoming:     make(chan *frame.Frame, maxInFlight),
-		outgoing:     make(chan *frame.Frame, maxInFlight),
+		outgoing:     make(chan *response, maxInFlight),
 		waitGroup:    &sync.WaitGroup{},
 		onClose:      onClose,
 	}
@@ -461,15 +488,20 @@ func (c *CqlServerConnection) outgoingLoop() {
 				}
 				break
 			} else {
-				if c.compression != primitive.CompressionNone {
-					outgoing.Header.Flags = outgoing.Header.Flags.Add(primitive.HeaderFlagCompressed)
-				}
-				log.Debug().Msgf("%v: sending outgoing frame: %v", c, outgoing)
-				if c.modernLayout {
-					// TODO write coalescer
-					abort = c.writeSegment(outgoing, c.conn)
+				if outgoing.rawResponse != nil {
+					abort = c.writeRawResponse(outgoing.rawResponse, c.conn)
+					log.Debug().Msgf("%v: sending outgoing raw response: %v", c, outgoing.rawResponse)
 				} else {
-					abort = c.writeFrame(outgoing, c.conn)
+					if c.compression != primitive.CompressionNone {
+						outgoing.responseFrame.Header.Flags = outgoing.responseFrame.Header.Flags.Add(primitive.HeaderFlagCompressed)
+					}
+					log.Debug().Msgf("%v: sending outgoing frame: %v", c, outgoing.responseFrame)
+					if c.modernLayout {
+						// TODO write coalescer
+						abort = c.writeSegment(outgoing.responseFrame, c.conn)
+					} else {
+						abort = c.writeFrame(outgoing.responseFrame, c.conn)
+					}
 				}
 			}
 		}
@@ -587,6 +619,15 @@ func (c *CqlServerConnection) writeFrame(outgoing *frame.Frame, dest io.Writer) 
 	return abort
 }
 
+func (c *CqlServerConnection) writeRawResponse(outgoing []byte, dest io.Writer) (abort bool) {
+	if _, err := dest.Write(outgoing); err != nil {
+		abort = c.reportConnectionFailure(err, false)
+	} else {
+		log.Debug().Msgf("%v: outgoing raw response successfully written: %v", c, outgoing)
+	}
+	return abort
+}
+
 func (c *CqlServerConnection) maybeSwitchToModernLayout(outgoing *frame.Frame) {
 	if !c.modernLayout &&
 		outgoing.Header.Version.SupportsModernFramingLayout() &&
@@ -641,19 +682,31 @@ func (c *CqlServerConnection) invokeRequestHandlers(request *frame.Frame) {
 	c.waitGroup.Add(1)
 	go func() {
 		log.Debug().Msgf("%v: invoking request handlers for incoming request: %v", c, request)
-		var response *frame.Frame
 		var err error
-		for i, handler := range c.handlers {
-			if response = handler(request, c, c.handlerCtx[i]); response != nil {
-				log.Debug().Msgf("%v: request handler %v produced response: %v", c, i, response)
-				if err = c.Send(response); err != nil {
-					log.Error().Err(err).Msgf("%v: send failed for frame: %v", c, response)
+		var rawResponse []byte
+		for i, rawHandler := range c.rawHandlers {
+			if rawResponse = rawHandler(request, c, c.handlerCtx[i]); rawResponse != nil {
+				log.Debug().Msgf("%v: raw request handler %v produced response: %v", c, i, rawResponse)
+				if err = c.SendRaw(rawResponse); err != nil {
+					log.Error().Err(err).Msgf("%v: send failed for frame: %v", c, rawResponse)
 				}
 				break
 			}
 		}
-		if response == nil {
-			log.Debug().Msgf("%v: no request handler could handle the request: %v", c, request)
+		if rawResponse == nil {
+			var response *frame.Frame
+			for i, handler := range c.handlers {
+				if response = handler(request, c, c.handlerCtx[i]); response != nil {
+					log.Debug().Msgf("%v: request handler %v produced response: %v", c, i, response)
+					if err = c.Send(response); err != nil {
+						log.Error().Err(err).Msgf("%v: send failed for frame: %v", c, response)
+					}
+					break
+				}
+			}
+			if response == nil {
+				log.Debug().Msgf("%v: no request handler could handle the request: %v", c, request)
+			}
 		}
 		c.waitGroup.Done()
 	}()
@@ -666,11 +719,26 @@ func (c *CqlServerConnection) Send(f *frame.Frame) error {
 	}
 	log.Debug().Msgf("%v: enqueuing outgoing frame: %v", c, f)
 	select {
-	case c.outgoing <- f:
+	case c.outgoing <- newFrameResponse(f):
 		log.Debug().Msgf("%v: outgoing frame successfully enqueued: %v", c, f)
 		return nil
 	default:
 		return fmt.Errorf("%v: failed to enqueue outgoing frame: %v", c, f)
+	}
+}
+
+// SendRaw sends the given response frame (already encoded).
+func (c *CqlServerConnection) SendRaw(rawResponse []byte) error {
+	if c.IsClosed() {
+		return fmt.Errorf("%v: connection closed", c)
+	}
+	log.Debug().Msgf("%v: enqueuing outgoing raw response: %v", c, rawResponse)
+	select {
+	case c.outgoing <- newRawResponse(rawResponse):
+		log.Debug().Msgf("%v: outgoing frame successfully enqueued: %v", c, rawResponse)
+		return nil
+	default:
+		return fmt.Errorf("%v: failed to send outgoing raw response: %v", c, rawResponse)
 	}
 }
 
