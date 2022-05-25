@@ -48,12 +48,12 @@ type PrimitiveType struct {
 	code primitive.DataTypeCode
 }
 
-func (t *PrimitiveType) GetDataTypeCode() primitive.DataTypeCode {
+func (t *PrimitiveType) Code() primitive.DataTypeCode {
 	return t.code
 }
 
 func (t *PrimitiveType) String() string {
-	switch t.GetDataTypeCode() {
+	switch t.Code() {
 	case primitive.DataTypeCodeAscii:
 		return "ascii"
 	case primitive.DataTypeCodeBigint:

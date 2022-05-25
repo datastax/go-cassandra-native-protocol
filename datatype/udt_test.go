@@ -29,7 +29,7 @@ func TestUserDefinedType(t *testing.T) {
 	fieldTypes := []DataType{Varchar, Int}
 	udtType, err := NewUserDefined("ks1", "udt1", fieldNames, fieldTypes)
 	assert.Nil(t, err)
-	assert.Equal(t, primitive.DataTypeCodeUdt, udtType.GetDataTypeCode())
+	assert.Equal(t, primitive.DataTypeCodeUdt, udtType.Code())
 	assert.Equal(t, fieldTypes, udtType.FieldTypes)
 	udtType2, err2 := NewUserDefined("ks1", "udt1", fieldNames, []DataType{Varchar, Int, Boolean})
 	assert.Nil(t, udtType2)
@@ -50,13 +50,13 @@ func TestUserDefinedTypeDeepCopy(t *testing.T) {
 	cloned.FieldTypes = []DataType{Uuid, Float, Varchar}
 	assert.NotEqual(t, udtType, cloned)
 
-	assert.Equal(t, primitive.DataTypeCodeUdt, udtType.GetDataTypeCode())
+	assert.Equal(t, primitive.DataTypeCodeUdt, udtType.Code())
 	assert.Equal(t, []DataType{Varchar, Int}, udtType.FieldTypes)
 	assert.Equal(t, []string{"f1", "f2"}, udtType.FieldNames)
 	assert.Equal(t, "ks1", udtType.Keyspace)
 	assert.Equal(t, "udt1", udtType.Name)
 
-	assert.Equal(t, primitive.DataTypeCodeUdt, cloned.GetDataTypeCode())
+	assert.Equal(t, primitive.DataTypeCodeUdt, cloned.Code())
 	assert.Equal(t, []DataType{Uuid, Float, Varchar}, cloned.FieldTypes)
 	assert.Equal(t, []string{"f5", "field6", "f7"}, cloned.FieldNames)
 	assert.Equal(t, "ks2", cloned.Keyspace)

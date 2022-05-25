@@ -27,7 +27,7 @@ type Set struct {
 	ElementType DataType
 }
 
-func (t *Set) GetDataTypeCode() primitive.DataTypeCode {
+func (t *Set) Code() primitive.DataTypeCode {
 	return primitive.DataTypeCodeSet
 }
 

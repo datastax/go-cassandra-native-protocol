@@ -45,7 +45,7 @@ func (c *durationCodec) DataType() datatype.DataType {
 }
 
 func (c *durationCodec) Encode(source interface{}, version primitive.ProtocolVersion) (dest []byte, err error) {
-	if !version.SupportsDataType(c.DataType().GetDataTypeCode()) {
+	if !version.SupportsDataType(c.DataType().Code()) {
 		err = errDataTypeNotSupported(c.DataType(), version)
 	} else {
 		var val CqlDuration
@@ -61,7 +61,7 @@ func (c *durationCodec) Encode(source interface{}, version primitive.ProtocolVer
 }
 
 func (c *durationCodec) Decode(source []byte, dest interface{}, version primitive.ProtocolVersion) (wasNull bool, err error) {
-	if !version.SupportsDataType(c.DataType().GetDataTypeCode()) {
+	if !version.SupportsDataType(c.DataType().Code()) {
 		wasNull = len(source) == 0
 		err = errDataTypeNotSupported(c.DataType(), version)
 	} else {

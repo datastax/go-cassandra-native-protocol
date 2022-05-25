@@ -49,7 +49,7 @@ func TestPrimitiveType(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			actual := test.input.GetDataTypeCode()
+			actual := test.input.Code()
 			assert.Equal(t, test.expected, actual)
 		})
 	}

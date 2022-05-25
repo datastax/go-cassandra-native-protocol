@@ -41,7 +41,7 @@ func NewUserDefined(keyspace string, name string, fieldNames []string, fieldType
 	return &UserDefined{Keyspace: keyspace, Name: name, FieldNames: fieldNames, FieldTypes: fieldTypes}, nil
 }
 
-func (t *UserDefined) GetDataTypeCode() primitive.DataTypeCode {
+func (t *UserDefined) Code() primitive.DataTypeCode {
 	return primitive.DataTypeCodeUdt
 }
 

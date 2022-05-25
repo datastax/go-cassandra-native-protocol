@@ -25,7 +25,7 @@ import (
 
 func TestCustomType(t *testing.T) {
 	customType := NewCustom("foo.bar.qix")
-	assert.Equal(t, primitive.DataTypeCodeCustom, customType.GetDataTypeCode())
+	assert.Equal(t, primitive.DataTypeCodeCustom, customType.Code())
 	assert.Equal(t, "foo.bar.qix", customType.ClassName)
 }
 

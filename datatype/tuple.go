@@ -32,7 +32,7 @@ func NewTuple(fieldTypes ...DataType) *Tuple {
 	return &Tuple{FieldTypes: fieldTypes}
 }
 
-func (t *Tuple) GetDataTypeCode() primitive.DataTypeCode {
+func (t *Tuple) Code() primitive.DataTypeCode {
 	return primitive.DataTypeCodeTuple
 }
 

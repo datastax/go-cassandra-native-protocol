@@ -31,7 +31,7 @@ func NewList(elementType DataType) *List {
 	return &List{ElementType: elementType}
 }
 
-func (t *List) GetDataTypeCode() primitive.DataTypeCode {
+func (t *List) Code() primitive.DataTypeCode {
 	return primitive.DataTypeCodeList
 }
 
@@ -40,7 +40,7 @@ func (t *List) String() string {
 }
 
 func writeListType(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error) {
-	if listType, ok := t.(*List); !ok || listType == nil {
+	if listType, ok := t.(*List); !ok {
 		return fmt.Errorf("expected *List, got %T", t)
 	} else if err = WriteDataType(listType.ElementType, dest, version); err != nil {
 		return fmt.Errorf("cannot write list element type: %w", err)

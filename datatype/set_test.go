@@ -25,7 +25,7 @@ import (
 
 func TestSetType(t *testing.T) {
 	setType := NewSet(Varchar)
-	assert.Equal(t, primitive.DataTypeCodeSet, setType.GetDataTypeCode())
+	assert.Equal(t, primitive.DataTypeCodeSet, setType.Code())
 	assert.Equal(t, Varchar, setType.ElementType)
 }
 
@@ -34,9 +34,9 @@ func TestSetTypeDeepCopy(t *testing.T) {
 	cloned := st.DeepCopy()
 	assert.Equal(t, st, cloned)
 	cloned.ElementType = Int
-	assert.Equal(t, primitive.DataTypeCodeSet, st.GetDataTypeCode())
+	assert.Equal(t, primitive.DataTypeCodeSet, st.Code())
 	assert.Equal(t, Varchar, st.ElementType)
-	assert.Equal(t, primitive.DataTypeCodeSet, cloned.GetDataTypeCode())
+	assert.Equal(t, primitive.DataTypeCodeSet, cloned.Code())
 	assert.Equal(t, Int, cloned.ElementType)
 }
 
