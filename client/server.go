@@ -352,7 +352,7 @@ func newFrameResponse(frameResponse *frame.Frame) *response {
 	}
 }
 
-func NewRawResponse(rawResponse []byte) *response {
+func newRawResponse(rawResponse []byte) *response {
 	return &response{
 		rawResponse: rawResponse,
 	}
