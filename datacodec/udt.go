@@ -47,7 +47,7 @@ func (c *udtCodec) DataType() datatype.DataType {
 }
 
 func (c *udtCodec) Encode(source interface{}, version primitive.ProtocolVersion) (dest []byte, err error) {
-	if !version.SupportsDataType(c.DataType().GetDataTypeCode()) {
+	if !version.SupportsDataType(c.DataType().Code()) {
 		err = errDataTypeNotSupported(c.DataType(), version)
 	} else {
 		var ext extractor
@@ -63,7 +63,7 @@ func (c *udtCodec) Encode(source interface{}, version primitive.ProtocolVersion)
 
 func (c *udtCodec) Decode(source []byte, dest interface{}, version primitive.ProtocolVersion) (wasNull bool, err error) {
 	wasNull = len(source) == 0
-	if !version.SupportsDataType(c.DataType().GetDataTypeCode()) {
+	if !version.SupportsDataType(c.DataType().Code()) {
 		err = errDataTypeNotSupported(c.DataType(), version)
 	} else {
 		var inj injector

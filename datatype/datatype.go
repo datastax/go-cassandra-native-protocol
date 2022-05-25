@@ -23,19 +23,19 @@ import (
 type DataType interface {
 	fmt.Stringer
 
-	GetDataTypeCode() primitive.DataTypeCode
+	Code() primitive.DataTypeCode
 	DeepCopyDataType() DataType
 }
 
 func WriteDataType(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error) {
 	if t == nil {
 		return fmt.Errorf("DataType can not be nil")
-	} else if err = primitive.CheckValidDataTypeCode(t.GetDataTypeCode(), version); err != nil {
+	} else if err = primitive.CheckValidDataTypeCode(t.Code(), version); err != nil {
 		return err
-	} else if err = primitive.WriteShort(uint16(t.GetDataTypeCode()), dest); err != nil {
-		return fmt.Errorf("cannot write data type code %v: %w", t.GetDataTypeCode(), err)
+	} else if err = primitive.WriteShort(uint16(t.Code()), dest); err != nil {
+		return fmt.Errorf("cannot write data type code %v: %w", t.Code(), err)
 	} else {
-		switch t.GetDataTypeCode() {
+		switch t.Code() {
 		case primitive.DataTypeCodeCustom:
 			return writeCustomType(t, dest, version)
 		case primitive.DataTypeCodeList:
@@ -56,7 +56,7 @@ func WriteDataType(t DataType, dest io.Writer, version primitive.ProtocolVersion
 func LengthOfDataType(t DataType, version primitive.ProtocolVersion) (length int, err error) {
 	length += primitive.LengthOfShort // type code
 	dataTypeLength := 0
-	switch t.GetDataTypeCode() {
+	switch t.Code() {
 	case primitive.DataTypeCodeCustom:
 		dataTypeLength, err = lengthOfCustomType(t, version)
 	case primitive.DataTypeCodeList:

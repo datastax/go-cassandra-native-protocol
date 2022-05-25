@@ -111,6 +111,6 @@ func assertErrorMessage(t *testing.T, expectedMessage string, actual error) {
 
 type wrongDataType struct{}
 
-func (w wrongDataType) String() string                          { return "666" }
-func (w wrongDataType) GetDataTypeCode() primitive.DataTypeCode { return 666 }
+func (w wrongDataType) String() string               { return "666" }
+func (w wrongDataType) Code() primitive.DataTypeCode { return 666 }
 func (w wrongDataType) DeepCopyDataType() datatype.DataType     { return &wrongDataType{} }

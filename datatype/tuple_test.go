@@ -26,7 +26,7 @@ import (
 
 func TestTupleType(t *testing.T) {
 	tupleType := NewTuple(Varchar, Int)
-	assert.Equal(t, primitive.DataTypeCodeTuple, tupleType.GetDataTypeCode())
+	assert.Equal(t, primitive.DataTypeCodeTuple, tupleType.Code())
 	assert.Equal(t, []DataType{Varchar, Int}, tupleType.FieldTypes)
 }
 
@@ -36,9 +36,9 @@ func TestTupleTypeDeepCopy(t *testing.T) {
 	assert.Equal(t, tt, cloned)
 	cloned.FieldTypes = []DataType{Int, Uuid, Float}
 	assert.NotEqual(t, tt, cloned)
-	assert.Equal(t, primitive.DataTypeCodeTuple, tt.GetDataTypeCode())
+	assert.Equal(t, primitive.DataTypeCodeTuple, tt.Code())
 	assert.Equal(t, []DataType{Varchar, Int}, tt.FieldTypes)
-	assert.Equal(t, primitive.DataTypeCodeTuple, cloned.GetDataTypeCode())
+	assert.Equal(t, primitive.DataTypeCodeTuple, cloned.Code())
 	assert.Equal(t, []DataType{Int, Uuid, Float}, cloned.FieldTypes)
 }
 
@@ -49,9 +49,9 @@ func TestTupleTypeDeepCopy_NilFieldTypesSlice(t *testing.T) {
 	assert.Equal(t, tt, cloned)
 	cloned.FieldTypes = []DataType{Int, Uuid, Float}
 	assert.NotEqual(t, tt, cloned)
-	assert.Equal(t, primitive.DataTypeCodeTuple, tt.GetDataTypeCode())
+	assert.Equal(t, primitive.DataTypeCodeTuple, tt.Code())
 	assert.Nil(t, tt.FieldTypes)
-	assert.Equal(t, primitive.DataTypeCodeTuple, cloned.GetDataTypeCode())
+	assert.Equal(t, primitive.DataTypeCodeTuple, cloned.Code())
 	assert.Equal(t, []DataType{Int, Uuid, Float}, cloned.FieldTypes)
 }
 
@@ -61,9 +61,9 @@ func TestTupleTypeDeepCopy_NilFieldType(t *testing.T) {
 	assert.Equal(t, tt, cloned)
 	cloned.FieldTypes = []DataType{Int, Uuid, Float}
 	assert.NotEqual(t, tt, cloned)
-	assert.Equal(t, primitive.DataTypeCodeTuple, tt.GetDataTypeCode())
+	assert.Equal(t, primitive.DataTypeCodeTuple, tt.Code())
 	assert.Equal(t, []DataType{nil, Int}, tt.FieldTypes)
-	assert.Equal(t, primitive.DataTypeCodeTuple, cloned.GetDataTypeCode())
+	assert.Equal(t, primitive.DataTypeCodeTuple, cloned.Code())
 	assert.Equal(t, []DataType{Int, Uuid, Float}, cloned.FieldTypes)
 }
 
@@ -73,9 +73,9 @@ func TestTupleTypeDeepCopy_ComplexFieldTypes(t *testing.T) {
 	assert.Equal(t, tt, cloned)
 	cloned.FieldTypes[0].(*List).ElementType = NewTuple(Int)
 	assert.NotEqual(t, tt, cloned)
-	assert.Equal(t, primitive.DataTypeCodeTuple, tt.GetDataTypeCode())
+	assert.Equal(t, primitive.DataTypeCodeTuple, tt.Code())
 	assert.Equal(t, []DataType{NewList(NewTuple(Varchar)), Int}, tt.FieldTypes)
-	assert.Equal(t, primitive.DataTypeCodeTuple, cloned.GetDataTypeCode())
+	assert.Equal(t, primitive.DataTypeCodeTuple, cloned.Code())
 	assert.Equal(t, []DataType{NewList(NewTuple(Int)), Int}, cloned.FieldTypes)
 }
 

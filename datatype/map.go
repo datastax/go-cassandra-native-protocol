@@ -28,12 +28,16 @@ type Map struct {
 	ValueType DataType
 }
 
-func (t *Map) GetDataTypeCode() primitive.DataTypeCode {
+func (t *Map) Code() primitive.DataTypeCode {
 	return primitive.DataTypeCodeMap
 }
 
 func (t *Map) String() string {
 	return fmt.Sprintf("map<%v,%v>", t.KeyType, t.ValueType)
+}
+
+func (t *Map) MarshalJSON() ([]byte, error) {
+	return []byte("\"" + t.String() + "\""), nil
 }
 
 func NewMap(keyType DataType, valueType DataType) *Map {

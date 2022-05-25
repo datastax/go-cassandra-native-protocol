@@ -31,7 +31,7 @@ func NewCustom(className string) *Custom {
 	return &Custom{ClassName: className}
 }
 
-func (t *Custom) GetDataTypeCode() primitive.DataTypeCode {
+func (t *Custom) Code() primitive.DataTypeCode {
 	return primitive.DataTypeCodeCustom
 }
 

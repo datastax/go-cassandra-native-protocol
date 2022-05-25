@@ -32,7 +32,7 @@ func (c *tinyintCodec) DataType() datatype.DataType {
 }
 
 func (c *tinyintCodec) Encode(source interface{}, version primitive.ProtocolVersion) (dest []byte, err error) {
-	if !version.SupportsDataType(c.DataType().GetDataTypeCode()) {
+	if !version.SupportsDataType(c.DataType().Code()) {
 		err = errDataTypeNotSupported(c.DataType(), version)
 	} else {
 		var val int8
@@ -48,7 +48,7 @@ func (c *tinyintCodec) Encode(source interface{}, version primitive.ProtocolVers
 }
 
 func (c *tinyintCodec) Decode(source []byte, dest interface{}, version primitive.ProtocolVersion) (wasNull bool, err error) {
-	if !version.SupportsDataType(c.DataType().GetDataTypeCode()) {
+	if !version.SupportsDataType(c.DataType().Code()) {
 		wasNull = len(source) == 0
 		err = errDataTypeNotSupported(c.DataType(), version)
 	} else {

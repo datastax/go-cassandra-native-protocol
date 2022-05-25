@@ -25,7 +25,7 @@ import (
 
 func TestListType(t *testing.T) {
 	ListType := NewList(Varchar)
-	assert.Equal(t, primitive.DataTypeCodeList, ListType.GetDataTypeCode())
+	assert.Equal(t, primitive.DataTypeCodeList, ListType.Code())
 	assert.Equal(t, Varchar, ListType.ElementType)
 }
 
@@ -34,9 +34,9 @@ func TestListTypeDeepCopy(t *testing.T) {
 	clonedObj := lt.DeepCopy()
 	assert.Equal(t, lt, clonedObj)
 	clonedObj.ElementType = Int
-	assert.Equal(t, primitive.DataTypeCodeList, lt.GetDataTypeCode())
+	assert.Equal(t, primitive.DataTypeCodeList, lt.Code())
 	assert.Equal(t, Varchar, lt.ElementType)
-	assert.Equal(t, primitive.DataTypeCodeList, clonedObj.GetDataTypeCode())
+	assert.Equal(t, primitive.DataTypeCodeList, clonedObj.Code())
 	assert.Equal(t, Int, clonedObj.ElementType)
 }
 

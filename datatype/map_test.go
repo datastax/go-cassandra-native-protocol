@@ -25,7 +25,7 @@ import (
 
 func TestMapType(t *testing.T) {
 	mapType := NewMap(Varchar, Int)
-	assert.Equal(t, primitive.DataTypeCodeMap, mapType.GetDataTypeCode())
+	assert.Equal(t, primitive.DataTypeCodeMap, mapType.Code())
 	assert.Equal(t, Varchar, mapType.KeyType)
 	assert.Equal(t, Int, mapType.ValueType)
 }
@@ -36,10 +36,10 @@ func TestMapTypeDeepCopy(t *testing.T) {
 	assert.Equal(t, mt, cloned)
 	cloned.KeyType = Inet
 	cloned.ValueType = Uuid
-	assert.Equal(t, primitive.DataTypeCodeMap, mt.GetDataTypeCode())
+	assert.Equal(t, primitive.DataTypeCodeMap, mt.Code())
 	assert.Equal(t, Varchar, mt.KeyType)
 	assert.Equal(t, Int, mt.ValueType)
-	assert.Equal(t, primitive.DataTypeCodeMap, cloned.GetDataTypeCode())
+	assert.Equal(t, primitive.DataTypeCodeMap, cloned.Code())
 	assert.Equal(t, Inet, cloned.KeyType)
 	assert.Equal(t, Uuid, cloned.ValueType)
 }

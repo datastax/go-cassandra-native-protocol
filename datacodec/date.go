@@ -84,7 +84,7 @@ func (c *dateCodec) DataType() datatype.DataType {
 // Note that this relies on the fact that some additions will overflow: this is expected.
 
 func (c *dateCodec) Encode(source interface{}, version primitive.ProtocolVersion) (dest []byte, err error) {
-	if !version.SupportsDataType(c.DataType().GetDataTypeCode()) {
+	if !version.SupportsDataType(c.DataType().Code()) {
 		err = errDataTypeNotSupported(c.DataType(), version)
 	} else {
 		var val int32
@@ -100,7 +100,7 @@ func (c *dateCodec) Encode(source interface{}, version primitive.ProtocolVersion
 }
 
 func (c *dateCodec) Decode(source []byte, dest interface{}, version primitive.ProtocolVersion) (wasNull bool, err error) {
-	if !version.SupportsDataType(c.DataType().GetDataTypeCode()) {
+	if !version.SupportsDataType(c.DataType().Code()) {
 		wasNull = len(source) == 0
 		err = errDataTypeNotSupported(c.DataType(), version)
 	} else {

@@ -47,7 +47,7 @@ type Codec interface {
 // the existing singletons. For complex CQL types, it delegates to one of the constructor functions available:
 // NewList, NewSet, NewMap, NewTuple, NewUserDefined and NewCustom.
 func NewCodec(dt datatype.DataType) (Codec, error) {
-	switch dt.GetDataTypeCode() {
+	switch dt.Code() {
 	case primitive.DataTypeCodeAscii:
 		return Ascii, nil
 	case primitive.DataTypeCodeBigint:
@@ -109,7 +109,7 @@ func NewCodec(dt datatype.DataType) (Codec, error) {
 // they are absolutely required, e.g. for the CQL type varint this function returns *big.Int since the usage of the
 // value type big.Int is not recommended.
 func PreferredGoType(dt datatype.DataType) (reflect.Type, error) {
-	switch dt.GetDataTypeCode() {
+	switch dt.Code() {
 	case primitive.DataTypeCodeAscii:
 		return typeOfString, nil
 	case primitive.DataTypeCodeBigint:
