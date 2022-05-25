@@ -734,7 +734,7 @@ func (c *CqlServerConnection) SendRaw(rawResponse []byte) error {
 	}
 	log.Debug().Msgf("%v: enqueuing outgoing raw response: %v", c, rawResponse)
 	select {
-	case c.outgoing <- NewRawResponse(rawResponse):
+	case c.outgoing <- newRawResponse(rawResponse):
 		log.Debug().Msgf("%v: outgoing frame successfully enqueued: %v", c, rawResponse)
 		return nil
 	default:
