@@ -368,7 +368,7 @@ func Test_userDefinedType_String(t1 *testing.T) {
 		t1.Run(tt.name, func(t *testing.T) {
 			udt, err := NewUserDefined(tt.keyspace, tt.udtName, tt.fieldNames, tt.fieldTypes)
 			require.NoError(t, err)
-			got := udt.String()
+			got := udt.AsCql()
 			assert.Equal(t, tt.want, got)
 		})
 	}

@@ -37,20 +37,20 @@ func (t *Tuple) Code() primitive.DataTypeCode {
 }
 
 func (t *Tuple) String() string {
+	return t.AsCql()
+}
+
+func (t *Tuple) AsCql() string {
 	buf := &bytes.Buffer{}
 	buf.WriteString("tuple<")
 	for i, elementType := range t.FieldTypes {
 		if i > 0 {
 			buf.WriteString(",")
 		}
-		buf.WriteString(elementType.String())
+		buf.WriteString(elementType.AsCql())
 	}
 	buf.WriteString(">")
 	return buf.String()
-}
-
-func (t *Tuple) MarshalJSON() ([]byte, error) {
-	return []byte("\"" + t.String() + "\""), nil
 }
 
 func writeTupleType(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error) {

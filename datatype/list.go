@@ -36,7 +36,11 @@ func (t *List) Code() primitive.DataTypeCode {
 }
 
 func (t *List) String() string {
-	return fmt.Sprintf("list<%v>", t.ElementType)
+	return t.AsCql()
+}
+
+func (t *List) AsCql() string {
+	return fmt.Sprintf("list<%v>", t.ElementType.AsCql())
 }
 
 func writeListType(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error) {

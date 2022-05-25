@@ -400,7 +400,7 @@ func Test_injectors_zeroDecodeAndSet(t *testing.T) {
 		udt: map[string]interface{}{"f1": int32(123)},
 	}
 	for dataType, source := range dataTypes {
-		t.Run(dataType.String()+" on interface{} receiver", func(t *testing.T) {
+		t.Run(dataType.AsCql()+" on interface{} receiver", func(t *testing.T) {
 			t.Run("slice element", func(t *testing.T) {
 				dest := make([]interface{}, 1)
 				inj, err := newSliceInjector(reflect.ValueOf(dest))

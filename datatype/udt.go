@@ -46,6 +46,10 @@ func (t *UserDefined) Code() primitive.DataTypeCode {
 }
 
 func (t *UserDefined) String() string {
+	return t.AsCql()
+}
+
+func (t *UserDefined) AsCql() string {
 	buf := &bytes.Buffer{}
 	buf.WriteString(t.Keyspace)
 	buf.WriteString(".")
@@ -57,14 +61,10 @@ func (t *UserDefined) String() string {
 		}
 		buf.WriteString(t.FieldNames[i])
 		buf.WriteString(":")
-		buf.WriteString(fieldType.String())
+		buf.WriteString(fieldType.AsCql())
 	}
 	buf.WriteString(">")
 	return buf.String()
-}
-
-func (t *UserDefined) MarshalJSON() ([]byte, error) {
-	return []byte("\"" + t.String() + "\""), nil
 }
 
 func writeUserDefinedType(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error) {

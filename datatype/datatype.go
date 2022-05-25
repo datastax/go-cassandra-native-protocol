@@ -21,9 +21,8 @@ import (
 )
 
 type DataType interface {
-	fmt.Stringer
-
 	Code() primitive.DataTypeCode
+	AsCql() string
 	DeepCopyDataType() DataType
 }
 
