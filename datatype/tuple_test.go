@@ -291,7 +291,7 @@ func Test_tupleType_String(t1 *testing.T) {
 	for _, tt := range tests {
 		t1.Run(tt.name, func(t *testing.T) {
 			tuple := NewTuple(tt.fieldTypes...)
-			got := tuple.String()
+			got := tuple.AsCql()
 			assert.Equal(t, tt.want, got)
 		})
 	}

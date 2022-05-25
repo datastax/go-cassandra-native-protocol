@@ -41,7 +41,7 @@ func Test_bigintCodec_DataType(t *testing.T) {
 func Test_bigintCodec_Encode(t *testing.T) {
 	codecs := []Codec{Bigint, Counter}
 	for _, codec := range codecs {
-		t.Run(codec.DataType().String(), func(t *testing.T) {
+		t.Run(codec.DataType().AsCql(), func(t *testing.T) {
 			for _, version := range primitive.SupportedProtocolVersions() {
 				t.Run(version.String(), func(t *testing.T) {
 					tests := []struct {
@@ -71,7 +71,7 @@ func Test_bigintCodec_Encode(t *testing.T) {
 func Test_bigintCodec_Decode(t *testing.T) {
 	codecs := []Codec{Bigint, Counter}
 	for _, codec := range codecs {
-		t.Run(codec.DataType().String(), func(t *testing.T) {
+		t.Run(codec.DataType().AsCql(), func(t *testing.T) {
 			for _, version := range primitive.SupportedProtocolVersions() {
 				t.Run(version.String(), func(t *testing.T) {
 					tests := []struct {

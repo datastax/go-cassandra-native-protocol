@@ -53,6 +53,10 @@ func (t *PrimitiveType) Code() primitive.DataTypeCode {
 }
 
 func (t *PrimitiveType) String() string {
+	return t.AsCql()
+}
+
+func (t *PrimitiveType) AsCql() string {
 	switch t.Code() {
 	case primitive.DataTypeCodeAscii:
 		return "ascii"
@@ -96,8 +100,4 @@ func (t *PrimitiveType) String() string {
 		return "duration"
 	}
 	return "?"
-}
-
-func (t *PrimitiveType) MarshalJSON() ([]byte, error) {
-	return []byte("\"" + t.String() + "\""), nil
 }

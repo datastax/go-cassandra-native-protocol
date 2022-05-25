@@ -32,11 +32,11 @@ func (t *Set) Code() primitive.DataTypeCode {
 }
 
 func (t *Set) String() string {
-	return fmt.Sprintf("set<%v>", t.ElementType)
+	return t.AsCql()
 }
 
-func (t *Set) MarshalJSON() ([]byte, error) {
-	return []byte("\"" + t.String() + "\""), nil
+func (t *Set) AsCql() string {
+	return fmt.Sprintf("set<%v>", t.ElementType.AsCql())
 }
 
 func NewSet(elementType DataType) *Set {

@@ -33,11 +33,11 @@ func (t *Map) Code() primitive.DataTypeCode {
 }
 
 func (t *Map) String() string {
-	return fmt.Sprintf("map<%v,%v>", t.KeyType, t.ValueType)
+	return t.AsCql()
 }
 
-func (t *Map) MarshalJSON() ([]byte, error) {
-	return []byte("\"" + t.String() + "\""), nil
+func (t *Map) AsCql() string {
+	return fmt.Sprintf("map<%v,%v>", t.KeyType.AsCql(), t.ValueType.AsCql())
 }
 
 func NewMap(keyType DataType, valueType DataType) *Map {

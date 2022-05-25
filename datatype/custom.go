@@ -36,11 +36,11 @@ func (t *Custom) Code() primitive.DataTypeCode {
 }
 
 func (t *Custom) String() string {
-	return fmt.Sprintf("custom(%v)", t.ClassName)
+	return t.AsCql()
 }
 
-func (t *Custom) MarshalJSON() ([]byte, error) {
-	return []byte("\"" + t.String() + "\""), nil
+func (t *Custom) AsCql() string {
+	return fmt.Sprintf("'%v'", t.ClassName)
 }
 
 func writeCustomType(t DataType, dest io.Writer, _ primitive.ProtocolVersion) (err error) {
