@@ -24,20 +24,20 @@ import (
 )
 
 func TestListType(t *testing.T) {
-	listType := NewListType(Varchar)
-	assert.Equal(t, primitive.DataTypeCodeList, listType.GetDataTypeCode())
-	assert.Equal(t, Varchar, listType.GetElementType())
+	ListType := NewListType(Varchar)
+	assert.Equal(t, primitive.DataTypeCodeList, ListType.GetDataTypeCode())
+	assert.Equal(t, Varchar, ListType.ElementType)
 }
 
-func TestListTypeClone(t *testing.T) {
+func TestListTypeDeepCopy(t *testing.T) {
 	lt := NewListType(Varchar)
-	clonedObj := lt.Clone().(*listType)
+	clonedObj := lt.DeepCopy()
 	assert.Equal(t, lt, clonedObj)
-	clonedObj.elementType = Int
+	clonedObj.ElementType = Int
 	assert.Equal(t, primitive.DataTypeCodeList, lt.GetDataTypeCode())
-	assert.Equal(t, Varchar, lt.GetElementType())
+	assert.Equal(t, Varchar, lt.ElementType)
 	assert.Equal(t, primitive.DataTypeCodeList, clonedObj.GetDataTypeCode())
-	assert.Equal(t, Int, clonedObj.GetElementType())
+	assert.Equal(t, Int, clonedObj.ElementType)
 }
 
 func TestWriteListType(t *testing.T) {
@@ -45,7 +45,7 @@ func TestWriteListType(t *testing.T) {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
-				input    ListType
+				input    DataType
 				expected []byte
 				err      error
 			}{
@@ -63,7 +63,7 @@ func TestWriteListType(t *testing.T) {
 						0, byte(primitive.DataTypeCodeVarchar & 0xFF)},
 					nil,
 				},
-				{"nil list", nil, nil, errors.New("expected ListType, got <nil>")},
+				{"nil list", nil, nil, errors.New("expected *ListType, got <nil>")},
 			}
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
@@ -84,13 +84,13 @@ func TestLengthOfListType(t *testing.T) {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
-				input    ListType
+				input    DataType
 				expected int
 				err      error
 			}{
 				{"simple list", NewListType(Varchar), primitive.LengthOfShort, nil},
 				{"complex list", NewListType(NewListType(Varchar)), primitive.LengthOfShort + primitive.LengthOfShort, nil},
-				{"nil list", nil, -1, errors.New("expected ListType, got <nil>")},
+				{"nil list", nil, -1, errors.New("expected *ListType, got <nil>")},
 			}
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
@@ -111,7 +111,7 @@ func TestReadListType(t *testing.T) {
 			tests := []struct {
 				name     string
 				input    []byte
-				expected ListType
+				expected DataType
 				err      error
 			}{
 				{

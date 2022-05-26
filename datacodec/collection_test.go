@@ -145,7 +145,7 @@ var (
 func TestNewList(t *testing.T) {
 	tests := []struct {
 		name     string
-		dataType datatype.ListType
+		dataType *datatype.ListType
 		want     Codec
 		wantErr  string
 	}{
@@ -195,7 +195,7 @@ func TestNewList(t *testing.T) {
 func TestNewSet(t *testing.T) {
 	tests := []struct {
 		name     string
-		dataType datatype.SetType
+		dataType *datatype.SetType
 		want     Codec
 		wantErr  string
 	}{

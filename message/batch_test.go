@@ -25,9 +25,9 @@ import (
 func TestBatch_Clone(t *testing.T) {
 	msg := &Batch{
 		Type: primitive.BatchTypeLogged,
-		Children: []*BatchChild{&BatchChild{
-			QueryOrId: "query",
-			Values: []*primitive.Value{&primitive.Value{
+		Children: []*BatchChild{{
+			Query: "query",
+			Values: []*primitive.Value{{
 				Type:     primitive.ValueTypeRegular,
 				Contents: []byte{0x0a},
 			}},
@@ -40,12 +40,12 @@ func TestBatch_Clone(t *testing.T) {
 		Keyspace:         "ks1",
 		NowInSeconds:     &primitive.NillableInt32{Value: 2},
 	}
-	cloned := msg.Clone().(*Batch)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 	cloned.Type = primitive.BatchTypeUnlogged
-	cloned.Children = []*BatchChild{&BatchChild{
-		QueryOrId: "query2",
-		Values: []*primitive.Value{&primitive.Value{
+	cloned.Children = []*BatchChild{{
+		Query: "query2",
+		Values: []*primitive.Value{{
 			Type:     primitive.ValueTypeNull,
 			Contents: []byte{0x0b},
 		}},
@@ -59,8 +59,8 @@ func TestBatch_Clone(t *testing.T) {
 	}
 	cloned.Keyspace = "ks2"
 	cloned.NowInSeconds = &primitive.NillableInt32{Value: 9}
-	assert.Equal(t, "query", msg.Children[0].QueryOrId)
-	assert.Equal(t, "query2", cloned.Children[0].QueryOrId)
+	assert.Equal(t, "query", msg.Children[0].Query)
+	assert.Equal(t, "query2", cloned.Children[0].Query)
 	assert.Equal(t, primitive.BatchTypeLogged, msg.Type)
 	assert.Equal(t, primitive.BatchTypeUnlogged, cloned.Type)
 	assert.Equal(t, primitive.ConsistencyLevelLocalOne, msg.Consistency)
@@ -108,12 +108,12 @@ func TestBatchCodec_Encode(t *testing.T) {
 				&Batch{
 					Children: []*BatchChild{
 						{
-							QueryOrId: "INSERT",
-							Values:    []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
+							Query:  "INSERT",
+							Values: []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
 						},
 						{
-							QueryOrId: []byte{0xca, 0xfe, 0xba, 0xbe},
-							Values:    []*primitive.Value{primitive.NewValue([]byte{5, 6, 7, 8})},
+							Id:     []byte{0xca, 0xfe, 0xba, 0xbe},
+							Values: []*primitive.Value{primitive.NewValue([]byte{5, 6, 7, 8})},
 						},
 					},
 				},
@@ -174,12 +174,12 @@ func TestBatchCodec_Encode(t *testing.T) {
 					&Batch{
 						Children: []*BatchChild{
 							{
-								QueryOrId: "INSERT",
-								Values:    []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
+								Query:  "INSERT",
+								Values: []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
 							},
 							{
-								QueryOrId: []byte{0xca, 0xfe, 0xba, 0xbe},
-								Values:    []*primitive.Value{primitive.NewValue([]byte{5, 6, 7, 8})},
+								Id:     []byte{0xca, 0xfe, 0xba, 0xbe},
+								Values: []*primitive.Value{primitive.NewValue([]byte{5, 6, 7, 8})},
 							},
 						},
 					},
@@ -205,8 +205,8 @@ func TestBatchCodec_Encode(t *testing.T) {
 						Type: primitive.BatchTypeUnlogged,
 						Children: []*BatchChild{
 							{
-								QueryOrId: "INSERT",
-								Values:    []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
+								Query:  "INSERT",
+								Values: []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
 							},
 						},
 						Consistency:       primitive.ConsistencyLevelLocalQuorum,
@@ -269,12 +269,12 @@ func TestBatchCodec_Encode(t *testing.T) {
 				&Batch{
 					Children: []*BatchChild{
 						{
-							QueryOrId: "INSERT",
-							Values:    []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
+							Query:  "INSERT",
+							Values: []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
 						},
 						{
-							QueryOrId: []byte{0xca, 0xfe, 0xba, 0xbe},
-							Values:    []*primitive.Value{primitive.NewValue([]byte{5, 6, 7, 8})},
+							Id:     []byte{0xca, 0xfe, 0xba, 0xbe},
+							Values: []*primitive.Value{primitive.NewValue([]byte{5, 6, 7, 8})},
 						},
 					},
 				},
@@ -300,8 +300,8 @@ func TestBatchCodec_Encode(t *testing.T) {
 					Type: primitive.BatchTypeUnlogged,
 					Children: []*BatchChild{
 						{
-							QueryOrId: "INSERT",
-							Values:    []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
+							Query:  "INSERT",
+							Values: []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
 						},
 					},
 					Consistency:       primitive.ConsistencyLevelLocalQuorum,
@@ -370,12 +370,12 @@ func TestBatchCodec_Encode(t *testing.T) {
 				&Batch{
 					Children: []*BatchChild{
 						{
-							QueryOrId: "INSERT",
-							Values:    []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
+							Query:  "INSERT",
+							Values: []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
 						},
 						{
-							QueryOrId: []byte{0xca, 0xfe, 0xba, 0xbe},
-							Values:    []*primitive.Value{primitive.NewValue([]byte{5, 6, 7, 8})},
+							Id:     []byte{0xca, 0xfe, 0xba, 0xbe},
+							Values: []*primitive.Value{primitive.NewValue([]byte{5, 6, 7, 8})},
 						},
 					},
 				},
@@ -401,8 +401,8 @@ func TestBatchCodec_Encode(t *testing.T) {
 					Type: primitive.BatchTypeUnlogged,
 					Children: []*BatchChild{
 						{
-							QueryOrId: "INSERT",
-							Values:    []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
+							Query:  "INSERT",
+							Values: []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
 						},
 					},
 					Consistency:       primitive.ConsistencyLevelLocalQuorum,
@@ -464,12 +464,12 @@ func TestBatchCodec_Encode(t *testing.T) {
 				&Batch{
 					Children: []*BatchChild{
 						{
-							QueryOrId: "INSERT",
-							Values:    []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
+							Query:  "INSERT",
+							Values: []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
 						},
 						{
-							QueryOrId: []byte{0xca, 0xfe, 0xba, 0xbe},
-							Values:    []*primitive.Value{primitive.NewValue([]byte{5, 6, 7, 8})},
+							Id:     []byte{0xca, 0xfe, 0xba, 0xbe},
+							Values: []*primitive.Value{primitive.NewValue([]byte{5, 6, 7, 8})},
 						},
 					},
 				},
@@ -495,8 +495,8 @@ func TestBatchCodec_Encode(t *testing.T) {
 					Type: primitive.BatchTypeUnlogged,
 					Children: []*BatchChild{
 						{
-							QueryOrId: "INSERT",
-							Values:    []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
+							Query:  "INSERT",
+							Values: []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
 						},
 					},
 					Consistency:       primitive.ConsistencyLevelLocalQuorum,
@@ -558,12 +558,12 @@ func TestBatchCodec_EncodedLength(t *testing.T) {
 				&Batch{
 					Children: []*BatchChild{
 						{
-							QueryOrId: "INSERT",
-							Values:    []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
+							Query:  "INSERT",
+							Values: []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
 						},
 						{
-							QueryOrId: []byte{0xca, 0xfe, 0xba, 0xbe},
-							Values:    []*primitive.Value{primitive.NewValue([]byte{5, 6, 7, 8})},
+							Id:     []byte{0xca, 0xfe, 0xba, 0xbe},
+							Values: []*primitive.Value{primitive.NewValue([]byte{5, 6, 7, 8})},
 						},
 					},
 				},
@@ -613,12 +613,12 @@ func TestBatchCodec_EncodedLength(t *testing.T) {
 					&Batch{
 						Children: []*BatchChild{
 							{
-								QueryOrId: "INSERT",
-								Values:    []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
+								Query:  "INSERT",
+								Values: []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
 							},
 							{
-								QueryOrId: []byte{0xca, 0xfe, 0xba, 0xbe},
-								Values:    []*primitive.Value{primitive.NewValue([]byte{5, 6, 7, 8})},
+								Id:     []byte{0xca, 0xfe, 0xba, 0xbe},
+								Values: []*primitive.Value{primitive.NewValue([]byte{5, 6, 7, 8})},
 							},
 						},
 					},
@@ -642,8 +642,8 @@ func TestBatchCodec_EncodedLength(t *testing.T) {
 						Type: primitive.BatchTypeUnlogged,
 						Children: []*BatchChild{
 							{
-								QueryOrId: "INSERT",
-								Values:    []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
+								Query:  "INSERT",
+								Values: []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
 							},
 						},
 						Consistency:       primitive.ConsistencyLevelLocalQuorum,
@@ -695,12 +695,12 @@ func TestBatchCodec_EncodedLength(t *testing.T) {
 				&Batch{
 					Children: []*BatchChild{
 						{
-							QueryOrId: "INSERT",
-							Values:    []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
+							Query:  "INSERT",
+							Values: []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
 						},
 						{
-							QueryOrId: []byte{0xca, 0xfe, 0xba, 0xbe},
-							Values:    []*primitive.Value{primitive.NewValue([]byte{5, 6, 7, 8})},
+							Id:     []byte{0xca, 0xfe, 0xba, 0xbe},
+							Values: []*primitive.Value{primitive.NewValue([]byte{5, 6, 7, 8})},
 						},
 					},
 				},
@@ -724,8 +724,8 @@ func TestBatchCodec_EncodedLength(t *testing.T) {
 					Type: primitive.BatchTypeUnlogged,
 					Children: []*BatchChild{
 						{
-							QueryOrId: "INSERT",
-							Values:    []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
+							Query:  "INSERT",
+							Values: []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
 						},
 					},
 					Consistency:       primitive.ConsistencyLevelLocalQuorum,
@@ -780,12 +780,12 @@ func TestBatchCodec_EncodedLength(t *testing.T) {
 				&Batch{
 					Children: []*BatchChild{
 						{
-							QueryOrId: "INSERT",
-							Values:    []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
+							Query:  "INSERT",
+							Values: []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
 						},
 						{
-							QueryOrId: []byte{0xca, 0xfe, 0xba, 0xbe},
-							Values:    []*primitive.Value{primitive.NewValue([]byte{5, 6, 7, 8})},
+							Id:     []byte{0xca, 0xfe, 0xba, 0xbe},
+							Values: []*primitive.Value{primitive.NewValue([]byte{5, 6, 7, 8})},
 						},
 					},
 				},
@@ -809,8 +809,8 @@ func TestBatchCodec_EncodedLength(t *testing.T) {
 					Type: primitive.BatchTypeUnlogged,
 					Children: []*BatchChild{
 						{
-							QueryOrId: "INSERT",
-							Values:    []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
+							Query:  "INSERT",
+							Values: []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
 						},
 					},
 					Consistency:       primitive.ConsistencyLevelLocalQuorum,
@@ -861,12 +861,12 @@ func TestBatchCodec_EncodedLength(t *testing.T) {
 				&Batch{
 					Children: []*BatchChild{
 						{
-							QueryOrId: "INSERT",
-							Values:    []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
+							Query:  "INSERT",
+							Values: []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
 						},
 						{
-							QueryOrId: []byte{0xca, 0xfe, 0xba, 0xbe},
-							Values:    []*primitive.Value{primitive.NewValue([]byte{5, 6, 7, 8})},
+							Id:     []byte{0xca, 0xfe, 0xba, 0xbe},
+							Values: []*primitive.Value{primitive.NewValue([]byte{5, 6, 7, 8})},
 						},
 					},
 				},
@@ -890,8 +890,8 @@ func TestBatchCodec_EncodedLength(t *testing.T) {
 					Type: primitive.BatchTypeUnlogged,
 					Children: []*BatchChild{
 						{
-							QueryOrId: "INSERT",
-							Values:    []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
+							Query:  "INSERT",
+							Values: []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
 						},
 					},
 					Consistency:       primitive.ConsistencyLevelLocalQuorum,
@@ -967,12 +967,12 @@ func TestBatchCodec_Decode(t *testing.T) {
 				&Batch{
 					Children: []*BatchChild{
 						{
-							QueryOrId: "INSERT",
-							Values:    []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
+							Query:  "INSERT",
+							Values: []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
 						},
 						{
-							QueryOrId: []byte{0xca, 0xfe, 0xba, 0xbe},
-							Values:    []*primitive.Value{primitive.NewValue([]byte{5, 6, 7, 8})},
+							Id:     []byte{0xca, 0xfe, 0xba, 0xbe},
+							Values: []*primitive.Value{primitive.NewValue([]byte{5, 6, 7, 8})},
 						},
 					},
 				},
@@ -1033,12 +1033,12 @@ func TestBatchCodec_Decode(t *testing.T) {
 					&Batch{
 						Children: []*BatchChild{
 							{
-								QueryOrId: "INSERT",
-								Values:    []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
+								Query:  "INSERT",
+								Values: []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
 							},
 							{
-								QueryOrId: []byte{0xca, 0xfe, 0xba, 0xbe},
-								Values:    []*primitive.Value{primitive.NewValue([]byte{5, 6, 7, 8})},
+								Id:     []byte{0xca, 0xfe, 0xba, 0xbe},
+								Values: []*primitive.Value{primitive.NewValue([]byte{5, 6, 7, 8})},
 							},
 						},
 					},
@@ -1062,8 +1062,8 @@ func TestBatchCodec_Decode(t *testing.T) {
 						Type: primitive.BatchTypeUnlogged,
 						Children: []*BatchChild{
 							{
-								QueryOrId: "INSERT",
-								Values:    []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
+								Query:  "INSERT",
+								Values: []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
 							},
 						},
 						Consistency:       primitive.ConsistencyLevelLocalQuorum,
@@ -1127,12 +1127,12 @@ func TestBatchCodec_Decode(t *testing.T) {
 				&Batch{
 					Children: []*BatchChild{
 						{
-							QueryOrId: "INSERT",
-							Values:    []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
+							Query:  "INSERT",
+							Values: []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
 						},
 						{
-							QueryOrId: []byte{0xca, 0xfe, 0xba, 0xbe},
-							Values:    []*primitive.Value{primitive.NewValue([]byte{5, 6, 7, 8})},
+							Id:     []byte{0xca, 0xfe, 0xba, 0xbe},
+							Values: []*primitive.Value{primitive.NewValue([]byte{5, 6, 7, 8})},
 						},
 					},
 				},
@@ -1161,8 +1161,8 @@ func TestBatchCodec_Decode(t *testing.T) {
 					Type: primitive.BatchTypeUnlogged,
 					Children: []*BatchChild{
 						{
-							QueryOrId: "INSERT",
-							Values:    []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
+							Query:  "INSERT",
+							Values: []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
 						},
 					},
 					Consistency:       primitive.ConsistencyLevelLocalQuorum,
@@ -1227,12 +1227,12 @@ func TestBatchCodec_Decode(t *testing.T) {
 				&Batch{
 					Children: []*BatchChild{
 						{
-							QueryOrId: "INSERT",
-							Values:    []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
+							Query:  "INSERT",
+							Values: []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
 						},
 						{
-							QueryOrId: []byte{0xca, 0xfe, 0xba, 0xbe},
-							Values:    []*primitive.Value{primitive.NewValue([]byte{5, 6, 7, 8})},
+							Id:     []byte{0xca, 0xfe, 0xba, 0xbe},
+							Values: []*primitive.Value{primitive.NewValue([]byte{5, 6, 7, 8})},
 						},
 					},
 				},
@@ -1256,8 +1256,8 @@ func TestBatchCodec_Decode(t *testing.T) {
 					Type: primitive.BatchTypeUnlogged,
 					Children: []*BatchChild{
 						{
-							QueryOrId: "INSERT",
-							Values:    []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
+							Query:  "INSERT",
+							Values: []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
 						},
 					},
 					Consistency:       primitive.ConsistencyLevelLocalQuorum,
@@ -1320,12 +1320,12 @@ func TestBatchCodec_Decode(t *testing.T) {
 				&Batch{
 					Children: []*BatchChild{
 						{
-							QueryOrId: "INSERT",
-							Values:    []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
+							Query:  "INSERT",
+							Values: []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
 						},
 						{
-							QueryOrId: []byte{0xca, 0xfe, 0xba, 0xbe},
-							Values:    []*primitive.Value{primitive.NewValue([]byte{5, 6, 7, 8})},
+							Id:     []byte{0xca, 0xfe, 0xba, 0xbe},
+							Values: []*primitive.Value{primitive.NewValue([]byte{5, 6, 7, 8})},
 						},
 					},
 				},
@@ -1353,8 +1353,8 @@ func TestBatchCodec_Decode(t *testing.T) {
 					Type: primitive.BatchTypeUnlogged,
 					Children: []*BatchChild{
 						{
-							QueryOrId: "INSERT",
-							Values:    []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
+							Query:  "INSERT",
+							Values: []*primitive.Value{primitive.NewValue([]byte{1, 2, 3, 4})},
 						},
 					},
 					Consistency:       primitive.ConsistencyLevelLocalQuorum,

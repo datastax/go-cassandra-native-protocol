@@ -21,7 +21,15 @@ import (
 	"io"
 )
 
+// AuthResponse is a request message sent in reply to an Authenticate or AuthChallenge response, and contains the
+// authentication data requested by the server. The server will then reply with either an AuthSuccess response message,
+// or with an AuthChallenge response message, if it requires additional authentication data.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type AuthResponse struct {
+
+	// Token is a protocol [bytes]; the details of what this token contains (and when it can be null/empty, if ever)
+	// depends on the actual authenticator used.
 	Token []byte
 }
 
@@ -35,13 +43,6 @@ func (m *AuthResponse) GetOpCode() primitive.OpCode {
 
 func (m *AuthResponse) String() string {
 	return "AUTH_RESPONSE"
-}
-
-// Performs a deep copy of this message object.
-func (m *AuthResponse) Clone() Message {
-	return &AuthResponse{
-		Token: primitive.CloneByteSlice(m.Token),
-	}
 }
 
 type authResponseCodec struct{}

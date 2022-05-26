@@ -21,7 +21,8 @@ import (
 	"io"
 )
 
-// The set of options common to Query and Execute messages.
+// QueryOptions is the set of options common to Query and Execute messages.
+// +k8s:deepcopy-gen=true
 type QueryOptions struct {
 	// The consistency level to use when executing the query. This field is mandatory; its default is ANY, as the
 	// zero value of primitive.ConsistencyLevel is primitive.ConsistencyLevelAny. Note that ANY is NOT suitable for
@@ -74,23 +75,6 @@ type QueryOptions struct {
 
 	// Valid only for DSE protocol versions.
 	ContinuousPagingOptions *ContinuousPagingOptions
-}
-
-func (o *QueryOptions) Clone() *QueryOptions {
-	return &QueryOptions{
-		Consistency:             o.Consistency,
-		PositionalValues:        cloneValuesSlice(o.PositionalValues),
-		NamedValues:             cloneValuesMap(o.NamedValues),
-		SkipMetadata:            o.SkipMetadata,
-		PageSize:                o.PageSize,
-		PageSizeInBytes:         o.PageSizeInBytes,
-		PagingState:             primitive.CloneByteSlice(o.PagingState),
-		SerialConsistency:       o.SerialConsistency.Clone(),
-		DefaultTimestamp:        o.DefaultTimestamp.Clone(),
-		Keyspace:                o.Keyspace,
-		NowInSeconds:            o.NowInSeconds.Clone(),
-		ContinuousPagingOptions: o.ContinuousPagingOptions.Clone(),
-	}
 }
 
 func (o *QueryOptions) String() string {
@@ -348,32 +332,4 @@ func DecodeQueryOptions(source io.Reader, version primitive.ProtocolVersion) (op
 		}
 	}
 	return options, nil
-}
-
-func cloneValuesSlice(o []*primitive.Value) []*primitive.Value {
-	var newValues []*primitive.Value
-	if o != nil {
-		newValues = make([]*primitive.Value, len(o))
-		for idx, v := range o {
-			newValues[idx] = v.Clone()
-		}
-	} else {
-		newValues = nil
-	}
-
-	return newValues
-}
-
-func cloneValuesMap(o map[string]*primitive.Value) map[string]*primitive.Value {
-	var newValues map[string]*primitive.Value
-	if o != nil {
-		newValues = make(map[string]*primitive.Value)
-		for key, v := range o {
-			newValues[key] = v.Clone()
-		}
-	} else {
-		newValues = nil
-	}
-
-	return newValues
 }

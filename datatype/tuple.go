@@ -21,37 +21,25 @@ import (
 	"io"
 )
 
-type TupleType interface {
-	DataType
-	GetFieldTypes() []DataType
+// TupleType is a data type that represents a CQL tuple type.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/datatype.DataType
+type TupleType struct {
+	FieldTypes []DataType
 }
 
-type tupleType struct {
-	fieldTypes []DataType
+func NewTupleType(fieldTypes ...DataType) *TupleType {
+	return &TupleType{FieldTypes: fieldTypes}
 }
 
-func (t *tupleType) GetFieldTypes() []DataType {
-	return t.fieldTypes
-}
-
-func NewTupleType(fieldTypes ...DataType) TupleType {
-	return &tupleType{fieldTypes: fieldTypes}
-}
-
-func (t *tupleType) GetDataTypeCode() primitive.DataTypeCode {
+func (t *TupleType) GetDataTypeCode() primitive.DataTypeCode {
 	return primitive.DataTypeCodeTuple
 }
 
-func (t *tupleType) Clone() DataType {
-	return &tupleType{
-		fieldTypes: cloneDataTypeSlice(t.fieldTypes),
-	}
-}
-
-func (t *tupleType) String() string {
+func (t *TupleType) String() string {
 	buf := &bytes.Buffer{}
 	buf.WriteString("tuple<")
-	for i, elementType := range t.fieldTypes {
+	for i, elementType := range t.FieldTypes {
 		if i > 0 {
 			buf.WriteString(",")
 		}
@@ -61,18 +49,18 @@ func (t *tupleType) String() string {
 	return buf.String()
 }
 
-func (t *tupleType) MarshalJSON() ([]byte, error) {
+func (t *TupleType) MarshalJSON() ([]byte, error) {
 	return []byte("\"" + t.String() + "\""), nil
 }
 
 func writeTupleType(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error) {
-	tupleType, ok := t.(TupleType)
+	tupleType, ok := t.(*TupleType)
 	if !ok {
-		return fmt.Errorf("expected TupleType, got %T", t)
-	} else if err = primitive.WriteShort(uint16(len(tupleType.GetFieldTypes())), dest); err != nil {
+		return fmt.Errorf("expected *TupleType, got %T", t)
+	} else if err = primitive.WriteShort(uint16(len(tupleType.FieldTypes)), dest); err != nil {
 		return fmt.Errorf("cannot write tuple type field count: %w", err)
 	}
-	for i, fieldType := range tupleType.GetFieldTypes() {
+	for i, fieldType := range tupleType.FieldTypes {
 		if err = WriteDataType(fieldType, dest, version); err != nil {
 			return fmt.Errorf("cannot write tuple field %d: %w", i, err)
 		}
@@ -81,11 +69,11 @@ func writeTupleType(t DataType, dest io.Writer, version primitive.ProtocolVersio
 }
 
 func lengthOfTupleType(t DataType, version primitive.ProtocolVersion) (int, error) {
-	if tupleType, ok := t.(TupleType); !ok {
-		return -1, fmt.Errorf("expected TupleType, got %T", t)
+	if tupleType, ok := t.(*TupleType); !ok {
+		return -1, fmt.Errorf("expected *TupleType, got %T", t)
 	} else {
 		length := primitive.LengthOfShort // field count
-		for i, fieldType := range tupleType.GetFieldTypes() {
+		for i, fieldType := range tupleType.FieldTypes {
 			if fieldLength, err := LengthOfDataType(fieldType, version); err != nil {
 				return -1, fmt.Errorf("cannot compute length of tuple field %d: %w", i, err)
 			} else {
@@ -100,10 +88,10 @@ func readTupleType(source io.Reader, version primitive.ProtocolVersion) (DataTyp
 	if fieldCount, err := primitive.ReadShort(source); err != nil {
 		return nil, fmt.Errorf("cannot read tuple field count: %w", err)
 	} else {
-		tupleType := &tupleType{}
-		tupleType.fieldTypes = make([]DataType, fieldCount)
+		tupleType := &TupleType{}
+		tupleType.FieldTypes = make([]DataType, fieldCount)
 		for i := 0; i < int(fieldCount); i++ {
-			if tupleType.fieldTypes[i], err = ReadDataType(source, version); err != nil {
+			if tupleType.FieldTypes[i], err = ReadDataType(source, version); err != nil {
 				return nil, fmt.Errorf("cannot read tuple field %d: %w", i, err)
 			}
 		}

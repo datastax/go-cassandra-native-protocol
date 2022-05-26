@@ -170,7 +170,7 @@ var (
 func TestNewUserDefinedCodec(t *testing.T) {
 	tests := []struct {
 		name     string
-		dataType datatype.UserDefinedType
+		dataType *datatype.UserDefinedType
 		expected Codec
 		err      string
 	}{

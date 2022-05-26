@@ -113,4 +113,4 @@ type wrongDataType struct{}
 
 func (w wrongDataType) String() string                          { return "666" }
 func (w wrongDataType) GetDataTypeCode() primitive.DataTypeCode { return 666 }
-func (w wrongDataType) Clone() datatype.DataType                { return &wrongDataType{} }
+func (w wrongDataType) DeepCopyDataType() datatype.DataType     { return &wrongDataType{} }

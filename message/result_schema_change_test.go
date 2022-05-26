@@ -22,7 +22,7 @@ import (
 	"testing"
 )
 
-func TestSchemaChangeResult_Clone(t *testing.T) {
+func TestSchemaChangeResult_DeepCopy(t *testing.T) {
 	msg := &SchemaChangeResult{
 		ChangeType: primitive.SchemaChangeTypeCreated,
 		Target:     primitive.SchemaChangeTargetAggregate,
@@ -31,7 +31,7 @@ func TestSchemaChangeResult_Clone(t *testing.T) {
 		Arguments:  []string{"arg1"},
 	}
 
-	cloned := msg.Clone().(*SchemaChangeResult)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 
 	cloned.ChangeType = primitive.SchemaChangeTypeDropped

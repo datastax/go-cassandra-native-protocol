@@ -24,6 +24,7 @@ import (
 
 // Frame is a high-level representation of a frame, where the body is fully decoded.
 // Note that frames are called "envelopes" in protocol v5 specs.
+// +k8s:deepcopy-gen=true
 type Frame struct {
 	Header *Header
 	Body   *Body
@@ -31,11 +32,14 @@ type Frame struct {
 
 // RawFrame is a low-level representation of a frame, where the body is not decoded.
 // Note that frames are called "envelopes" in protocol v5 specs.
+// +k8s:deepcopy-gen=true
 type RawFrame struct {
 	Header *Header
 	Body   []byte
 }
 
+// Header is the header of a frame.
+// +k8s:deepcopy-gen=true
 type Header struct {
 	IsResponse bool
 	Version    primitive.ProtocolVersion
@@ -53,6 +57,8 @@ type Header struct {
 	BodyLength int32
 }
 
+// Body is the body of a frame.
+// +k8s:deepcopy-gen=true
 type Body struct {
 	// The tracing id. Only valid for response frames, ignored otherwise.
 	TracingId *primitive.UUID
@@ -144,50 +150,6 @@ func (f *Frame) SetCompress(compress bool) {
 	}
 }
 
-// Clone Performs a deep copy of a frame object
-func (f *Frame) Clone() *Frame {
-	return &Frame{
-		Header: f.Header.Clone(),
-		Body:   f.Body.Clone(),
-	}
-}
-
-// Clone Performs a deep copy of a header object and returns the new object.
-func (h *Header) Clone() *Header {
-	newHeader := *h // it's only value types so this is fine
-	return &newHeader
-}
-
-// Clone Performs a deep copy of a body object and returns the new object.
-func (b *Body) Clone() *Body {
-	var customPayload map[string][]byte
-	if b.CustomPayload == nil {
-		customPayload = nil
-	} else {
-		customPayload = make(map[string][]byte)
-		for key, value := range b.CustomPayload {
-			newValue := make([]byte, len(value))
-			copy(newValue, value)
-			customPayload[key] = newValue
-		}
-	}
-
-	var warnings []string
-	if b.Warnings == nil {
-		warnings = nil
-	} else {
-		warnings = make([]string, len(b.Warnings))
-		copy(warnings, b.Warnings)
-	}
-
-	return &Body{
-		TracingId:     b.TracingId.Clone(),
-		CustomPayload: customPayload,
-		Warnings:      warnings,
-		Message:       b.Message.Clone(),
-	}
-}
-
 func (f *Frame) String() string {
 	return fmt.Sprintf("{header: %v, body: %v}", f.Header, f.Body)
 }
@@ -223,14 +185,6 @@ func (f *RawFrame) Dump() (string, error) {
 		return "", err
 	} else {
 		return hex.Dump(buffer.Bytes()), nil
-	}
-}
-
-// Clone Performs a deep copy of a RawFrame object
-func (f *RawFrame) Clone() *RawFrame {
-	return &RawFrame{
-		Header: f.Header.Clone(),
-		Body:   primitive.CloneByteSlice(f.Body),
 	}
 }
 

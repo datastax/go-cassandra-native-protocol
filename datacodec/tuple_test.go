@@ -168,7 +168,7 @@ var (
 func TestNewTupleCodec(t *testing.T) {
 	tests := []struct {
 		name     string
-		dataType datatype.TupleType
+		dataType *datatype.TupleType
 		expected Codec
 		err      string
 	}{

@@ -22,12 +22,12 @@ import (
 	"reflect"
 )
 
-func NewTuple(tupleType datatype.TupleType) (Codec, error) {
+func NewTuple(tupleType *datatype.TupleType) (Codec, error) {
 	if tupleType == nil {
 		return nil, ErrNilDataType
 	}
-	elementCodecs := make([]Codec, len(tupleType.GetFieldTypes()))
-	for i, elementType := range tupleType.GetFieldTypes() {
+	elementCodecs := make([]Codec, len(tupleType.FieldTypes))
+	for i, elementType := range tupleType.FieldTypes {
 		if elementCodec, err := NewCodec(elementType); err != nil {
 			return nil, fmt.Errorf("cannot create codec for tuple element %d: %w", i, err)
 		} else {
@@ -38,7 +38,7 @@ func NewTuple(tupleType datatype.TupleType) (Codec, error) {
 }
 
 type tupleCodec struct {
-	dataType      datatype.TupleType
+	dataType      *datatype.TupleType
 	elementCodecs []Codec
 }
 

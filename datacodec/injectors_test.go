@@ -436,7 +436,7 @@ func testInjectorAndDataType(t *testing.T, source interface{}, inj injector, dat
 	err = inj.setElem(0, 0, zero, false, false)
 	require.NoError(t, err)
 	a := actual()
-	if _, ok := dataType.(datatype.MapType); ok {
+	if _, ok := dataType.(*datatype.MapType); ok {
 		assert.Len(t, a, 1)
 		assert.IsType(t, map[*int32]*string{}, a)
 		for k, v := range a.(map[*int32]*string) {

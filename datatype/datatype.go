@@ -24,7 +24,7 @@ type DataType interface {
 	fmt.Stringer
 
 	GetDataTypeCode() primitive.DataTypeCode
-	Clone() DataType
+	DeepCopyDataType() DataType
 }
 
 func WriteDataType(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error) {
@@ -139,17 +139,4 @@ func ReadDataType(source io.Reader, version primitive.ProtocolVersion) (decoded 
 		}
 		return nil, fmt.Errorf("unknown type code: %w", err)
 	}
-}
-
-func cloneDataTypeSlice(o []DataType) []DataType {
-	var newFieldTypes []DataType
-	for _, fieldType := range o {
-		if fieldType == nil {
-			newFieldTypes = append(newFieldTypes, nil)
-		} else {
-			newFieldTypes = append(newFieldTypes, fieldType.Clone())
-		}
-	}
-
-	return newFieldTypes
 }

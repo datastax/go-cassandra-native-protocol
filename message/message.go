@@ -22,7 +22,7 @@ import (
 type Message interface {
 	IsResponse() bool
 	GetOpCode() primitive.OpCode
-	Clone() Message
+	DeepCopyMessage() Message
 }
 
 type Encoder interface {

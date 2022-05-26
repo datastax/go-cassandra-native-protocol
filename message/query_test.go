@@ -22,7 +22,7 @@ import (
 	"testing"
 )
 
-func TestQuery_Clone(t *testing.T) {
+func TestQuery_DeepCopy(t *testing.T) {
 	msg := &Query{
 		Query: "query",
 		Options: &QueryOptions{
@@ -60,7 +60,7 @@ func TestQuery_Clone(t *testing.T) {
 		},
 	}
 
-	cloned := msg.Clone().(*Query)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 
 	cloned.Query = "query 2"
@@ -1416,7 +1416,7 @@ func TestQueryCodec_Decode(t *testing.T) {
 					0, // flags
 				},
 				&Query{
-					Query: "",
+					Query:   "",
 					Options: &QueryOptions{},
 				},
 				nil,
@@ -1528,7 +1528,7 @@ func TestQueryCodec_Decode(t *testing.T) {
 					0, // flags
 				},
 				&Query{
-					Query: "",
+					Query:   "",
 					Options: &QueryOptions{},
 				},
 				nil,
@@ -1649,7 +1649,7 @@ func TestQueryCodec_Decode(t *testing.T) {
 					0, // flags
 				},
 				&Query{
-					Query: "",
+					Query:   "",
 					Options: &QueryOptions{},
 				},
 				nil,
@@ -1845,7 +1845,7 @@ func TestQueryCodec_Decode(t *testing.T) {
 					0, 0, 0, 0, // flags
 				},
 				&Query{
-					Query: "",
+					Query:   "",
 					Options: &QueryOptions{},
 				},
 				nil,

@@ -26,11 +26,10 @@ const LengthOfUuid = 16
 
 type UUID [16]byte
 
-func (u *UUID) Clone() *UUID {
+func (u *UUID) DeepCopy() *UUID {
 	if u == nil {
 		return nil
 	}
-
 	newUuid := *u
 	return &newUuid
 }

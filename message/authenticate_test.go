@@ -22,11 +22,11 @@ import (
 	"testing"
 )
 
-func TestAuthenticate_Clone(t *testing.T) {
+func TestAuthenticate_DeepCopy(t *testing.T) {
 	msg := &Authenticate{
 		Authenticator: "auth",
 	}
-	cloned := msg.Clone().(*Authenticate)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 	cloned.Authenticator = "auth2"
 	assert.Equal(t, "auth", msg.Authenticator)

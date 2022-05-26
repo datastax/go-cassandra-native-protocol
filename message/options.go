@@ -21,6 +21,10 @@ import (
 	"io"
 )
 
+// Options is a request message to obtain supported features from the server. The response to such a request is
+// Supported.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type Options struct {
 }
 
@@ -30,10 +34,6 @@ func (m *Options) IsResponse() bool {
 
 func (m *Options) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeOptions
-}
-
-func (m *Options) Clone() Message {
-	return &Options{}
 }
 
 func (m *Options) String() string {

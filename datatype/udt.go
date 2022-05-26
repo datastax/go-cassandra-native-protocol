@@ -21,71 +21,41 @@ import (
 	"io"
 )
 
-type UserDefinedType interface {
-	DataType
-	GetKeyspace() string
-	GetName() string
-	// names and types are not modeled as a map because iteration order matters
-	GetFieldNames() []string
-	GetFieldTypes() []DataType
+// UserDefinedType is a data type that represents a CQL user-defined type.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/datatype.DataType
+type UserDefinedType struct {
+	Keyspace   string
+	Name       string
+	FieldNames []string
+	FieldTypes []DataType
+	// Note: field names and field types are not modeled as a map because iteration order matters.
 }
 
-type userDefinedType struct {
-	keyspace   string
-	name       string
-	fieldNames []string
-	fieldTypes []DataType
-}
-
-func (t *userDefinedType) GetKeyspace() string {
-	return t.keyspace
-}
-
-func (t *userDefinedType) GetName() string {
-	return t.name
-}
-
-func (t *userDefinedType) GetFieldNames() []string {
-	return t.fieldNames
-}
-
-func (t *userDefinedType) GetFieldTypes() []DataType {
-	return t.fieldTypes
-}
-
-func NewUserDefinedType(keyspace string, name string, fieldNames []string, fieldTypes []DataType) (UserDefinedType, error) {
+func NewUserDefinedType(keyspace string, name string, fieldNames []string, fieldTypes []DataType) (*UserDefinedType, error) {
 	fieldNamesLength := len(fieldNames)
 	fieldTypesLength := len(fieldTypes)
 	if fieldNamesLength != fieldTypesLength {
 		return nil, fmt.Errorf("field names and field types length mismatch: %d != %d", fieldNamesLength, fieldTypesLength)
 	}
-	return &userDefinedType{keyspace: keyspace, name: name, fieldNames: fieldNames, fieldTypes: fieldTypes}, nil
+	return &UserDefinedType{Keyspace: keyspace, Name: name, FieldNames: fieldNames, FieldTypes: fieldTypes}, nil
 }
 
-func (t *userDefinedType) GetDataTypeCode() primitive.DataTypeCode {
+func (t *UserDefinedType) GetDataTypeCode() primitive.DataTypeCode {
 	return primitive.DataTypeCodeUdt
 }
 
-func (t *userDefinedType) Clone() DataType {
-	return &userDefinedType{
-		keyspace:   t.keyspace,
-		name:       t.name,
-		fieldNames: primitive.CloneStringSlice(t.fieldNames),
-		fieldTypes: cloneDataTypeSlice(t.fieldTypes),
-	}
-}
-
-func (t *userDefinedType) String() string {
+func (t *UserDefinedType) String() string {
 	buf := &bytes.Buffer{}
-	buf.WriteString(t.keyspace)
+	buf.WriteString(t.Keyspace)
 	buf.WriteString(".")
-	buf.WriteString(t.name)
+	buf.WriteString(t.Name)
 	buf.WriteString("<")
-	for i, fieldType := range t.fieldTypes {
+	for i, fieldType := range t.FieldTypes {
 		if i > 0 {
 			buf.WriteString(",")
 		}
-		buf.WriteString(t.fieldNames[i])
+		buf.WriteString(t.FieldNames[i])
 		buf.WriteString(":")
 		buf.WriteString(fieldType.String())
 	}
@@ -93,26 +63,26 @@ func (t *userDefinedType) String() string {
 	return buf.String()
 }
 
-func (t *userDefinedType) MarshalJSON() ([]byte, error) {
+func (t *UserDefinedType) MarshalJSON() ([]byte, error) {
 	return []byte("\"" + t.String() + "\""), nil
 }
 
 func writeUserDefinedType(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error) {
-	userDefinedType, ok := t.(UserDefinedType)
+	userDefinedType, ok := t.(*UserDefinedType)
 	if !ok {
-		return fmt.Errorf("expected UserDefinedType, got %T", t)
-	} else if err = primitive.WriteString(userDefinedType.GetKeyspace(), dest); err != nil {
+		return fmt.Errorf("expected *UserDefinedType, got %T", t)
+	} else if err = primitive.WriteString(userDefinedType.Keyspace, dest); err != nil {
 		return fmt.Errorf("cannot write udt keyspace: %w", err)
-	} else if err = primitive.WriteString(userDefinedType.GetName(), dest); err != nil {
+	} else if err = primitive.WriteString(userDefinedType.Name, dest); err != nil {
 		return fmt.Errorf("cannot write udt name: %w", err)
-	} else if err = primitive.WriteShort(uint16(len(userDefinedType.GetFieldTypes())), dest); err != nil {
+	} else if err = primitive.WriteShort(uint16(len(userDefinedType.FieldTypes)), dest); err != nil {
 		return fmt.Errorf("cannot write udt field count: %w", err)
 	}
-	if len(userDefinedType.GetFieldNames()) != len(userDefinedType.GetFieldTypes()) {
+	if len(userDefinedType.FieldNames) != len(userDefinedType.FieldTypes) {
 		return fmt.Errorf("invalid user-defined type: length of field names is not equal to length of field types")
 	}
-	for i, fieldName := range userDefinedType.GetFieldNames() {
-		fieldType := userDefinedType.GetFieldTypes()[i]
+	for i, fieldName := range userDefinedType.FieldNames {
+		fieldType := userDefinedType.FieldTypes[i]
 		if err = primitive.WriteString(fieldName, dest); err != nil {
 			return fmt.Errorf("cannot write udt field %v name: %w", fieldName, err)
 		} else if err = WriteDataType(fieldType, dest, version); err != nil {
@@ -123,18 +93,18 @@ func writeUserDefinedType(t DataType, dest io.Writer, version primitive.Protocol
 }
 
 func lengthOfUserDefinedType(t DataType, version primitive.ProtocolVersion) (length int, err error) {
-	userDefinedType, ok := t.(UserDefinedType)
+	userDefinedType, ok := t.(*UserDefinedType)
 	if !ok {
-		return -1, fmt.Errorf("expected UserDefinedType, got %T", t)
+		return -1, fmt.Errorf("expected *UserDefinedType, got %T", t)
 	}
-	length += primitive.LengthOfString(userDefinedType.GetKeyspace())
-	length += primitive.LengthOfString(userDefinedType.GetName())
+	length += primitive.LengthOfString(userDefinedType.Keyspace)
+	length += primitive.LengthOfString(userDefinedType.Name)
 	length += primitive.LengthOfShort // field count
-	if len(userDefinedType.GetFieldNames()) != len(userDefinedType.GetFieldTypes()) {
+	if len(userDefinedType.FieldNames) != len(userDefinedType.FieldTypes) {
 		return -1, fmt.Errorf("invalid user-defined type: length of field names is not equal to length of field types")
 	}
-	for i, fieldName := range userDefinedType.GetFieldNames() {
-		fieldType := userDefinedType.GetFieldTypes()[i]
+	for i, fieldName := range userDefinedType.FieldNames {
+		fieldType := userDefinedType.FieldTypes[i]
 		length += primitive.LengthOfString(fieldName)
 		if fieldLength, err := LengthOfDataType(fieldType, version); err != nil {
 			return -1, fmt.Errorf("cannot compute length of udt field %v: %w", fieldName, err)
@@ -146,20 +116,20 @@ func lengthOfUserDefinedType(t DataType, version primitive.ProtocolVersion) (len
 }
 
 func readUserDefinedType(source io.Reader, version primitive.ProtocolVersion) (decoded DataType, err error) {
-	userDefinedType := &userDefinedType{}
-	if userDefinedType.keyspace, err = primitive.ReadString(source); err != nil {
+	userDefinedType := &UserDefinedType{}
+	if userDefinedType.Keyspace, err = primitive.ReadString(source); err != nil {
 		return nil, fmt.Errorf("cannot read udt keyspace: %w", err)
-	} else if userDefinedType.name, err = primitive.ReadString(source); err != nil {
+	} else if userDefinedType.Name, err = primitive.ReadString(source); err != nil {
 		return nil, fmt.Errorf("cannot read udt name: %w", err)
 	} else if fieldCount, err := primitive.ReadShort(source); err != nil {
 		return nil, fmt.Errorf("cannot read udt field count: %w", err)
 	} else {
-		userDefinedType.fieldNames = make([]string, fieldCount)
-		userDefinedType.fieldTypes = make([]DataType, fieldCount)
+		userDefinedType.FieldNames = make([]string, fieldCount)
+		userDefinedType.FieldTypes = make([]DataType, fieldCount)
 		for i := 0; i < int(fieldCount); i++ {
-			if userDefinedType.fieldNames[i], err = primitive.ReadString(source); err != nil {
+			if userDefinedType.FieldNames[i], err = primitive.ReadString(source); err != nil {
 				return nil, fmt.Errorf("cannot read udt field %d name: %w", i, err)
-			} else if userDefinedType.fieldTypes[i], err = ReadDataType(source, version); err != nil {
+			} else if userDefinedType.FieldTypes[i], err = ReadDataType(source, version); err != nil {
 				return nil, fmt.Errorf("cannot read udt field %d: %w", i, err)
 			}
 		}

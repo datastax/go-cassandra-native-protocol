@@ -24,11 +24,11 @@ import (
 	"testing"
 )
 
-func TestServerError_Clone(t *testing.T) {
+func TestServerError_DeepCopy(t *testing.T) {
 	msg := &ServerError{
 		ErrorMessage: "msg",
 	}
-	cloned := msg.Clone().(*ServerError)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 	cloned.ErrorMessage = "alt msg"
 	assert.NotEqual(t, msg, cloned)
@@ -36,11 +36,11 @@ func TestServerError_Clone(t *testing.T) {
 	assert.Equal(t, "alt msg", cloned.ErrorMessage)
 }
 
-func TestProtocolError_Clone(t *testing.T) {
+func TestProtocolError_DeepCopy(t *testing.T) {
 	msg := &ProtocolError{
 		ErrorMessage: "msg",
 	}
-	cloned := msg.Clone().(*ProtocolError)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 	cloned.ErrorMessage = "alt msg"
 	assert.NotEqual(t, msg, cloned)
@@ -48,11 +48,11 @@ func TestProtocolError_Clone(t *testing.T) {
 	assert.Equal(t, "alt msg", cloned.ErrorMessage)
 }
 
-func TestAuthenticationError_Clone(t *testing.T) {
+func TestAuthenticationError_DeepCopy(t *testing.T) {
 	msg := &AuthenticationError{
 		ErrorMessage: "msg",
 	}
-	cloned := msg.Clone().(*AuthenticationError)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 	cloned.ErrorMessage = "alt msg"
 	assert.NotEqual(t, msg, cloned)
@@ -60,11 +60,11 @@ func TestAuthenticationError_Clone(t *testing.T) {
 	assert.Equal(t, "alt msg", cloned.ErrorMessage)
 }
 
-func TestOverloaded_Clone(t *testing.T) {
+func TestOverloaded_DeepCopy(t *testing.T) {
 	msg := &Overloaded{
 		ErrorMessage: "msg",
 	}
-	cloned := msg.Clone().(*Overloaded)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 	cloned.ErrorMessage = "alt msg"
 	assert.NotEqual(t, msg, cloned)
@@ -72,11 +72,11 @@ func TestOverloaded_Clone(t *testing.T) {
 	assert.Equal(t, "alt msg", cloned.ErrorMessage)
 }
 
-func TestIsBootstrapping_Clone(t *testing.T) {
+func TestIsBootstrapping_DeepCopy(t *testing.T) {
 	msg := &IsBootstrapping{
 		ErrorMessage: "msg",
 	}
-	cloned := msg.Clone().(*IsBootstrapping)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 	cloned.ErrorMessage = "alt msg"
 	assert.NotEqual(t, msg, cloned)
@@ -84,11 +84,11 @@ func TestIsBootstrapping_Clone(t *testing.T) {
 	assert.Equal(t, "alt msg", cloned.ErrorMessage)
 }
 
-func TestTruncateError_Clone(t *testing.T) {
+func TestTruncateError_DeepCopy(t *testing.T) {
 	msg := &TruncateError{
 		ErrorMessage: "msg",
 	}
-	cloned := msg.Clone().(*TruncateError)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 	cloned.ErrorMessage = "alt msg"
 	assert.NotEqual(t, msg, cloned)
@@ -96,11 +96,11 @@ func TestTruncateError_Clone(t *testing.T) {
 	assert.Equal(t, "alt msg", cloned.ErrorMessage)
 }
 
-func TestSyntaxError_Clone(t *testing.T) {
+func TestSyntaxError_DeepCopy(t *testing.T) {
 	msg := &SyntaxError{
 		ErrorMessage: "msg",
 	}
-	cloned := msg.Clone().(*SyntaxError)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 	cloned.ErrorMessage = "alt msg"
 	assert.NotEqual(t, msg, cloned)
@@ -108,11 +108,11 @@ func TestSyntaxError_Clone(t *testing.T) {
 	assert.Equal(t, "alt msg", cloned.ErrorMessage)
 }
 
-func TestUnauthorized_Clone(t *testing.T) {
+func TestUnauthorized_DeepCopy(t *testing.T) {
 	msg := &Unauthorized{
 		ErrorMessage: "msg",
 	}
-	cloned := msg.Clone().(*Unauthorized)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 	cloned.ErrorMessage = "alt msg"
 	assert.NotEqual(t, msg, cloned)
@@ -120,11 +120,11 @@ func TestUnauthorized_Clone(t *testing.T) {
 	assert.Equal(t, "alt msg", cloned.ErrorMessage)
 }
 
-func TestInvalid_Clone(t *testing.T) {
+func TestInvalid_DeepCopy(t *testing.T) {
 	msg := &Invalid{
 		ErrorMessage: "msg",
 	}
-	cloned := msg.Clone().(*Invalid)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 	cloned.ErrorMessage = "alt msg"
 	assert.NotEqual(t, msg, cloned)
@@ -132,11 +132,11 @@ func TestInvalid_Clone(t *testing.T) {
 	assert.Equal(t, "alt msg", cloned.ErrorMessage)
 }
 
-func TestConfigError_Clone(t *testing.T) {
+func TestConfigError_DeepCopy(t *testing.T) {
 	msg := &ConfigError{
 		ErrorMessage: "msg",
 	}
-	cloned := msg.Clone().(*ConfigError)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 	cloned.ErrorMessage = "alt msg"
 	assert.NotEqual(t, msg, cloned)
@@ -144,14 +144,14 @@ func TestConfigError_Clone(t *testing.T) {
 	assert.Equal(t, "alt msg", cloned.ErrorMessage)
 }
 
-func TestUnavailable_Clone(t *testing.T) {
+func TestUnavailable_DeepCopy(t *testing.T) {
 	msg := &Unavailable{
 		ErrorMessage: "msg",
 		Consistency:  primitive.ConsistencyLevelAll,
 		Required:     2,
 		Alive:        1,
 	}
-	cloned := msg.Clone().(*Unavailable)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 	cloned.ErrorMessage = "alt msg"
 	cloned.Consistency = primitive.ConsistencyLevelEachQuorum
@@ -168,7 +168,7 @@ func TestUnavailable_Clone(t *testing.T) {
 	assert.EqualValues(t, 2, cloned.Alive)
 }
 
-func TestReadTimeout_Clone(t *testing.T) {
+func TestReadTimeout_DeepCopy(t *testing.T) {
 	msg := &ReadTimeout{
 		ErrorMessage: "msg",
 		Consistency:  primitive.ConsistencyLevelAll,
@@ -176,7 +176,7 @@ func TestReadTimeout_Clone(t *testing.T) {
 		BlockFor:     4,
 		DataPresent:  false,
 	}
-	cloned := msg.Clone().(*ReadTimeout)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 	cloned.ErrorMessage = "alt msg"
 	cloned.Consistency = primitive.ConsistencyLevelEachQuorum
@@ -196,7 +196,7 @@ func TestReadTimeout_Clone(t *testing.T) {
 	assert.True(t, cloned.DataPresent)
 }
 
-func TestWriteTimeout_Clone(t *testing.T) {
+func TestWriteTimeout_DeepCopy(t *testing.T) {
 	msg := &WriteTimeout{
 		ErrorMessage: "msg",
 		Consistency:  primitive.ConsistencyLevelAll,
@@ -204,7 +204,7 @@ func TestWriteTimeout_Clone(t *testing.T) {
 		BlockFor:     6,
 		WriteType:    primitive.WriteTypeBatch,
 	}
-	cloned := msg.Clone().(*WriteTimeout)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 	cloned.ErrorMessage = "alt msg"
 	cloned.Consistency = primitive.ConsistencyLevelEachQuorum
@@ -224,7 +224,7 @@ func TestWriteTimeout_Clone(t *testing.T) {
 	assert.Equal(t, primitive.WriteTypeBatchLog, cloned.WriteType)
 }
 
-func TestReadFailure_Clone(t *testing.T) {
+func TestReadFailure_DeepCopy(t *testing.T) {
 	msg := &ReadFailure{
 		ErrorMessage: "msg",
 		Consistency:  primitive.ConsistencyLevelAll,
@@ -243,7 +243,7 @@ func TestReadFailure_Clone(t *testing.T) {
 		},
 		DataPresent: false,
 	}
-	cloned := msg.Clone().(*ReadFailure)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 	cloned.ErrorMessage = "alt msg"
 	cloned.Consistency = primitive.ConsistencyLevelEachQuorum
@@ -284,7 +284,7 @@ func TestReadFailure_Clone(t *testing.T) {
 	assert.True(t, cloned.DataPresent)
 }
 
-func TestWriteFailure_Clone(t *testing.T) {
+func TestWriteFailure_DeepCopy(t *testing.T) {
 	msg := &WriteFailure{
 		ErrorMessage: "msg",
 		Consistency:  primitive.ConsistencyLevelAll,
@@ -303,7 +303,7 @@ func TestWriteFailure_Clone(t *testing.T) {
 		},
 		WriteType: primitive.WriteTypeBatchLog,
 	}
-	cloned := msg.Clone().(*WriteFailure)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 	cloned.ErrorMessage = "alt msg"
 	cloned.Consistency = primitive.ConsistencyLevelEachQuorum
@@ -344,14 +344,14 @@ func TestWriteFailure_Clone(t *testing.T) {
 	assert.Equal(t, primitive.WriteTypeCdc, cloned.WriteType)
 }
 
-func TestFunctionFailure_Clone(t *testing.T) {
+func TestFunctionFailure_DeepCopy(t *testing.T) {
 	msg := &FunctionFailure{
 		ErrorMessage: "msg",
 		Keyspace:     "ks1",
 		Function:     "f1",
 		Arguments:    []string{"arg1", "arg2"},
 	}
-	cloned := msg.Clone().(*FunctionFailure)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 	cloned.ErrorMessage = "alt msg"
 	cloned.Keyspace = "ks2"
@@ -368,12 +368,12 @@ func TestFunctionFailure_Clone(t *testing.T) {
 	assert.Equal(t, []string{"arg3"}, cloned.Arguments)
 }
 
-func TestUnprepared_Clone(t *testing.T) {
+func TestUnprepared_DeepCopy(t *testing.T) {
 	msg := &Unprepared{
 		ErrorMessage: "msg",
 		Id:           []byte{0x01},
 	}
-	cloned := msg.Clone().(*Unprepared)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 	cloned.ErrorMessage = "alt msg"
 	cloned.Id = []byte{0x02, 0x03}
@@ -384,13 +384,13 @@ func TestUnprepared_Clone(t *testing.T) {
 	assert.Equal(t, []byte{0x02, 0x03}, cloned.Id)
 }
 
-func TestAlreadyExists_Clone(t *testing.T) {
+func TestAlreadyExists_DeepCopy(t *testing.T) {
 	msg := &AlreadyExists{
 		ErrorMessage: "msg",
 		Keyspace:     "ks1",
 		Table:        "table1",
 	}
-	cloned := msg.Clone().(*AlreadyExists)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 	cloned.ErrorMessage = "alt msg"
 	cloned.Keyspace = "ks2"

@@ -22,7 +22,7 @@ import (
 	"testing"
 )
 
-func TestStartup_Clone(t *testing.T) {
+func TestStartup_DeepCopy(t *testing.T) {
 	msg := &Startup{
 		Options: map[string]string{
 			"opt1": "val1",
@@ -30,7 +30,7 @@ func TestStartup_Clone(t *testing.T) {
 		},
 	}
 
-	cloned := msg.Clone().(*Startup)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 
 	cloned.Options["opt1"] = "val5"

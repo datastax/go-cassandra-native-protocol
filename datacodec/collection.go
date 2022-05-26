@@ -24,22 +24,22 @@ import (
 	"reflect"
 )
 
-func NewList(dataType datatype.ListType) (Codec, error) {
+func NewList(dataType *datatype.ListType) (Codec, error) {
 	if dataType == nil {
 		return nil, ErrNilDataType
 	}
-	codec, err := NewCodec(dataType.GetElementType())
+	codec, err := NewCodec(dataType.ElementType)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create codec for list elements: %w", err)
 	}
 	return &collectionCodec{dataType, codec}, nil
 }
 
-func NewSet(dataType datatype.SetType) (Codec, error) {
+func NewSet(dataType *datatype.SetType) (Codec, error) {
 	if dataType == nil {
 		return nil, ErrNilDataType
 	}
-	codec, err := NewCodec(dataType.GetElementType())
+	codec, err := NewCodec(dataType.ElementType)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create codec for set elements: %w", err)
 	}

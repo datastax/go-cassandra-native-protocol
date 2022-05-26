@@ -26,6 +26,9 @@ import (
 // Note: a reasonmap is inherently a map, but it is not modeled as a map in Go because [inetaddr]
 // is not a valid map key type.
 
+// FailureReason is a map entry for a <reasonmap>; it contains the endpoint that failed and the corresponding failure
+// code.
+// +k8s:deepcopy-gen=true
 type FailureReason struct {
 	Endpoint net.IP
 	Code     FailureCode

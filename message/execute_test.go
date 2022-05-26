@@ -22,7 +22,7 @@ import (
 	"testing"
 )
 
-func TestExecute_Clone(t *testing.T) {
+func TestExecute_DeepCopy(t *testing.T) {
 	msg := &Execute{
 		QueryId:          []byte{0x01},
 		ResultMetadataId: []byte{0x02},
@@ -61,7 +61,7 @@ func TestExecute_Clone(t *testing.T) {
 		},
 	}
 
-	cloned := msg.Clone().(*Execute)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 
 	cloned.QueryId = []byte{0x41}

@@ -22,6 +22,7 @@ import (
 
 // ContinuousPagingOptions holds options for DSE continuous paging feature. Valid for QUERY and EXECUTE messages.
 // See QueryOptions.
+// +k8s:deepcopy-gen=true
 type ContinuousPagingOptions struct {
 	// The maximum number of pages that the server will send to the client in total, or zero to indicate no limit.
 	// Valid for both DSE v1 and v2.
@@ -33,15 +34,6 @@ type ContinuousPagingOptions struct {
 	// Valid for DSE v2 only.
 	// See Revise.
 	NextPages int32
-}
-
-func (options *ContinuousPagingOptions) Clone() *ContinuousPagingOptions {
-	if options == nil {
-		return nil
-	}
-
-	newObj := *options
-	return &newObj
 }
 
 func EncodeContinuousPagingOptions(options *ContinuousPagingOptions, dest io.Writer, version primitive.ProtocolVersion) (err error) {

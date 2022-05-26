@@ -22,7 +22,7 @@ import (
 	"testing"
 )
 
-func TestRowsResult_Clone(t *testing.T) {
+func TestRowsResult_DeepCopy(t *testing.T) {
 	msg := &RowsResult{
 		Metadata: &RowsMetadata{
 			ColumnCount:          1,
@@ -50,7 +50,7 @@ func TestRowsResult_Clone(t *testing.T) {
 		},
 	}
 
-	cloned := msg.Clone().(*RowsResult)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 
 	cloned.Metadata = &RowsMetadata{

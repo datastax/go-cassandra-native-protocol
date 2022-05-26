@@ -20,71 +20,53 @@ import (
 	"io"
 )
 
-type MapType interface {
-	DataType
-	GetKeyType() DataType
-	GetValueType() DataType
+// MapType is a data type that represents a CQL map type.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/datatype.DataType
+type MapType struct {
+	KeyType   DataType
+	ValueType DataType
 }
 
-type mapType struct {
-	keyType   DataType
-	valueType DataType
-}
-
-func (t *mapType) GetKeyType() DataType {
-	return t.keyType
-}
-
-func (t *mapType) GetValueType() DataType {
-	return t.valueType
-}
-
-func (t *mapType) GetDataTypeCode() primitive.DataTypeCode {
+func (t *MapType) GetDataTypeCode() primitive.DataTypeCode {
 	return primitive.DataTypeCodeMap
 }
 
-func (t *mapType) Clone() DataType {
-	return &mapType{
-		keyType:   t.keyType.Clone(),
-		valueType: t.valueType.Clone(),
-	}
+func (t *MapType) String() string {
+	return fmt.Sprintf("map<%v,%v>", t.KeyType, t.ValueType)
 }
 
-func (t *mapType) String() string {
-	return fmt.Sprintf("map<%v,%v>", t.keyType, t.valueType)
-}
-
-func (t *mapType) MarshalJSON() ([]byte, error) {
+func (t *MapType) MarshalJSON() ([]byte, error) {
 	return []byte("\"" + t.String() + "\""), nil
 }
 
-func NewMapType(keyType DataType, valueType DataType) MapType {
-	return &mapType{keyType: keyType, valueType: valueType}
+func NewMapType(keyType DataType, valueType DataType) *MapType {
+	return &MapType{KeyType: keyType, ValueType: valueType}
 }
 
 func writeMapType(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error) {
-	mapType, ok := t.(MapType)
+	mapType, ok := t.(*MapType)
 	if !ok {
-		return fmt.Errorf("expected MapType, got %T", t)
-	} else if err = WriteDataType(mapType.GetKeyType(), dest, version); err != nil {
+		return fmt.Errorf("expected *MapType, got %T", t)
+	} else if err = WriteDataType(mapType.KeyType, dest, version); err != nil {
 		return fmt.Errorf("cannot write map key type: %w", err)
-	} else if err = WriteDataType(mapType.GetValueType(), dest, version); err != nil {
+	} else if err = WriteDataType(mapType.ValueType, dest, version); err != nil {
 		return fmt.Errorf("cannot write map value type: %w", err)
 	}
 	return nil
 }
 
 func lengthOfMapType(t DataType, version primitive.ProtocolVersion) (length int, err error) {
-	mapType, ok := t.(MapType)
+	mapType, ok := t.(*MapType)
 	if !ok {
-		return -1, fmt.Errorf("expected MapType, got %T", t)
+		return -1, fmt.Errorf("expected *MapType, got %T", t)
 	}
-	if keyLength, err := LengthOfDataType(mapType.GetKeyType(), version); err != nil {
+	if keyLength, err := LengthOfDataType(mapType.KeyType, version); err != nil {
 		return -1, fmt.Errorf("cannot compute length of map key type: %w", err)
 	} else {
 		length += keyLength
 	}
-	if valueLength, err := LengthOfDataType(mapType.GetValueType(), version); err != nil {
+	if valueLength, err := LengthOfDataType(mapType.ValueType, version); err != nil {
 		return -1, fmt.Errorf("cannot compute length of map value type: %w", err)
 	} else {
 		length += valueLength
@@ -93,10 +75,10 @@ func lengthOfMapType(t DataType, version primitive.ProtocolVersion) (length int,
 }
 
 func readMapType(source io.Reader, version primitive.ProtocolVersion) (decoded DataType, err error) {
-	mapType := &mapType{}
-	if mapType.keyType, err = ReadDataType(source, version); err != nil {
+	mapType := &MapType{}
+	if mapType.KeyType, err = ReadDataType(source, version); err != nil {
 		return nil, fmt.Errorf("cannot read map key type: %w", err)
-	} else if mapType.valueType, err = ReadDataType(source, version); err != nil {
+	} else if mapType.ValueType, err = ReadDataType(source, version); err != nil {
 		return nil, fmt.Errorf("cannot read map value type: %w", err)
 	}
 	return mapType, nil

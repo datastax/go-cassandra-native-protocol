@@ -22,6 +22,8 @@ import (
 )
 
 // Batch is a BATCH request message. The zero value is NOT a valid message; at least one batch child must be provided.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type Batch struct {
 	// The batch type: LOGGED, UNLOGGED or COUNTER. This field is mandatory; its default is LOGGED, as the zero value
 	// of primitive.BatchType is primitive.BatchTypeLogged. The LOGGED type is equivalent to a regular CQL3 batch
@@ -80,50 +82,16 @@ func (m *Batch) Flags() primitive.QueryFlag {
 	return flags
 }
 
-// Clone performs a deep copy of this batch message object
-func (m *Batch) Clone() Message {
-	var newBatchChildren []*BatchChild
-	for _, child := range m.Children {
-		newBatchChildren = append(newBatchChildren, child.Clone())
-	}
-
-	return &Batch{
-		Type:              m.Type,
-		Children:          newBatchChildren,
-		Consistency:       m.Consistency,
-		SerialConsistency: m.SerialConsistency.Clone(),
-		DefaultTimestamp:  m.DefaultTimestamp.Clone(),
-		Keyspace:          m.Keyspace,
-		NowInSeconds:      m.NowInSeconds.Clone(),
-	}
-}
-
+// BatchChild represents a BATCH child statement.
+// +k8s:deepcopy-gen=true
 type BatchChild struct {
-	// Either a string or []byte; the former should be the CQL statement to execute, the latter the prepared id of
-	// the statement to execute.
-	QueryOrId interface{}
+	// The CQL statement to execute. Exactly one of Query or Id must be present, never both.
+	Query string
+	// The prepared id of the statement to execute. Exactly one of Query or Id must be present, never both.
+	Id []byte
 	// Note: named values are in theory possible, but their server-side implementation is
 	// broken. See https://issues.apache.org/jira/browse/CASSANDRA-10246
 	Values []*primitive.Value
-}
-
-func (c *BatchChild) Clone() *BatchChild {
-	var newQueryOrId interface{}
-	if c.QueryOrId != nil {
-		switch queryOrId := c.QueryOrId.(type) {
-		case []byte:
-			newQueryOrId = primitive.CloneByteSlice(queryOrId)
-		default:
-			newQueryOrId = queryOrId
-		}
-	} else {
-		newQueryOrId = nil
-	}
-
-	return &BatchChild{
-		QueryOrId: newQueryOrId,
-		Values:    cloneValuesSlice(c.Values),
-	}
 }
 
 type batchCodec struct{}
@@ -145,25 +113,22 @@ func (c *batchCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 		return fmt.Errorf("cannot write BATCH query count: %w", err)
 	}
 	for i, child := range batch.Children {
-		switch queryOrId := child.QueryOrId.(type) {
-		case string:
+		if child.Query != "" {
 			if err = primitive.WriteByte(uint8(primitive.BatchChildTypeQueryString), dest); err != nil {
 				return fmt.Errorf("cannot write BATCH query kind 0 for child #%d: %w", i, err)
-			} else if queryOrId == "" {
+			} else if child.Query == "" {
 				return fmt.Errorf("cannot write empty BATCH query string for child #%d", i)
-			} else if err = primitive.WriteLongString(queryOrId, dest); err != nil {
+			} else if err = primitive.WriteLongString(child.Query, dest); err != nil {
 				return fmt.Errorf("cannot write BATCH query string for child #%d: %w", i, err)
 			}
-		case []byte:
+		} else {
 			if err = primitive.WriteByte(uint8(primitive.BatchChildTypePreparedId), dest); err != nil {
 				return fmt.Errorf("cannot write BATCH query kind 1 for child #%d: %w", i, err)
-			} else if len(queryOrId) == 0 {
+			} else if len(child.Id) == 0 {
 				return fmt.Errorf("cannot write empty BATCH query id for child #%d: %w", i, err)
-			} else if err = primitive.WriteShortBytes(queryOrId, dest); err != nil {
+			} else if err = primitive.WriteShortBytes(child.Id, dest); err != nil {
 				return fmt.Errorf("cannot write BATCH query id for child #%d: %w", i, err)
 			}
-		default:
-			return fmt.Errorf("unsupported BATCH child type for child #%d: %T", i, queryOrId)
 		}
 		if err = primitive.WritePositionalValues(child.Values, dest, version); err != nil {
 			return fmt.Errorf("cannot write BATCH positional values for child #%d: %w", i, err)
@@ -221,13 +186,10 @@ func (c *batchCodec) EncodedLength(msg Message, version primitive.ProtocolVersio
 	length += primitive.LengthOfShort // number of queries
 	for i, child := range batch.Children {
 		length += primitive.LengthOfByte // child type
-		switch stringOrId := child.QueryOrId.(type) {
-		case string:
-			length += primitive.LengthOfLongString(stringOrId)
-		case []byte:
-			length += primitive.LengthOfShortBytes(stringOrId)
-		default:
-			return -1, fmt.Errorf("unsupported BATCH child type for child #%d: %T", i, stringOrId)
+		if child.Query != "" {
+			length += primitive.LengthOfLongString(child.Query)
+		} else {
+			length += primitive.LengthOfShortBytes(child.Id)
 		}
 		if valuesLength, err := primitive.LengthOfPositionalValues(child.Values); err != nil {
 			return -1, fmt.Errorf("cannot compute length of BATCH positional values for child #%d: %w", i, err)
@@ -283,11 +245,11 @@ func (c *batchCodec) Decode(source io.Reader, version primitive.ProtocolVersion)
 		var child = &BatchChild{}
 		switch primitive.BatchChildType(childType) {
 		case primitive.BatchChildTypeQueryString:
-			if child.QueryOrId, err = primitive.ReadLongString(source); err != nil {
+			if child.Query, err = primitive.ReadLongString(source); err != nil {
 				return nil, fmt.Errorf("cannot read BATCH query string for child #%d: %w", i, err)
 			}
 		case primitive.BatchChildTypePreparedId:
-			if child.QueryOrId, err = primitive.ReadShortBytes(source); err != nil {
+			if child.Id, err = primitive.ReadShortBytes(source); err != nil {
 				return nil, fmt.Errorf("cannot read BATCH query id for child #%d: %w", i, err)
 			}
 		default:

@@ -49,6 +49,11 @@ const (
 	StartupOptionThrowOnOverload = "THROW_ON_OVERLOAD"
 )
 
+// Startup is the first request message that a client sends when establishing a connection. The server will respond by
+// either a Ready response message (in which case the connection is ready for queries) or with an Authenticate response
+// message (in which case credentials will need to be provided using a subsequent AuthResponse request message).
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type Startup struct {
 	// Currently supported options are:
 	// - "CQL_VERSION"
@@ -147,12 +152,6 @@ func (m *Startup) IsResponse() bool {
 
 func (m *Startup) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeStartup
-}
-
-func (m *Startup) Clone() Message {
-	return &Startup{
-		Options: primitive.CloneOptions(m.Options),
-	}
 }
 
 func (m *Startup) String() string {
