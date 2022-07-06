@@ -32,13 +32,11 @@ func TestBatch_Clone(t *testing.T) {
 				Contents: []byte{0x0a},
 			}},
 		}},
-		Consistency: primitive.ConsistencyLevelLocalOne,
-		SerialConsistency: &primitive.NillableConsistencyLevel{
-			Value: primitive.ConsistencyLevelSerial,
-		},
-		DefaultTimestamp: &primitive.NillableInt64{Value: 1},
-		Keyspace:         "ks1",
-		NowInSeconds:     &primitive.NillableInt32{Value: 2},
+		Consistency:       primitive.ConsistencyLevelLocalOne,
+		SerialConsistency: consistencyLevelPtr(primitive.ConsistencyLevelSerial),
+		DefaultTimestamp:  int64Ptr(1),
+		Keyspace:          "ks1",
+		NowInSeconds:      int32Ptr(2),
 	}
 	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
@@ -51,28 +49,24 @@ func TestBatch_Clone(t *testing.T) {
 		}},
 	}}
 	cloned.Consistency = primitive.ConsistencyLevelAll
-	cloned.SerialConsistency = &primitive.NillableConsistencyLevel{
-		Value: primitive.ConsistencyLevelLocalSerial,
-	}
-	cloned.DefaultTimestamp = &primitive.NillableInt64{
-		Value: 5,
-	}
+	cloned.SerialConsistency = consistencyLevelPtr(primitive.ConsistencyLevelLocalSerial)
+	cloned.DefaultTimestamp = int64Ptr(5)
 	cloned.Keyspace = "ks2"
-	cloned.NowInSeconds = &primitive.NillableInt32{Value: 9}
+	cloned.NowInSeconds = int32Ptr(9)
 	assert.Equal(t, "query", msg.Children[0].Query)
 	assert.Equal(t, "query2", cloned.Children[0].Query)
 	assert.Equal(t, primitive.BatchTypeLogged, msg.Type)
 	assert.Equal(t, primitive.BatchTypeUnlogged, cloned.Type)
 	assert.Equal(t, primitive.ConsistencyLevelLocalOne, msg.Consistency)
 	assert.Equal(t, primitive.ConsistencyLevelAll, cloned.Consistency)
-	assert.Equal(t, primitive.ConsistencyLevelSerial, msg.SerialConsistency.Value)
-	assert.Equal(t, primitive.ConsistencyLevelLocalSerial, cloned.SerialConsistency.Value)
-	assert.EqualValues(t, 1, msg.DefaultTimestamp.Value)
-	assert.EqualValues(t, 5, cloned.DefaultTimestamp.Value)
+	assert.Equal(t, primitive.ConsistencyLevelSerial, *msg.SerialConsistency)
+	assert.Equal(t, primitive.ConsistencyLevelLocalSerial, *cloned.SerialConsistency)
+	assert.EqualValues(t, 1, *msg.DefaultTimestamp)
+	assert.EqualValues(t, 5, *cloned.DefaultTimestamp)
 	assert.Equal(t, "ks1", msg.Keyspace)
 	assert.Equal(t, "ks2", cloned.Keyspace)
-	assert.EqualValues(t, 2, msg.NowInSeconds.Value)
-	assert.EqualValues(t, 9, cloned.NowInSeconds.Value)
+	assert.EqualValues(t, 2, *msg.NowInSeconds)
+	assert.EqualValues(t, 9, *cloned.NowInSeconds)
 	assert.NotEqual(t, msg, cloned)
 }
 
@@ -210,8 +204,8 @@ func TestBatchCodec_Encode(t *testing.T) {
 							},
 						},
 						Consistency:       primitive.ConsistencyLevelLocalQuorum,
-						SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
-						DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+						SerialConsistency: consistencyLevelPtr(primitive.ConsistencyLevelLocalSerial),
+						DefaultTimestamp:  int64Ptr(123),
 					},
 					[]byte{
 						byte(primitive.BatchTypeUnlogged),
@@ -305,10 +299,10 @@ func TestBatchCodec_Encode(t *testing.T) {
 						},
 					},
 					Consistency:       primitive.ConsistencyLevelLocalQuorum,
-					SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
-					DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+					SerialConsistency: consistencyLevelPtr(primitive.ConsistencyLevelLocalSerial),
+					DefaultTimestamp:  int64Ptr(123),
 					Keyspace:          "ks1",
-					NowInSeconds:      &primitive.NillableInt32{Value: 234},
+					NowInSeconds:      int32Ptr(234),
 				},
 				[]byte{
 					byte(primitive.BatchTypeUnlogged),
@@ -406,8 +400,8 @@ func TestBatchCodec_Encode(t *testing.T) {
 						},
 					},
 					Consistency:       primitive.ConsistencyLevelLocalQuorum,
-					SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
-					DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+					SerialConsistency: consistencyLevelPtr(primitive.ConsistencyLevelLocalSerial),
+					DefaultTimestamp:  int64Ptr(123),
 				},
 				[]byte{
 					byte(primitive.BatchTypeUnlogged),
@@ -500,8 +494,8 @@ func TestBatchCodec_Encode(t *testing.T) {
 						},
 					},
 					Consistency:       primitive.ConsistencyLevelLocalQuorum,
-					SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
-					DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+					SerialConsistency: consistencyLevelPtr(primitive.ConsistencyLevelLocalSerial),
+					DefaultTimestamp:  int64Ptr(123),
 					Keyspace:          "ks1",
 				},
 				[]byte{
@@ -647,8 +641,8 @@ func TestBatchCodec_EncodedLength(t *testing.T) {
 							},
 						},
 						Consistency:       primitive.ConsistencyLevelLocalQuorum,
-						SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
-						DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+						SerialConsistency: consistencyLevelPtr(primitive.ConsistencyLevelLocalSerial),
+						DefaultTimestamp:  int64Ptr(123),
 					},
 					primitive.LengthOfByte +
 						primitive.LengthOfShort + // children count
@@ -729,10 +723,10 @@ func TestBatchCodec_EncodedLength(t *testing.T) {
 						},
 					},
 					Consistency:       primitive.ConsistencyLevelLocalQuorum,
-					SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
-					DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+					SerialConsistency: consistencyLevelPtr(primitive.ConsistencyLevelLocalSerial),
+					DefaultTimestamp:  int64Ptr(123),
 					Keyspace:          "ks1",
-					NowInSeconds:      &primitive.NillableInt32{Value: 234},
+					NowInSeconds:      int32Ptr(234),
 				},
 				primitive.LengthOfByte +
 					primitive.LengthOfShort + // children count
@@ -814,8 +808,8 @@ func TestBatchCodec_EncodedLength(t *testing.T) {
 						},
 					},
 					Consistency:       primitive.ConsistencyLevelLocalQuorum,
-					SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
-					DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+					SerialConsistency: consistencyLevelPtr(primitive.ConsistencyLevelLocalSerial),
+					DefaultTimestamp:  int64Ptr(123),
 				},
 				primitive.LengthOfByte +
 					primitive.LengthOfShort + // children count
@@ -895,8 +889,8 @@ func TestBatchCodec_EncodedLength(t *testing.T) {
 						},
 					},
 					Consistency:       primitive.ConsistencyLevelLocalQuorum,
-					SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
-					DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+					SerialConsistency: consistencyLevelPtr(primitive.ConsistencyLevelLocalSerial),
+					DefaultTimestamp:  int64Ptr(123),
 					Keyspace:          "ks1",
 				},
 				primitive.LengthOfByte +
@@ -1067,8 +1061,8 @@ func TestBatchCodec_Decode(t *testing.T) {
 							},
 						},
 						Consistency:       primitive.ConsistencyLevelLocalQuorum,
-						SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
-						DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+						SerialConsistency: consistencyLevelPtr(primitive.ConsistencyLevelLocalSerial),
+						DefaultTimestamp:  int64Ptr(123),
 					},
 					nil,
 				},
@@ -1166,10 +1160,10 @@ func TestBatchCodec_Decode(t *testing.T) {
 						},
 					},
 					Consistency:       primitive.ConsistencyLevelLocalQuorum,
-					SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
-					DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+					SerialConsistency: consistencyLevelPtr(primitive.ConsistencyLevelLocalSerial),
+					DefaultTimestamp:  int64Ptr(123),
 					Keyspace:          "ks1",
-					NowInSeconds:      &primitive.NillableInt32{Value: 234},
+					NowInSeconds:      int32Ptr(234),
 				},
 				nil,
 			},
@@ -1261,8 +1255,8 @@ func TestBatchCodec_Decode(t *testing.T) {
 						},
 					},
 					Consistency:       primitive.ConsistencyLevelLocalQuorum,
-					SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
-					DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+					SerialConsistency: consistencyLevelPtr(primitive.ConsistencyLevelLocalSerial),
+					DefaultTimestamp:  int64Ptr(123),
 				},
 				nil,
 			},
@@ -1358,8 +1352,8 @@ func TestBatchCodec_Decode(t *testing.T) {
 						},
 					},
 					Consistency:       primitive.ConsistencyLevelLocalQuorum,
-					SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
-					DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+					SerialConsistency: consistencyLevelPtr(primitive.ConsistencyLevelLocalSerial),
+					DefaultTimestamp:  int64Ptr(123),
 					Keyspace:          "ks1",
 				},
 				nil,

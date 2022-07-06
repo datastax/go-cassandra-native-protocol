@@ -198,17 +198,17 @@ func (in *Batch) DeepCopyInto(out *Batch) {
 	}
 	if in.SerialConsistency != nil {
 		in, out := &in.SerialConsistency, &out.SerialConsistency
-		*out = new(primitive.NillableConsistencyLevel)
+		*out = new(primitive.ConsistencyLevel)
 		**out = **in
 	}
 	if in.DefaultTimestamp != nil {
 		in, out := &in.DefaultTimestamp, &out.DefaultTimestamp
-		*out = new(primitive.NillableInt64)
+		*out = new(int64)
 		**out = **in
 	}
 	if in.NowInSeconds != nil {
 		in, out := &in.NowInSeconds, &out.NowInSeconds
-		*out = new(primitive.NillableInt32)
+		*out = new(int32)
 		**out = **in
 	}
 	return
@@ -644,17 +644,17 @@ func (in *QueryOptions) DeepCopyInto(out *QueryOptions) {
 	}
 	if in.SerialConsistency != nil {
 		in, out := &in.SerialConsistency, &out.SerialConsistency
-		*out = new(primitive.NillableConsistencyLevel)
+		*out = new(primitive.ConsistencyLevel)
 		**out = **in
 	}
 	if in.DefaultTimestamp != nil {
 		in, out := &in.DefaultTimestamp, &out.DefaultTimestamp
-		*out = new(primitive.NillableInt64)
+		*out = new(int64)
 		**out = **in
 	}
 	if in.NowInSeconds != nil {
 		in, out := &in.NowInSeconds, &out.NowInSeconds
-		*out = new(primitive.NillableInt32)
+		*out = new(int32)
 		**out = **in
 	}
 	if in.ContinuousPagingOptions != nil {

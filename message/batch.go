@@ -36,18 +36,18 @@ type Batch struct {
 	Consistency primitive.ConsistencyLevel
 	// The (optional) serial consistency level to use when executing the query. Serial consistency is available
 	// starting with protocol version 3.
-	SerialConsistency *primitive.NillableConsistencyLevel
+	SerialConsistency *primitive.ConsistencyLevel
 	// The default timestamp for the query in microseconds (negative values are discouraged but supported for
 	// backward compatibility reasons except for the smallest negative value (-2^63) that is forbidden). If provided,
 	// this will replace the server-side assigned timestamp as default timestamp. Note that a timestamp in the query
 	// itself (that is, if the query has a USING TIMESTAMP clause) will still override this timestamp.
 	// Default timestamps are valid for protocol versions 3 and higher.
-	DefaultTimestamp *primitive.NillableInt64
+	DefaultTimestamp *int64
 	// The keyspace in which to execute queries, when the target table name is not qualified. Optional. Introduced in
 	// Protocol Version 5, also present in DSE protocol v2.
 	Keyspace string
 	// Introduced in Protocol Version 5, not present in DSE protocol versions.
-	NowInSeconds *primitive.NillableInt32
+	NowInSeconds *int32
 }
 
 func (m *Batch) IsResponse() bool {
@@ -148,12 +148,12 @@ func (c *batchCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 			return fmt.Errorf("cannot write BATCH query flags: %w", err)
 		}
 		if version.SupportsQueryFlag(primitive.QueryFlagSerialConsistency) && flags.Contains(primitive.QueryFlagSerialConsistency) {
-			if err = primitive.WriteShort(uint16(batch.SerialConsistency.Value), dest); err != nil {
+			if err = primitive.WriteShort(uint16(*batch.SerialConsistency), dest); err != nil {
 				return fmt.Errorf("cannot write BATCH serial consistency: %w", err)
 			}
 		}
 		if version.SupportsQueryFlag(primitive.QueryFlagDefaultTimestamp) && flags.Contains(primitive.QueryFlagDefaultTimestamp) {
-			if err = primitive.WriteLong(batch.DefaultTimestamp.Value, dest); err != nil {
+			if err = primitive.WriteLong(*batch.DefaultTimestamp, dest); err != nil {
 				return fmt.Errorf("cannot write BATCH default timestamp: %w", err)
 			}
 		}
@@ -165,7 +165,7 @@ func (c *batchCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 			}
 		}
 		if version.SupportsQueryFlag(primitive.QueryFlagNowInSeconds) && flags.Contains(primitive.QueryFlagNowInSeconds) {
-			if err = primitive.WriteInt(batch.NowInSeconds.Value, dest); err != nil {
+			if err = primitive.WriteInt(*batch.NowInSeconds, dest); err != nil {
 				return fmt.Errorf("cannot write BATCH now-in-seconds: %w", err)
 			}
 		}
@@ -283,18 +283,19 @@ func (c *batchCodec) Decode(source io.Reader, version primitive.ProtocolVersion)
 			return nil, errors.New("cannot use BATCH with named values, see CASSANDRA-10246")
 		}
 		if flags.Contains(primitive.QueryFlagSerialConsistency) {
-			batch.SerialConsistency = &primitive.NillableConsistencyLevel{}
-			var batchSerialConsistency uint16
-			if batchSerialConsistency, err = primitive.ReadShort(source); err != nil {
+			var batchSerialConsistencyUint uint16
+			if batchSerialConsistencyUint, err = primitive.ReadShort(source); err != nil {
 				return nil, fmt.Errorf("cannot read BATCH serial consistency: %w", err)
 			}
-			batch.SerialConsistency.Value = primitive.ConsistencyLevel(batchSerialConsistency)
+			batchSerialConsistency := primitive.ConsistencyLevel(batchSerialConsistencyUint)
+			batch.SerialConsistency = &batchSerialConsistency
 		}
 		if flags.Contains(primitive.QueryFlagDefaultTimestamp) {
-			batch.DefaultTimestamp = &primitive.NillableInt64{}
-			if batch.DefaultTimestamp.Value, err = primitive.ReadLong(source); err != nil {
+			var batchDefaultTimestamp int64
+			if batchDefaultTimestamp, err = primitive.ReadLong(source); err != nil {
 				return nil, fmt.Errorf("cannot read BATCH default timestamp: %w", err)
 			}
+			batch.DefaultTimestamp = &batchDefaultTimestamp
 		}
 		if version.SupportsQueryFlag(primitive.QueryFlagWithKeyspace) && flags.Contains(primitive.QueryFlagWithKeyspace) {
 			if batch.Keyspace, err = primitive.ReadString(source); err != nil {
@@ -302,10 +303,11 @@ func (c *batchCodec) Decode(source io.Reader, version primitive.ProtocolVersion)
 			}
 		}
 		if version.SupportsQueryFlag(primitive.QueryFlagNowInSeconds) && flags.Contains(primitive.QueryFlagNowInSeconds) {
-			batch.NowInSeconds = &primitive.NillableInt32{}
-			if batch.NowInSeconds.Value, err = primitive.ReadInt(source); err != nil {
+			var batchNowInSeconds int32
+			if batchNowInSeconds, err = primitive.ReadInt(source); err != nil {
 				return nil, fmt.Errorf("cannot read BATCH now-in-seconds: %w", err)
 			}
+			batch.NowInSeconds = &batchNowInSeconds
 		}
 	}
 	return batch, nil
