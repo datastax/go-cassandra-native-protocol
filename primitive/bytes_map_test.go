@@ -18,9 +18,10 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestReadBytesMap(t *testing.T) {
@@ -76,7 +77,7 @@ func TestReadBytesMap(t *testing.T) {
 			[]byte{},
 			fmt.Errorf(
 				"cannot read [bytes map] entry 0 key: %w",
-					fmt.Errorf("cannot read [string] content: %w", errors.New("unexpected EOF")),
+				fmt.Errorf("cannot read [string] content: %w", errors.New("unexpected EOF")),
 			),
 		},
 		{

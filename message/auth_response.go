@@ -17,8 +17,9 @@ package message
 import (
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 // AuthResponse is a request message sent in reply to an Authenticate or AuthChallenge response, and contains the

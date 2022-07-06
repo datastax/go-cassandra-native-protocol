@@ -16,13 +16,15 @@ package client
 
 import (
 	"bytes"
+	"net"
+	"strings"
+
+	"github.com/rs/zerolog/log"
+
 	"github.com/datastax/go-cassandra-native-protocol/datatype"
 	"github.com/datastax/go-cassandra-native-protocol/frame"
 	"github.com/datastax/go-cassandra-native-protocol/message"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/rs/zerolog/log"
-	"net"
-	"strings"
 )
 
 // Creates a new RequestHandler to handle queries to system tables (system.local and system.peers).

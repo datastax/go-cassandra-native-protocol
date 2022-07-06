@@ -17,8 +17,9 @@ package datatype
 import (
 	"bytes"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 // UserDefined is a data type that represents a CQL user-defined type.

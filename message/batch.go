@@ -17,8 +17,9 @@ package message
 import (
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 // Batch is a BATCH request message. The zero value is NOT a valid message; at least one batch child must be provided.

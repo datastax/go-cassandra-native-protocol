@@ -17,9 +17,10 @@ package datacodec
 import (
 	"bytes"
 	"fmt"
+	"reflect"
+
 	"github.com/datastax/go-cassandra-native-protocol/datatype"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"reflect"
 )
 
 func NewUserDefined(dataType *datatype.UserDefined) (Codec, error) {

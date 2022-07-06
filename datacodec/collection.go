@@ -17,11 +17,12 @@ package datacodec
 import (
 	"bytes"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/datatype"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
 	"math"
 	"reflect"
+
+	"github.com/datastax/go-cassandra-native-protocol/datatype"
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 func NewList(dataType *datatype.List) (Codec, error) {

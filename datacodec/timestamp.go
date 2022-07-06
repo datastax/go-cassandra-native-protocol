@@ -15,9 +15,10 @@
 package datacodec
 
 import (
+	"time"
+
 	"github.com/datastax/go-cassandra-native-protocol/datatype"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"time"
 )
 
 const TimestampLayoutDefault = "2006-01-02T15:04:05.999999999-07:00"

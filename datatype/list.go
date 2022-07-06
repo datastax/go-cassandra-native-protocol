@@ -16,8 +16,9 @@ package datatype
 
 import (
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 // List is a data type that represents a CQL list type.

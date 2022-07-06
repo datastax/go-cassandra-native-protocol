@@ -15,8 +15,9 @@
 package message
 
 import (
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 type Message interface {

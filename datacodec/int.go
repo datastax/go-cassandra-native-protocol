@@ -16,9 +16,10 @@ package datacodec
 
 import (
 	"encoding/binary"
+	"strconv"
+
 	"github.com/datastax/go-cassandra-native-protocol/datatype"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"strconv"
 )
 
 // Int is a codec for the CQL int type. Its preferred Go type is int32, but it can encode from and decode to

@@ -17,8 +17,9 @@ package message
 import (
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 // AuthSuccess is a response message sent in reply to an AuthResponse request, to indicate that the authentication was

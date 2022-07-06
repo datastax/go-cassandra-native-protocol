@@ -17,10 +17,11 @@ package datacodec
 import (
 	"bytes"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/datatype"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
 	"time"
+
+	"github.com/datastax/go-cassandra-native-protocol/datatype"
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 // CqlDuration is a CQL type introduced in protocol v5. A duration can either be positive or negative. If a duration is

@@ -15,10 +15,12 @@
 package datacodec
 
 import (
-	"github.com/datastax/go-cassandra-native-protocol/datatype"
-	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/datastax/go-cassandra-native-protocol/datatype"
 )
 
 func TestNewCodec(t *testing.T) {

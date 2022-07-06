@@ -15,10 +15,12 @@
 package client
 
 import (
+	"strings"
+
+	"github.com/rs/zerolog/log"
+
 	"github.com/datastax/go-cassandra-native-protocol/frame"
 	"github.com/datastax/go-cassandra-native-protocol/message"
-	"github.com/rs/zerolog/log"
-	"strings"
 )
 
 // A RequestHandler to handle server-side heartbeats. This handler assumes that every OPTIONS request is a heartbeat

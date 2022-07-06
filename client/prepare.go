@@ -15,9 +15,10 @@
 package client
 
 import (
+	"github.com/rs/zerolog/log"
+
 	"github.com/datastax/go-cassandra-native-protocol/frame"
 	"github.com/datastax/go-cassandra-native-protocol/message"
-	"github.com/rs/zerolog/log"
 )
 
 // A RequestHandler to handle PREPARE and EXECUTE requests for the given query string, effectively emulating the

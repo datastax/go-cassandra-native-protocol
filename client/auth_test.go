@@ -15,8 +15,9 @@
 package client
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAuthCredentials_Copy(t *testing.T) {

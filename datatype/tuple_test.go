@@ -18,10 +18,12 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 func TestTupleType(t *testing.T) {

@@ -16,9 +16,11 @@ package message
 
 import (
 	"bytes"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 func TestContinuousPagingOptions_DeepCopy(t *testing.T) {

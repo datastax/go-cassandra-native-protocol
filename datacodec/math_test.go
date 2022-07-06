@@ -15,9 +15,10 @@
 package datacodec
 
 import (
-	"github.com/stretchr/testify/assert"
 	"math"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_addExact(t *testing.T) {

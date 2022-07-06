@@ -16,9 +16,10 @@ package datacodec
 
 import (
 	"encoding/binary"
+	"math/big"
+
 	"github.com/datastax/go-cassandra-native-protocol/datatype"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"math/big"
 )
 
 // CqlDecimal is the poor man's representation in Go of a CQL decimal value, since there is no built-in representation

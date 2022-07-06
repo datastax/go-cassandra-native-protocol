@@ -15,10 +15,12 @@
 package frame
 
 import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+
 	"github.com/datastax/go-cassandra-native-protocol/message"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestFrame_DeepCopy(t *testing.T) {

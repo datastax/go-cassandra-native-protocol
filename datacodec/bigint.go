@@ -16,10 +16,11 @@ package datacodec
 
 import (
 	"encoding/binary"
-	"github.com/datastax/go-cassandra-native-protocol/datatype"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"math/big"
 	"strconv"
+
+	"github.com/datastax/go-cassandra-native-protocol/datatype"
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 // Bigint is a codec for the CQL bigint type. Its preferred Go type is int64, but it can encode from and decode

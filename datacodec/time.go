@@ -15,9 +15,10 @@
 package datacodec
 
 import (
+	"time"
+
 	"github.com/datastax/go-cassandra-native-protocol/datatype"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"time"
 )
 
 const (

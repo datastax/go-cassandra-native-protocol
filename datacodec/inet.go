@@ -16,9 +16,10 @@ package datacodec
 
 import (
 	"errors"
+	"net"
+
 	"github.com/datastax/go-cassandra-native-protocol/datatype"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"net"
 )
 
 // Inet is a codec for the CQL inet type. Its preferred Go type is net.IP but it can encode from and decode to

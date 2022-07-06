@@ -16,9 +16,10 @@ package message
 
 import (
 	"fmt"
+	"io"
+
 	"github.com/datastax/go-cassandra-native-protocol/datatype"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"io"
 )
 
 // ColumnMetadata represents a column in a PreparedResult message.

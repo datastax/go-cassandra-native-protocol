@@ -16,8 +16,9 @@ package message
 
 import (
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 // Revise was called CANCEL in DSE protocol version 1 and was renamed to REVISE_REQUEST in version 2.

@@ -16,13 +16,15 @@ package frame
 
 import (
 	"bytes"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/datastax/go-cassandra-native-protocol/compression/lz4"
 	"github.com/datastax/go-cassandra-native-protocol/compression/snappy"
 	"github.com/datastax/go-cassandra-native-protocol/message"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 // The tests in this file are meant to focus on encoding / decoding of frame headers and other common parts of

@@ -15,12 +15,13 @@
 package datacodec
 
 import (
-	"github.com/stretchr/testify/assert"
 	"math"
 	"math/big"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_int64ToInt(t *testing.T) {

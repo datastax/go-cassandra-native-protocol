@@ -15,10 +15,11 @@
 package datacodec
 
 import (
-	"github.com/datastax/go-cassandra-native-protocol/datatype"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"math"
 	"strconv"
+
+	"github.com/datastax/go-cassandra-native-protocol/datatype"
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 // Tinyint is a codec for the CQL tinyint type. Its preferred Go type is int8, but it can encode from and decode

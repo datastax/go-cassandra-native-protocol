@@ -16,10 +16,12 @@ package segment
 
 import (
 	"bytes"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+
 	"github.com/datastax/go-cassandra-native-protocol/compression/lz4"
 	"github.com/datastax/go-cassandra-native-protocol/crc"
-	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func Test_codec_DecodeSegment(t *testing.T) {

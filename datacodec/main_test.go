@@ -16,14 +16,16 @@ package datacodec
 
 import (
 	"encoding/binary"
-	"github.com/datastax/go-cassandra-native-protocol/datatype"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"math/big"
 	"net"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/datastax/go-cassandra-native-protocol/datatype"
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 const (
@@ -111,7 +113,7 @@ func assertErrorMessage(t *testing.T, expectedMessage string, actual error) {
 
 type wrongDataType struct{}
 
-func (w wrongDataType) String() string               { return "666" }
-func (w wrongDataType) AsCql() string                { return "666" }
-func (w wrongDataType) Code() primitive.DataTypeCode { return 666 }
-func (w wrongDataType) DeepCopyDataType() datatype.DataType     { return &wrongDataType{} }
+func (w wrongDataType) String() string                      { return "666" }
+func (w wrongDataType) AsCql() string                       { return "666" }
+func (w wrongDataType) Code() primitive.DataTypeCode        { return 666 }
+func (w wrongDataType) DeepCopyDataType() datatype.DataType { return &wrongDataType{} }

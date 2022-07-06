@@ -3,8 +3,9 @@
 package datacodec
 
 import (
-	datatype "github.com/datastax/go-cassandra-native-protocol/datatype"
 	mock "github.com/stretchr/testify/mock"
+
+	datatype "github.com/datastax/go-cassandra-native-protocol/datatype"
 
 	primitive "github.com/datastax/go-cassandra-native-protocol/primitive"
 )

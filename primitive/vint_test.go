@@ -17,10 +17,11 @@ package primitive
 import (
 	"bytes"
 	"errors"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"math"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var (

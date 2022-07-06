@@ -18,9 +18,10 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"github.com/pierrec/lz4/v4"
 	"io"
 	"io/ioutil"
+
+	"github.com/pierrec/lz4/v4"
 )
 
 // Compressor satisfies frame.BodyCompressor and segment.PayloadCompressor for the LZ4 algorithm.

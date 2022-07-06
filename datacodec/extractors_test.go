@@ -15,9 +15,10 @@
 package datacodec
 
 import (
-	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_sliceExtractor_get(t *testing.T) {

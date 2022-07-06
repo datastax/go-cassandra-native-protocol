@@ -16,8 +16,9 @@ package message
 
 import (
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 // ContinuousPagingOptions holds options for DSE continuous paging feature. Valid for QUERY and EXECUTE messages.
