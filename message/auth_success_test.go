@@ -22,12 +22,12 @@ import (
 	"testing"
 )
 
-func TestAuthSuccess_Clone(t *testing.T) {
+func TestAuthSuccess_DeepCopy(t *testing.T) {
 	token := []byte{0xca, 0xfe, 0xba, 0xbe}
 	msg := &AuthSuccess{
 		Token: token,
 	}
-	cloned := msg.Clone().(*AuthSuccess)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 	cloned.Token = []byte{0xcb, 0xfd, 0xbc, 0xba}
 	assert.Equal(t, []byte{0xca, 0xfe, 0xba, 0xbe}, token)

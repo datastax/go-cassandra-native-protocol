@@ -33,7 +33,7 @@ var Bigint Codec = &bigintCodec{dataType: datatype.Bigint}
 var Counter Codec = &bigintCodec{dataType: datatype.Counter}
 
 type bigintCodec struct {
-	dataType datatype.PrimitiveType
+	dataType *datatype.PrimitiveType
 }
 
 func (c *bigintCodec) DataType() datatype.DataType {

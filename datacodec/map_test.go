@@ -27,7 +27,7 @@ import (
 func TestNewMap(t *testing.T) {
 	tests := []struct {
 		name     string
-		dataType datatype.MapType
+		dataType *datatype.MapType
 		want     Codec
 		wantErr  string
 	}{
@@ -217,7 +217,7 @@ func Test_mapCodec_Encode(t *testing.T) {
 				{"map<int,text> one elem", mapSimple, map[int]string{12: "abc"}, mapOneTwoAbcBytes4, ""},
 				{"map<int,text> non-empty", mapSimple, map[int]string{12: "abc"}, mapOneTwoAbcBytes4, ""},
 				{"map<int,text> map pointer", mapSimple, &map[int]string{12: "abc"}, mapOneTwoAbcBytes4, ""},
-				{"map<int,text> non-empty elems pointesr", mapSimple, map[*int]*string{intPtr(12): stringPtr("abc")}, mapOneTwoAbcBytes4, ""},
+				{"map<int,text> non-empty elems pointers", mapSimple, map[*int]*string{intPtr(12): stringPtr("abc")}, mapOneTwoAbcBytes4, ""},
 				{"map<int,text> non-empty map pointer elems pointers", mapSimple, &map[*int]*string{intPtr(12): stringPtr("abc")}, mapOneTwoAbcBytes4, ""},
 				{"map<int,text> non-empty interface{}", mapSimple, map[int]interface{}{12: "abc"}, mapOneTwoAbcBytes4, ""},
 				{"map<int,text> nil key", mapSimple, map[interface{}]interface{}{nil: "abc"}, []byte{0x0, 0x0, 0x0, 0x1, 0xff, 0xff, 0xff, 0xff, 0x0, 0x0, 0x0, 0x3, a, b, c}, ""},

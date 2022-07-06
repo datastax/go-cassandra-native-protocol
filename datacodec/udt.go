@@ -22,14 +22,14 @@ import (
 	"reflect"
 )
 
-func NewUserDefined(dataType datatype.UserDefinedType) (Codec, error) {
+func NewUserDefined(dataType *datatype.UserDefinedType) (Codec, error) {
 	if dataType == nil {
 		return nil, ErrNilDataType
 	}
-	fieldCodecs := make([]Codec, len(dataType.GetFieldTypes()))
-	for i, fieldType := range dataType.GetFieldTypes() {
+	fieldCodecs := make([]Codec, len(dataType.FieldTypes))
+	for i, fieldType := range dataType.FieldTypes {
 		if fieldCodec, err := NewCodec(fieldType); err != nil {
-			return nil, fmt.Errorf("cannot create codec for user-defined type field %d (%s): %w", i, dataType.GetFieldNames()[i], err)
+			return nil, fmt.Errorf("cannot create codec for user-defined type field %d (%s): %w", i, dataType.FieldNames[i], err)
 		} else {
 			fieldCodecs[i] = fieldCodec
 		}
@@ -38,7 +38,7 @@ func NewUserDefined(dataType datatype.UserDefinedType) (Codec, error) {
 }
 
 type udtCodec struct {
-	dataType    datatype.UserDefinedType
+	dataType    *datatype.UserDefinedType
 	fieldCodecs []Codec
 }
 
@@ -52,7 +52,7 @@ func (c *udtCodec) Encode(source interface{}, version primitive.ProtocolVersion)
 	} else {
 		var ext extractor
 		if ext, err = c.createExtractor(source); err == nil && ext != nil {
-			dest, err = writeUdt(ext, c.dataType.GetFieldNames(), c.fieldCodecs, version)
+			dest, err = writeUdt(ext, c.dataType.FieldNames, c.fieldCodecs, version)
 		}
 	}
 	if err != nil {
@@ -68,7 +68,7 @@ func (c *udtCodec) Decode(source []byte, dest interface{}, version primitive.Pro
 	} else {
 		var inj injector
 		if inj, err = c.createInjector(dest, wasNull); err == nil && inj != nil {
-			err = readUdt(source, inj, c.dataType.GetFieldNames(), c.fieldCodecs, version)
+			err = readUdt(source, inj, c.dataType.FieldNames, c.fieldCodecs, version)
 		}
 	}
 	if err != nil {

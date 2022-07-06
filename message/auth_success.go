@@ -21,6 +21,10 @@ import (
 	"io"
 )
 
+// AuthSuccess is a response message sent in reply to an AuthResponse request, to indicate that the authentication was
+// successful.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type AuthSuccess struct {
 	Token []byte
 }
@@ -35,13 +39,6 @@ func (m *AuthSuccess) GetOpCode() primitive.OpCode {
 
 func (m *AuthSuccess) String() string {
 	return "AUTH_SUCCESS"
-}
-
-// Performs a deep copy of this message object.
-func (m *AuthSuccess) Clone() Message {
-	return &AuthSuccess{
-		Token: primitive.CloneByteSlice(m.Token),
-	}
 }
 
 type authSuccessCodec struct{}

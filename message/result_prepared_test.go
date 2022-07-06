@@ -22,7 +22,7 @@ import (
 	"testing"
 )
 
-func TestPreparedResult_Clone(t *testing.T) {
+func TestPreparedResult_DeepCopy(t *testing.T) {
 	msg := &PreparedResult{
 		PreparedQueryId:  []byte{0x12},
 		ResultMetadataId: []byte{0x23},
@@ -56,7 +56,7 @@ func TestPreparedResult_Clone(t *testing.T) {
 		},
 	}
 
-	cloned := msg.Clone().(*PreparedResult)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 
 	cloned.PreparedQueryId = []byte{0x42}
@@ -521,10 +521,10 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 				{
 					"prepared result without bound variables",
 					&PreparedResult{PreparedQueryId: []byte{1, 2, 3, 4}},
-					primitive.LengthOfInt + //result type
+					primitive.LengthOfInt + // result type
 						primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
 						primitive.LengthOfInt + // flags
-						primitive.LengthOfInt + //column count
+						primitive.LengthOfInt + // column count
 						primitive.LengthOfInt + // flags
 						primitive.LengthOfInt, // column count
 					nil,
@@ -545,14 +545,14 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 							},
 						},
 					},
-					primitive.LengthOfInt + //result type
+					primitive.LengthOfInt + // result type
 						primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
 						primitive.LengthOfInt + // flags
 						primitive.LengthOfInt + // column count
 						primitive.LengthOfString("ks1") +
 						primitive.LengthOfString("table1") +
 						primitive.LengthOfString("col1") +
-						primitive.LengthOfShort + //col type
+						primitive.LengthOfShort + // col type
 						primitive.LengthOfInt + // flags
 						primitive.LengthOfInt, // column count
 					nil,
@@ -585,20 +585,20 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 							},
 						},
 					},
-					primitive.LengthOfInt + //result type
+					primitive.LengthOfInt + // result type
 						primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
 						primitive.LengthOfInt + // flags
 						primitive.LengthOfInt + // column count
 						primitive.LengthOfString("ks1") +
 						primitive.LengthOfString("table1") +
 						primitive.LengthOfString("col1") +
-						primitive.LengthOfShort + //col type
+						primitive.LengthOfShort + // col type
 						primitive.LengthOfInt + // flags
 						primitive.LengthOfInt + // column count
 						primitive.LengthOfString("ks1") +
 						primitive.LengthOfString("table1") +
 						primitive.LengthOfString("col2") +
-						primitive.LengthOfShort, //col type
+						primitive.LengthOfShort, // col type
 					nil,
 				},
 			}
@@ -618,10 +618,10 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 				{
 					"prepared result without bound variables",
 					&PreparedResult{PreparedQueryId: []byte{1, 2, 3, 4}},
-					primitive.LengthOfInt + //result type
+					primitive.LengthOfInt + // result type
 						primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
 						primitive.LengthOfInt + // flags
-						primitive.LengthOfInt + //column count
+						primitive.LengthOfInt + // column count
 						primitive.LengthOfInt + // pk count
 						primitive.LengthOfInt + // flags
 						primitive.LengthOfInt, // column count
@@ -644,7 +644,7 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 							},
 						},
 					},
-					primitive.LengthOfInt + //result type
+					primitive.LengthOfInt + // result type
 						primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
 						primitive.LengthOfInt + // flags
 						primitive.LengthOfInt + // column count
@@ -653,7 +653,7 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 						primitive.LengthOfString("ks1") +
 						primitive.LengthOfString("table1") +
 						primitive.LengthOfString("col1") +
-						primitive.LengthOfShort + //col type
+						primitive.LengthOfShort + // col type
 						primitive.LengthOfInt + // flags
 						primitive.LengthOfInt, // column count
 					nil,
@@ -687,7 +687,7 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 							},
 						},
 					},
-					primitive.LengthOfInt + //result type
+					primitive.LengthOfInt + // result type
 						primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
 						primitive.LengthOfInt + // flags
 						primitive.LengthOfInt + // column count
@@ -696,13 +696,13 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 						primitive.LengthOfString("ks1") +
 						primitive.LengthOfString("table1") +
 						primitive.LengthOfString("col1") +
-						primitive.LengthOfShort + //col type
+						primitive.LengthOfShort + // col type
 						primitive.LengthOfInt + // flags
 						primitive.LengthOfInt + // column count
 						primitive.LengthOfString("ks1") +
 						primitive.LengthOfString("table1") +
 						primitive.LengthOfString("col2") +
-						primitive.LengthOfShort, //col type
+						primitive.LengthOfShort, // col type
 					nil,
 				},
 			}
@@ -725,11 +725,11 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 						PreparedQueryId:  []byte{1, 2, 3, 4},
 						ResultMetadataId: []byte{5, 6, 7, 8},
 					},
-					primitive.LengthOfInt + //result type
+					primitive.LengthOfInt + // result type
 						primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
 						primitive.LengthOfShortBytes([]byte{5, 6, 7, 8}) +
 						primitive.LengthOfInt + // flags
-						primitive.LengthOfInt + //column count
+						primitive.LengthOfInt + // column count
 						primitive.LengthOfInt + // pk count
 						primitive.LengthOfInt + // flags
 						primitive.LengthOfInt, // column count
@@ -753,17 +753,17 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 							},
 						},
 					},
-					primitive.LengthOfInt + //result type
+					primitive.LengthOfInt + // result type
 						primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
 						primitive.LengthOfShortBytes([]byte{5, 6, 7, 8}) +
 						primitive.LengthOfInt + // flags
-						primitive.LengthOfInt + //column count
+						primitive.LengthOfInt + // column count
 						primitive.LengthOfInt + // pk count
 						primitive.LengthOfShort + // pk1
 						primitive.LengthOfString("ks1") +
 						primitive.LengthOfString("table1") +
 						primitive.LengthOfString("col1") +
-						primitive.LengthOfShort + //col type
+						primitive.LengthOfShort + // col type
 						primitive.LengthOfInt + // flags
 						primitive.LengthOfInt, // column count
 					nil,
@@ -798,23 +798,23 @@ func TestResultCodec_EncodedLength_Prepared(test *testing.T) {
 							},
 						},
 					},
-					primitive.LengthOfInt + //result type
+					primitive.LengthOfInt + // result type
 						primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) +
 						primitive.LengthOfShortBytes([]byte{5, 6, 7, 8}) +
 						primitive.LengthOfInt + // flags
-						primitive.LengthOfInt + //column count
+						primitive.LengthOfInt + // column count
 						primitive.LengthOfInt + // pk count
 						primitive.LengthOfShort + // pk1
 						primitive.LengthOfString("ks1") +
 						primitive.LengthOfString("table1") +
 						primitive.LengthOfString("col1") +
-						primitive.LengthOfShort + //col type
+						primitive.LengthOfShort + // col type
 						primitive.LengthOfInt + // flags
 						primitive.LengthOfInt + // column count
 						primitive.LengthOfString("ks1") +
 						primitive.LengthOfString("table1") +
 						primitive.LengthOfString("col2") +
-						primitive.LengthOfShort, //col type
+						primitive.LengthOfShort, // col type
 					nil,
 				},
 			}

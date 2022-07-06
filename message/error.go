@@ -28,6 +28,9 @@ type Error interface {
 
 // SERVER ERROR
 
+// ServerError is a server error response.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type ServerError struct {
 	ErrorMessage string
 }
@@ -38,11 +41,6 @@ func (m *ServerError) IsResponse() bool {
 
 func (m *ServerError) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
-}
-
-func (m *ServerError) Clone() Message {
-	newObj := *m
-	return &newObj
 }
 
 func (m *ServerError) GetErrorCode() primitive.ErrorCode {
@@ -59,6 +57,9 @@ func (m *ServerError) String() string {
 
 // PROTOCOL ERROR
 
+// ProtocolError is a protocol error response.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type ProtocolError struct {
 	ErrorMessage string
 }
@@ -69,11 +70,6 @@ func (m *ProtocolError) IsResponse() bool {
 
 func (m *ProtocolError) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
-}
-
-func (m *ProtocolError) Clone() Message {
-	newObj := *m
-	return &newObj
 }
 
 func (m *ProtocolError) GetErrorCode() primitive.ErrorCode {
@@ -90,6 +86,9 @@ func (m *ProtocolError) String() string {
 
 // AUTHENTICATION ERROR
 
+// AuthenticationError is an authentication error response.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type AuthenticationError struct {
 	ErrorMessage string
 }
@@ -100,11 +99,6 @@ func (m *AuthenticationError) IsResponse() bool {
 
 func (m *AuthenticationError) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
-}
-
-func (m *AuthenticationError) Clone() Message {
-	newObj := *m
-	return &newObj
 }
 
 func (m *AuthenticationError) GetErrorCode() primitive.ErrorCode {
@@ -121,6 +115,9 @@ func (m *AuthenticationError) String() string {
 
 // OVERLOADED
 
+// Overloaded is an error response sent when the coordinator is overloaded.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type Overloaded struct {
 	ErrorMessage string
 }
@@ -131,11 +128,6 @@ func (m *Overloaded) IsResponse() bool {
 
 func (m *Overloaded) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
-}
-
-func (m *Overloaded) Clone() Message {
-	newObj := *m
-	return &newObj
 }
 
 func (m *Overloaded) GetErrorCode() primitive.ErrorCode {
@@ -152,6 +144,9 @@ func (m *Overloaded) String() string {
 
 // IS BOOTSTRAPPING
 
+// IsBootstrapping is an error response sent when the coordinator is bootstrapping.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type IsBootstrapping struct {
 	ErrorMessage string
 }
@@ -162,11 +157,6 @@ func (m *IsBootstrapping) IsResponse() bool {
 
 func (m *IsBootstrapping) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
-}
-
-func (m *IsBootstrapping) Clone() Message {
-	newObj := *m
-	return &newObj
 }
 
 func (m *IsBootstrapping) GetErrorCode() primitive.ErrorCode {
@@ -183,6 +173,9 @@ func (m *IsBootstrapping) String() string {
 
 // TRUNCATE ERROR
 
+// TruncateError is an error response notifying that a TRUNCATE statement failed.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type TruncateError struct {
 	ErrorMessage string
 }
@@ -193,11 +186,6 @@ func (m *TruncateError) IsResponse() bool {
 
 func (m *TruncateError) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
-}
-
-func (m *TruncateError) Clone() Message {
-	newObj := *m
-	return &newObj
 }
 
 func (m *TruncateError) GetErrorCode() primitive.ErrorCode {
@@ -214,6 +202,9 @@ func (m *TruncateError) String() string {
 
 // SYNTAX ERROR
 
+// SyntaxError is an error response notifying that the query has a syntax error.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type SyntaxError struct {
 	ErrorMessage string
 }
@@ -224,11 +215,6 @@ func (m *SyntaxError) IsResponse() bool {
 
 func (m *SyntaxError) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
-}
-
-func (m *SyntaxError) Clone() Message {
-	newObj := *m
-	return &newObj
 }
 
 func (m *SyntaxError) GetErrorCode() primitive.ErrorCode {
@@ -245,6 +231,9 @@ func (m *SyntaxError) String() string {
 
 // UNAUTHORIZED
 
+// Unauthorized is an error response notifying that the logged user is not authorized to perform the request.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type Unauthorized struct {
 	ErrorMessage string
 }
@@ -255,11 +244,6 @@ func (m *Unauthorized) IsResponse() bool {
 
 func (m *Unauthorized) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
-}
-
-func (m *Unauthorized) Clone() Message {
-	newObj := *m
-	return &newObj
 }
 
 func (m *Unauthorized) GetErrorCode() primitive.ErrorCode {
@@ -276,6 +260,9 @@ func (m *Unauthorized) String() string {
 
 // INVALID
 
+// Invalid is an error response sent when the query is syntactically correct but invalid.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type Invalid struct {
 	ErrorMessage string
 }
@@ -286,11 +273,6 @@ func (m *Invalid) IsResponse() bool {
 
 func (m *Invalid) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
-}
-
-func (m *Invalid) Clone() Message {
-	newObj := *m
-	return &newObj
 }
 
 func (m *Invalid) GetErrorCode() primitive.ErrorCode {
@@ -307,6 +289,9 @@ func (m *Invalid) String() string {
 
 // CONFIG ERROR
 
+// ConfigError is an error response sent when the query cannot be executed due to some configuration issue.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type ConfigError struct {
 	ErrorMessage string
 }
@@ -317,11 +302,6 @@ func (m *ConfigError) IsResponse() bool {
 
 func (m *ConfigError) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
-}
-
-func (m *ConfigError) Clone() Message {
-	newObj := *m
-	return &newObj
 }
 
 func (m *ConfigError) GetErrorCode() primitive.ErrorCode {
@@ -338,6 +318,9 @@ func (m *ConfigError) String() string {
 
 // UNAVAILABLE
 
+// Unavailable is an error response sent when the coordinator knows that the consistency level cannot be fulfilled.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type Unavailable struct {
 	ErrorMessage string
 	// The consistency level of the query that triggered the exception.
@@ -355,11 +338,6 @@ func (m *Unavailable) IsResponse() bool {
 
 func (m *Unavailable) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
-}
-
-func (m *Unavailable) Clone() Message {
-	newObj := *m
-	return &newObj
 }
 
 func (m *Unavailable) GetErrorCode() primitive.ErrorCode {
@@ -383,6 +361,10 @@ func (m *Unavailable) String() string {
 
 // READ TIMEOUT
 
+// ReadTimeout is an error response sent when the coordinator does not receive enough responses from replicas for a read
+// query.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type ReadTimeout struct {
 	ErrorMessage string
 	// The consistency level of the query that triggered the exception.
@@ -404,11 +386,6 @@ func (m *ReadTimeout) IsResponse() bool {
 
 func (m *ReadTimeout) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
-}
-
-func (m *ReadTimeout) Clone() Message {
-	newObj := *m
-	return &newObj
 }
 
 func (m *ReadTimeout) GetErrorCode() primitive.ErrorCode {
@@ -433,6 +410,10 @@ func (m *ReadTimeout) String() string {
 
 // WRITE TIMEOUT
 
+// WriteTimeout is an error response sent when the coordinator does not receive enough responses from replicas for a
+// write query.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type WriteTimeout struct {
 	ErrorMessage string
 	// The consistency level of the query that triggered the exception.
@@ -453,11 +434,6 @@ func (m *WriteTimeout) IsResponse() bool {
 
 func (m *WriteTimeout) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
-}
-
-func (m *WriteTimeout) Clone() Message {
-	newObj := *m
-	return &newObj
 }
 
 func (m *WriteTimeout) GetErrorCode() primitive.ErrorCode {
@@ -483,6 +459,9 @@ func (m *WriteTimeout) String() string {
 
 // READ FAILURE
 
+// ReadFailure is an error response sent when the coordinator receives a read failure from a replica.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type ReadFailure struct {
 	ErrorMessage string
 	// The consistency level of the query that triggered the exception.
@@ -509,19 +488,6 @@ func (m *ReadFailure) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
 }
 
-func (m *ReadFailure) Clone() Message {
-	newObj := &ReadFailure{
-		ErrorMessage:   m.ErrorMessage,
-		Consistency:    m.Consistency,
-		Received:       m.Received,
-		BlockFor:       m.BlockFor,
-		NumFailures:    m.NumFailures,
-		FailureReasons: cloneFailureReasons(m.FailureReasons),
-		DataPresent:    m.DataPresent,
-	}
-	return newObj
-}
-
 func (m *ReadFailure) GetErrorCode() primitive.ErrorCode {
 	return primitive.ErrorCodeReadFailure
 }
@@ -544,6 +510,9 @@ func (m *ReadFailure) String() string {
 
 // WRITE FAILURE
 
+// WriteFailure is an error response sent when the coordinator receives a write failure from a replica.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type WriteFailure struct {
 	ErrorMessage string
 	// The consistency level of the query that triggered the exception.
@@ -570,18 +539,6 @@ func (m *WriteFailure) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
 }
 
-func (m *WriteFailure) Clone() Message {
-	return &WriteFailure{
-		ErrorMessage:   m.ErrorMessage,
-		Consistency:    m.Consistency,
-		Received:       m.Received,
-		BlockFor:       m.BlockFor,
-		NumFailures:    m.NumFailures,
-		FailureReasons: cloneFailureReasons(m.FailureReasons),
-		WriteType:      m.WriteType,
-	}
-}
-
 func (m *WriteFailure) GetErrorCode() primitive.ErrorCode {
 	return primitive.ErrorCodeWriteFailure
 }
@@ -604,6 +561,10 @@ func (m *WriteFailure) String() string {
 
 // FUNCTION FAILURE
 
+// FunctionFailure is an error response sent when the coordinator receives an error from a replica while executing a
+// function.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type FunctionFailure struct {
 	ErrorMessage string
 	Keyspace     string
@@ -617,23 +578,6 @@ func (m *FunctionFailure) IsResponse() bool {
 
 func (m *FunctionFailure) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
-}
-
-func (m *FunctionFailure) Clone() Message {
-	var arguments []string
-	if m.Arguments != nil {
-		arguments = make([]string, len(m.Arguments))
-		copy(arguments, m.Arguments)
-	} else {
-		arguments = nil
-	}
-
-	return &FunctionFailure{
-		ErrorMessage: m.ErrorMessage,
-		Keyspace:     m.Keyspace,
-		Function:     m.Function,
-		Arguments:    arguments,
-	}
 }
 
 func (m *FunctionFailure) GetErrorCode() primitive.ErrorCode {
@@ -657,6 +601,9 @@ func (m *FunctionFailure) String() string {
 
 // UNPREPARED
 
+// Unprepared is an error response sent when an unprepared query execution is attempted.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type Unprepared struct {
 	ErrorMessage string
 	Id           []byte
@@ -668,13 +615,6 @@ func (m *Unprepared) IsResponse() bool {
 
 func (m *Unprepared) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
-}
-
-func (m *Unprepared) Clone() Message {
-	return &Unprepared{
-		ErrorMessage: m.ErrorMessage,
-		Id:           primitive.CloneByteSlice(m.Id),
-	}
 }
 
 func (m *Unprepared) GetErrorCode() primitive.ErrorCode {
@@ -696,6 +636,9 @@ func (m *Unprepared) String() string {
 
 // ALREADY EXISTS
 
+// AlreadyExists is an error response sent when the creation of a schema object fails because the object already exists.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type AlreadyExists struct {
 	ErrorMessage string
 	Keyspace     string
@@ -708,11 +651,6 @@ func (m *AlreadyExists) IsResponse() bool {
 
 func (m *AlreadyExists) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
-}
-
-func (m *AlreadyExists) Clone() Message {
-	newObj := *m
-	return &newObj
 }
 
 func (m *AlreadyExists) GetErrorCode() primitive.ErrorCode {
@@ -1208,15 +1146,4 @@ func (c *errorCodec) Decode(source io.Reader, version primitive.ProtocolVersion)
 
 func (c *errorCodec) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeError
-}
-
-func cloneFailureReasons(failureReasons []*primitive.FailureReason) []*primitive.FailureReason {
-	var result []*primitive.FailureReason
-	if failureReasons != nil {
-		result = make([]*primitive.FailureReason, len(failureReasons))
-		copy(result, failureReasons)
-	} else {
-		result = nil
-	}
-	return result
 }

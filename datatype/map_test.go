@@ -26,22 +26,22 @@ import (
 func TestMapType(t *testing.T) {
 	mapType := NewMapType(Varchar, Int)
 	assert.Equal(t, primitive.DataTypeCodeMap, mapType.GetDataTypeCode())
-	assert.Equal(t, Varchar, mapType.GetKeyType())
-	assert.Equal(t, Int, mapType.GetValueType())
+	assert.Equal(t, Varchar, mapType.KeyType)
+	assert.Equal(t, Int, mapType.ValueType)
 }
 
-func TestMapTypeClone(t *testing.T) {
+func TestMapTypeDeepCopy(t *testing.T) {
 	mt := NewMapType(Varchar, Int)
-	cloned := mt.Clone().(*mapType)
+	cloned := mt.DeepCopy()
 	assert.Equal(t, mt, cloned)
-	cloned.keyType = Inet
-	cloned.valueType = Uuid
+	cloned.KeyType = Inet
+	cloned.ValueType = Uuid
 	assert.Equal(t, primitive.DataTypeCodeMap, mt.GetDataTypeCode())
-	assert.Equal(t, Varchar, mt.GetKeyType())
-	assert.Equal(t, Int, mt.GetValueType())
+	assert.Equal(t, Varchar, mt.KeyType)
+	assert.Equal(t, Int, mt.ValueType)
 	assert.Equal(t, primitive.DataTypeCodeMap, cloned.GetDataTypeCode())
-	assert.Equal(t, Inet, cloned.GetKeyType())
-	assert.Equal(t, Uuid, cloned.GetValueType())
+	assert.Equal(t, Inet, cloned.KeyType)
+	assert.Equal(t, Uuid, cloned.ValueType)
 }
 
 func TestWriteMapType(t *testing.T) {
@@ -49,7 +49,7 @@ func TestWriteMapType(t *testing.T) {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
-				input    MapType
+				input    DataType
 				expected []byte
 				err      error
 			}{
@@ -75,7 +75,7 @@ func TestWriteMapType(t *testing.T) {
 					},
 					nil,
 				},
-				{"nil map", nil, nil, errors.New("expected MapType, got <nil>")},
+				{"nil map", nil, nil, errors.New("expected *MapType, got <nil>")},
 			}
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
@@ -96,7 +96,7 @@ func TestLengthOfMapType(t *testing.T) {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
-				input    MapType
+				input    DataType
 				expected int
 				err      error
 			}{
@@ -112,7 +112,7 @@ func TestLengthOfMapType(t *testing.T) {
 					primitive.LengthOfShort * 6,
 					nil,
 				},
-				{"nil map", nil, -1, errors.New("expected MapType, got <nil>")},
+				{"nil map", nil, -1, errors.New("expected *MapType, got <nil>")},
 			}
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
@@ -133,7 +133,7 @@ func TestReadMapType(t *testing.T) {
 			tests := []struct {
 				name     string
 				input    []byte
-				expected MapType
+				expected DataType
 				err      error
 			}{
 				{

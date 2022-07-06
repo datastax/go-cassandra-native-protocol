@@ -30,83 +30,83 @@ func TestUserDefinedType(t *testing.T) {
 	udtType, err := NewUserDefinedType("ks1", "udt1", fieldNames, fieldTypes)
 	assert.Nil(t, err)
 	assert.Equal(t, primitive.DataTypeCodeUdt, udtType.GetDataTypeCode())
-	assert.Equal(t, fieldTypes, udtType.GetFieldTypes())
+	assert.Equal(t, fieldTypes, udtType.FieldTypes)
 	udtType2, err2 := NewUserDefinedType("ks1", "udt1", fieldNames, []DataType{Varchar, Int, Boolean})
 	assert.Nil(t, udtType2)
 	assert.Errorf(t, err2, "field names and field types length mismatch: 2 != 3")
 }
 
-func TestUserDefinedTypeClone(t *testing.T) {
+func TestUserDefinedTypeDeepCopy(t *testing.T) {
 	fieldNames := []string{"f1", "f2"}
 	fieldTypes := []DataType{Varchar, Int}
 	udtType, err := NewUserDefinedType("ks1", "udt1", fieldNames, fieldTypes)
 	assert.Nil(t, err)
 
-	cloned := udtType.Clone().(*userDefinedType)
+	cloned := udtType.DeepCopy()
 	assert.Equal(t, udtType, cloned)
-	cloned.name = "udt2"
-	cloned.keyspace = "ks2"
-	cloned.fieldNames = []string{"f5", "field6", "f7"}
-	cloned.fieldTypes = []DataType{Uuid, Float, Varchar}
+	cloned.Name = "udt2"
+	cloned.Keyspace = "ks2"
+	cloned.FieldNames = []string{"f5", "field6", "f7"}
+	cloned.FieldTypes = []DataType{Uuid, Float, Varchar}
 	assert.NotEqual(t, udtType, cloned)
 
 	assert.Equal(t, primitive.DataTypeCodeUdt, udtType.GetDataTypeCode())
-	assert.Equal(t, []DataType{Varchar, Int}, udtType.GetFieldTypes())
-	assert.Equal(t, []string{"f1", "f2"}, udtType.GetFieldNames())
-	assert.Equal(t, "ks1", udtType.GetKeyspace())
-	assert.Equal(t, "udt1", udtType.GetName())
+	assert.Equal(t, []DataType{Varchar, Int}, udtType.FieldTypes)
+	assert.Equal(t, []string{"f1", "f2"}, udtType.FieldNames)
+	assert.Equal(t, "ks1", udtType.Keyspace)
+	assert.Equal(t, "udt1", udtType.Name)
 
 	assert.Equal(t, primitive.DataTypeCodeUdt, cloned.GetDataTypeCode())
-	assert.Equal(t, []DataType{Uuid, Float, Varchar}, cloned.GetFieldTypes())
-	assert.Equal(t, []string{"f5", "field6", "f7"}, cloned.GetFieldNames())
-	assert.Equal(t, "ks2", cloned.GetKeyspace())
-	assert.Equal(t, "udt2", cloned.GetName())
+	assert.Equal(t, []DataType{Uuid, Float, Varchar}, cloned.FieldTypes)
+	assert.Equal(t, []string{"f5", "field6", "f7"}, cloned.FieldNames)
+	assert.Equal(t, "ks2", cloned.Keyspace)
+	assert.Equal(t, "udt2", cloned.Name)
 }
 
-func TestUserDefinedTypeClone_NilFieldTypesSlice(t *testing.T) {
+func TestUserDefinedTypeDeepCopy_NilFieldTypesSlice(t *testing.T) {
 	fieldNames := []string{"f1", "f2", "f3"}
 	fieldTypes := []DataType{Int, Uuid, Float}
 	udtType, err := NewUserDefinedType("ks1", "udt1", fieldNames, fieldTypes)
 	assert.Nil(t, err)
-	udtType.(*userDefinedType).fieldTypes = nil
+	udtType.FieldTypes = nil
 
-	cloned := udtType.Clone().(*userDefinedType)
+	cloned := udtType.DeepCopy()
 	assert.Equal(t, udtType, cloned)
-	cloned.fieldTypes = []DataType{Uuid, Float, Varchar}
+	cloned.FieldTypes = []DataType{Uuid, Float, Varchar}
 	assert.NotEqual(t, udtType, cloned)
 
-	assert.Nil(t, udtType.GetFieldTypes())
-	assert.Equal(t, []DataType{Uuid, Float, Varchar}, cloned.GetFieldTypes())
+	assert.Nil(t, udtType.FieldTypes)
+	assert.Equal(t, []DataType{Uuid, Float, Varchar}, cloned.FieldTypes)
 }
 
-func TestUserDefinedTypeClone_NilFieldType(t *testing.T) {
+func TestUserDefinedTypeDeepCopy_NilFieldType(t *testing.T) {
 	fieldNames := []string{"f1", "f2", "f3"}
 	fieldTypes := []DataType{nil, Uuid, Float}
 	udtType, err := NewUserDefinedType("ks1", "udt1", fieldNames, fieldTypes)
 	assert.Nil(t, err)
 
-	cloned := udtType.Clone().(*userDefinedType)
+	cloned := udtType.DeepCopy()
 	assert.Equal(t, udtType, cloned)
-	cloned.fieldTypes = []DataType{Uuid, Float, Varchar}
+	cloned.FieldTypes = []DataType{Uuid, Float, Varchar}
 	assert.NotEqual(t, udtType, cloned)
 
-	assert.Equal(t, []DataType{nil, Uuid, Float}, udtType.GetFieldTypes())
-	assert.Equal(t, []DataType{Uuid, Float, Varchar}, cloned.GetFieldTypes())
+	assert.Equal(t, []DataType{nil, Uuid, Float}, udtType.FieldTypes)
+	assert.Equal(t, []DataType{Uuid, Float, Varchar}, cloned.FieldTypes)
 }
 
-func TestUserDefinedTypeClone_ComplexFieldTypes(t *testing.T) {
+func TestUserDefinedTypeDeepCopy_ComplexFieldTypes(t *testing.T) {
 	fieldNames := []string{"f1", "f2", "f3"}
 	fieldTypes := []DataType{NewListType(NewTupleType(Varchar)), Uuid, Float}
 	udtType, err := NewUserDefinedType("ks1", "udt1", fieldNames, fieldTypes)
 	assert.Nil(t, err)
 
-	cloned := udtType.Clone().(*userDefinedType)
+	cloned := udtType.DeepCopy()
 	assert.Equal(t, udtType, cloned)
-	cloned.GetFieldTypes()[0].(*listType).elementType = NewTupleType(Int)
+	cloned.FieldTypes[0].(*ListType).ElementType = NewTupleType(Int)
 	assert.NotEqual(t, udtType, cloned)
 
-	assert.Equal(t, []DataType{NewListType(NewTupleType(Varchar)), Uuid, Float}, udtType.GetFieldTypes())
-	assert.Equal(t, []DataType{NewListType(NewTupleType(Int)), Uuid, Float}, cloned.GetFieldTypes())
+	assert.Equal(t, []DataType{NewListType(NewTupleType(Varchar)), Uuid, Float}, udtType.FieldTypes)
+	assert.Equal(t, []DataType{NewListType(NewTupleType(Int)), Uuid, Float}, cloned.FieldTypes)
 }
 
 var udt1, _ = NewUserDefinedType("ks1", "udt1", []string{"f1", "f2"}, []DataType{Varchar, Int})
@@ -115,7 +115,7 @@ var udt2, _ = NewUserDefinedType("ks1", "udt2", []string{"f1"}, []DataType{udt1}
 func TestWriteUserDefinedType(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    UserDefinedType
+		input    DataType
 		expected []byte
 		err      error
 	}{
@@ -203,7 +203,7 @@ func TestLengthOfUserDefinedType(t *testing.T) {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
-				input    UserDefinedType
+				input    DataType
 				expected int
 				err      error
 			}{
@@ -236,7 +236,7 @@ func TestLengthOfUserDefinedType(t *testing.T) {
 						primitive.LengthOfShort, // int
 					nil,
 				},
-				{"nil udt", nil, -1, errors.New("expected UserDefinedType, got <nil>")},
+				{"nil udt", nil, -1, errors.New("expected *UserDefinedType, got <nil>")},
 			}
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
@@ -255,7 +255,7 @@ func TestReadUserDefinedType(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    []byte
-		expected UserDefinedType
+		expected DataType
 		err      error
 	}{
 		{

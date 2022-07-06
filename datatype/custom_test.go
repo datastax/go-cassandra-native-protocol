@@ -26,7 +26,7 @@ import (
 func TestCustomType(t *testing.T) {
 	customType := NewCustomType("foo.bar.qix")
 	assert.Equal(t, primitive.DataTypeCodeCustom, customType.GetDataTypeCode())
-	assert.Equal(t, "foo.bar.qix", customType.GetClassName())
+	assert.Equal(t, "foo.bar.qix", customType.ClassName)
 }
 
 func TestWriteCustomType(t *testing.T) {
@@ -34,12 +34,12 @@ func TestWriteCustomType(t *testing.T) {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
-				input    CustomType
+				input    DataType
 				expected []byte
 				err      error
 			}{
 				{"simple custom", NewCustomType("hello"), []byte{0, 5, byte('h'), byte('e'), byte('l'), byte('l'), byte('o')}, nil},
-				{"nil custom", nil, nil, errors.New("expected CustomType, got <nil>")},
+				{"nil custom", nil, nil, errors.New("expected *CustomType, got <nil>")},
 			}
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
@@ -60,12 +60,12 @@ func TestLengthOfCustomType(t *testing.T) {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
-				input    CustomType
+				input    DataType
 				expected int
 				err      error
 			}{
 				{"simple custom", NewCustomType("hello"), primitive.LengthOfString("hello"), nil},
-				{"nil custom", nil, -1, errors.New("expected CustomType, got <nil>")},
+				{"nil custom", nil, -1, errors.New("expected *CustomType, got <nil>")},
 			}
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
@@ -86,7 +86,7 @@ func TestReadCustomType(t *testing.T) {
 			tests := []struct {
 				name     string
 				input    []byte
-				expected CustomType
+				expected DataType
 				err      error
 			}{
 				{"simple custom", []byte{0, 5, byte('h'), byte('e'), byte('l'), byte('l'), byte('o')}, NewCustomType("hello"), nil},
@@ -114,11 +114,11 @@ func TestReadCustomType(t *testing.T) {
 	}
 }
 
-func TestCustomTypeClone(t *testing.T) {
+func TestCustomTypeDeepCopy(t *testing.T) {
 	ct := NewCustomType("foo.bar.qix")
-	clonedCustomType := ct.Clone().(*customType)
+	clonedCustomType := ct.DeepCopy()
 	assert.Equal(t, ct, clonedCustomType)
-	clonedCustomType.className = "123"
-	assert.Equal(t, "123", clonedCustomType.GetClassName())
-	assert.Equal(t, "foo.bar.qix", ct.GetClassName())
+	clonedCustomType.ClassName = "123"
+	assert.Equal(t, "123", clonedCustomType.ClassName)
+	assert.Equal(t, "foo.bar.qix", ct.ClassName)
 }

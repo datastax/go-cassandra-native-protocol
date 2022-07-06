@@ -22,7 +22,11 @@ import (
 	"io"
 )
 
+// Execute is a request message that executes a prepared statement, identified by its prepared query id.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type Execute struct {
+	// QueryId is the prepared query id to execute.
 	QueryId []byte
 	// the ID of the result set metadata that was sent along with response to PREPARE message.
 	// Valid in protocol version 5 and DSE protocol version 2. See PreparedResult.
@@ -36,14 +40,6 @@ func (m *Execute) IsResponse() bool {
 
 func (m *Execute) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeExecute
-}
-
-func (m *Execute) Clone() Message {
-	return &Execute{
-		QueryId:          primitive.CloneByteSlice(m.QueryId),
-		ResultMetadataId: primitive.CloneByteSlice(m.ResultMetadataId),
-		Options:          m.Options.Clone(),
-	}
 }
 
 func (m *Execute) String() string {

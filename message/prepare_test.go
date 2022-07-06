@@ -22,13 +22,13 @@ import (
 	"testing"
 )
 
-func TestPrepare_Clone(t *testing.T) {
+func TestPrepare_DeepCopy(t *testing.T) {
 	msg := &Prepare{
 		Query:    "query",
 		Keyspace: "ks1",
 	}
 
-	cloned := msg.Clone().(*Prepare)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 
 	cloned.Query = "query2"

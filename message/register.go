@@ -21,6 +21,9 @@ import (
 	"io"
 )
 
+// Register is a request to register the client as a listener for the specified event types.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type Register struct {
 	EventTypes []primitive.EventType
 }
@@ -31,20 +34,6 @@ func (m *Register) IsResponse() bool {
 
 func (m *Register) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeRegister
-}
-
-func (m *Register) Clone() Message {
-	var newEventTypes []primitive.EventType
-	if m.EventTypes != nil {
-		newEventTypes = make([]primitive.EventType, len(m.EventTypes))
-		copy(newEventTypes, m.EventTypes)
-	} else {
-		newEventTypes = nil
-	}
-
-	return &Register{
-		EventTypes: newEventTypes,
-	}
 }
 
 func (m *Register) String() string {

@@ -23,7 +23,7 @@ import (
 func TestPrimitiveType(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    PrimitiveType
+		input    *PrimitiveType
 		expected primitive.DataTypeCode
 	}{
 		{"Ascii", Ascii, primitive.DataTypeCodeAscii},

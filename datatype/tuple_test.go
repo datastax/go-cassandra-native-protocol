@@ -27,62 +27,62 @@ import (
 func TestTupleType(t *testing.T) {
 	tupleType := NewTupleType(Varchar, Int)
 	assert.Equal(t, primitive.DataTypeCodeTuple, tupleType.GetDataTypeCode())
-	assert.Equal(t, []DataType{Varchar, Int}, tupleType.GetFieldTypes())
+	assert.Equal(t, []DataType{Varchar, Int}, tupleType.FieldTypes)
 }
 
-func TestTupleTypeClone(t *testing.T) {
+func TestTupleTypeDeepCopy(t *testing.T) {
 	tt := NewTupleType(Varchar, Int)
-	cloned := tt.Clone().(*tupleType)
+	cloned := tt.DeepCopy()
 	assert.Equal(t, tt, cloned)
-	cloned.fieldTypes = []DataType{Int, Uuid, Float}
+	cloned.FieldTypes = []DataType{Int, Uuid, Float}
 	assert.NotEqual(t, tt, cloned)
 	assert.Equal(t, primitive.DataTypeCodeTuple, tt.GetDataTypeCode())
-	assert.Equal(t, []DataType{Varchar, Int}, tt.GetFieldTypes())
+	assert.Equal(t, []DataType{Varchar, Int}, tt.FieldTypes)
 	assert.Equal(t, primitive.DataTypeCodeTuple, cloned.GetDataTypeCode())
-	assert.Equal(t, []DataType{Int, Uuid, Float}, cloned.GetFieldTypes())
+	assert.Equal(t, []DataType{Int, Uuid, Float}, cloned.FieldTypes)
 }
 
-func TestTupleTypeClone_NilFieldTypesSlice(t *testing.T) {
-	tt := NewTupleType(Varchar, Int).(*tupleType)
-	tt.fieldTypes = nil
-	cloned := tt.Clone().(*tupleType)
+func TestTupleTypeDeepCopy_NilFieldTypesSlice(t *testing.T) {
+	tt := NewTupleType(Varchar, Int)
+	tt.FieldTypes = nil
+	cloned := tt.DeepCopy()
 	assert.Equal(t, tt, cloned)
-	cloned.fieldTypes = []DataType{Int, Uuid, Float}
+	cloned.FieldTypes = []DataType{Int, Uuid, Float}
 	assert.NotEqual(t, tt, cloned)
 	assert.Equal(t, primitive.DataTypeCodeTuple, tt.GetDataTypeCode())
-	assert.Nil(t, tt.GetFieldTypes())
+	assert.Nil(t, tt.FieldTypes)
 	assert.Equal(t, primitive.DataTypeCodeTuple, cloned.GetDataTypeCode())
-	assert.Equal(t, []DataType{Int, Uuid, Float}, cloned.GetFieldTypes())
+	assert.Equal(t, []DataType{Int, Uuid, Float}, cloned.FieldTypes)
 }
 
-func TestTupleTypeClone_NilFieldType(t *testing.T) {
-	tt := NewTupleType(nil, Int).(*tupleType)
-	cloned := tt.Clone().(*tupleType)
+func TestTupleTypeDeepCopy_NilFieldType(t *testing.T) {
+	tt := NewTupleType(nil, Int)
+	cloned := tt.DeepCopy()
 	assert.Equal(t, tt, cloned)
-	cloned.fieldTypes = []DataType{Int, Uuid, Float}
+	cloned.FieldTypes = []DataType{Int, Uuid, Float}
 	assert.NotEqual(t, tt, cloned)
 	assert.Equal(t, primitive.DataTypeCodeTuple, tt.GetDataTypeCode())
-	assert.Equal(t, []DataType{nil, Int}, tt.GetFieldTypes())
+	assert.Equal(t, []DataType{nil, Int}, tt.FieldTypes)
 	assert.Equal(t, primitive.DataTypeCodeTuple, cloned.GetDataTypeCode())
-	assert.Equal(t, []DataType{Int, Uuid, Float}, cloned.GetFieldTypes())
+	assert.Equal(t, []DataType{Int, Uuid, Float}, cloned.FieldTypes)
 }
 
-func TestTupleTypeClone_ComplexFieldTypes(t *testing.T) {
-	tt := NewTupleType(NewListType(NewTupleType(Varchar)), Int).(*tupleType)
-	cloned := tt.Clone().(*tupleType)
+func TestTupleTypeDeepCopy_ComplexFieldTypes(t *testing.T) {
+	tt := NewTupleType(NewListType(NewTupleType(Varchar)), Int)
+	cloned := tt.DeepCopy()
 	assert.Equal(t, tt, cloned)
-	cloned.GetFieldTypes()[0].(*listType).elementType = NewTupleType(Int)
+	cloned.FieldTypes[0].(*ListType).ElementType = NewTupleType(Int)
 	assert.NotEqual(t, tt, cloned)
 	assert.Equal(t, primitive.DataTypeCodeTuple, tt.GetDataTypeCode())
-	assert.Equal(t, []DataType{NewListType(NewTupleType(Varchar)), Int}, tt.GetFieldTypes())
+	assert.Equal(t, []DataType{NewListType(NewTupleType(Varchar)), Int}, tt.FieldTypes)
 	assert.Equal(t, primitive.DataTypeCodeTuple, cloned.GetDataTypeCode())
-	assert.Equal(t, []DataType{NewListType(NewTupleType(Int)), Int}, cloned.GetFieldTypes())
+	assert.Equal(t, []DataType{NewListType(NewTupleType(Int)), Int}, cloned.FieldTypes)
 }
 
 func TestWriteTupleType(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    TupleType
+		input    DataType
 		expected []byte
 		err      error
 	}{
@@ -163,7 +163,7 @@ func TestLengthOfTupleType(t *testing.T) {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
-				input    TupleType
+				input    DataType
 				expected int
 				err      error
 			}{
@@ -179,7 +179,7 @@ func TestLengthOfTupleType(t *testing.T) {
 					primitive.LengthOfShort * 9,
 					nil,
 				},
-				{"nil tuple", nil, -1, errors.New("expected TupleType, got <nil>")},
+				{"nil tuple", nil, -1, errors.New("expected *TupleType, got <nil>")},
 			}
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
@@ -198,7 +198,7 @@ func TestReadTupleType(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    []byte
-		expected TupleType
+		expected DataType
 		err      error
 	}{
 		{

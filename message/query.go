@@ -21,6 +21,9 @@ import (
 	"io"
 )
 
+// Query is a request that executes a CQL query.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type Query struct {
 	Query   string
 	Options *QueryOptions
@@ -36,20 +39,6 @@ func (q *Query) IsResponse() bool {
 
 func (q *Query) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeQuery
-}
-
-func (q *Query) Clone() Message {
-	var newQueryOptions *QueryOptions
-	if q.Options != nil {
-		newQueryOptions = q.Options.Clone()
-	} else {
-		newQueryOptions = nil
-	}
-
-	return &Query{
-		Query:   q.Query,
-		Options: newQueryOptions,
-	}
 }
 
 type queryCodec struct{}

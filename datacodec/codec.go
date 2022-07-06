@@ -89,17 +89,17 @@ func NewCodec(dt datatype.DataType) (Codec, error) {
 	case primitive.DataTypeCodeVarint:
 		return Varint, nil
 	case primitive.DataTypeCodeCustom:
-		return NewCustom(dt.(datatype.CustomType)), nil
+		return NewCustom(dt.(*datatype.CustomType)), nil
 	case primitive.DataTypeCodeList:
-		return NewList(dt.(datatype.ListType))
+		return NewList(dt.(*datatype.ListType))
 	case primitive.DataTypeCodeSet:
-		return NewSet(dt.(datatype.SetType))
+		return NewSet(dt.(*datatype.SetType))
 	case primitive.DataTypeCodeMap:
-		return NewMap(dt.(datatype.MapType))
+		return NewMap(dt.(*datatype.MapType))
 	case primitive.DataTypeCodeTuple:
-		return NewTuple(dt.(datatype.TupleType))
+		return NewTuple(dt.(*datatype.TupleType))
 	case primitive.DataTypeCodeUdt:
-		return NewUserDefined(dt.(datatype.UserDefinedType))
+		return NewUserDefined(dt.(*datatype.UserDefinedType))
 	}
 	return nil, errCannotCreateCodec(dt)
 }
@@ -157,26 +157,26 @@ func PreferredGoType(dt datatype.DataType) (reflect.Type, error) {
 	case primitive.DataTypeCodeVarint:
 		return typeOfBigIntPointer, nil
 	case primitive.DataTypeCodeList:
-		listType := dt.(datatype.ListType)
-		elemType, err := PreferredGoType(listType.GetElementType())
+		listType := dt.(*datatype.ListType)
+		elemType, err := PreferredGoType(listType.ElementType)
 		if err != nil {
 			return nil, err
 		}
 		return reflect.SliceOf(ensureNillable(elemType)), nil
 	case primitive.DataTypeCodeSet:
-		setType := dt.(datatype.SetType)
-		elemType, err := PreferredGoType(setType.GetElementType())
+		setType := dt.(*datatype.SetType)
+		elemType, err := PreferredGoType(setType.ElementType)
 		if err != nil {
 			return nil, err
 		}
 		return reflect.SliceOf(ensureNillable(elemType)), nil
 	case primitive.DataTypeCodeMap:
-		mapType := dt.(datatype.MapType)
-		keyType, err := PreferredGoType(mapType.GetKeyType())
+		mapType := dt.(*datatype.MapType)
+		keyType, err := PreferredGoType(mapType.KeyType)
 		if err != nil {
 			return nil, err
 		}
-		valueType, err := PreferredGoType(mapType.GetValueType())
+		valueType, err := PreferredGoType(mapType.ValueType)
 		if err != nil {
 			return nil, err
 		}

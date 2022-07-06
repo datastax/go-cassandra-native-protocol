@@ -29,6 +29,9 @@ const (
 	SupportedProtocolVersions = "PROTOCOL_VERSIONS"
 )
 
+// Supported is a response message sent in reply to an Options request.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type Supported struct {
 	// This multimap gives for each of the supported Startup options, the list of supported values.
 	// See Startup.Options for details about supported option keys.
@@ -41,10 +44,6 @@ func (m *Supported) IsResponse() bool {
 
 func (m *Supported) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeSupported
-}
-
-func (m *Supported) Clone() Message {
-	return &Supported{Options: primitive.CloneSupportedOptions(m.Options)}
 }
 
 func (m *Supported) String() string {
