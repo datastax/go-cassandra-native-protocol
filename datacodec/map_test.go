@@ -97,9 +97,9 @@ type coordinates struct {
 var (
 	mapOneTwoAbcBytes2 = []byte{
 		0, 1,
-		0, 0, 0, 4,
+		0, 4,
 		0, 0, 0, 12,
-		0, 0, 0, 3,
+		0, 3,
 		a, b, c,
 	}
 	mapOneTwoAbcBytes4 = []byte{
@@ -111,13 +111,13 @@ var (
 	}
 	mapZeroOneTwoAbcBytes2 = []byte{
 		0, 1, // length of outer collection
-		0, 0, 0, 4, // length of outer collection 1st key
+		0, 4, // length of outer collection 1st key
 		0, 0, 0, 0, // 1st key
-		0, 0, 0, 17, // length of outer collection 1st value
+		0, 13, // length of outer collection 1st value
 		0, 1, // length of 1st inner collection
-		0, 0, 0, 4, // length of 1st inner collection 1st key
+		0, 4, // length of 1st inner collection 1st key
 		0, 0, 0, 12, // 1st inner collection 1st key
-		0, 0, 0, 3, // length of 1st inner collection 1st value
+		0, 3, // length of 1st inner collection 1st value
 		a, b, c, // 1st inner collection 1st value
 	}
 	mapZeroOneTwoAbcBytes4 = []byte{
@@ -155,30 +155,30 @@ var (
 	}
 	mapCoordinatesBytes2 = []byte{
 		0, 2,
-		0, 0, 0, 1,
+		0, 1,
 		x,
-		0, 0, 0, 4,
+		0, 4,
 		0x41, 0x45, 0x70, 0xa4,
-		0, 0, 0, 1,
+		0, 1,
 		y,
-		0, 0, 0, 4,
+		0, 4,
 		0xc2, 0x63, 0x1e, 0xb8,
 	}
 	mapCoordinatesEmptyBytes2 = []byte{
 		0, 2,
-		0, 0, 0, 1,
+		0, 1,
 		x,
-		0, 0, 0, 4,
+		0, 4,
 		0, 0, 0, 0,
-		0, 0, 0, 1,
+		0, 1,
 		y,
-		0, 0, 0, 4,
+		0, 4,
 		0, 0, 0, 0,
 	}
 	mapNullAbcBytes2 = []byte{
 		0, 1,
-		255, 255, 255, 255,
-		0, 0, 0, 3,
+		255, 255,
+		0, 3,
 		a, b, c,
 	}
 	mapNullAbcBytes4 = []byte{
@@ -189,9 +189,9 @@ var (
 	}
 	mapOneTwoNullBytes2 = []byte{
 		0, 1,
-		0, 0, 0, 4,
+		0, 4,
 		0, 0, 0, 12,
-		255, 255, 255, 255,
+		255, 255,
 	}
 	mapOneTwoNullBytes4 = []byte{
 		0, 0, 0, 1,
@@ -262,8 +262,8 @@ func Test_mapCodec_Encode(t *testing.T) {
 				{"map<int,text> non-empty elems pointers", mapSimple, map[*int]*string{intPtr(12): stringPtr("abc")}, mapOneTwoAbcBytes2, ""},
 				{"map<int,text> non-empty map pointer elems pointers", mapSimple, &map[*int]*string{intPtr(12): stringPtr("abc")}, mapOneTwoAbcBytes2, ""},
 				{"map<int,text> non-empty interface{}", mapSimple, map[int]interface{}{12: "abc"}, mapOneTwoAbcBytes2, ""},
-				{"map<int,text> nil key", mapSimple, map[interface{}]interface{}{nil: "abc"}, []byte{0x0, 0x1, 0xff, 0xff, 0xff, 0xff, 0x0, 0x0, 0x0, 0x3, a, b, c}, ""},
-				{"map<int,text> nil value", mapSimple, map[int]interface{}{12: nil}, []byte{0x0, 0x1, 0x0, 0x0, 0x0, 0x4, 0x0, 0x0, 0x0, 0xc, 0xff, 0xff, 0xff, 0xff}, ""},
+				{"map<int,text> nil key", mapSimple, map[interface{}]interface{}{nil: "abc"}, []byte{0x0, 0x1, 0xff, 0xff, 0x0, 0x3, a, b, c}, ""},
+				{"map<int,text> nil value", mapSimple, map[int]interface{}{12: nil}, []byte{0x0, 0x1, 0x0, 0x4, 0x0, 0x0, 0x0, 0xc, 0xff, 0xff}, ""},
 				{"map<int,text> wrong source type", mapSimple, 123, nil, fmt.Sprintf("cannot encode int as CQL %s with %s: source type not supported", mapSimple.DataType(), version)},
 				{"map<int,text> wrong source type nil", mapSimple, []int(nil), nil, fmt.Sprintf("cannot encode []int as CQL %s with %s: source type not supported", mapSimple.DataType(), version)},
 				{"map<int,text> wrong source type nil pointer", mapSimple, new([]int), nil, fmt.Sprintf("cannot encode *[]int as CQL %s with %s: source type not supported", mapSimple.DataType(), version)},

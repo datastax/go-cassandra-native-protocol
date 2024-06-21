@@ -38,6 +38,22 @@ func ReadShortBytes(source io.Reader) ([]byte, error) {
 	}
 }
 
+func ReadShortSignedBytes(source io.Reader) ([]byte, error) {
+	if length, err := ReadShortSigned(source); err != nil {
+		return nil, fmt.Errorf("cannot read [short bytes] length: %w", err)
+	} else if length < 0 {
+		return nil, nil
+	} else if length == 0 {
+		return []byte{}, nil
+	} else {
+		decoded := make([]byte, length)
+		if _, err := io.ReadFull(source, decoded); err != nil {
+			return nil, fmt.Errorf("cannot read [short bytes] content: %w", err)
+		}
+		return decoded, nil
+	}
+}
+
 func WriteShortBytes(b []byte, dest io.Writer) error {
 	length := len(b)
 	if err := WriteShort(uint16(length), dest); err != nil {
@@ -46,6 +62,24 @@ func WriteShortBytes(b []byte, dest io.Writer) error {
 		return fmt.Errorf("cannot write [short bytes] content: %w", err)
 	} else if n < length {
 		return errors.New("not enough capacity to write [short bytes] content")
+	}
+	return nil
+}
+
+func WriteShortSignedBytes(b []byte, dest io.Writer) error {
+	if b == nil {
+		if err := WriteShortSigned(-1, dest); err != nil {
+			return fmt.Errorf("cannot write null [bytes]: %w", err)
+		}
+	} else {
+		length := len(b)
+		if err := WriteShortSigned(int16(length), dest); err != nil {
+			return fmt.Errorf("cannot write [short bytes] length: %w", err)
+		} else if n, err := dest.Write(b); err != nil {
+			return fmt.Errorf("cannot write [short bytes] content: %w", err)
+		} else if n < length {
+			return errors.New("not enough capacity to write [short bytes] content")
+		}
 	}
 	return nil
 }

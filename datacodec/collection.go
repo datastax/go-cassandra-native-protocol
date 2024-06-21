@@ -139,7 +139,11 @@ func writeCollection(ext extractor, elementCodec Codec, size int, version primit
 		} else if encodedElem, err := elementCodec.Encode(elem, version); err != nil {
 			return nil, errCannotEncodeElement(i, err)
 		} else {
-			_ = primitive.WriteBytes(encodedElem, buf)
+			if version.Uses4BytesCollectionLength() {
+				_ = primitive.WriteBytes(encodedElem, buf)
+			} else {
+				_ = primitive.WriteShortSignedBytes(encodedElem, buf)
+			}
 		}
 	}
 	return buf.Bytes(), nil
@@ -154,7 +158,14 @@ func readCollection(source []byte, injectorFactory func(int) (injector, error), 
 		return err
 	} else {
 		for i := 0; i < size; i++ {
-			if encodedElem, err := primitive.ReadBytes(reader); err != nil {
+			var encodedElem []byte
+			var err error
+			if version.Uses4BytesCollectionLength() {
+				encodedElem, err = primitive.ReadBytes(reader)
+			} else {
+				encodedElem, err = primitive.ReadShortSignedBytes(reader)
+			}
+			if err != nil {
 				return errCannotReadElement(i, err)
 			} else if decodedElem, err := inj.zeroElem(i, i); err != nil {
 				return errCannotCreateElement(i, err)

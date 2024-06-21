@@ -147,8 +147,13 @@ func writeMap(ext keyValueExtractor, size int, keyCodec Codec, valueCodec Codec,
 		} else if encodedValue, err := valueCodec.Encode(value, version); err != nil {
 			return nil, errCannotEncodeMapValue(i, err)
 		} else {
-			_ = primitive.WriteBytes(encodedKey, buf)
-			_ = primitive.WriteBytes(encodedValue, buf)
+			if version.Uses4BytesCollectionLength() {
+				_ = primitive.WriteBytes(encodedKey, buf)
+				_ = primitive.WriteBytes(encodedValue, buf)
+			} else {
+				_ = primitive.WriteShortSignedBytes(encodedKey, buf)
+				_ = primitive.WriteShortSignedBytes(encodedValue, buf)
+			}
 		}
 	}
 	return buf.Bytes(), nil
@@ -163,9 +168,25 @@ func readMap(source []byte, injectorFactory func(int) (keyValueInjector, error),
 		return err
 	} else {
 		for i := 0; i < size; i++ {
-			if encodedKey, err := primitive.ReadBytes(reader); err != nil {
+			var encodedKey []byte
+			var encodedValue []byte
+			var err error
+
+			if version.Uses4BytesCollectionLength() {
+				encodedKey, err = primitive.ReadBytes(reader)
+			} else {
+				encodedKey, err = primitive.ReadShortSignedBytes(reader)
+			}
+			if err != nil {
 				return errCannotReadMapKey(i, err)
-			} else if encodedValue, err := primitive.ReadBytes(reader); err != nil {
+			}
+			if version.Uses4BytesCollectionLength() {
+				encodedValue, err = primitive.ReadBytes(reader)
+			} else {
+				encodedValue, err = primitive.ReadShortSignedBytes(reader)
+			}
+
+			if err != nil {
 				return errCannotReadMapValue(i, err)
 			} else if decodedKey, err := inj.zeroKey(i); err != nil {
 				return errCannotCreateMapKey(i, err)
