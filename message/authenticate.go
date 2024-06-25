@@ -17,10 +17,15 @@ package message
 import (
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
+// Authenticate is a response sent in reply to a Startup request when the server requires authentication. It must be
+// followed by an AuthResponse request message.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type Authenticate struct {
 	Authenticator string
 }
@@ -35,12 +40,6 @@ func (m *Authenticate) GetOpCode() primitive.OpCode {
 
 func (m *Authenticate) String() string {
 	return "AUTHENTICATE " + m.Authenticator
-}
-
-// Performs a deep copy of this message object.
-func (m *Authenticate) Clone() Message {
-	newMsg := *m
-	return &newMsg
 }
 
 type authenticateCodec struct{}

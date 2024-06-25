@@ -17,17 +17,18 @@ package datacodec
 import (
 	"bytes"
 	"fmt"
+	"reflect"
+
 	"github.com/datastax/go-cassandra-native-protocol/datatype"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"reflect"
 )
 
-func NewTuple(tupleType datatype.TupleType) (Codec, error) {
+func NewTuple(tupleType *datatype.Tuple) (Codec, error) {
 	if tupleType == nil {
 		return nil, ErrNilDataType
 	}
-	elementCodecs := make([]Codec, len(tupleType.GetFieldTypes()))
-	for i, elementType := range tupleType.GetFieldTypes() {
+	elementCodecs := make([]Codec, len(tupleType.FieldTypes))
+	for i, elementType := range tupleType.FieldTypes {
 		if elementCodec, err := NewCodec(elementType); err != nil {
 			return nil, fmt.Errorf("cannot create codec for tuple element %d: %w", i, err)
 		} else {
@@ -38,7 +39,7 @@ func NewTuple(tupleType datatype.TupleType) (Codec, error) {
 }
 
 type tupleCodec struct {
-	dataType      datatype.TupleType
+	dataType      *datatype.Tuple
 	elementCodecs []Codec
 }
 
@@ -47,7 +48,7 @@ func (c *tupleCodec) DataType() datatype.DataType {
 }
 
 func (c *tupleCodec) Encode(source interface{}, version primitive.ProtocolVersion) (dest []byte, err error) {
-	if !version.SupportsDataType(c.DataType().GetDataTypeCode()) {
+	if !version.SupportsDataType(c.DataType().Code()) {
 		err = errDataTypeNotSupported(c.DataType(), version)
 	} else {
 		var ext extractor
@@ -63,7 +64,7 @@ func (c *tupleCodec) Encode(source interface{}, version primitive.ProtocolVersio
 
 func (c *tupleCodec) Decode(source []byte, dest interface{}, version primitive.ProtocolVersion) (wasNull bool, err error) {
 	wasNull = len(source) == 0
-	if !version.SupportsDataType(c.DataType().GetDataTypeCode()) {
+	if !version.SupportsDataType(c.DataType().Code()) {
 		err = errDataTypeNotSupported(c.DataType(), version)
 	} else {
 		var inj injector

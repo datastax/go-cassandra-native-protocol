@@ -18,18 +18,20 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/datatype"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"math"
 	"strconv"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+
+	"github.com/datastax/go-cassandra-native-protocol/datatype"
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 var (
-	listOfInt, _          = NewList(datatype.NewListType(datatype.Int))
-	listOfSetOfVarchar, _ = NewList(datatype.NewListType(datatype.NewSetType(datatype.Varchar)))
+	listOfInt, _          = NewList(datatype.NewList(datatype.Int))
+	listOfSetOfVarchar, _ = NewList(datatype.NewList(datatype.NewSet(datatype.Varchar)))
 )
 
 var (
@@ -145,7 +147,7 @@ var (
 func TestNewList(t *testing.T) {
 	tests := []struct {
 		name     string
-		dataType datatype.ListType
+		dataType *datatype.List
 		want     Codec
 		wantErr  string
 	}{
@@ -157,20 +159,20 @@ func TestNewList(t *testing.T) {
 		},
 		{
 			"simple",
-			datatype.NewListType(datatype.Int),
+			datatype.NewList(datatype.Int),
 			&collectionCodec{
-				dataType:     datatype.NewListType(datatype.Int),
+				dataType:     datatype.NewList(datatype.Int),
 				elementCodec: &intCodec{},
 			},
 			"",
 		},
 		{
 			"complex",
-			datatype.NewListType(datatype.NewListType(datatype.Int)),
+			datatype.NewList(datatype.NewList(datatype.Int)),
 			&collectionCodec{
-				dataType: datatype.NewListType(datatype.NewListType(datatype.Int)),
+				dataType: datatype.NewList(datatype.NewList(datatype.Int)),
 				elementCodec: &collectionCodec{
-					dataType:     datatype.NewListType(datatype.Int),
+					dataType:     datatype.NewList(datatype.Int),
 					elementCodec: &intCodec{},
 				},
 			},
@@ -178,7 +180,7 @@ func TestNewList(t *testing.T) {
 		},
 		{
 			"wrong data type",
-			datatype.NewListType(wrongDataType{}),
+			datatype.NewList(wrongDataType{}),
 			nil,
 			"cannot create codec for list elements: cannot create data codec for CQL type 666",
 		},
@@ -195,7 +197,7 @@ func TestNewList(t *testing.T) {
 func TestNewSet(t *testing.T) {
 	tests := []struct {
 		name     string
-		dataType datatype.SetType
+		dataType *datatype.Set
 		want     Codec
 		wantErr  string
 	}{
@@ -207,20 +209,20 @@ func TestNewSet(t *testing.T) {
 		},
 		{
 			"simple",
-			datatype.NewSetType(datatype.Int),
+			datatype.NewSet(datatype.Int),
 			&collectionCodec{
-				dataType:     datatype.NewSetType(datatype.Int),
+				dataType:     datatype.NewSet(datatype.Int),
 				elementCodec: &intCodec{},
 			},
 			"",
 		},
 		{
 			"complex",
-			datatype.NewSetType(datatype.NewSetType(datatype.Int)),
+			datatype.NewSet(datatype.NewSet(datatype.Int)),
 			&collectionCodec{
-				dataType: datatype.NewSetType(datatype.NewSetType(datatype.Int)),
+				dataType: datatype.NewSet(datatype.NewSet(datatype.Int)),
 				elementCodec: &collectionCodec{
-					dataType:     datatype.NewSetType(datatype.Int),
+					dataType:     datatype.NewSet(datatype.Int),
 					elementCodec: &intCodec{},
 				},
 			},
@@ -228,7 +230,7 @@ func TestNewSet(t *testing.T) {
 		},
 		{
 			"wrong data type",
-			datatype.NewSetType(wrongDataType{}),
+			datatype.NewSet(wrongDataType{}),
 			nil,
 			"cannot create codec for set elements: cannot create data codec for CQL type 666",
 		},

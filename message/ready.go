@@ -17,10 +17,14 @@ package message
 import (
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
+// Ready is a response sent when the coordinator replies to a Startup request without requiring authentication.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type Ready struct {
 }
 
@@ -30,10 +34,6 @@ func (m *Ready) IsResponse() bool {
 
 func (m *Ready) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeReady
-}
-
-func (m *Ready) Clone() Message {
-	return &Ready{}
 }
 
 func (m *Ready) String() string {

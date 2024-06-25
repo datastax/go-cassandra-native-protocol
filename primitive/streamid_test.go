@@ -17,9 +17,10 @@ package primitive
 import (
 	"bytes"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"math"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestReadStreamId(t *testing.T) {

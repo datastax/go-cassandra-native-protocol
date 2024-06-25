@@ -17,8 +17,9 @@ package message
 import (
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 type Event interface {
@@ -28,7 +29,10 @@ type Event interface {
 
 // SCHEMA CHANGE EVENT
 
-// Note: this struct is identical to SchemaChangeResult
+// SchemaChangeEvent is a response sent when a schema change event occurs.
+// Note: this struct is identical to SchemaChangeResult.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type SchemaChangeEvent struct {
 	// The schema change type.
 	ChangeType primitive.SchemaChangeType
@@ -52,16 +56,6 @@ func (m *SchemaChangeEvent) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeEvent
 }
 
-func (m *SchemaChangeEvent) Clone() Message {
-	return &SchemaChangeEvent{
-		ChangeType: m.ChangeType,
-		Target:     m.Target,
-		Keyspace:   m.Keyspace,
-		Object:     m.Object,
-		Arguments:  primitive.CloneStringSlice(m.Arguments),
-	}
-}
-
 func (m *SchemaChangeEvent) GetEventType() primitive.EventType {
 	return primitive.EventTypeSchemaChange
 }
@@ -77,6 +71,9 @@ func (m *SchemaChangeEvent) String() string {
 
 // STATUS CHANGE EVENT
 
+// StatusChangeEvent is a response sent when a node status change event occurs.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type StatusChangeEvent struct {
 	ChangeType primitive.StatusChangeType
 	Address    *primitive.Inet
@@ -90,13 +87,6 @@ func (m *StatusChangeEvent) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeEvent
 }
 
-func (m *StatusChangeEvent) Clone() Message {
-	return &StatusChangeEvent{
-		ChangeType: m.ChangeType,
-		Address:    primitive.CloneInet(m.Address),
-	}
-}
-
 func (m *StatusChangeEvent) GetEventType() primitive.EventType {
 	return primitive.EventTypeStatusChange
 }
@@ -107,6 +97,9 @@ func (m *StatusChangeEvent) String() string {
 
 // TOPOLOGY CHANGE EVENT
 
+// TopologyChangeEvent is a response sent when a topology change event occurs.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type TopologyChangeEvent struct {
 	// The topology change type. Note that MOVED_NODE is only valid from protocol version 3 onwards.
 	ChangeType primitive.TopologyChangeType
@@ -120,13 +113,6 @@ func (m *TopologyChangeEvent) IsResponse() bool {
 
 func (m *TopologyChangeEvent) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeEvent
-}
-
-func (m *TopologyChangeEvent) Clone() Message {
-	return &TopologyChangeEvent{
-		ChangeType: m.ChangeType,
-		Address:    primitive.CloneInet(m.Address),
-	}
 }
 
 func (m *TopologyChangeEvent) GetEventType() primitive.EventType {

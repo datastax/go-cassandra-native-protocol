@@ -20,17 +20,19 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/frame"
-	"github.com/datastax/go-cassandra-native-protocol/message"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/datastax/go-cassandra-native-protocol/segment"
-	"github.com/rs/zerolog/log"
 	"io"
 	"math"
 	"net"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/rs/zerolog/log"
+
+	"github.com/datastax/go-cassandra-native-protocol/frame"
+	"github.com/datastax/go-cassandra-native-protocol/message"
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
+	"github.com/datastax/go-cassandra-native-protocol/segment"
 )
 
 const (

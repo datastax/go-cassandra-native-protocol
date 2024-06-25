@@ -16,10 +16,11 @@ package client
 
 import (
 	"fmt"
-	"github.com/rs/zerolog/log"
 	"net"
 	"sync"
 	"sync/atomic"
+
+	"github.com/rs/zerolog/log"
 )
 
 type connectionHolder struct {

@@ -28,7 +28,8 @@ const (
 	ValueTypeUnset   = ValueType(-2)
 )
 
-// Value models the [value] protocol primitive structure
+// Value models the [value] protocol primitive structure.
+// +k8s:deepcopy-gen=true
 type Value struct {
 	Type     ValueType
 	Contents []byte
@@ -48,20 +49,6 @@ func NewNullValue() *Value {
 
 func NewUnsetValue() *Value {
 	return &Value{Type: ValueTypeUnset}
-}
-
-func (v *Value) Clone() *Value {
-	var newContents []byte
-	if v.Contents != nil {
-		newContents = make([]byte, len(v.Contents))
-		copy(newContents, v.Contents)
-	} else {
-		newContents = nil
-	}
-	return &Value{
-		Type:     v.Type,
-		Contents: newContents,
-	}
 }
 
 // [value]

@@ -16,13 +16,15 @@ package message
 
 import (
 	"bytes"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+
 	"github.com/datastax/go-cassandra-native-protocol/datatype"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
-func TestRowsResult_Clone(t *testing.T) {
+func TestRowsResult_DeepCopy(t *testing.T) {
 	msg := &RowsResult{
 		Metadata: &RowsMetadata{
 			ColumnCount:          1,
@@ -50,7 +52,7 @@ func TestRowsResult_Clone(t *testing.T) {
 		},
 	}
 
-	cloned := msg.Clone().(*RowsResult)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 
 	cloned.Metadata = &RowsMetadata{

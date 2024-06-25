@@ -17,10 +17,15 @@ package message
 import (
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
+// AuthChallenge is a response sent in reply to an AuthResponse request, when the server requires additional
+// authentication data. It must be followed by an AuthResponse request message.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type AuthChallenge struct {
 	Token []byte
 }
@@ -35,13 +40,6 @@ func (m *AuthChallenge) GetOpCode() primitive.OpCode {
 
 func (m *AuthChallenge) String() string {
 	return "AUTH_CHALLENGE"
-}
-
-// Performs a deep copy of this message object.
-func (m *AuthChallenge) Clone() Message {
-	return &AuthChallenge{
-		Token: primitive.CloneByteSlice(m.Token),
-	}
 }
 
 type authChallengeCodec struct{}

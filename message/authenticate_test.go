@@ -17,16 +17,18 @@ package message
 import (
 	"bytes"
 	"errors"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
-func TestAuthenticate_Clone(t *testing.T) {
+func TestAuthenticate_DeepCopy(t *testing.T) {
 	msg := &Authenticate{
 		Authenticator: "auth",
 	}
-	cloned := msg.Clone().(*Authenticate)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 	cloned.Authenticator = "auth2"
 	assert.Equal(t, "auth", msg.Authenticator)

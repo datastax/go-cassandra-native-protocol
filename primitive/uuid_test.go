@@ -18,8 +18,9 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var uuid = UUID{0xC0, 0xD1, 0xD2, 0x1E, 0xBB, 0x01, 0x41, 0x96, 0x86, 0xDB, 0xBC, 0x31, 0x7B, 0xC1, 0x79, 0x6A}
@@ -90,9 +91,9 @@ func TestWriteUuid(t *testing.T) {
 	}
 }
 
-func TestUUID_Clone(t *testing.T) {
+func TestUUID_DeepCopy(t *testing.T) {
 	u := &UUID{0, 1, 2, 3, 4, 5, 6}
-	cloned := u.Clone()
+	cloned := u.DeepCopy()
 
 	assert.Equal(t, u, cloned)
 

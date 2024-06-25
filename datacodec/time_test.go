@@ -16,10 +16,12 @@ package datacodec
 
 import (
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 var (

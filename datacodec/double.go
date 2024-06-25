@@ -16,10 +16,11 @@ package datacodec
 
 import (
 	"encoding/binary"
-	"github.com/datastax/go-cassandra-native-protocol/datatype"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"math"
 	"math/big"
+
+	"github.com/datastax/go-cassandra-native-protocol/datatype"
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 // Double is a codec for the CQL double type. Its preferred Go type is float64, but it can encode from and

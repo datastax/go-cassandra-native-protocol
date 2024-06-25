@@ -425,7 +425,7 @@ func insertDataBatch(
 				binary.BigEndian.PutUint32(cc, uint32(j))
 				binary.BigEndian.PutUint32(v, uint32(i)*uint32(j))
 				children[j-1] = &message.BatchChild{
-					QueryOrId: fmt.Sprintf("INSERT INTO %s.%s (pk, cc, v) VALUES (?,?,?)", ks, table),
+					Query: fmt.Sprintf("INSERT INTO %s.%s (pk, cc, v) VALUES (?,?,?)", ks, table),
 					Values: []*primitive.Value{
 						primitive.NewValue(pk),
 						primitive.NewValue(cc),
@@ -474,7 +474,7 @@ func insertDataBatchPrepared(
 				binary.BigEndian.PutUint32(cc, uint32(j))
 				binary.BigEndian.PutUint32(v, uint32(i)*uint32(j))
 				children[j-1] = &message.BatchChild{
-					QueryOrId: prepared.PreparedQueryId,
+					Id: prepared.PreparedQueryId,
 					Values: []*primitive.Value{
 						primitive.NewValue(pk),
 						primitive.NewValue(cc),

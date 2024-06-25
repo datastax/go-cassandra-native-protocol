@@ -23,6 +23,8 @@ import (
 
 // [inet] (net.IP + port)
 
+// Inet is the [inet] protocol type. It is the combination of a net.IP + port number.
+// +k8s:deepcopy-gen=true
 type Inet struct {
 	Addr net.IP
 	Port int32

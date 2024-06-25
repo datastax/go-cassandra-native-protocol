@@ -17,13 +17,15 @@ package message
 import (
 	"bytes"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/stretchr/testify/assert"
 	"net"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
-func TestSchemaChangeEvent_Clone(t *testing.T) {
+func TestSchemaChangeEvent_DeepCopy(t *testing.T) {
 	msg := &SchemaChangeEvent{
 		ChangeType: primitive.SchemaChangeTypeCreated,
 		Target:     primitive.SchemaChangeTargetAggregate,
@@ -32,7 +34,7 @@ func TestSchemaChangeEvent_Clone(t *testing.T) {
 		Arguments:  []string{"arg1"},
 	}
 
-	cloned := msg.Clone().(*SchemaChangeEvent)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 
 	cloned.ChangeType = primitive.SchemaChangeTypeDropped
@@ -54,7 +56,7 @@ func TestSchemaChangeEvent_Clone(t *testing.T) {
 	assert.Equal(t, []string{"arg2"}, cloned.Arguments)
 }
 
-func TestStatusChangeEvent_Clone(t *testing.T) {
+func TestStatusChangeEvent_DeepCopy(t *testing.T) {
 	msg := &StatusChangeEvent{
 		ChangeType: primitive.StatusChangeTypeDown,
 		Address: &primitive.Inet{
@@ -63,7 +65,7 @@ func TestStatusChangeEvent_Clone(t *testing.T) {
 		},
 	}
 
-	cloned := msg.Clone().(*StatusChangeEvent)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 
 	cloned.ChangeType = primitive.StatusChangeTypeUp
@@ -81,7 +83,7 @@ func TestStatusChangeEvent_Clone(t *testing.T) {
 	assert.EqualValues(t, 801, cloned.Address.Port)
 }
 
-func TestTopologyChangeEvent_Clone(t *testing.T) {
+func TestTopologyChangeEvent_DeepCopy(t *testing.T) {
 	msg := &TopologyChangeEvent{
 		ChangeType: primitive.TopologyChangeTypeNewNode,
 		Address: &primitive.Inet{
@@ -90,7 +92,7 @@ func TestTopologyChangeEvent_Clone(t *testing.T) {
 		},
 	}
 
-	cloned := msg.Clone().(*TopologyChangeEvent)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 
 	cloned.ChangeType = primitive.TopologyChangeTypeRemovedNode

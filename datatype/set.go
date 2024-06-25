@@ -16,58 +16,47 @@ package datatype
 
 import (
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
-type SetType interface {
-	DataType
-	GetElementType() DataType
+// Set is a data type that represents a CQL set type.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/datatype.DataType
+type Set struct {
+	ElementType DataType
 }
 
-type setType struct {
-	elementType DataType
-}
-
-func (t *setType) GetElementType() DataType {
-	return t.elementType
-}
-
-func (t *setType) GetDataTypeCode() primitive.DataTypeCode {
+func (t *Set) Code() primitive.DataTypeCode {
 	return primitive.DataTypeCodeSet
 }
 
-func (t *setType) Clone() DataType {
-	return &setType{
-		elementType: t.elementType.Clone(),
-	}
+func (t *Set) String() string {
+	return t.AsCql()
 }
 
-func (t *setType) String() string {
-	return fmt.Sprintf("set<%v>", t.elementType)
+func (t *Set) AsCql() string {
+	return fmt.Sprintf("set<%v>", t.ElementType.AsCql())
 }
 
-func (t *setType) MarshalJSON() ([]byte, error) {
-	return []byte("\"" + t.String() + "\""), nil
-}
-
-func NewSetType(elementType DataType) SetType {
-	return &setType{elementType: elementType}
+func NewSet(elementType DataType) *Set {
+	return &Set{ElementType: elementType}
 }
 
 func writeSetType(t DataType, dest io.Writer, version primitive.ProtocolVersion) (err error) {
-	if setType, ok := t.(SetType); !ok {
-		return fmt.Errorf("expected SetType, got %T", t)
-	} else if err = WriteDataType(setType.GetElementType(), dest, version); err != nil {
+	if setType, ok := t.(*Set); !ok {
+		return fmt.Errorf("expected *Set, got %T", t)
+	} else if err = WriteDataType(setType.ElementType, dest, version); err != nil {
 		return fmt.Errorf("cannot write set element type: %w", err)
 	}
 	return nil
 }
 
 func lengthOfSetType(t DataType, version primitive.ProtocolVersion) (length int, err error) {
-	if setType, ok := t.(SetType); !ok {
-		return -1, fmt.Errorf("expected SetType, got %T", t)
-	} else if elementLength, err := LengthOfDataType(setType.GetElementType(), version); err != nil {
+	if setType, ok := t.(*Set); !ok {
+		return -1, fmt.Errorf("expected *Set, got %T", t)
+	} else if elementLength, err := LengthOfDataType(setType.ElementType, version); err != nil {
 		return -1, fmt.Errorf("cannot compute length of set element type: %w", err)
 	} else {
 		length += elementLength
@@ -76,8 +65,8 @@ func lengthOfSetType(t DataType, version primitive.ProtocolVersion) (length int,
 }
 
 func readSetType(source io.Reader, version primitive.ProtocolVersion) (decoded DataType, err error) {
-	setType := &setType{}
-	if setType.elementType, err = ReadDataType(source, version); err != nil {
+	setType := &Set{}
+	if setType.ElementType, err = ReadDataType(source, version); err != nil {
 		return nil, fmt.Errorf("cannot read set element type: %w", err)
 	}
 	return setType, nil

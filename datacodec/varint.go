@@ -15,10 +15,11 @@
 package datacodec
 
 import (
-	"github.com/datastax/go-cassandra-native-protocol/datatype"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"math/big"
 	"strconv"
+
+	"github.com/datastax/go-cassandra-native-protocol/datatype"
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 // Varint is a codec for the CQL varint type, a type that can handle arbitrary-length integers. Its preferred

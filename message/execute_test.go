@@ -17,12 +17,14 @@ package message
 import (
 	"bytes"
 	"errors"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
-func TestExecute_Clone(t *testing.T) {
+func TestExecute_DeepCopy(t *testing.T) {
 	msg := &Execute{
 		QueryId:          []byte{0x01},
 		ResultMetadataId: []byte{0x02},
@@ -40,19 +42,14 @@ func TestExecute_Clone(t *testing.T) {
 					Contents: []byte{0x21},
 				},
 			},
-			SkipMetadata:    false,
-			PageSize:        5,
-			PageSizeInBytes: false,
-			PagingState:     []byte{0x33},
-			SerialConsistency: &primitive.NillableConsistencyLevel{
-				Value: primitive.ConsistencyLevelLocalSerial},
-			DefaultTimestamp: &primitive.NillableInt64{
-				Value: 1,
-			},
-			Keyspace: "ks1",
-			NowInSeconds: &primitive.NillableInt32{
-				Value: 3,
-			},
+			SkipMetadata:      false,
+			PageSize:          5,
+			PageSizeInBytes:   false,
+			PagingState:       []byte{0x33},
+			SerialConsistency: consistencyLevelPtr(primitive.ConsistencyLevelLocalSerial),
+			DefaultTimestamp:  int64Ptr(1),
+			Keyspace:          "ks1",
+			NowInSeconds:      int32Ptr(3),
 			ContinuousPagingOptions: &ContinuousPagingOptions{
 				MaxPages:       5,
 				PagesPerSecond: 2,
@@ -61,7 +58,7 @@ func TestExecute_Clone(t *testing.T) {
 		},
 	}
 
-	cloned := msg.Clone().(*Execute)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 
 	cloned.QueryId = []byte{0x41}
@@ -85,11 +82,9 @@ func TestExecute_Clone(t *testing.T) {
 		PageSizeInBytes:   true,
 		PagingState:       []byte{0x23},
 		SerialConsistency: nil,
-		DefaultTimestamp: &primitive.NillableInt64{
-			Value: 3,
-		},
-		Keyspace:     "ks2",
-		NowInSeconds: nil,
+		DefaultTimestamp:  int64Ptr(3),
+		Keyspace:          "ks2",
+		NowInSeconds:      nil,
 		ContinuousPagingOptions: &ContinuousPagingOptions{
 			MaxPages:       6,
 			PagesPerSecond: 3,
@@ -108,10 +103,10 @@ func TestExecute_Clone(t *testing.T) {
 	assert.EqualValues(t, 5, msg.Options.PageSize)
 	assert.False(t, msg.Options.PageSizeInBytes)
 	assert.Equal(t, []byte{0x33}, msg.Options.PagingState)
-	assert.Equal(t, primitive.ConsistencyLevelLocalSerial, msg.Options.SerialConsistency.Value)
-	assert.EqualValues(t, 1, msg.Options.DefaultTimestamp.Value)
+	assert.Equal(t, primitive.ConsistencyLevelLocalSerial, *msg.Options.SerialConsistency)
+	assert.EqualValues(t, 1, *msg.Options.DefaultTimestamp)
 	assert.Equal(t, "ks1", msg.Options.Keyspace)
-	assert.EqualValues(t, 3, msg.Options.NowInSeconds.Value)
+	assert.EqualValues(t, 3, *msg.Options.NowInSeconds)
 	assert.EqualValues(t, 5, msg.Options.ContinuousPagingOptions.MaxPages)
 	assert.EqualValues(t, 2, msg.Options.ContinuousPagingOptions.PagesPerSecond)
 	assert.EqualValues(t, 3, msg.Options.ContinuousPagingOptions.NextPages)
@@ -130,7 +125,7 @@ func TestExecute_Clone(t *testing.T) {
 	assert.True(t, cloned.Options.PageSizeInBytes)
 	assert.Equal(t, []byte{0x23}, cloned.Options.PagingState)
 	assert.Nil(t, cloned.Options.SerialConsistency)
-	assert.EqualValues(t, 3, cloned.Options.DefaultTimestamp.Value)
+	assert.EqualValues(t, 3, *cloned.Options.DefaultTimestamp)
 	assert.Equal(t, "ks2", cloned.Options.Keyspace)
 	assert.Nil(t, cloned.Options.NowInSeconds)
 	assert.EqualValues(t, 6, cloned.Options.ContinuousPagingOptions.MaxPages)
@@ -166,8 +161,8 @@ func TestExecuteCodec_Encode(t *testing.T) {
 							SkipMetadata:      true,
 							PageSize:          100,
 							PagingState:       []byte{0xca, 0xfe, 0xba, 0xbe},
-							SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
-							DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+							SerialConsistency: consistencyLevelPtr(primitive.ConsistencyLevelLocalSerial),
+							DefaultTimestamp:  int64Ptr(123),
 						},
 					},
 					[]byte{
@@ -283,8 +278,8 @@ func TestExecuteCodec_Encode(t *testing.T) {
 						SkipMetadata:      true,
 						PageSize:          100,
 						PagingState:       []byte{0xca, 0xfe, 0xba, 0xbe},
-						SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
-						DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+						SerialConsistency: consistencyLevelPtr(primitive.ConsistencyLevelLocalSerial),
+						DefaultTimestamp:  int64Ptr(123),
 					},
 				},
 				[]byte{
@@ -383,7 +378,7 @@ func TestExecuteCodec_Encode(t *testing.T) {
 					ResultMetadataId: []byte{5, 6, 7, 8},
 					Options: &QueryOptions{
 						Keyspace:     "ks1",
-						NowInSeconds: &primitive.NillableInt32{Value: 123},
+						NowInSeconds: int32Ptr(123),
 					},
 				},
 				[]byte{
@@ -406,7 +401,7 @@ func TestExecuteCodec_Encode(t *testing.T) {
 					ResultMetadataId: []byte{5, 6, 7, 8},
 					Options: &QueryOptions{
 						Keyspace:     "ks1",
-						NowInSeconds: &primitive.NillableInt32{Value: 123},
+						NowInSeconds: int32Ptr(123),
 						PositionalValues: []*primitive.Value{
 							{
 								Type:     primitive.ValueTypeRegular,
@@ -484,8 +479,8 @@ func TestExecuteCodec_Encode(t *testing.T) {
 						SkipMetadata:      true,
 						PageSize:          100,
 						PagingState:       []byte{0xca, 0xfe, 0xba, 0xbe},
-						SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
-						DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+						SerialConsistency: consistencyLevelPtr(primitive.ConsistencyLevelLocalSerial),
+						DefaultTimestamp:  int64Ptr(123),
 					},
 				},
 				[]byte{
@@ -677,8 +672,8 @@ func TestExecuteCodec_EncodedLength(t *testing.T) {
 							SkipMetadata:      true,
 							PageSize:          100,
 							PagingState:       []byte{0xca, 0xfe, 0xba, 0xbe},
-							SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
-							DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+							SerialConsistency: consistencyLevelPtr(primitive.ConsistencyLevelLocalSerial),
+							DefaultTimestamp:  int64Ptr(123),
 						},
 					},
 					primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) + // query id
@@ -779,8 +774,8 @@ func TestExecuteCodec_EncodedLength(t *testing.T) {
 						SkipMetadata:      true,
 						PageSize:          100,
 						PagingState:       []byte{0xca, 0xfe, 0xba, 0xbe},
-						SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
-						DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+						SerialConsistency: consistencyLevelPtr(primitive.ConsistencyLevelLocalSerial),
+						DefaultTimestamp:  int64Ptr(123),
 					},
 				},
 				primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) + // query id
@@ -866,7 +861,7 @@ func TestExecuteCodec_EncodedLength(t *testing.T) {
 					ResultMetadataId: []byte{5, 6, 7, 8},
 					Options: &QueryOptions{
 						Keyspace:     "ks1",
-						NowInSeconds: &primitive.NillableInt32{Value: 123},
+						NowInSeconds: int32Ptr(123),
 					},
 				},
 				primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) + // query id
@@ -884,7 +879,7 @@ func TestExecuteCodec_EncodedLength(t *testing.T) {
 					ResultMetadataId: []byte{5, 6, 7, 8},
 					Options: &QueryOptions{
 						Keyspace:     "ks1",
-						NowInSeconds: &primitive.NillableInt32{Value: 123},
+						NowInSeconds: int32Ptr(123),
 						PositionalValues: []*primitive.Value{
 							{
 								Type:     primitive.ValueTypeRegular,
@@ -948,8 +943,8 @@ func TestExecuteCodec_EncodedLength(t *testing.T) {
 						SkipMetadata:      true,
 						PageSize:          100,
 						PagingState:       []byte{0xca, 0xfe, 0xba, 0xbe},
-						SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
-						DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+						SerialConsistency: consistencyLevelPtr(primitive.ConsistencyLevelLocalSerial),
+						DefaultTimestamp:  int64Ptr(123),
 					},
 				},
 				primitive.LengthOfShortBytes([]byte{1, 2, 3, 4}) + // query id
@@ -1122,8 +1117,8 @@ func TestExecuteCodec_Decode(t *testing.T) {
 							SkipMetadata:      true,
 							PageSize:          100,
 							PagingState:       []byte{0xca, 0xfe, 0xba, 0xbe},
-							SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
-							DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+							SerialConsistency: consistencyLevelPtr(primitive.ConsistencyLevelLocalSerial),
+							DefaultTimestamp:  int64Ptr(123),
 						},
 					},
 					nil,
@@ -1237,8 +1232,8 @@ func TestExecuteCodec_Decode(t *testing.T) {
 						SkipMetadata:      true,
 						PageSize:          100,
 						PagingState:       []byte{0xca, 0xfe, 0xba, 0xbe},
-						SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
-						DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+						SerialConsistency: consistencyLevelPtr(primitive.ConsistencyLevelLocalSerial),
+						DefaultTimestamp:  int64Ptr(123),
 					},
 				},
 				nil,
@@ -1337,7 +1332,7 @@ func TestExecuteCodec_Decode(t *testing.T) {
 					ResultMetadataId: []byte{5, 6, 7, 8},
 					Options: &QueryOptions{
 						Keyspace:     "ks1",
-						NowInSeconds: &primitive.NillableInt32{Value: 123},
+						NowInSeconds: int32Ptr(123),
 					},
 				},
 				nil,
@@ -1364,7 +1359,7 @@ func TestExecuteCodec_Decode(t *testing.T) {
 					ResultMetadataId: []byte{5, 6, 7, 8},
 					Options: &QueryOptions{
 						Keyspace:     "ks1",
-						NowInSeconds: &primitive.NillableInt32{Value: 123},
+						NowInSeconds: int32Ptr(123),
 						PositionalValues: []*primitive.Value{
 							{
 								Type:     primitive.ValueTypeRegular,
@@ -1458,8 +1453,8 @@ func TestExecuteCodec_Decode(t *testing.T) {
 						SkipMetadata:      true,
 						PageSize:          100,
 						PagingState:       []byte{0xca, 0xfe, 0xba, 0xbe},
-						SerialConsistency: &primitive.NillableConsistencyLevel{Value: primitive.ConsistencyLevelLocalSerial},
-						DefaultTimestamp:  &primitive.NillableInt64{Value: 123},
+						SerialConsistency: consistencyLevelPtr(primitive.ConsistencyLevelLocalSerial),
+						DefaultTimestamp:  int64Ptr(123),
 					},
 				},
 				nil,

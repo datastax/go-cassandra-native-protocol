@@ -17,17 +17,19 @@ package message
 import (
 	"bytes"
 	"errors"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
-func TestRegister_Clone(t *testing.T) {
+func TestRegister_DeepCopy(t *testing.T) {
 	msg := &Register{
 		EventTypes: []primitive.EventType{primitive.EventTypeSchemaChange},
 	}
 
-	cloned := msg.Clone().(*Register)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 
 	cloned.EventTypes = []primitive.EventType{primitive.EventTypeSchemaChange, primitive.EventTypeStatusChange}

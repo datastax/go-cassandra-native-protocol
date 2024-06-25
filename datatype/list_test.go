@@ -18,26 +18,28 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 func TestListType(t *testing.T) {
-	listType := NewListType(Varchar)
-	assert.Equal(t, primitive.DataTypeCodeList, listType.GetDataTypeCode())
-	assert.Equal(t, Varchar, listType.GetElementType())
+	ListType := NewList(Varchar)
+	assert.Equal(t, primitive.DataTypeCodeList, ListType.Code())
+	assert.Equal(t, Varchar, ListType.ElementType)
 }
 
-func TestListTypeClone(t *testing.T) {
-	lt := NewListType(Varchar)
-	clonedObj := lt.Clone().(*listType)
+func TestListTypeDeepCopy(t *testing.T) {
+	lt := NewList(Varchar)
+	clonedObj := lt.DeepCopy()
 	assert.Equal(t, lt, clonedObj)
-	clonedObj.elementType = Int
-	assert.Equal(t, primitive.DataTypeCodeList, lt.GetDataTypeCode())
-	assert.Equal(t, Varchar, lt.GetElementType())
-	assert.Equal(t, primitive.DataTypeCodeList, clonedObj.GetDataTypeCode())
-	assert.Equal(t, Int, clonedObj.GetElementType())
+	clonedObj.ElementType = Int
+	assert.Equal(t, primitive.DataTypeCodeList, lt.Code())
+	assert.Equal(t, Varchar, lt.ElementType)
+	assert.Equal(t, primitive.DataTypeCodeList, clonedObj.Code())
+	assert.Equal(t, Int, clonedObj.ElementType)
 }
 
 func TestWriteListType(t *testing.T) {
@@ -45,25 +47,25 @@ func TestWriteListType(t *testing.T) {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
-				input    ListType
+				input    DataType
 				expected []byte
 				err      error
 			}{
 				{
 					"simple list",
-					NewListType(Varchar),
+					NewList(Varchar),
 					[]byte{0, byte(primitive.DataTypeCodeVarchar & 0xFF)},
 					nil,
 				},
 				{
 					"complex list",
-					NewListType(NewListType(Varchar)),
+					NewList(NewList(Varchar)),
 					[]byte{
 						0, byte(primitive.DataTypeCodeList & 0xFF),
 						0, byte(primitive.DataTypeCodeVarchar & 0xFF)},
 					nil,
 				},
-				{"nil list", nil, nil, errors.New("expected ListType, got <nil>")},
+				{"nil list", nil, nil, errors.New("expected *List, got <nil>")},
 			}
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
@@ -84,13 +86,13 @@ func TestLengthOfListType(t *testing.T) {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
-				input    ListType
+				input    DataType
 				expected int
 				err      error
 			}{
-				{"simple list", NewListType(Varchar), primitive.LengthOfShort, nil},
-				{"complex list", NewListType(NewListType(Varchar)), primitive.LengthOfShort + primitive.LengthOfShort, nil},
-				{"nil list", nil, -1, errors.New("expected ListType, got <nil>")},
+				{"simple list", NewList(Varchar), primitive.LengthOfShort, nil},
+				{"complex list", NewList(NewList(Varchar)), primitive.LengthOfShort + primitive.LengthOfShort, nil},
+				{"nil list", nil, -1, errors.New("expected *List, got <nil>")},
 			}
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
@@ -111,13 +113,13 @@ func TestReadListType(t *testing.T) {
 			tests := []struct {
 				name     string
 				input    []byte
-				expected ListType
+				expected DataType
 				err      error
 			}{
 				{
 					"simple list",
 					[]byte{0, byte(primitive.DataTypeCodeVarchar & 0xff)},
-					NewListType(Varchar),
+					NewList(Varchar),
 					nil,
 				},
 				{
@@ -125,7 +127,7 @@ func TestReadListType(t *testing.T) {
 					[]byte{
 						0, byte(primitive.DataTypeCodeList & 0xff),
 						0, byte(primitive.DataTypeCodeVarchar & 0xff)},
-					NewListType(NewListType(Varchar)),
+					NewList(NewList(Varchar)),
 					nil,
 				},
 				{

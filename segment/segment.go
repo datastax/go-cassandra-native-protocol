@@ -24,12 +24,14 @@ import (
 // larger frame spanning multiple segments (multi-segment part). It can also be optionally compressed with Lz4.
 // Segments were introduced in protocol v5 to improve compression efficiency (especially for small messages) and to
 // introduce error detection in the native protocol.
+// +k8s:deepcopy-gen=true
 type Segment struct {
 	Header  *Header
 	Payload *Payload
 }
 
 // Header is the header of a Segment.
+// +k8s:deepcopy-gen=true
 type Header struct {
 	// IsSelfContained is true when this segment's payload contains one or more Frames (self-contained segment); when it
 	// is false, this segment's payload contains just a portion of a larger frame spanning multiple segments
@@ -53,6 +55,7 @@ type Header struct {
 }
 
 // Payload is the payload of a Segment.
+// +k8s:deepcopy-gen=true
 type Payload struct {
 	// UncompressedData holds the uncompressed data forming one or more frames.
 	UncompressedData []byte

@@ -15,23 +15,25 @@
 package datacodec
 
 import (
-	"github.com/datastax/go-cassandra-native-protocol/datatype"
-	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/datastax/go-cassandra-native-protocol/datatype"
 )
 
 func TestNewCodec(t *testing.T) {
-	customType := datatype.NewCustomType("com.example.Type")
-	listType := datatype.NewListType(datatype.Int)
+	customType := datatype.NewCustom("com.example.Type")
+	listType := datatype.NewList(datatype.Int)
 	listCodec, _ := NewList(listType)
-	setType := datatype.NewSetType(datatype.Int)
+	setType := datatype.NewSet(datatype.Int)
 	setCodec, _ := NewSet(setType)
-	mapType := datatype.NewMapType(datatype.Int, datatype.Varchar)
+	mapType := datatype.NewMap(datatype.Int, datatype.Varchar)
 	mapCodec, _ := NewMap(mapType)
-	tupleType := datatype.NewTupleType(datatype.Int)
+	tupleType := datatype.NewTuple(datatype.Int)
 	tupleCodec, _ := NewTuple(tupleType)
-	userDefinedType, _ := datatype.NewUserDefinedType("ks1", "table1", []string{"f1"}, []datatype.DataType{datatype.Int})
+	userDefinedType, _ := datatype.NewUserDefined("ks1", "table1", []string{"f1"}, []datatype.DataType{datatype.Int})
 	userDefinedCodec, _ := NewUserDefined(userDefinedType)
 	tests := []struct {
 		name      string
@@ -76,12 +78,12 @@ func TestNewCodec(t *testing.T) {
 }
 
 func TestPreferredGoType(t *testing.T) {
-	customType := datatype.NewCustomType("com.example.Type")
-	listType := datatype.NewListType(datatype.Int)
-	setType := datatype.NewSetType(datatype.Int)
-	mapType := datatype.NewMapType(datatype.Int, datatype.Varchar)
-	tupleType := datatype.NewTupleType(datatype.Int)
-	userDefinedType, _ := datatype.NewUserDefinedType("ks1", "table1", []string{"f1"}, []datatype.DataType{datatype.Int})
+	customType := datatype.NewCustom("com.example.Type")
+	listType := datatype.NewList(datatype.Int)
+	setType := datatype.NewSet(datatype.Int)
+	mapType := datatype.NewMap(datatype.Int, datatype.Varchar)
+	tupleType := datatype.NewTuple(datatype.Int)
+	userDefinedType, _ := datatype.NewUserDefined("ks1", "table1", []string{"f1"}, []datatype.DataType{datatype.Int})
 	tests := []struct {
 		name     string
 		dt       datatype.DataType
@@ -114,10 +116,10 @@ func TestPreferredGoType(t *testing.T) {
 		{"Map", mapType, reflect.TypeOf(map[*int32]*string{}), ""},
 		{"Tuple", tupleType, reflect.TypeOf([]interface{}{}), ""},
 		{"UserDefined", userDefinedType, reflect.TypeOf(map[string]interface{}{}), ""},
-		{"List wrong", datatype.NewListType(wrongDataType{}), nil, "could not find any suitable Go type for CQL type 666"},
-		{"Set wrong", datatype.NewSetType(wrongDataType{}), nil, "could not find any suitable Go type for CQL type 666"},
-		{"Map wrong key", datatype.NewMapType(wrongDataType{}, datatype.Int), nil, "could not find any suitable Go type for CQL type 666"},
-		{"Map wrong value", datatype.NewMapType(datatype.Int, wrongDataType{}), nil, "could not find any suitable Go type for CQL type 666"},
+		{"List wrong", datatype.NewList(wrongDataType{}), nil, "could not find any suitable Go type for CQL type 666"},
+		{"Set wrong", datatype.NewSet(wrongDataType{}), nil, "could not find any suitable Go type for CQL type 666"},
+		{"Map wrong key", datatype.NewMap(wrongDataType{}, datatype.Int), nil, "could not find any suitable Go type for CQL type 666"},
+		{"Map wrong value", datatype.NewMap(datatype.Int, wrongDataType{}), nil, "could not find any suitable Go type for CQL type 666"},
 		{"wrong", wrongDataType{}, nil, "could not find any suitable Go type for CQL type 666"},
 	}
 	for _, tt := range tests {

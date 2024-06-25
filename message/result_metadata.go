@@ -16,11 +16,14 @@ package message
 
 import (
 	"fmt"
+	"io"
+
 	"github.com/datastax/go-cassandra-native-protocol/datatype"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"io"
 )
 
+// ColumnMetadata represents a column in a PreparedResult message.
+// +k8s:deepcopy-gen=true
 type ColumnMetadata struct {
 	Keyspace string
 	Table    string
@@ -30,6 +33,7 @@ type ColumnMetadata struct {
 }
 
 // VariablesMetadata is used in PreparedResult to indicate metadata about the prepared statement's bound variables.
+// +k8s:deepcopy-gen=true
 type VariablesMetadata struct {
 	// The indices of variables belonging to the table's partition key, if any. Valid from protocol version 4 onwards;
 	// will be nil for protocol versions lesser than 4.
@@ -47,6 +51,7 @@ func (rm *VariablesMetadata) Flags() (flag primitive.VariablesFlag) {
 // RowsMetadata is used in RowsResult to indicate metadata about the result set present in the result response;
 // and in PreparedResult, to indicate metadata about the result set that the prepared statement will produce once
 // executed.
+// +k8s:deepcopy-gen=true
 type RowsMetadata struct {
 	// Must be always present, even when Columns is nil. If Columns is non-nil, the value of ColumnCount must match
 	// len(Columns), otherwise an error is returned when encoding.
@@ -379,64 +384,4 @@ func haveSameTable(cols []*ColumnMetadata) bool {
 		}
 	}
 	return true
-}
-
-func (cm *ColumnMetadata) Clone() *ColumnMetadata {
-	if cm == nil {
-		return nil
-	}
-
-	return &ColumnMetadata{
-		Keyspace: cm.Keyspace,
-		Table:    cm.Table,
-		Name:     cm.Name,
-		Index:    cm.Index,
-		Type:     cm.Type.Clone(),
-	}
-}
-
-func (vm *VariablesMetadata) Clone() *VariablesMetadata {
-	var newPkIndices []uint16
-	if vm.PkIndices != nil {
-		newPkIndices = make([]uint16, len(vm.PkIndices))
-		copy(newPkIndices, vm.PkIndices)
-	} else {
-		newPkIndices = nil
-	}
-
-	var newColumnMetadata []*ColumnMetadata
-	if vm.Columns != nil {
-		newColumnMetadata = make([]*ColumnMetadata, len(vm.Columns))
-		for idx, cm := range vm.Columns {
-			newColumnMetadata[idx] = cm.Clone()
-		}
-	} else {
-		newColumnMetadata = nil
-	}
-
-	return &VariablesMetadata{
-		PkIndices: newPkIndices,
-		Columns:   newColumnMetadata,
-	}
-}
-
-func (rm *RowsMetadata) Clone() *RowsMetadata {
-	var newColumnMetadata []*ColumnMetadata
-	if rm.Columns != nil {
-		newColumnMetadata = make([]*ColumnMetadata, len(rm.Columns))
-		for idx, cm := range rm.Columns {
-			newColumnMetadata[idx] = cm.Clone()
-		}
-	} else {
-		newColumnMetadata = nil
-	}
-
-	return &RowsMetadata{
-		ColumnCount:          rm.ColumnCount,
-		PagingState:          primitive.CloneByteSlice(rm.PagingState),
-		NewResultMetadataId:  primitive.CloneByteSlice(rm.NewResultMetadataId),
-		ContinuousPageNumber: rm.ContinuousPageNumber,
-		LastContinuousPage:   rm.LastContinuousPage,
-		Columns:              newColumnMetadata,
-	}
 }

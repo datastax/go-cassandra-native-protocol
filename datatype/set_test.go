@@ -18,26 +18,28 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 func TestSetType(t *testing.T) {
-	setType := NewSetType(Varchar)
-	assert.Equal(t, primitive.DataTypeCodeSet, setType.GetDataTypeCode())
-	assert.Equal(t, Varchar, setType.GetElementType())
+	setType := NewSet(Varchar)
+	assert.Equal(t, primitive.DataTypeCodeSet, setType.Code())
+	assert.Equal(t, Varchar, setType.ElementType)
 }
 
-func TestSetTypeClone(t *testing.T) {
-	st := NewSetType(Varchar)
-	cloned := st.Clone().(*setType)
+func TestSetTypeDeepCopy(t *testing.T) {
+	st := NewSet(Varchar)
+	cloned := st.DeepCopy()
 	assert.Equal(t, st, cloned)
-	cloned.elementType = Int
-	assert.Equal(t, primitive.DataTypeCodeSet, st.GetDataTypeCode())
-	assert.Equal(t, Varchar, st.GetElementType())
-	assert.Equal(t, primitive.DataTypeCodeSet, cloned.GetDataTypeCode())
-	assert.Equal(t, Int, cloned.GetElementType())
+	cloned.ElementType = Int
+	assert.Equal(t, primitive.DataTypeCodeSet, st.Code())
+	assert.Equal(t, Varchar, st.ElementType)
+	assert.Equal(t, primitive.DataTypeCodeSet, cloned.Code())
+	assert.Equal(t, Int, cloned.ElementType)
 }
 
 func TestWriteSetType(t *testing.T) {
@@ -45,25 +47,25 @@ func TestWriteSetType(t *testing.T) {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
-				input    SetType
+				input    DataType
 				expected []byte
 				err      error
 			}{
 				{
 					"simple set",
-					NewSetType(Varchar),
+					NewSet(Varchar),
 					[]byte{0, byte(primitive.DataTypeCodeVarchar & 0xFF)},
 					nil,
 				},
 				{
 					"complex set",
-					NewSetType(NewSetType(Varchar)),
+					NewSet(NewSet(Varchar)),
 					[]byte{
 						0, byte(primitive.DataTypeCodeSet & 0xFF),
 						0, byte(primitive.DataTypeCodeVarchar & 0xFF)},
 					nil,
 				},
-				{"nil set", nil, nil, errors.New("expected SetType, got <nil>")},
+				{"nil set", nil, nil, errors.New("expected *Set, got <nil>")},
 			}
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
@@ -84,13 +86,13 @@ func TestLengthOfSetType(t *testing.T) {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
-				input    SetType
+				input    DataType
 				expected int
 				err      error
 			}{
-				{"simple set", NewSetType(Varchar), primitive.LengthOfShort, nil},
-				{"complex set", NewSetType(NewSetType(Varchar)), primitive.LengthOfShort + primitive.LengthOfShort, nil},
-				{"nil set", nil, -1, errors.New("expected SetType, got <nil>")},
+				{"simple set", NewSet(Varchar), primitive.LengthOfShort, nil},
+				{"complex set", NewSet(NewSet(Varchar)), primitive.LengthOfShort + primitive.LengthOfShort, nil},
+				{"nil set", nil, -1, errors.New("expected *Set, got <nil>")},
 			}
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
@@ -111,13 +113,13 @@ func TestReadSetType(t *testing.T) {
 			tests := []struct {
 				name     string
 				input    []byte
-				expected SetType
+				expected DataType
 				err      error
 			}{
 				{
 					"simple set",
 					[]byte{0, byte(primitive.DataTypeCodeVarchar & 0xff)},
-					NewSetType(Varchar),
+					NewSet(Varchar),
 					nil,
 				},
 				{
@@ -125,7 +127,7 @@ func TestReadSetType(t *testing.T) {
 					[]byte{
 						0, byte(primitive.DataTypeCodeSet & 0xff),
 						0, byte(primitive.DataTypeCodeVarchar & 0xff)},
-					NewSetType(NewSetType(Varchar)),
+					NewSet(NewSet(Varchar)),
 					nil,
 				},
 				{

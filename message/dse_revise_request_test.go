@@ -17,18 +17,20 @@ package message
 import (
 	"bytes"
 	"errors"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
-func TestRevise_Clone(t *testing.T) {
+func TestRevise_DeepCopy(t *testing.T) {
 	obj := &Revise{
 		RevisionType:   primitive.DseRevisionTypeCancelContinuousPaging,
 		TargetStreamId: 5,
 		NextPages:      10,
 	}
-	cloned := obj.Clone().(*Revise)
+	cloned := obj.DeepCopy()
 	assert.Equal(t, obj, cloned)
 	cloned.RevisionType = primitive.DseRevisionTypeMoreContinuousPages
 	cloned.TargetStreamId = 6

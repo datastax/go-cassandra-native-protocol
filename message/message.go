@@ -15,14 +15,15 @@
 package message
 
 import (
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 type Message interface {
 	IsResponse() bool
 	GetOpCode() primitive.OpCode
-	Clone() Message
+	DeepCopyMessage() Message
 }
 
 type Encoder interface {

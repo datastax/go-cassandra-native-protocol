@@ -17,20 +17,21 @@ package datacodec
 import (
 	"bytes"
 	"fmt"
+	"reflect"
+
 	"github.com/datastax/go-cassandra-native-protocol/datatype"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"reflect"
 )
 
-func NewMap(dataType datatype.MapType) (Codec, error) {
+func NewMap(dataType *datatype.Map) (Codec, error) {
 	if dataType == nil {
 		return nil, ErrNilDataType
 	}
-	keyCodec, err := NewCodec(dataType.GetKeyType())
+	keyCodec, err := NewCodec(dataType.KeyType)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create codec for map keys: %w", err)
 	}
-	valueCodec, err := NewCodec(dataType.GetValueType())
+	valueCodec, err := NewCodec(dataType.ValueType)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create codec for map values: %w", err)
 	}
@@ -38,7 +39,7 @@ func NewMap(dataType datatype.MapType) (Codec, error) {
 }
 
 type mapCodec struct {
-	dataType   datatype.MapType
+	dataType   *datatype.Map
 	keyCodec   Codec
 	valueCodec Codec
 }

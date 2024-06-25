@@ -16,17 +16,19 @@ package message
 
 import (
 	"bytes"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
-func TestSetKeyspaceResult_Clone(t *testing.T) {
+func TestSetKeyspaceResult_DeepCopy(t *testing.T) {
 	msg := &SetKeyspaceResult{
 		Keyspace: "ks1",
 	}
 
-	cloned := msg.Clone().(*SetKeyspaceResult)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 
 	cloned.Keyspace = "ks2"

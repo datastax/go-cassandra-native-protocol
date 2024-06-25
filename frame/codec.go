@@ -16,9 +16,10 @@ package frame
 
 import (
 	"fmt"
+	"io"
+
 	"github.com/datastax/go-cassandra-native-protocol/message"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"io"
 )
 
 type Encoder interface {

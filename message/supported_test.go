@@ -17,12 +17,14 @@ package message
 import (
 	"bytes"
 	"errors"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
-func TestSupported_Clone(t *testing.T) {
+func TestSupported_DeepCopy(t *testing.T) {
 	msg := &Supported{
 		Options: map[string][]string{
 			"opt1": {"val1"},
@@ -30,7 +32,7 @@ func TestSupported_Clone(t *testing.T) {
 		},
 	}
 
-	cloned := msg.Clone().(*Supported)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 
 	cloned.Options["opt1"] = []string{"val5"}

@@ -18,8 +18,9 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/crc"
 	"io"
+
+	"github.com/datastax/go-cassandra-native-protocol/crc"
 )
 
 // MaxPayloadLength is the maximum payload length a Segment can contain. Since the payload length header field contains

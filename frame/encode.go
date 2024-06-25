@@ -18,8 +18,9 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 func (c *codec) EncodeFrame(frame *Frame, dest io.Writer) error {

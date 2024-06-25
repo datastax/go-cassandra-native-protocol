@@ -17,18 +17,20 @@ package message
 import (
 	"bytes"
 	"errors"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
-func TestPrepare_Clone(t *testing.T) {
+func TestPrepare_DeepCopy(t *testing.T) {
 	msg := &Prepare{
 		Query:    "query",
 		Keyspace: "ks1",
 	}
 
-	cloned := msg.Clone().(*Prepare)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 
 	cloned.Query = "query2"

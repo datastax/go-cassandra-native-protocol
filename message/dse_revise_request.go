@@ -16,11 +16,14 @@ package message
 
 import (
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 // Revise was called CANCEL in DSE protocol version 1 and was renamed to REVISE_REQUEST in version 2.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type Revise struct {
 	RevisionType   primitive.DseRevisionType
 	TargetStreamId int32
@@ -36,11 +39,6 @@ func (m *Revise) IsResponse() bool {
 
 func (m *Revise) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeDseRevise
-}
-
-func (m *Revise) Clone() Message {
-	newObj := *m
-	return &newObj
 }
 
 func (m *Revise) String() string {

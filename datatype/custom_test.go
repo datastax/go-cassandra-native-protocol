@@ -18,15 +18,17 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 func TestCustomType(t *testing.T) {
-	customType := NewCustomType("foo.bar.qix")
-	assert.Equal(t, primitive.DataTypeCodeCustom, customType.GetDataTypeCode())
-	assert.Equal(t, "foo.bar.qix", customType.GetClassName())
+	customType := NewCustom("foo.bar.qix")
+	assert.Equal(t, primitive.DataTypeCodeCustom, customType.Code())
+	assert.Equal(t, "foo.bar.qix", customType.ClassName)
 }
 
 func TestWriteCustomType(t *testing.T) {
@@ -34,12 +36,12 @@ func TestWriteCustomType(t *testing.T) {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
-				input    CustomType
+				input    DataType
 				expected []byte
 				err      error
 			}{
-				{"simple custom", NewCustomType("hello"), []byte{0, 5, byte('h'), byte('e'), byte('l'), byte('l'), byte('o')}, nil},
-				{"nil custom", nil, nil, errors.New("expected CustomType, got <nil>")},
+				{"simple custom", NewCustom("hello"), []byte{0, 5, byte('h'), byte('e'), byte('l'), byte('l'), byte('o')}, nil},
+				{"nil custom", nil, nil, errors.New("expected *Custom, got <nil>")},
 			}
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
@@ -60,12 +62,12 @@ func TestLengthOfCustomType(t *testing.T) {
 		t.Run(version.String(), func(t *testing.T) {
 			tests := []struct {
 				name     string
-				input    CustomType
+				input    DataType
 				expected int
 				err      error
 			}{
-				{"simple custom", NewCustomType("hello"), primitive.LengthOfString("hello"), nil},
-				{"nil custom", nil, -1, errors.New("expected CustomType, got <nil>")},
+				{"simple custom", NewCustom("hello"), primitive.LengthOfString("hello"), nil},
+				{"nil custom", nil, -1, errors.New("expected *Custom, got <nil>")},
 			}
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
@@ -86,10 +88,10 @@ func TestReadCustomType(t *testing.T) {
 			tests := []struct {
 				name     string
 				input    []byte
-				expected CustomType
+				expected DataType
 				err      error
 			}{
-				{"simple custom", []byte{0, 5, byte('h'), byte('e'), byte('l'), byte('l'), byte('o')}, NewCustomType("hello"), nil},
+				{"simple custom", []byte{0, 5, byte('h'), byte('e'), byte('l'), byte('l'), byte('o')}, NewCustom("hello"), nil},
 				{
 					"cannot read custom",
 					[]byte{},
@@ -114,11 +116,11 @@ func TestReadCustomType(t *testing.T) {
 	}
 }
 
-func TestCustomTypeClone(t *testing.T) {
-	ct := NewCustomType("foo.bar.qix")
-	clonedCustomType := ct.Clone().(*customType)
+func TestCustomTypeDeepCopy(t *testing.T) {
+	ct := NewCustom("foo.bar.qix")
+	clonedCustomType := ct.DeepCopy()
 	assert.Equal(t, ct, clonedCustomType)
-	clonedCustomType.className = "123"
-	assert.Equal(t, "123", clonedCustomType.GetClassName())
-	assert.Equal(t, "foo.bar.qix", ct.GetClassName())
+	clonedCustomType.ClassName = "123"
+	assert.Equal(t, "123", clonedCustomType.ClassName)
+	assert.Equal(t, "foo.bar.qix", ct.ClassName)
 }

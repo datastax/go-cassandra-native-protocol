@@ -16,10 +16,12 @@ package datacodec
 
 import (
 	"fmt"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+
 	"github.com/datastax/go-cassandra-native-protocol/datatype"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 var (
@@ -37,7 +39,7 @@ func Test_stringCodec_DataType(t *testing.T) {
 func Test_stringCodec_Encode(t *testing.T) {
 	codecs := []Codec{Varchar, Ascii}
 	for _, codec := range codecs {
-		t.Run(codec.DataType().String(), func(t *testing.T) {
+		t.Run(codec.DataType().AsCql(), func(t *testing.T) {
 			for _, version := range primitive.SupportedProtocolVersions() {
 				t.Run(version.String(), func(t *testing.T) {
 					tests := []struct {
@@ -68,7 +70,7 @@ func Test_stringCodec_Encode(t *testing.T) {
 func Test_stringCodec_Decode(t *testing.T) {
 	codecs := []Codec{Varchar, Ascii}
 	for _, codec := range codecs {
-		t.Run(codec.DataType().String(), func(t *testing.T) {
+		t.Run(codec.DataType().AsCql(), func(t *testing.T) {
 			for _, version := range primitive.SupportedProtocolVersions() {
 				t.Run(version.String(), func(t *testing.T) {
 					tests := []struct {

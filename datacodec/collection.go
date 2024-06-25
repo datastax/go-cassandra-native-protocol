@@ -17,29 +17,30 @@ package datacodec
 import (
 	"bytes"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/datatype"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
 	"math"
 	"reflect"
+
+	"github.com/datastax/go-cassandra-native-protocol/datatype"
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
-func NewList(dataType datatype.ListType) (Codec, error) {
+func NewList(dataType *datatype.List) (Codec, error) {
 	if dataType == nil {
 		return nil, ErrNilDataType
 	}
-	codec, err := NewCodec(dataType.GetElementType())
+	codec, err := NewCodec(dataType.ElementType)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create codec for list elements: %w", err)
 	}
 	return &collectionCodec{dataType, codec}, nil
 }
 
-func NewSet(dataType datatype.SetType) (Codec, error) {
+func NewSet(dataType *datatype.Set) (Codec, error) {
 	if dataType == nil {
 		return nil, ErrNilDataType
 	}
-	codec, err := NewCodec(dataType.GetElementType())
+	codec, err := NewCodec(dataType.ElementType)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create codec for set elements: %w", err)
 	}

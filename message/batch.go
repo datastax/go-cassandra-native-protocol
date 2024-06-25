@@ -17,11 +17,14 @@ package message
 import (
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 // Batch is a BATCH request message. The zero value is NOT a valid message; at least one batch child must be provided.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type Batch struct {
 	// The batch type: LOGGED, UNLOGGED or COUNTER. This field is mandatory; its default is LOGGED, as the zero value
 	// of primitive.BatchType is primitive.BatchTypeLogged. The LOGGED type is equivalent to a regular CQL3 batch
@@ -34,18 +37,18 @@ type Batch struct {
 	Consistency primitive.ConsistencyLevel
 	// The (optional) serial consistency level to use when executing the query. Serial consistency is available
 	// starting with protocol version 3.
-	SerialConsistency *primitive.NillableConsistencyLevel
+	SerialConsistency *primitive.ConsistencyLevel
 	// The default timestamp for the query in microseconds (negative values are discouraged but supported for
 	// backward compatibility reasons except for the smallest negative value (-2^63) that is forbidden). If provided,
 	// this will replace the server-side assigned timestamp as default timestamp. Note that a timestamp in the query
 	// itself (that is, if the query has a USING TIMESTAMP clause) will still override this timestamp.
 	// Default timestamps are valid for protocol versions 3 and higher.
-	DefaultTimestamp *primitive.NillableInt64
+	DefaultTimestamp *int64
 	// The keyspace in which to execute queries, when the target table name is not qualified. Optional. Introduced in
 	// Protocol Version 5, also present in DSE protocol v2.
 	Keyspace string
 	// Introduced in Protocol Version 5, not present in DSE protocol versions.
-	NowInSeconds *primitive.NillableInt32
+	NowInSeconds *int32
 }
 
 func (m *Batch) IsResponse() bool {
@@ -80,50 +83,16 @@ func (m *Batch) Flags() primitive.QueryFlag {
 	return flags
 }
 
-// Clone performs a deep copy of this batch message object
-func (m *Batch) Clone() Message {
-	var newBatchChildren []*BatchChild
-	for _, child := range m.Children {
-		newBatchChildren = append(newBatchChildren, child.Clone())
-	}
-
-	return &Batch{
-		Type:              m.Type,
-		Children:          newBatchChildren,
-		Consistency:       m.Consistency,
-		SerialConsistency: m.SerialConsistency.Clone(),
-		DefaultTimestamp:  m.DefaultTimestamp.Clone(),
-		Keyspace:          m.Keyspace,
-		NowInSeconds:      m.NowInSeconds.Clone(),
-	}
-}
-
+// BatchChild represents a BATCH child statement.
+// +k8s:deepcopy-gen=true
 type BatchChild struct {
-	// Either a string or []byte; the former should be the CQL statement to execute, the latter the prepared id of
-	// the statement to execute.
-	QueryOrId interface{}
+	// The CQL statement to execute. Exactly one of Query or Id must be present, never both.
+	Query string
+	// The prepared id of the statement to execute. Exactly one of Query or Id must be present, never both.
+	Id []byte
 	// Note: named values are in theory possible, but their server-side implementation is
 	// broken. See https://issues.apache.org/jira/browse/CASSANDRA-10246
 	Values []*primitive.Value
-}
-
-func (c *BatchChild) Clone() *BatchChild {
-	var newQueryOrId interface{}
-	if c.QueryOrId != nil {
-		switch queryOrId := c.QueryOrId.(type) {
-		case []byte:
-			newQueryOrId = primitive.CloneByteSlice(queryOrId)
-		default:
-			newQueryOrId = queryOrId
-		}
-	} else {
-		newQueryOrId = nil
-	}
-
-	return &BatchChild{
-		QueryOrId: newQueryOrId,
-		Values:    cloneValuesSlice(c.Values),
-	}
 }
 
 type batchCodec struct{}
@@ -145,25 +114,22 @@ func (c *batchCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 		return fmt.Errorf("cannot write BATCH query count: %w", err)
 	}
 	for i, child := range batch.Children {
-		switch queryOrId := child.QueryOrId.(type) {
-		case string:
+		if child.Query != "" {
 			if err = primitive.WriteByte(uint8(primitive.BatchChildTypeQueryString), dest); err != nil {
 				return fmt.Errorf("cannot write BATCH query kind 0 for child #%d: %w", i, err)
-			} else if queryOrId == "" {
+			} else if child.Query == "" {
 				return fmt.Errorf("cannot write empty BATCH query string for child #%d", i)
-			} else if err = primitive.WriteLongString(queryOrId, dest); err != nil {
+			} else if err = primitive.WriteLongString(child.Query, dest); err != nil {
 				return fmt.Errorf("cannot write BATCH query string for child #%d: %w", i, err)
 			}
-		case []byte:
+		} else {
 			if err = primitive.WriteByte(uint8(primitive.BatchChildTypePreparedId), dest); err != nil {
 				return fmt.Errorf("cannot write BATCH query kind 1 for child #%d: %w", i, err)
-			} else if len(queryOrId) == 0 {
+			} else if len(child.Id) == 0 {
 				return fmt.Errorf("cannot write empty BATCH query id for child #%d: %w", i, err)
-			} else if err = primitive.WriteShortBytes(queryOrId, dest); err != nil {
+			} else if err = primitive.WriteShortBytes(child.Id, dest); err != nil {
 				return fmt.Errorf("cannot write BATCH query id for child #%d: %w", i, err)
 			}
-		default:
-			return fmt.Errorf("unsupported BATCH child type for child #%d: %T", i, queryOrId)
 		}
 		if err = primitive.WritePositionalValues(child.Values, dest, version); err != nil {
 			return fmt.Errorf("cannot write BATCH positional values for child #%d: %w", i, err)
@@ -183,12 +149,12 @@ func (c *batchCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 			return fmt.Errorf("cannot write BATCH query flags: %w", err)
 		}
 		if version.SupportsQueryFlag(primitive.QueryFlagSerialConsistency) && flags.Contains(primitive.QueryFlagSerialConsistency) {
-			if err = primitive.WriteShort(uint16(batch.SerialConsistency.Value), dest); err != nil {
+			if err = primitive.WriteShort(uint16(*batch.SerialConsistency), dest); err != nil {
 				return fmt.Errorf("cannot write BATCH serial consistency: %w", err)
 			}
 		}
 		if version.SupportsQueryFlag(primitive.QueryFlagDefaultTimestamp) && flags.Contains(primitive.QueryFlagDefaultTimestamp) {
-			if err = primitive.WriteLong(batch.DefaultTimestamp.Value, dest); err != nil {
+			if err = primitive.WriteLong(*batch.DefaultTimestamp, dest); err != nil {
 				return fmt.Errorf("cannot write BATCH default timestamp: %w", err)
 			}
 		}
@@ -200,7 +166,7 @@ func (c *batchCodec) Encode(msg Message, dest io.Writer, version primitive.Proto
 			}
 		}
 		if version.SupportsQueryFlag(primitive.QueryFlagNowInSeconds) && flags.Contains(primitive.QueryFlagNowInSeconds) {
-			if err = primitive.WriteInt(batch.NowInSeconds.Value, dest); err != nil {
+			if err = primitive.WriteInt(*batch.NowInSeconds, dest); err != nil {
 				return fmt.Errorf("cannot write BATCH now-in-seconds: %w", err)
 			}
 		}
@@ -221,13 +187,10 @@ func (c *batchCodec) EncodedLength(msg Message, version primitive.ProtocolVersio
 	length += primitive.LengthOfShort // number of queries
 	for i, child := range batch.Children {
 		length += primitive.LengthOfByte // child type
-		switch stringOrId := child.QueryOrId.(type) {
-		case string:
-			length += primitive.LengthOfLongString(stringOrId)
-		case []byte:
-			length += primitive.LengthOfShortBytes(stringOrId)
-		default:
-			return -1, fmt.Errorf("unsupported BATCH child type for child #%d: %T", i, stringOrId)
+		if child.Query != "" {
+			length += primitive.LengthOfLongString(child.Query)
+		} else {
+			length += primitive.LengthOfShortBytes(child.Id)
 		}
 		if valuesLength, err := primitive.LengthOfPositionalValues(child.Values); err != nil {
 			return -1, fmt.Errorf("cannot compute length of BATCH positional values for child #%d: %w", i, err)
@@ -283,11 +246,11 @@ func (c *batchCodec) Decode(source io.Reader, version primitive.ProtocolVersion)
 		var child = &BatchChild{}
 		switch primitive.BatchChildType(childType) {
 		case primitive.BatchChildTypeQueryString:
-			if child.QueryOrId, err = primitive.ReadLongString(source); err != nil {
+			if child.Query, err = primitive.ReadLongString(source); err != nil {
 				return nil, fmt.Errorf("cannot read BATCH query string for child #%d: %w", i, err)
 			}
 		case primitive.BatchChildTypePreparedId:
-			if child.QueryOrId, err = primitive.ReadShortBytes(source); err != nil {
+			if child.Id, err = primitive.ReadShortBytes(source); err != nil {
 				return nil, fmt.Errorf("cannot read BATCH query id for child #%d: %w", i, err)
 			}
 		default:
@@ -321,18 +284,19 @@ func (c *batchCodec) Decode(source io.Reader, version primitive.ProtocolVersion)
 			return nil, errors.New("cannot use BATCH with named values, see CASSANDRA-10246")
 		}
 		if flags.Contains(primitive.QueryFlagSerialConsistency) {
-			batch.SerialConsistency = &primitive.NillableConsistencyLevel{}
-			var batchSerialConsistency uint16
-			if batchSerialConsistency, err = primitive.ReadShort(source); err != nil {
+			var batchSerialConsistencyUint uint16
+			if batchSerialConsistencyUint, err = primitive.ReadShort(source); err != nil {
 				return nil, fmt.Errorf("cannot read BATCH serial consistency: %w", err)
 			}
-			batch.SerialConsistency.Value = primitive.ConsistencyLevel(batchSerialConsistency)
+			batchSerialConsistency := primitive.ConsistencyLevel(batchSerialConsistencyUint)
+			batch.SerialConsistency = &batchSerialConsistency
 		}
 		if flags.Contains(primitive.QueryFlagDefaultTimestamp) {
-			batch.DefaultTimestamp = &primitive.NillableInt64{}
-			if batch.DefaultTimestamp.Value, err = primitive.ReadLong(source); err != nil {
+			var batchDefaultTimestamp int64
+			if batchDefaultTimestamp, err = primitive.ReadLong(source); err != nil {
 				return nil, fmt.Errorf("cannot read BATCH default timestamp: %w", err)
 			}
+			batch.DefaultTimestamp = &batchDefaultTimestamp
 		}
 		if version.SupportsQueryFlag(primitive.QueryFlagWithKeyspace) && flags.Contains(primitive.QueryFlagWithKeyspace) {
 			if batch.Keyspace, err = primitive.ReadString(source); err != nil {
@@ -340,10 +304,11 @@ func (c *batchCodec) Decode(source io.Reader, version primitive.ProtocolVersion)
 			}
 		}
 		if version.SupportsQueryFlag(primitive.QueryFlagNowInSeconds) && flags.Contains(primitive.QueryFlagNowInSeconds) {
-			batch.NowInSeconds = &primitive.NillableInt32{}
-			if batch.NowInSeconds.Value, err = primitive.ReadInt(source); err != nil {
+			var batchNowInSeconds int32
+			if batchNowInSeconds, err = primitive.ReadInt(source); err != nil {
 				return nil, fmt.Errorf("cannot read BATCH now-in-seconds: %w", err)
 			}
+			batch.NowInSeconds = &batchNowInSeconds
 		}
 	}
 	return batch, nil

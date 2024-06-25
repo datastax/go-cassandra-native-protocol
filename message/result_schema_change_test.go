@@ -17,12 +17,14 @@ package message
 import (
 	"bytes"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
-func TestSchemaChangeResult_Clone(t *testing.T) {
+func TestSchemaChangeResult_DeepCopy(t *testing.T) {
 	msg := &SchemaChangeResult{
 		ChangeType: primitive.SchemaChangeTypeCreated,
 		Target:     primitive.SchemaChangeTargetAggregate,
@@ -31,7 +33,7 @@ func TestSchemaChangeResult_Clone(t *testing.T) {
 		Arguments:  []string{"arg1"},
 	}
 
-	cloned := msg.Clone().(*SchemaChangeResult)
+	cloned := msg.DeepCopy()
 	assert.Equal(t, msg, cloned)
 
 	cloned.ChangeType = primitive.SchemaChangeTypeDropped

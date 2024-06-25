@@ -17,10 +17,14 @@ package message
 import (
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
+// Prepare is a request to prepare a CQL statement.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type Prepare struct {
 	// The CQL query to prepare.
 	Query string
@@ -35,11 +39,6 @@ func (m *Prepare) IsResponse() bool {
 
 func (m *Prepare) GetOpCode() primitive.OpCode {
 	return primitive.OpCodePrepare
-}
-
-func (m *Prepare) Clone() Message {
-	newObj := *m
-	return &newObj
 }
 
 func (m *Prepare) String() string {

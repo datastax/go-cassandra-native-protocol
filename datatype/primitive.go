@@ -19,48 +19,45 @@ import (
 )
 
 var (
-	Ascii     PrimitiveType = &primitiveType{code: primitive.DataTypeCodeAscii}
-	Bigint    PrimitiveType = &primitiveType{code: primitive.DataTypeCodeBigint}
-	Blob      PrimitiveType = &primitiveType{code: primitive.DataTypeCodeBlob}
-	Boolean   PrimitiveType = &primitiveType{code: primitive.DataTypeCodeBoolean}
-	Counter   PrimitiveType = &primitiveType{code: primitive.DataTypeCodeCounter}
-	Date      PrimitiveType = &primitiveType{code: primitive.DataTypeCodeDate}
-	Decimal   PrimitiveType = &primitiveType{code: primitive.DataTypeCodeDecimal}
-	Double    PrimitiveType = &primitiveType{code: primitive.DataTypeCodeDouble}
-	Duration  PrimitiveType = &primitiveType{code: primitive.DataTypeCodeDuration}
-	Float     PrimitiveType = &primitiveType{code: primitive.DataTypeCodeFloat}
-	Inet      PrimitiveType = &primitiveType{code: primitive.DataTypeCodeInet}
-	Int       PrimitiveType = &primitiveType{code: primitive.DataTypeCodeInt}
-	Smallint  PrimitiveType = &primitiveType{code: primitive.DataTypeCodeSmallint}
-	Time      PrimitiveType = &primitiveType{code: primitive.DataTypeCodeTime}
-	Timestamp PrimitiveType = &primitiveType{code: primitive.DataTypeCodeTimestamp}
-	Timeuuid  PrimitiveType = &primitiveType{code: primitive.DataTypeCodeTimeuuid}
-	Tinyint   PrimitiveType = &primitiveType{code: primitive.DataTypeCodeTinyint}
-	Uuid      PrimitiveType = &primitiveType{code: primitive.DataTypeCodeUuid}
-	Varchar   PrimitiveType = &primitiveType{code: primitive.DataTypeCodeVarchar}
-	Varint    PrimitiveType = &primitiveType{code: primitive.DataTypeCodeVarint}
+	Ascii     = &PrimitiveType{code: primitive.DataTypeCodeAscii}
+	Bigint    = &PrimitiveType{code: primitive.DataTypeCodeBigint}
+	Blob      = &PrimitiveType{code: primitive.DataTypeCodeBlob}
+	Boolean   = &PrimitiveType{code: primitive.DataTypeCodeBoolean}
+	Counter   = &PrimitiveType{code: primitive.DataTypeCodeCounter}
+	Date      = &PrimitiveType{code: primitive.DataTypeCodeDate}
+	Decimal   = &PrimitiveType{code: primitive.DataTypeCodeDecimal}
+	Double    = &PrimitiveType{code: primitive.DataTypeCodeDouble}
+	Duration  = &PrimitiveType{code: primitive.DataTypeCodeDuration}
+	Float     = &PrimitiveType{code: primitive.DataTypeCodeFloat}
+	Inet      = &PrimitiveType{code: primitive.DataTypeCodeInet}
+	Int       = &PrimitiveType{code: primitive.DataTypeCodeInt}
+	Smallint  = &PrimitiveType{code: primitive.DataTypeCodeSmallint}
+	Time      = &PrimitiveType{code: primitive.DataTypeCodeTime}
+	Timestamp = &PrimitiveType{code: primitive.DataTypeCodeTimestamp}
+	Timeuuid  = &PrimitiveType{code: primitive.DataTypeCodeTimeuuid}
+	Tinyint   = &PrimitiveType{code: primitive.DataTypeCodeTinyint}
+	Uuid      = &PrimitiveType{code: primitive.DataTypeCodeUuid}
+	Varchar   = &PrimitiveType{code: primitive.DataTypeCodeVarchar}
+	Varint    = &PrimitiveType{code: primitive.DataTypeCodeVarint}
 )
 
-type PrimitiveType interface {
-	DataType
-}
-
-type primitiveType struct {
+// PrimitiveType is a datatype that is represented by a CQL scalar type.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/datatype.DataType
+type PrimitiveType struct {
 	code primitive.DataTypeCode
 }
 
-func (t *primitiveType) GetDataTypeCode() primitive.DataTypeCode {
+func (t *PrimitiveType) Code() primitive.DataTypeCode {
 	return t.code
 }
 
-func (t *primitiveType) Clone() DataType {
-	return &primitiveType{
-		code: t.code,
-	}
+func (t *PrimitiveType) String() string {
+	return t.AsCql()
 }
 
-func (t *primitiveType) String() string {
-	switch t.GetDataTypeCode() {
+func (t *PrimitiveType) AsCql() string {
+	switch t.Code() {
 	case primitive.DataTypeCodeAscii:
 		return "ascii"
 	case primitive.DataTypeCodeBigint:
@@ -103,8 +100,4 @@ func (t *primitiveType) String() string {
 		return "duration"
 	}
 	return "?"
-}
-
-func (t *primitiveType) MarshalJSON() ([]byte, error) {
-	return []byte("\"" + t.String() + "\""), nil
 }

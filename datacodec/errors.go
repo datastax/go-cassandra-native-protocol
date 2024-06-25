@@ -17,9 +17,10 @@ package datacodec
 import (
 	"errors"
 	"fmt"
+	"reflect"
+
 	"github.com/datastax/go-cassandra-native-protocol/datatype"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"reflect"
 )
 
 var ErrNilDestination = errors.New("destination is nil")

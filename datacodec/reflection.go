@@ -15,12 +15,13 @@
 package datacodec
 
 import (
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"math/big"
 	"net"
 	"reflect"
 	"strings"
 	"time"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 var (

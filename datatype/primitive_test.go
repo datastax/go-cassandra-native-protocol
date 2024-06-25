@@ -15,15 +15,17 @@
 package datatype
 
 import (
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 func TestPrimitiveType(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    PrimitiveType
+		input    *PrimitiveType
 		expected primitive.DataTypeCode
 	}{
 		{"Ascii", Ascii, primitive.DataTypeCodeAscii},
@@ -49,7 +51,7 @@ func TestPrimitiveType(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			actual := test.input.GetDataTypeCode()
+			actual := test.input.Code()
 			assert.Equal(t, test.expected, actual)
 		})
 	}

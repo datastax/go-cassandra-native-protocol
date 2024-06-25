@@ -14,6 +14,8 @@
 
 package message
 
+import "github.com/datastax/go-cassandra-native-protocol/primitive"
+
 //goland:noinspection GoUnusedConst
 const (
 	__  = byte('_')
@@ -102,3 +104,7 @@ type encodedLengthTestCase struct {
 	expected int
 	err      error
 }
+
+func int32Ptr(x int32) *int32                                                      { return &x }
+func int64Ptr(x int64) *int64                                                      { return &x }
+func consistencyLevelPtr(x primitive.ConsistencyLevel) *primitive.ConsistencyLevel { return &x }

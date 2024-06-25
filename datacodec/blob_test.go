@@ -16,16 +16,18 @@ package datacodec
 
 import (
 	"fmt"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+
 	"github.com/datastax/go-cassandra-native-protocol/datatype"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func Test_blobCodec_DataType(t *testing.T) {
 	assert.Equal(t, datatype.Blob, Blob.DataType())
 	assert.Equal(t, datatype.Blob, PassThrough.DataType())
-	customType := datatype.NewCustomType("com.example.Type")
+	customType := datatype.NewCustom("com.example.Type")
 	assert.Equal(t, customType, NewCustom(customType).DataType())
 }
 

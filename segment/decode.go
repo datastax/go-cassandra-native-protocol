@@ -18,9 +18,10 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io"
+
 	"github.com/datastax/go-cassandra-native-protocol/crc"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"io"
 )
 
 func (c *codec) DecodeSegment(source io.Reader) (*Segment, error) {

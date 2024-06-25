@@ -16,9 +16,10 @@ package datacodec
 
 import (
 	"encoding/binary"
+	"math"
+
 	"github.com/datastax/go-cassandra-native-protocol/datatype"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"math"
 )
 
 // Float is a codec for the CQL float type. Its preferred Go type is float32, but it can encode from and decode

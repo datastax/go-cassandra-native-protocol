@@ -17,8 +17,9 @@ package snappy
 import (
 	"bytes"
 	"fmt"
-	"github.com/golang/snappy"
 	"io"
+
+	"github.com/golang/snappy"
 )
 
 // Compressor satisfies frame.BodyCompressor for the SNAPPY algorithm.

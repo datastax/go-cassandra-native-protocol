@@ -3,3 +3,4 @@
 /.idea
 *.iml
 /go-cassandra-native-protocol
+/build/

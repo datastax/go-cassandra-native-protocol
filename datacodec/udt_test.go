@@ -17,28 +17,30 @@ package datacodec
 import (
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/datatype"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"testing"
+
+	"github.com/datastax/go-cassandra-native-protocol/datatype"
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 var (
-	udtTypeSimple, _ = datatype.NewUserDefinedType(
+	udtTypeSimple, _ = datatype.NewUserDefined(
 		"ks1",
 		"type1",
 		[]string{"f1", "f2", "f3"},
 		[]datatype.DataType{datatype.Int, datatype.Boolean, datatype.Varchar},
 	)
-	udtTypeComplex, _ = datatype.NewUserDefinedType(
+	udtTypeComplex, _ = datatype.NewUserDefined(
 		"ks1",
 		"type2",
 		[]string{"f1", "f2"},
 		[]datatype.DataType{udtTypeSimple, udtTypeSimple},
 	)
-	udtTypeEmpty, _ = datatype.NewUserDefinedType("ks1", "type3", []string{}, []datatype.DataType{})
-	udtTypeWrong, _ = datatype.NewUserDefinedType("ks1", "type4", []string{"f1"}, []datatype.DataType{wrongDataType{}})
+	udtTypeEmpty, _ = datatype.NewUserDefined("ks1", "type3", []string{}, []datatype.DataType{})
+	udtTypeWrong, _ = datatype.NewUserDefined("ks1", "type4", []string{"f1"}, []datatype.DataType{wrongDataType{}})
 )
 
 var (
@@ -170,7 +172,7 @@ var (
 func TestNewUserDefinedCodec(t *testing.T) {
 	tests := []struct {
 		name     string
-		dataType datatype.UserDefinedType
+		dataType *datatype.UserDefined
 		expected Codec
 		err      string
 	}{

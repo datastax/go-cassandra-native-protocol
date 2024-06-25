@@ -15,14 +15,16 @@
 package datacodec
 
 import (
-	"github.com/datastax/go-cassandra-native-protocol/datatype"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"math/big"
 	"net"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/datastax/go-cassandra-native-protocol/datatype"
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 type testStruct struct {
@@ -368,7 +370,7 @@ func Test_mapInjector_setElem(t *testing.T) {
 
 // A special test to check the sequence zero -> decode -> set on various data types.
 func Test_injectors_zeroDecodeAndSet(t *testing.T) {
-	udt, _ := datatype.NewUserDefinedType("ks1", "table1", []string{"f1"}, []datatype.DataType{datatype.Int})
+	udt, _ := datatype.NewUserDefined("ks1", "table1", []string{"f1"}, []datatype.DataType{datatype.Int})
 	dataTypes := map[datatype.DataType]interface{}{
 		datatype.Ascii:   "ascii",
 		datatype.Bigint:  int64(123),
@@ -380,27 +382,27 @@ func Test_injectors_zeroDecodeAndSet(t *testing.T) {
 			Unscaled: big.NewInt(123456),
 			Scale:    -1,
 		},
-		datatype.Double:                    123.456,
-		datatype.Duration:                  CqlDuration{12, 34, 5678},
-		datatype.Float:                     float32(123.456),
-		datatype.Inet:                      net.ParseIP("fe80::aede:48ff:fe00:1122"),
-		datatype.Int:                       int32(42),
-		datatype.Smallint:                  int16(42),
-		datatype.Time:                      durationSimple,
-		datatype.Timestamp:                 timestampPosUTC,
-		datatype.Timeuuid:                  primitive.UUID{0xC0, 0xD1, 0xD2, 0x1E, 0xBB, 0x01, 0x41, 0x96, 0x86, 0xDB, 0xBC, 0x31, 0x7B, 0xC1, 0x79, 0x6A},
-		datatype.Tinyint:                   int8(42),
-		datatype.Uuid:                      primitive.UUID{0xC0, 0xD1, 0xD2, 0x1E, 0xBB, 0x01, 0x41, 0x96, 0x86, 0xDB, 0xBC, 0x31, 0x7B, 0xC1, 0x79, 0x6A},
-		datatype.Varchar:                   "UTF-8",
-		datatype.Varint:                    big.NewInt(123456),
-		datatype.NewListType(datatype.Int): []*int32{int32Ptr(1), int32Ptr(2), int32Ptr(3)},
-		datatype.NewSetType(datatype.Int):  []*int32{int32Ptr(1), int32Ptr(2), int32Ptr(3)},
-		datatype.NewMapType(datatype.Int, datatype.Varchar):   map[*int32]*string{int32Ptr(123): stringPtr("abc")},
-		datatype.NewTupleType(datatype.Int, datatype.Varchar): []interface{}{int32(123), "abc"},
+		datatype.Double:                123.456,
+		datatype.Duration:              CqlDuration{12, 34, 5678},
+		datatype.Float:                 float32(123.456),
+		datatype.Inet:                  net.ParseIP("fe80::aede:48ff:fe00:1122"),
+		datatype.Int:                   int32(42),
+		datatype.Smallint:              int16(42),
+		datatype.Time:                  durationSimple,
+		datatype.Timestamp:             timestampPosUTC,
+		datatype.Timeuuid:              primitive.UUID{0xC0, 0xD1, 0xD2, 0x1E, 0xBB, 0x01, 0x41, 0x96, 0x86, 0xDB, 0xBC, 0x31, 0x7B, 0xC1, 0x79, 0x6A},
+		datatype.Tinyint:               int8(42),
+		datatype.Uuid:                  primitive.UUID{0xC0, 0xD1, 0xD2, 0x1E, 0xBB, 0x01, 0x41, 0x96, 0x86, 0xDB, 0xBC, 0x31, 0x7B, 0xC1, 0x79, 0x6A},
+		datatype.Varchar:               "UTF-8",
+		datatype.Varint:                big.NewInt(123456),
+		datatype.NewList(datatype.Int): []*int32{int32Ptr(1), int32Ptr(2), int32Ptr(3)},
+		datatype.NewSet(datatype.Int):  []*int32{int32Ptr(1), int32Ptr(2), int32Ptr(3)},
+		datatype.NewMap(datatype.Int, datatype.Varchar):   map[*int32]*string{int32Ptr(123): stringPtr("abc")},
+		datatype.NewTuple(datatype.Int, datatype.Varchar): []interface{}{int32(123), "abc"},
 		udt: map[string]interface{}{"f1": int32(123)},
 	}
 	for dataType, source := range dataTypes {
-		t.Run(dataType.String()+" on interface{} receiver", func(t *testing.T) {
+		t.Run(dataType.AsCql()+" on interface{} receiver", func(t *testing.T) {
 			t.Run("slice element", func(t *testing.T) {
 				dest := make([]interface{}, 1)
 				inj, err := newSliceInjector(reflect.ValueOf(dest))
@@ -436,7 +438,7 @@ func testInjectorAndDataType(t *testing.T, source interface{}, inj injector, dat
 	err = inj.setElem(0, 0, zero, false, false)
 	require.NoError(t, err)
 	a := actual()
-	if _, ok := dataType.(datatype.MapType); ok {
+	if _, ok := dataType.(*datatype.Map); ok {
 		assert.Len(t, a, 1)
 		assert.IsType(t, map[*int32]*string{}, a)
 		for k, v := range a.(map[*int32]*string) {

@@ -15,17 +15,19 @@
 package frame
 
 import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+
 	"github.com/datastax/go-cassandra-native-protocol/message"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
-func TestFrame_Clone(t *testing.T) {
+func TestFrame_DeepCopy(t *testing.T) {
 	f := NewFrame(primitive.ProtocolVersion4, 1, &message.Ready{})
 	f.SetTracingId(&primitive.UUID{0x01, 0x02})
 
-	cloned := f.Clone()
+	cloned := f.DeepCopy()
 	assert.Equal(t, f, cloned)
 
 	cloned.SetTracingId(&primitive.UUID{0x02, 0x03})
@@ -37,7 +39,7 @@ func TestFrame_Clone(t *testing.T) {
 	assert.Equal(t, &primitive.UUID{0x02, 0x03}, cloned.Body.TracingId)
 }
 
-func TestRawFrame_Clone(t *testing.T) {
+func TestRawFrame_DeepCopy(t *testing.T) {
 	f := &RawFrame{
 		Header: &Header{
 			IsResponse: true,
@@ -50,7 +52,7 @@ func TestRawFrame_Clone(t *testing.T) {
 		Body: []byte{0x01},
 	}
 
-	cloned := f.Clone()
+	cloned := f.DeepCopy()
 	assert.Equal(t, f, cloned)
 
 	cloned.Body = []byte{0x03, 0x04}
@@ -62,7 +64,7 @@ func TestRawFrame_Clone(t *testing.T) {
 	assert.Equal(t, []byte{0x03, 0x04}, cloned.Body)
 }
 
-func TestHeader_Clone(t *testing.T) {
+func TestHeader_DeepCopy(t *testing.T) {
 	h := &Header{
 		IsResponse: true,
 		Version:    primitive.ProtocolVersion4,
@@ -72,7 +74,7 @@ func TestHeader_Clone(t *testing.T) {
 		BodyLength: 1,
 	}
 
-	cloned := h.Clone()
+	cloned := h.DeepCopy()
 	assert.Equal(t, h, cloned)
 
 	cloned.IsResponse = false
@@ -98,7 +100,7 @@ func TestHeader_Clone(t *testing.T) {
 	assert.EqualValues(t, 2, cloned.BodyLength)
 }
 
-func TestBody_Clone(t *testing.T) {
+func TestBody_DeepCopy(t *testing.T) {
 	b := &Body{
 		TracingId: &primitive.UUID{0x01},
 		CustomPayload: map[string][]byte{
@@ -110,7 +112,7 @@ func TestBody_Clone(t *testing.T) {
 		},
 	}
 
-	cloned := b.Clone()
+	cloned := b.DeepCopy()
 	assert.Equal(t, b, cloned)
 
 	cloned.TracingId = &primitive.UUID{0x03}
@@ -138,7 +140,7 @@ func TestBody_Clone(t *testing.T) {
 	assert.Equal(t, "q2", cloned.Message.(*message.Query).Query)
 }
 
-func TestBody_Clone_WithNils(t *testing.T) {
+func TestBody_DeepCopy_WithNils(t *testing.T) {
 	b := &Body{
 		TracingId:     nil,
 		CustomPayload: nil,
@@ -148,7 +150,7 @@ func TestBody_Clone_WithNils(t *testing.T) {
 		},
 	}
 
-	cloned := b.Clone()
+	cloned := b.DeepCopy()
 	assert.Equal(t, b, cloned)
 
 	cloned.TracingId = &primitive.UUID{0x03}

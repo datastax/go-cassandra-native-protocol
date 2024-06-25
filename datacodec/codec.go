@@ -15,9 +15,10 @@
 package datacodec
 
 import (
+	"reflect"
+
 	"github.com/datastax/go-cassandra-native-protocol/datatype"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"reflect"
 )
 
 type Encoder interface {
@@ -47,7 +48,7 @@ type Codec interface {
 // the existing singletons. For complex CQL types, it delegates to one of the constructor functions available:
 // NewList, NewSet, NewMap, NewTuple, NewUserDefined and NewCustom.
 func NewCodec(dt datatype.DataType) (Codec, error) {
-	switch dt.GetDataTypeCode() {
+	switch dt.Code() {
 	case primitive.DataTypeCodeAscii:
 		return Ascii, nil
 	case primitive.DataTypeCodeBigint:
@@ -89,17 +90,17 @@ func NewCodec(dt datatype.DataType) (Codec, error) {
 	case primitive.DataTypeCodeVarint:
 		return Varint, nil
 	case primitive.DataTypeCodeCustom:
-		return NewCustom(dt.(datatype.CustomType)), nil
+		return NewCustom(dt.(*datatype.Custom)), nil
 	case primitive.DataTypeCodeList:
-		return NewList(dt.(datatype.ListType))
+		return NewList(dt.(*datatype.List))
 	case primitive.DataTypeCodeSet:
-		return NewSet(dt.(datatype.SetType))
+		return NewSet(dt.(*datatype.Set))
 	case primitive.DataTypeCodeMap:
-		return NewMap(dt.(datatype.MapType))
+		return NewMap(dt.(*datatype.Map))
 	case primitive.DataTypeCodeTuple:
-		return NewTuple(dt.(datatype.TupleType))
+		return NewTuple(dt.(*datatype.Tuple))
 	case primitive.DataTypeCodeUdt:
-		return NewUserDefined(dt.(datatype.UserDefinedType))
+		return NewUserDefined(dt.(*datatype.UserDefined))
 	}
 	return nil, errCannotCreateCodec(dt)
 }
@@ -109,7 +110,7 @@ func NewCodec(dt datatype.DataType) (Codec, error) {
 // they are absolutely required, e.g. for the CQL type varint this function returns *big.Int since the usage of the
 // value type big.Int is not recommended.
 func PreferredGoType(dt datatype.DataType) (reflect.Type, error) {
-	switch dt.GetDataTypeCode() {
+	switch dt.Code() {
 	case primitive.DataTypeCodeAscii:
 		return typeOfString, nil
 	case primitive.DataTypeCodeBigint:
@@ -157,26 +158,26 @@ func PreferredGoType(dt datatype.DataType) (reflect.Type, error) {
 	case primitive.DataTypeCodeVarint:
 		return typeOfBigIntPointer, nil
 	case primitive.DataTypeCodeList:
-		listType := dt.(datatype.ListType)
-		elemType, err := PreferredGoType(listType.GetElementType())
+		listType := dt.(*datatype.List)
+		elemType, err := PreferredGoType(listType.ElementType)
 		if err != nil {
 			return nil, err
 		}
 		return reflect.SliceOf(ensureNillable(elemType)), nil
 	case primitive.DataTypeCodeSet:
-		setType := dt.(datatype.SetType)
-		elemType, err := PreferredGoType(setType.GetElementType())
+		setType := dt.(*datatype.Set)
+		elemType, err := PreferredGoType(setType.ElementType)
 		if err != nil {
 			return nil, err
 		}
 		return reflect.SliceOf(ensureNillable(elemType)), nil
 	case primitive.DataTypeCodeMap:
-		mapType := dt.(datatype.MapType)
-		keyType, err := PreferredGoType(mapType.GetKeyType())
+		mapType := dt.(*datatype.Map)
+		keyType, err := PreferredGoType(mapType.KeyType)
 		if err != nil {
 			return nil, err
 		}
-		valueType, err := PreferredGoType(mapType.GetValueType())
+		valueType, err := PreferredGoType(mapType.ValueType)
 		if err != nil {
 			return nil, err
 		}

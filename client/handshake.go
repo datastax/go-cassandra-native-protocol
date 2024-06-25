@@ -16,10 +16,12 @@ package client
 
 import (
 	"fmt"
+
+	"github.com/rs/zerolog/log"
+
 	"github.com/datastax/go-cassandra-native-protocol/frame"
 	"github.com/datastax/go-cassandra-native-protocol/message"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/rs/zerolog/log"
 )
 
 // PerformHandshake performs a handshake between the given client and server connections, using the provided protocol

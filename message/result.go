@@ -17,8 +17,9 @@ package message
 import (
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
 	"io"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 type Result interface {
@@ -28,6 +29,9 @@ type Result interface {
 
 // VOID
 
+// VoidResult is a response message sent when the executed query returns nothing.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type VoidResult struct{}
 
 func (m *VoidResult) IsResponse() bool {
@@ -42,28 +46,22 @@ func (m *VoidResult) GetResultType() primitive.ResultType {
 	return primitive.ResultTypeVoid
 }
 
-func (m *VoidResult) Clone() Message {
-	return &VoidResult{}
-}
-
 func (m *VoidResult) String() string {
 	return "RESULT VOID"
 }
 
 // SET KEYSPACE
 
+// SetKeyspaceResult is a response message sent when the executed query is a USE statement that alters the session's
+// current keyspace.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type SetKeyspaceResult struct {
 	Keyspace string
 }
 
 func (m *SetKeyspaceResult) IsResponse() bool {
 	return true
-}
-
-func (m *SetKeyspaceResult) Clone() Message {
-	return &SetKeyspaceResult{
-		Keyspace: m.Keyspace,
-	}
 }
 
 func (m *SetKeyspaceResult) GetOpCode() primitive.OpCode {
@@ -80,7 +78,10 @@ func (m *SetKeyspaceResult) String() string {
 
 // SCHEMA CHANGE
 
+// SchemaChangeResult is a response message sent when the executed query is a schema-altering query (DDL).
 // Note: this struct is identical to SchemaChangeEvent.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type SchemaChangeResult struct {
 	// The schema change type.
 	ChangeType primitive.SchemaChangeType
@@ -105,16 +106,6 @@ func (m *SchemaChangeResult) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeResult
 }
 
-func (m *SchemaChangeResult) Clone() Message {
-	return &SchemaChangeResult{
-		ChangeType: m.ChangeType,
-		Target:     m.Target,
-		Keyspace:   m.Keyspace,
-		Object:     m.Object,
-		Arguments:  primitive.CloneStringSlice(m.Arguments),
-	}
-}
-
 func (m *SchemaChangeResult) GetResultType() primitive.ResultType {
 	return primitive.ResultTypeSchemaChange
 }
@@ -130,6 +121,9 @@ func (m *SchemaChangeResult) String() string {
 
 // PREPARED
 
+// PreparedResult is a response message sent in reply to a Prepare request.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type PreparedResult struct {
 	PreparedQueryId []byte
 	// The result set metadata id; valid for protocol version 5, if the prepared statement is a SELECT. Also valid in DSE v2. See Execute.
@@ -142,15 +136,6 @@ type PreparedResult struct {
 
 func (m *PreparedResult) IsResponse() bool {
 	return true
-}
-
-func (m *PreparedResult) Clone() Message {
-	return &PreparedResult{
-		PreparedQueryId:   primitive.CloneByteSlice(m.PreparedQueryId),
-		ResultMetadataId:  primitive.CloneByteSlice(m.ResultMetadataId),
-		VariablesMetadata: m.VariablesMetadata.Clone(),
-		ResultMetadata:    m.ResultMetadata.Clone(),
-	}
 }
 
 func (m *PreparedResult) GetOpCode() primitive.OpCode {
@@ -173,6 +158,9 @@ type Row = []Column
 
 type RowSet = []Row
 
+// RowsResult is a response message sent when the executed query is a SELECT statement.
+// +k8s:deepcopy-gen=true
+// +k8s:deepcopy-gen:interfaces=github.com/datastax/go-cassandra-native-protocol/message.Message
 type RowsResult struct {
 	Metadata *RowsMetadata
 	Data     RowSet
@@ -184,13 +172,6 @@ func (m *RowsResult) IsResponse() bool {
 
 func (m *RowsResult) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeResult
-}
-
-func (m *RowsResult) Clone() Message {
-	return &RowsResult{
-		Metadata: m.Metadata.Clone(),
-		Data:     cloneRowSet(m.Data),
-	}
 }
 
 func (m *RowsResult) GetResultType() primitive.ResultType {
@@ -540,30 +521,4 @@ func (c *resultCodec) Decode(source io.Reader, version primitive.ProtocolVersion
 
 func (c *resultCodec) GetOpCode() primitive.OpCode {
 	return primitive.OpCodeResult
-}
-
-func cloneRowSet(o RowSet) RowSet {
-	if o == nil {
-		return nil
-	}
-
-	newRowSet := make(RowSet, len(o))
-	for idx, v := range o {
-		newRowSet[idx] = cloneRow(v)
-	}
-
-	return newRowSet
-}
-
-func cloneRow(o Row) Row {
-	if o == nil {
-		return nil
-	}
-
-	newRow := make(Row, len(o))
-	for idx, v := range o {
-		newRow[idx] = primitive.CloneByteSlice(v)
-	}
-
-	return newRow
 }

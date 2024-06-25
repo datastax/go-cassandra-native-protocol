@@ -16,18 +16,20 @@ package message
 
 import (
 	"bytes"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
-func TestContinuousPagingOptions_Clone(t *testing.T) {
+func TestContinuousPagingOptions_DeepCopy(t *testing.T) {
 	obj := &ContinuousPagingOptions{
 		MaxPages:       1,
 		PagesPerSecond: 2,
 		NextPages:      3,
 	}
-	cloned := obj.Clone()
+	cloned := obj.DeepCopy()
 	assert.Equal(t, obj, cloned)
 	cloned.MaxPages = 5
 	cloned.PagesPerSecond = 6

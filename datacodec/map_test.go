@@ -17,17 +17,19 @@ package datacodec
 import (
 	"errors"
 	"fmt"
-	"github.com/datastax/go-cassandra-native-protocol/datatype"
-	"github.com/datastax/go-cassandra-native-protocol/primitive"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"testing"
+
+	"github.com/datastax/go-cassandra-native-protocol/datatype"
+	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
 
 func TestNewMap(t *testing.T) {
 	tests := []struct {
 		name     string
-		dataType datatype.MapType
+		dataType *datatype.Map
 		want     Codec
 		wantErr  string
 	}{
@@ -39,9 +41,9 @@ func TestNewMap(t *testing.T) {
 		},
 		{
 			"simple",
-			datatype.NewMapType(datatype.Int, datatype.Varchar),
+			datatype.NewMap(datatype.Int, datatype.Varchar),
 			&mapCodec{
-				dataType:   datatype.NewMapType(datatype.Int, datatype.Varchar),
+				dataType:   datatype.NewMap(datatype.Int, datatype.Varchar),
 				keyCodec:   &intCodec{},
 				valueCodec: &stringCodec{dataType: datatype.Varchar},
 			},
@@ -49,12 +51,12 @@ func TestNewMap(t *testing.T) {
 		},
 		{
 			"complex",
-			datatype.NewMapType(datatype.Int, datatype.NewMapType(datatype.Int, datatype.Varchar)),
+			datatype.NewMap(datatype.Int, datatype.NewMap(datatype.Int, datatype.Varchar)),
 			&mapCodec{
-				dataType: datatype.NewMapType(datatype.Int, datatype.NewMapType(datatype.Int, datatype.Varchar)),
+				dataType: datatype.NewMap(datatype.Int, datatype.NewMap(datatype.Int, datatype.Varchar)),
 				keyCodec: &intCodec{},
 				valueCodec: &mapCodec{
-					dataType:   datatype.NewMapType(datatype.Int, datatype.Varchar),
+					dataType:   datatype.NewMap(datatype.Int, datatype.Varchar),
 					keyCodec:   &intCodec{},
 					valueCodec: &stringCodec{dataType: datatype.Varchar},
 				},
@@ -63,13 +65,13 @@ func TestNewMap(t *testing.T) {
 		},
 		{
 			"wrong key type",
-			datatype.NewMapType(wrongDataType{}, datatype.Int),
+			datatype.NewMap(wrongDataType{}, datatype.Int),
 			nil,
 			"cannot create codec for map keys: cannot create data codec for CQL type 666",
 		},
 		{
 			"wrong value type",
-			datatype.NewMapType(datatype.Int, wrongDataType{}),
+			datatype.NewMap(datatype.Int, wrongDataType{}),
 			nil,
 			"cannot create codec for map values: cannot create data codec for CQL type 666",
 		},
@@ -84,9 +86,9 @@ func TestNewMap(t *testing.T) {
 }
 
 var (
-	mapSimple, _      = NewMap(datatype.NewMapType(datatype.Int, datatype.Varchar))
-	mapComplex, _     = NewMap(datatype.NewMapType(datatype.Int, datatype.NewMapType(datatype.Int, datatype.Varchar)))
-	mapCoordinates, _ = NewMap(datatype.NewMapType(datatype.Varchar, datatype.Float))
+	mapSimple, _      = NewMap(datatype.NewMap(datatype.Int, datatype.Varchar))
+	mapComplex, _     = NewMap(datatype.NewMap(datatype.Int, datatype.NewMap(datatype.Int, datatype.Varchar)))
+	mapCoordinates, _ = NewMap(datatype.NewMap(datatype.Varchar, datatype.Float))
 )
 
 type coordinates struct {
@@ -217,7 +219,7 @@ func Test_mapCodec_Encode(t *testing.T) {
 				{"map<int,text> one elem", mapSimple, map[int]string{12: "abc"}, mapOneTwoAbcBytes4, ""},
 				{"map<int,text> non-empty", mapSimple, map[int]string{12: "abc"}, mapOneTwoAbcBytes4, ""},
 				{"map<int,text> map pointer", mapSimple, &map[int]string{12: "abc"}, mapOneTwoAbcBytes4, ""},
-				{"map<int,text> non-empty elems pointer", mapSimple, map[*int]*string{intPtr(12): stringPtr("abc")}, mapOneTwoAbcBytes4, ""},
+				{"map<int,text> non-empty elems pointers", mapSimple, map[*int]*string{intPtr(12): stringPtr("abc")}, mapOneTwoAbcBytes4, ""},
 				{"map<int,text> non-empty map pointer elems pointers", mapSimple, &map[*int]*string{intPtr(12): stringPtr("abc")}, mapOneTwoAbcBytes4, ""},
 				{"map<int,text> non-empty interface{}", mapSimple, map[int]interface{}{12: "abc"}, mapOneTwoAbcBytes4, ""},
 				{"map<int,text> nil key", mapSimple, map[interface{}]interface{}{nil: "abc"}, []byte{0x0, 0x0, 0x0, 0x1, 0xff, 0xff, 0xff, 0xff, 0x0, 0x0, 0x0, 0x3, a, b, c}, ""},

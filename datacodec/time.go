@@ -15,9 +15,10 @@
 package datacodec
 
 import (
+	"time"
+
 	"github.com/datastax/go-cassandra-native-protocol/datatype"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"time"
 )
 
 const (
@@ -98,7 +99,7 @@ func (c *timeCodec) DataType() datatype.DataType {
 }
 
 func (c *timeCodec) Encode(source interface{}, version primitive.ProtocolVersion) (dest []byte, err error) {
-	if !version.SupportsDataType(c.DataType().GetDataTypeCode()) {
+	if !version.SupportsDataType(c.DataType().Code()) {
 		err = errDataTypeNotSupported(c.DataType(), version)
 	} else {
 		var val int64
@@ -114,7 +115,7 @@ func (c *timeCodec) Encode(source interface{}, version primitive.ProtocolVersion
 }
 
 func (c *timeCodec) Decode(source []byte, dest interface{}, version primitive.ProtocolVersion) (wasNull bool, err error) {
-	if !version.SupportsDataType(c.DataType().GetDataTypeCode()) {
+	if !version.SupportsDataType(c.DataType().Code()) {
 		wasNull = len(source) == 0
 		err = errDataTypeNotSupported(c.DataType(), version)
 	} else {
