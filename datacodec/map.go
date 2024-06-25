@@ -151,8 +151,8 @@ func writeMap(ext keyValueExtractor, size int, keyCodec Codec, valueCodec Codec,
 				_ = primitive.WriteBytes(encodedKey, buf)
 				_ = primitive.WriteBytes(encodedValue, buf)
 			} else {
-				_ = primitive.WriteShortSignedBytes(encodedKey, buf)
-				_ = primitive.WriteShortSignedBytes(encodedValue, buf)
+				_ = primitive.WriteShortBytes(encodedKey, buf)
+				_ = primitive.WriteShortBytes(encodedValue, buf)
 			}
 		}
 	}
@@ -175,7 +175,7 @@ func readMap(source []byte, injectorFactory func(int) (keyValueInjector, error),
 			if version.Uses4BytesCollectionLength() {
 				encodedKey, err = primitive.ReadBytes(reader)
 			} else {
-				encodedKey, err = primitive.ReadShortSignedBytes(reader)
+				encodedKey, err = primitive.ReadShortBytes(reader)
 			}
 			if err != nil {
 				return errCannotReadMapKey(i, err)
@@ -183,7 +183,7 @@ func readMap(source []byte, injectorFactory func(int) (keyValueInjector, error),
 			if version.Uses4BytesCollectionLength() {
 				encodedValue, err = primitive.ReadBytes(reader)
 			} else {
-				encodedValue, err = primitive.ReadShortSignedBytes(reader)
+				encodedValue, err = primitive.ReadShortBytes(reader)
 			}
 
 			if err != nil {

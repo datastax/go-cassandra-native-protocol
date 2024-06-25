@@ -142,7 +142,7 @@ func writeCollection(ext extractor, elementCodec Codec, size int, version primit
 			if version.Uses4BytesCollectionLength() {
 				_ = primitive.WriteBytes(encodedElem, buf)
 			} else {
-				_ = primitive.WriteShortSignedBytes(encodedElem, buf)
+				_ = primitive.WriteShortBytes(encodedElem, buf)
 			}
 		}
 	}
@@ -163,7 +163,7 @@ func readCollection(source []byte, injectorFactory func(int) (injector, error), 
 			if version.Uses4BytesCollectionLength() {
 				encodedElem, err = primitive.ReadBytes(reader)
 			} else {
-				encodedElem, err = primitive.ReadShortSignedBytes(reader)
+				encodedElem, err = primitive.ReadShortBytes(reader)
 			}
 			if err != nil {
 				return errCannotReadElement(i, err)

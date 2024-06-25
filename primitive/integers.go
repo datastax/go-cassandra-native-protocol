@@ -52,13 +52,6 @@ func ReadShort(source io.Reader) (decoded uint16, err error) {
 	return decoded, err
 }
 
-func ReadShortSigned(source io.Reader) (decoded int16, err error) {
-	if err = binary.Read(source, binary.BigEndian, &decoded); err != nil {
-		err = fmt.Errorf("cannot read [short]: %w", err)
-	}
-	return decoded, err
-}
-
 func WriteShort(i uint16, dest io.Writer) error {
 	if err := binary.Write(dest, binary.BigEndian, i); err != nil {
 		return fmt.Errorf("cannot write [short]: %w", err)

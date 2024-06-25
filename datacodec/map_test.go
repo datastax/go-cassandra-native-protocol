@@ -177,7 +177,7 @@ var (
 	}
 	mapNullAbcBytes2 = []byte{
 		0, 1,
-		255, 255,
+		0, 0,
 		0, 3,
 		a, b, c,
 	}
@@ -191,7 +191,7 @@ var (
 		0, 1,
 		0, 4,
 		0, 0, 0, 12,
-		255, 255,
+		0, 0,
 	}
 	mapOneTwoNullBytes4 = []byte{
 		0, 0, 0, 1,
@@ -217,7 +217,7 @@ func Test_mapCodec_Encode(t *testing.T) {
 				{"map<int,text> one elem", mapSimple, map[int]string{12: "abc"}, mapOneTwoAbcBytes4, ""},
 				{"map<int,text> non-empty", mapSimple, map[int]string{12: "abc"}, mapOneTwoAbcBytes4, ""},
 				{"map<int,text> map pointer", mapSimple, &map[int]string{12: "abc"}, mapOneTwoAbcBytes4, ""},
-				{"map<int,text> non-empty elems pointesr", mapSimple, map[*int]*string{intPtr(12): stringPtr("abc")}, mapOneTwoAbcBytes4, ""},
+				{"map<int,text> non-empty elems pointer", mapSimple, map[*int]*string{intPtr(12): stringPtr("abc")}, mapOneTwoAbcBytes4, ""},
 				{"map<int,text> non-empty map pointer elems pointers", mapSimple, &map[*int]*string{intPtr(12): stringPtr("abc")}, mapOneTwoAbcBytes4, ""},
 				{"map<int,text> non-empty interface{}", mapSimple, map[int]interface{}{12: "abc"}, mapOneTwoAbcBytes4, ""},
 				{"map<int,text> nil key", mapSimple, map[interface{}]interface{}{nil: "abc"}, []byte{0x0, 0x0, 0x0, 0x1, 0xff, 0xff, 0xff, 0xff, 0x0, 0x0, 0x0, 0x3, a, b, c}, ""},
@@ -262,8 +262,8 @@ func Test_mapCodec_Encode(t *testing.T) {
 				{"map<int,text> non-empty elems pointers", mapSimple, map[*int]*string{intPtr(12): stringPtr("abc")}, mapOneTwoAbcBytes2, ""},
 				{"map<int,text> non-empty map pointer elems pointers", mapSimple, &map[*int]*string{intPtr(12): stringPtr("abc")}, mapOneTwoAbcBytes2, ""},
 				{"map<int,text> non-empty interface{}", mapSimple, map[int]interface{}{12: "abc"}, mapOneTwoAbcBytes2, ""},
-				{"map<int,text> nil key", mapSimple, map[interface{}]interface{}{nil: "abc"}, []byte{0x0, 0x1, 0xff, 0xff, 0x0, 0x3, a, b, c}, ""},
-				{"map<int,text> nil value", mapSimple, map[int]interface{}{12: nil}, []byte{0x0, 0x1, 0x0, 0x4, 0x0, 0x0, 0x0, 0xc, 0xff, 0xff}, ""},
+				{"map<int,text> nil key", mapSimple, map[interface{}]interface{}{nil: "abc"}, []byte{0x0, 0x1, 0x0, 0x0, 0x0, 0x3, a, b, c}, ""},
+				{"map<int,text> nil value", mapSimple, map[int]interface{}{12: nil}, []byte{0x0, 0x1, 0x0, 0x4, 0x0, 0x0, 0x0, 0xc, 0x0, 0x0}, ""},
 				{"map<int,text> wrong source type", mapSimple, 123, nil, fmt.Sprintf("cannot encode int as CQL %s with %s: source type not supported", mapSimple.DataType(), version)},
 				{"map<int,text> wrong source type nil", mapSimple, []int(nil), nil, fmt.Sprintf("cannot encode []int as CQL %s with %s: source type not supported", mapSimple.DataType(), version)},
 				{"map<int,text> wrong source type nil pointer", mapSimple, new([]int), nil, fmt.Sprintf("cannot encode *[]int as CQL %s with %s: source type not supported", mapSimple.DataType(), version)},
@@ -403,7 +403,7 @@ func Test_mapCodec_Decode(t *testing.T) {
 				wantValue *string
 			}{
 				{"map<int,text> nil key", mapNullAbcBytes2, nil, stringPtr("abc")},
-				{"map<int,text> nil value", mapOneTwoNullBytes2, int32Ptr(12), nil},
+				{"map<int,text> nil value", mapOneTwoNullBytes2, int32Ptr(12), stringPtr("")},
 				{"map<int,text> non nil", mapOneTwoAbcBytes2, int32Ptr(12), stringPtr("abc")},
 			}
 			for _, tt := range testsNull {
