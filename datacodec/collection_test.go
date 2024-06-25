@@ -306,7 +306,7 @@ func Test_collectionCodec_Encode(t *testing.T) {
 				{"list<int> many elems", listOfInt, []int{1, 2, 3}, listOneTwoThreeBytes2, ""},
 				{"list<int> many elems pointers", listOfInt, []*int{intPtr(1), intPtr(2), intPtr(3)}, listOneTwoThreeBytes2, ""},
 				{"list<int> many elems interface{}", listOfInt, []interface{}{1, 2, 3}, listOneTwoThreeBytes2, ""},
-				{"list<int> nil element", listOfInt, []interface{}{nil}, []byte{0x0, 0x1, 0x0, 0x0}, ""}, // Protocol V2 does not store negative collection size, so we cannot distinguish between NULL and empty
+				{"list<int> nil element", listOfInt, []interface{}{nil}, []byte{0x0, 0x1, 0x0, 0x0}, ""}, // Protocol V2 does not store negative collection element size, so we cannot distinguish between NULL and empty
 				{"list<int> wrong source type", listOfInt, 123, nil, fmt.Sprintf("cannot encode int as CQL %s with %s: source type not supported", listOfInt.DataType(), version)},
 				{"list<int> wrong source type nil", listOfInt, map[string]int(nil), nil, fmt.Sprintf("cannot encode map[string]int as CQL %s with %s: source type not supported", listOfInt.DataType(), version)},
 				{"list<set<text>> nil untyped", listOfSetOfVarchar, nil, nil, ""},
@@ -316,7 +316,7 @@ func Test_collectionCodec_Encode(t *testing.T) {
 				{"list<set<text>> array", listOfSetOfVarchar, [2][1]string{{"abc"}, {"def"}}, listAbcDefBytes2, ""},
 				{"list<set<text>> pointers", listOfSetOfVarchar, [][]*string{{stringPtr("abc"), stringPtr("def")}, {}}, listAbcDefEmptyBytes2, ""},
 				{"list<set<text>> many elems interface{}", listOfSetOfVarchar, [][]interface{}{{"abc", "def"}, {}}, listAbcDefEmptyBytes2, ""},
-				// Protocol V2 does not store negative collection size, so we cannot distinguish between NULL and empty
+				// Protocol V2 does not store negative collection element size, so we cannot distinguish between NULL and empty
 				{"list<set<text>> nil element", listOfSetOfVarchar, []interface{}{nil}, []byte{0x0, 0x1, 0x0, 0x0}, ""},
 				{"list<set<text>> nil inner element", listOfSetOfVarchar, []interface{}{[]interface{}{nil}}, []byte{0x0, 0x1, 0x0, 0x4, 0x0, 0x1, 0x0, 0x0}, ""},
 				{"list<set<text>> wrong source type", listOfSetOfVarchar, 123, nil, fmt.Sprintf("cannot encode int as CQL %s with %s: source type not supported", listOfSetOfVarchar.DataType(), version)},
@@ -419,7 +419,7 @@ func Test_collectionCodec_Decode(t *testing.T) {
 				{"list<set<text>> many elems [][]interface{}", listOfSetOfVarchar, listAbcDefEmptyBytes2, new([][]interface{}), &[][]interface{}{{"abc", "def"}, {}}, false, ""},
 				{"list<set<text>> many elems interface{}", listOfSetOfVarchar, listAbcDefEmptyBytes2, new(interface{}), interfacePtr([][]*string{{stringPtr("abc"), stringPtr("def")}, {}}), false, ""},
 				{"list<set<text>> nil elem", listOfSetOfVarchar, listAbcNullNullBytes2, new([][]string), &[][]string{{"abc", ""}, nil}, false, ""},
-				// Protocol V2 does not store negative collection size, so we cannot distinguish between NULL and empty
+				// Protocol V2 does not store negative collection element size, so we cannot distinguish between NULL and empty
 				{"list<set<text>> nil elem pointers", listOfSetOfVarchar, listAbcNullNullBytes2, new([][]*string), &[][]*string{{stringPtr("abc"), stringPtr("")}, nil}, false, ""},
 				{"list<set<text>> nil elem [][]interface{}", listOfSetOfVarchar, listAbcNullNullBytes2, new([][]interface{}), &[][]interface{}{{"abc", ""}, nil}, false, ""},
 				{"list<set<text>> nil elem interface{}", listOfSetOfVarchar, listAbcNullNullBytes2, new(interface{}), interfacePtr([][]*string{{stringPtr("abc"), stringPtr("")}, nil}), false, ""},
