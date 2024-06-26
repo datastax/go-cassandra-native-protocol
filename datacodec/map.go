@@ -152,6 +152,15 @@ func writeMap(ext keyValueExtractor, size int, keyCodec Codec, valueCodec Codec,
 				_ = primitive.WriteBytes(encodedKey, buf)
 				_ = primitive.WriteBytes(encodedValue, buf)
 			} else {
+				// Protocol V2 does not allow negative size of collection elements,
+				// which would indicate NULL. As C* 2.x does not support NULL collection elements,
+				// we are returning an error
+				if encodedKey == nil {
+					return nil, errNilMapKey()
+				}
+				if encodedValue == nil {
+					return nil, errNilMapValue()
+				}
 				_ = primitive.WriteShortBytes(encodedKey, buf)
 				_ = primitive.WriteShortBytes(encodedValue, buf)
 			}

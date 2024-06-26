@@ -135,6 +135,14 @@ func errCannotDecodeElement(i int, err error) error {
 	return fmt.Errorf("cannot decode element %d: %w", i, err)
 }
 
+func errNilMapKey() error {
+	return fmt.Errorf("nil map keys are not supported")
+}
+
+func errNilMapValue() error {
+	return fmt.Errorf("nil map values are not supported")
+}
+
 func errCannotDecodeMapKey(i int, err error) error {
 	return fmt.Errorf("cannot decode entry %d key: %w", i, err)
 }
@@ -217,6 +225,10 @@ func collectionSizeTooLarge(size, max int) error {
 
 func collectionSizeNegative(size int) error {
 	return fmt.Errorf("expected collection size >= 0, got: %d", size)
+}
+
+func collectionElementNil() error {
+	return fmt.Errorf("nil is not supported inside collections")
 }
 
 func errCannotCreateCodec(dt datatype.DataType) error {

@@ -143,6 +143,12 @@ func writeCollection(ext extractor, elementCodec Codec, size int, version primit
 			if version.Uses4BytesCollectionLength() {
 				_ = primitive.WriteBytes(encodedElem, buf)
 			} else {
+				if encodedElem == nil {
+					// Protocol V2 does not allow negative size of collection elements,
+					// which would indicate NULL. As C* 2.x does not support NULL collection elements,
+					// we are returning an error
+					return nil, collectionElementNil()
+				}
 				_ = primitive.WriteShortBytes(encodedElem, buf)
 			}
 		}
