@@ -42,16 +42,16 @@ var (
 	}
 	listOneBytes2 = []byte{
 		0, 1,
-		0, 0, 0, 4,
+		0, 4,
 		0, 0, 0, 1,
 	}
 	listOneTwoThreeBytes2 = []byte{
 		0, 3,
-		0, 0, 0, 4,
+		0, 4,
 		0, 0, 0, 1,
-		0, 0, 0, 4,
+		0, 4,
 		0, 0, 0, 2,
-		0, 0, 0, 4,
+		0, 4,
 		0, 0, 0, 3,
 	}
 	listOneTwoThreeBytes4 = []byte{
@@ -65,13 +65,13 @@ var (
 	}
 	listAbcDefBytes2 = []byte{
 		0, 2, // length of outer collection
-		0, 0, 0, 9, // length of outer collection 1st element
+		0, 7, // length of outer collection 1st element
 		0, 1, // length of 1st inner collection
-		0, 0, 0, 3, // length of 1st inner collection 1st element
+		0, 3, // length of 1st inner collection 1st element
 		a, b, c, // element
-		0, 0, 0, 9, // length of outer collection 2nd element
+		0, 7, // length of outer collection 2nd element
 		0, 1, // length of 2nd inner collection
-		0, 0, 0, 3, // length of 2nd inner collection 1st element
+		0, 3, // length of 2nd inner collection 1st element
 		d, e, f, // element
 	}
 	listAbcDefBytes4 = []byte{
@@ -87,13 +87,13 @@ var (
 	}
 	listAbcDefEmptyBytes2 = []byte{
 		0, 2, // length of outer collection
-		0, 0, 0, 16, // length of outer collection 1st element
+		0, 12, // length of outer collection 1st element
 		0, 2, // length of 1st inner collection
-		0, 0, 0, 3, // length of 1st inner collection 1st element
+		0, 3, // length of 1st inner collection 1st element
 		a, b, c, // element
-		0, 0, 0, 3, // length of 1st inner collection 2nd element
+		0, 3, // length of 1st inner collection 2nd element
 		d, e, f, // element
-		0, 0, 0, 2, // length of outer collection 2nd element
+		0, 2, // length of outer collection 2nd element
 		0, 0, // length of 2nd inner collection
 	}
 	listAbcDefEmptyBytes4 = []byte{
@@ -118,11 +118,11 @@ var (
 	}
 	listOneTwoNullBytes2 = []byte{
 		0, 3,
-		0, 0, 0, 4,
+		0, 4,
 		0, 0, 0, 1,
-		0, 0, 0, 4,
+		0, 4,
 		0, 0, 0, 2,
-		255, 255, 255, 255,
+		0, 0,
 	}
 	listAbcNullNullBytes4 = []byte{
 		0, 0, 0, 2, // length of outer collection
@@ -135,12 +135,12 @@ var (
 	}
 	listAbcNullNullBytes2 = []byte{
 		0, 2, // length of outer collection
-		0, 0, 0, 13, // length of outer collection 1st element
+		0, 9, // length of outer collection 1st element
 		0, 2, // length of 1st inner collection
-		0, 0, 0, 3, // length of 1st inner collection 1st element
+		0, 3, // length of 1st inner collection 1st element
 		a, b, c, // element
-		255, 255, 255, 255, // inner collection 2nd element (null)
-		255, 255, 255, 255, // outer collection 2nd element (null)
+		0, 0, // inner collection 2nd element (null)
+		0, 0, // outer collection 2nd element (null)
 	}
 )
 
@@ -306,7 +306,7 @@ func Test_collectionCodec_Encode(t *testing.T) {
 				{"list<int> many elems", listOfInt, []int{1, 2, 3}, listOneTwoThreeBytes2, ""},
 				{"list<int> many elems pointers", listOfInt, []*int{intPtr(1), intPtr(2), intPtr(3)}, listOneTwoThreeBytes2, ""},
 				{"list<int> many elems interface{}", listOfInt, []interface{}{1, 2, 3}, listOneTwoThreeBytes2, ""},
-				{"list<int> nil element", listOfInt, []interface{}{nil}, []byte{0x0, 0x1, 0xff, 0xff, 0xff, 0xff}, ""},
+				{"list<int> nil element", listOfInt, []interface{}{nil}, nil, "nil is not supported inside collections"},
 				{"list<int> wrong source type", listOfInt, 123, nil, fmt.Sprintf("cannot encode int as CQL %s with %s: source type not supported", listOfInt.DataType(), version)},
 				{"list<int> wrong source type nil", listOfInt, map[string]int(nil), nil, fmt.Sprintf("cannot encode map[string]int as CQL %s with %s: source type not supported", listOfInt.DataType(), version)},
 				{"list<set<text>> nil untyped", listOfSetOfVarchar, nil, nil, ""},
@@ -316,8 +316,8 @@ func Test_collectionCodec_Encode(t *testing.T) {
 				{"list<set<text>> array", listOfSetOfVarchar, [2][1]string{{"abc"}, {"def"}}, listAbcDefBytes2, ""},
 				{"list<set<text>> pointers", listOfSetOfVarchar, [][]*string{{stringPtr("abc"), stringPtr("def")}, {}}, listAbcDefEmptyBytes2, ""},
 				{"list<set<text>> many elems interface{}", listOfSetOfVarchar, [][]interface{}{{"abc", "def"}, {}}, listAbcDefEmptyBytes2, ""},
-				{"list<set<text>> nil element", listOfSetOfVarchar, []interface{}{nil}, []byte{0x0, 0x1, 0xff, 0xff, 0xff, 0xff}, ""},
-				{"list<set<text>> nil inner element", listOfSetOfVarchar, []interface{}{[]interface{}{nil}}, []byte{0x0, 0x1, 0x0, 0x0, 0x0, 0x6, 0x0, 0x1, 0xff, 0xff, 0xff, 0xff}, ""},
+				{"list<set<text>> nil element", listOfSetOfVarchar, []interface{}{nil}, nil, "nil is not supported inside collections"},
+				{"list<set<text>> nil inner element", listOfSetOfVarchar, []interface{}{[]interface{}{nil}}, nil, "nil is not supported inside collections"},
 				{"list<set<text>> wrong source type", listOfSetOfVarchar, 123, nil, fmt.Sprintf("cannot encode int as CQL %s with %s: source type not supported", listOfSetOfVarchar.DataType(), version)},
 			}
 			for _, tt := range tests {
@@ -418,9 +418,10 @@ func Test_collectionCodec_Decode(t *testing.T) {
 				{"list<set<text>> many elems [][]interface{}", listOfSetOfVarchar, listAbcDefEmptyBytes2, new([][]interface{}), &[][]interface{}{{"abc", "def"}, {}}, false, ""},
 				{"list<set<text>> many elems interface{}", listOfSetOfVarchar, listAbcDefEmptyBytes2, new(interface{}), interfacePtr([][]*string{{stringPtr("abc"), stringPtr("def")}, {}}), false, ""},
 				{"list<set<text>> nil elem", listOfSetOfVarchar, listAbcNullNullBytes2, new([][]string), &[][]string{{"abc", ""}, nil}, false, ""},
-				{"list<set<text>> nil elem pointers", listOfSetOfVarchar, listAbcNullNullBytes2, new([][]*string), &[][]*string{{stringPtr("abc"), nil}, nil}, false, ""},
-				{"list<set<text>> nil elem [][]interface{}", listOfSetOfVarchar, listAbcNullNullBytes2, new([][]interface{}), &[][]interface{}{{"abc", nil}, nil}, false, ""},
-				{"list<set<text>> nil elem interface{}", listOfSetOfVarchar, listAbcNullNullBytes2, new(interface{}), interfacePtr([][]*string{{stringPtr("abc"), nil}, nil}), false, ""},
+				// Protocol V2 does not store negative collection element size, so we cannot distinguish between NULL and empty
+				{"list<set<text>> nil elem pointers", listOfSetOfVarchar, listAbcNullNullBytes2, new([][]*string), &[][]*string{{stringPtr("abc"), stringPtr("")}, nil}, false, ""},
+				{"list<set<text>> nil elem [][]interface{}", listOfSetOfVarchar, listAbcNullNullBytes2, new([][]interface{}), &[][]interface{}{{"abc", ""}, nil}, false, ""},
+				{"list<set<text>> nil elem interface{}", listOfSetOfVarchar, listAbcNullNullBytes2, new(interface{}), interfacePtr([][]*string{{stringPtr("abc"), stringPtr("")}, nil}), false, ""},
 				{"list<set<text>> pointer required", listOfSetOfVarchar, nil, [][]string{}, [][]string{}, true, fmt.Sprintf("cannot decode CQL %s as [][]string with %s: destination is not pointer", listOfSetOfVarchar.DataType(), version)},
 				{"list<set<text>> wrong destination type", listOfSetOfVarchar, nil, &map[string]string{}, new(map[string]string), true, fmt.Sprintf("cannot decode CQL %s as *map[string]string with %s: destination type not supported", listOfSetOfVarchar.DataType(), version)},
 			}
