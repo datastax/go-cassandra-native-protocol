@@ -67,26 +67,6 @@ func Test_durationCodec_Encode(t *testing.T) {
 			}
 		})
 	}
-	for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion5) {
-		t.Run(version.String(), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				source   interface{}
-				expected []byte
-				err      string
-			}{
-				{"null", nil, nil, "data type duration not supported"},
-				{"non null", cqlDurationPos, nil, "data type duration not supported"},
-			}
-			for _, tt := range tests {
-				t.Run(tt.name, func(t *testing.T) {
-					actual, err := Duration.Encode(tt.source, version)
-					assert.Equal(t, tt.expected, actual)
-					assertErrorMessage(t, tt.err, err)
-				})
-			}
-		})
-	}
 }
 
 func Test_durationCodec_Decode(t *testing.T) {
@@ -105,29 +85,6 @@ func Test_durationCodec_Decode(t *testing.T) {
 				{"non null interface", cqlDurationPosBytes, new(interface{}), interfacePtr(cqlDurationPos), false, ""},
 				{"read failed", []byte{1}, new(CqlDuration), new(CqlDuration), false, fmt.Sprintf("cannot decode CQL duration as *datacodec.CqlDuration with %v: cannot read datacodec.CqlDuration: cannot read duration days: cannot read [vint]: cannot read [unsigned vint]: EOF", version)},
 				{"conversion failed", cqlDurationPosBytes, new(float64), new(float64), false, fmt.Sprintf("cannot decode CQL duration as *float64 with %v: cannot convert from datacodec.CqlDuration to *float64: conversion not supported", version)},
-			}
-			for _, tt := range tests {
-				t.Run(tt.name, func(t *testing.T) {
-					wasNull, err := Duration.Decode(tt.source, tt.dest, version)
-					assert.Equal(t, tt.expected, tt.dest)
-					assert.Equal(t, tt.wasNull, wasNull)
-					assertErrorMessage(t, tt.err, err)
-				})
-			}
-		})
-	}
-	for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion5) {
-		t.Run(version.String(), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				source   []byte
-				dest     interface{}
-				expected interface{}
-				wasNull  bool
-				err      string
-			}{
-				{"null", nil, new(CqlDuration), new(CqlDuration), true, "data type duration not supported"},
-				{"non null", cqlDurationPosBytes, new(CqlDuration), new(CqlDuration), false, "data type duration not supported"},
 			}
 			for _, tt := range tests {
 				t.Run(tt.name, func(t *testing.T) {

@@ -525,14 +525,6 @@ func Test_tupleCodec_Encode(t *testing.T) {
 			})
 		})
 	}
-	for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion3) {
-		t.Run(version.String(), func(t *testing.T) {
-			codec, _ := NewTuple(datatype.NewTuple(datatype.Int))
-			dest, err := codec.Encode(nil, version)
-			assert.Nil(t, dest)
-			assertErrorMessage(t, "data type tuple<int> not supported in "+version.String(), err)
-		})
-	}
 	t.Run("invalid types", func(t *testing.T) {
 		dest, err := tupleCodecSimple.Encode(123, primitive.ProtocolVersion5)
 		assert.Nil(t, dest)
@@ -851,13 +843,6 @@ func Test_tupleCodec_Decode(t *testing.T) {
 					})
 				}
 			})
-		})
-	}
-	for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion3) {
-		t.Run(version.String(), func(t *testing.T) {
-			codec, _ := NewTuple(datatype.NewTuple(datatype.Int))
-			_, err := codec.Decode(nil, nil, version)
-			assertErrorMessage(t, "data type tuple<int> not supported in "+version.String(), err)
 		})
 	}
 	t.Run("invalid types", func(t *testing.T) {

@@ -20,10 +20,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestTupleType(t *testing.T) {
@@ -135,29 +133,6 @@ func TestWriteTupleType(t *testing.T) {
 			})
 		}
 	})
-
-	t.Run("versions_without_tuple_support", func(t *testing.T) {
-		for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion3) {
-			t.Run(version.String(), func(t *testing.T) {
-				for _, test := range tests {
-					t.Run(test.name, func(t *testing.T) {
-						var dest = &bytes.Buffer{}
-						var err error
-						err = WriteDataType(test.input, dest, version)
-						actual := dest.Bytes()
-						require.NotNil(t, err)
-						if test.err != nil {
-							assert.Equal(t, test.err, err)
-						} else {
-							assert.Contains(t, err.Error(),
-								fmt.Sprintf("invalid data type code for %s: DataTypeCode Tuple", version))
-						}
-						assert.Equal(t, 0, len(actual))
-					})
-				}
-			})
-		}
-	})
 }
 
 func TestLengthOfTupleType(t *testing.T) {
@@ -254,25 +229,6 @@ func TestReadTupleType(t *testing.T) {
 						actual, err = ReadDataType(source, version)
 						assert.Equal(t, test.expected, actual)
 						assert.Equal(t, test.err, err)
-					})
-				}
-			})
-		}
-	})
-
-	t.Run("versions_without_tuple_support", func(t *testing.T) {
-		for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion3) {
-			t.Run(version.String(), func(t *testing.T) {
-				for _, test := range tests {
-					t.Run(test.name, func(t *testing.T) {
-						var source = bytes.NewBuffer(test.input)
-						var actual DataType
-						var err error
-						actual, err = ReadDataType(source, version)
-						require.NotNil(t, err)
-						assert.Contains(t, err.Error(),
-							fmt.Sprintf("invalid data type code for %s: DataTypeCode Tuple", version))
-						assert.Nil(t, actual)
 					})
 				}
 			})

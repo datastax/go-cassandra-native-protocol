@@ -150,7 +150,7 @@ func CheckValidBatchType(batchType BatchType) error {
 }
 
 func CheckValidDataTypeCode(code DataTypeCode, version ProtocolVersion) error {
-	if !code.IsValid() || !version.SupportsDataType(code) {
+	if !code.IsValid() {
 		return fmt.Errorf("invalid data type code for %v: %v", version, code)
 	}
 	return nil

@@ -102,26 +102,6 @@ func Test_dateCodec_Encode(t *testing.T) {
 			}
 		})
 	}
-	for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
-		t.Run(version.String(), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				source   interface{}
-				expected []byte
-				err      string
-			}{
-				{"nil", nil, nil, "data type date not supported"},
-				{"non nil", datePos, nil, "data type date not supported"},
-			}
-			for _, tt := range tests {
-				t.Run(tt.name, func(t *testing.T) {
-					actual, err := Date.Encode(tt.source, version)
-					assert.Equal(t, tt.expected, actual)
-					assertErrorMessage(t, tt.err, err)
-				})
-			}
-		})
-	}
 }
 
 func Test_dateCodec_Decode(t *testing.T) {
@@ -140,29 +120,6 @@ func Test_dateCodec_Decode(t *testing.T) {
 				{"non null interface", datePosBytes, new(interface{}), interfacePtr(datePos), false, ""},
 				{"read failed", []byte{1}, new(int32), new(int32), false, fmt.Sprintf("cannot decode CQL date as *int32 with %v: cannot read int32: expected 4 bytes but got: 1", version)},
 				{"conversion failed", datePosBytes, new(float64), new(float64), false, fmt.Sprintf("cannot decode CQL date as *float64 with %v: cannot convert from int32 to *float64: conversion not supported", version)},
-			}
-			for _, tt := range tests {
-				t.Run(tt.name, func(t *testing.T) {
-					wasNull, err := Date.Decode(tt.source, tt.dest, version)
-					assert.Equal(t, tt.expected, tt.dest)
-					assert.Equal(t, tt.wasNull, wasNull)
-					assertErrorMessage(t, tt.err, err)
-				})
-			}
-		})
-	}
-	for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
-		t.Run(version.String(), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				source   []byte
-				dest     interface{}
-				expected interface{}
-				wasNull  bool
-				err      string
-			}{
-				{"null", nil, new(int32), new(int32), true, "data type date not supported"},
-				{"non null", datePosBytes, new(time.Time), new(time.Time), false, "data type date not supported"},
 			}
 			for _, tt := range tests {
 				t.Run(tt.name, func(t *testing.T) {

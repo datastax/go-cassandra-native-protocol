@@ -48,13 +48,9 @@ func (c *udtCodec) DataType() datatype.DataType {
 }
 
 func (c *udtCodec) Encode(source interface{}, version primitive.ProtocolVersion) (dest []byte, err error) {
-	if !version.SupportsDataType(c.DataType().Code()) {
-		err = errDataTypeNotSupported(c.DataType(), version)
-	} else {
-		var ext extractor
-		if ext, err = c.createExtractor(source); err == nil && ext != nil {
-			dest, err = writeUdt(ext, c.dataType.FieldNames, c.fieldCodecs, version)
-		}
+	var ext extractor
+	if ext, err = c.createExtractor(source); err == nil && ext != nil {
+		dest, err = writeUdt(ext, c.dataType.FieldNames, c.fieldCodecs, version)
 	}
 	if err != nil {
 		err = errCannotEncode(source, c.DataType(), version, err)
@@ -64,13 +60,9 @@ func (c *udtCodec) Encode(source interface{}, version primitive.ProtocolVersion)
 
 func (c *udtCodec) Decode(source []byte, dest interface{}, version primitive.ProtocolVersion) (wasNull bool, err error) {
 	wasNull = len(source) == 0
-	if !version.SupportsDataType(c.DataType().Code()) {
-		err = errDataTypeNotSupported(c.DataType(), version)
-	} else {
-		var inj injector
-		if inj, err = c.createInjector(dest, wasNull); err == nil && inj != nil {
-			err = readUdt(source, inj, c.dataType.FieldNames, c.fieldCodecs, version)
-		}
+	var inj injector
+	if inj, err = c.createInjector(dest, wasNull); err == nil && inj != nil {
+		err = readUdt(source, inj, c.dataType.FieldNames, c.fieldCodecs, version)
 	}
 	if err != nil {
 		err = errCannotDecode(dest, c.DataType(), version, err)

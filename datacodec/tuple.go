@@ -48,13 +48,9 @@ func (c *tupleCodec) DataType() datatype.DataType {
 }
 
 func (c *tupleCodec) Encode(source interface{}, version primitive.ProtocolVersion) (dest []byte, err error) {
-	if !version.SupportsDataType(c.DataType().Code()) {
-		err = errDataTypeNotSupported(c.DataType(), version)
-	} else {
-		var ext extractor
-		if ext, err = c.createExtractor(source); err == nil && ext != nil {
-			dest, err = writeTuple(ext, c.elementCodecs, version)
-		}
+	var ext extractor
+	if ext, err = c.createExtractor(source); err == nil && ext != nil {
+		dest, err = writeTuple(ext, c.elementCodecs, version)
 	}
 	if err != nil {
 		err = errCannotEncode(source, c.DataType(), version, err)
@@ -64,13 +60,9 @@ func (c *tupleCodec) Encode(source interface{}, version primitive.ProtocolVersio
 
 func (c *tupleCodec) Decode(source []byte, dest interface{}, version primitive.ProtocolVersion) (wasNull bool, err error) {
 	wasNull = len(source) == 0
-	if !version.SupportsDataType(c.DataType().Code()) {
-		err = errDataTypeNotSupported(c.DataType(), version)
-	} else {
-		var inj injector
-		if inj, err = c.createInjector(dest, wasNull); err == nil && inj != nil {
-			err = readTuple(source, inj, c.elementCodecs, version)
-		}
+	var inj injector
+	if inj, err = c.createInjector(dest, wasNull); err == nil && inj != nil {
+		err = readTuple(source, inj, c.elementCodecs, version)
 	}
 	if err != nil {
 		err = errCannotDecode(dest, c.DataType(), version, err)
