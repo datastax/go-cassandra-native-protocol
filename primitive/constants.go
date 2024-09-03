@@ -156,50 +156,6 @@ func (v ProtocolVersion) SupportsWriteTimeoutContentions() bool {
 	return v >= ProtocolVersion5 && v != ProtocolVersionDse1 && v != ProtocolVersionDse2
 }
 
-func (v ProtocolVersion) SupportsDataType(code DataTypeCode) bool {
-	switch code {
-	case DataTypeCodeCustom:
-	case DataTypeCodeAscii:
-	case DataTypeCodeBigint:
-	case DataTypeCodeBlob:
-	case DataTypeCodeBoolean:
-	case DataTypeCodeCounter:
-	case DataTypeCodeDecimal:
-	case DataTypeCodeDouble:
-	case DataTypeCodeFloat:
-	case DataTypeCodeInt:
-	case DataTypeCodeTimestamp:
-	case DataTypeCodeUuid:
-	case DataTypeCodeVarchar:
-	case DataTypeCodeVarint:
-	case DataTypeCodeTimeuuid:
-	case DataTypeCodeInet:
-	case DataTypeCodeList:
-	case DataTypeCodeMap:
-	case DataTypeCodeSet:
-	case DataTypeCodeText:
-		return v <= ProtocolVersion2 // removed in version 3
-	case DataTypeCodeUdt:
-		return v >= ProtocolVersion3
-	case DataTypeCodeTuple:
-		return v >= ProtocolVersion3
-	case DataTypeCodeDate:
-		return v >= ProtocolVersion4
-	case DataTypeCodeTime:
-		return v >= ProtocolVersion4
-	case DataTypeCodeSmallint:
-		return v >= ProtocolVersion4
-	case DataTypeCodeTinyint:
-		return v >= ProtocolVersion4
-	case DataTypeCodeDuration:
-		return v >= ProtocolVersion5
-	default:
-		// Unknown code
-		return false
-	}
-	return true
-}
-
 func (v ProtocolVersion) SupportsSchemaChangeTarget(target SchemaChangeTarget) bool {
 	switch target {
 	case SchemaChangeTargetKeyspace:

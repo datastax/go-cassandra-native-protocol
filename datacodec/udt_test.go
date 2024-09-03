@@ -16,7 +16,6 @@ package datacodec
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -415,14 +414,6 @@ func Test_udtCodec_Encode(t *testing.T) {
 			})
 		})
 	}
-	for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion3) {
-		t.Run(version.String(), func(t *testing.T) {
-			dest, err := udtCodecSimple.Encode(nil, version)
-			assert.Nil(t, dest)
-			expectedMessage := fmt.Sprintf("data type %s not supported in %v", udtTypeSimple, version)
-			assertErrorMessage(t, expectedMessage, err)
-		})
-	}
 	t.Run("invalid types", func(t *testing.T) {
 		dest, err := udtCodecSimple.Encode(123, primitive.ProtocolVersion5)
 		assert.Nil(t, dest)
@@ -685,13 +676,6 @@ func Test_udtCodec_Decode(t *testing.T) {
 					})
 				}
 			})
-		})
-	}
-	for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion3) {
-		t.Run(version.String(), func(t *testing.T) {
-			_, err := udtCodecSimple.Decode(nil, nil, version)
-			expectedMessage := fmt.Sprintf("data type %s not supported in %v", udtTypeSimple, version)
-			assertErrorMessage(t, expectedMessage, err)
 		})
 	}
 	t.Run("invalid types", func(t *testing.T) {

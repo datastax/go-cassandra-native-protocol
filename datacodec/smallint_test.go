@@ -56,26 +56,6 @@ func Test_smallintCodec_Encode(t *testing.T) {
 			}
 		})
 	}
-	for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
-		t.Run(version.String(), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				source   interface{}
-				expected []byte
-				err      string
-			}{
-				{"nil", int16NilPtr(), nil, "data type smallint not supported"},
-				{"non nil", 1, nil, "data type smallint not supported"},
-			}
-			for _, tt := range tests {
-				t.Run(tt.name, func(t *testing.T) {
-					actual, err := Smallint.Encode(tt.source, version)
-					assert.Equal(t, tt.expected, actual)
-					assertErrorMessage(t, tt.err, err)
-				})
-			}
-		})
-	}
 }
 
 func Test_smallintCodec_Decode(t *testing.T) {
@@ -94,29 +74,6 @@ func Test_smallintCodec_Decode(t *testing.T) {
 				{"non null interface", smallintOneBytes, new(interface{}), interfacePtr(int16(1)), false, ""},
 				{"read failed", []byte{1}, new(int16), new(int16), false, fmt.Sprintf("cannot decode CQL smallint as *int16 with %v: cannot read int16: expected 2 bytes but got: 1", version)},
 				{"conversion failed", smallintOneBytes, new(float64), new(float64), false, fmt.Sprintf("cannot decode CQL smallint as *float64 with %v: cannot convert from int16 to *float64: conversion not supported", version)},
-			}
-			for _, tt := range tests {
-				t.Run(tt.name, func(t *testing.T) {
-					wasNull, err := Smallint.Decode(tt.source, tt.dest, version)
-					assert.Equal(t, tt.expected, tt.dest)
-					assert.Equal(t, tt.wasNull, wasNull)
-					assertErrorMessage(t, tt.err, err)
-				})
-			}
-		})
-	}
-	for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
-		t.Run(version.String(), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				source   []byte
-				dest     interface{}
-				expected interface{}
-				wasNull  bool
-				err      string
-			}{
-				{"null", nil, new(int16), new(int16), true, "data type smallint not supported"},
-				{"non null", smallintOneBytes, new(int16), new(int16), false, "data type smallint not supported"},
 			}
 			for _, tt := range tests {
 				t.Run(tt.name, func(t *testing.T) {

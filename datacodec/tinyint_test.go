@@ -56,26 +56,6 @@ func Test_tinyintCodec_Encode(t *testing.T) {
 			}
 		})
 	}
-	for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
-		t.Run(version.String(), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				source   interface{}
-				expected []byte
-				err      string
-			}{
-				{"nil", int8NilPtr(), nil, "data type tinyint not supported"},
-				{"non nil", 1, nil, "data type tinyint not supported"},
-			}
-			for _, tt := range tests {
-				t.Run(tt.name, func(t *testing.T) {
-					actual, err := Tinyint.Encode(tt.source, version)
-					assert.Equal(t, tt.expected, actual)
-					assertErrorMessage(t, tt.err, err)
-				})
-			}
-		})
-	}
 }
 
 func Test_tinyintCodec_Decode(t *testing.T) {
@@ -94,29 +74,6 @@ func Test_tinyintCodec_Decode(t *testing.T) {
 				{"non null interface", tinyintOneBytes, new(interface{}), interfacePtr(int8(1)), false, ""},
 				{"read failed", []byte{1, 2}, new(int8), new(int8), false, fmt.Sprintf("cannot decode CQL tinyint as *int8 with %v: cannot read int8: expected 1 bytes but got: 2", version)},
 				{"conversion failed", tinyintOneBytes, new(float64), new(float64), false, fmt.Sprintf("cannot decode CQL tinyint as *float64 with %v: cannot convert from int8 to *float64: conversion not supported", version)},
-			}
-			for _, tt := range tests {
-				t.Run(tt.name, func(t *testing.T) {
-					wasNull, err := Tinyint.Decode(tt.source, tt.dest, version)
-					assert.Equal(t, tt.expected, tt.dest)
-					assert.Equal(t, tt.wasNull, wasNull)
-					assertErrorMessage(t, tt.err, err)
-				})
-			}
-		})
-	}
-	for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion4) {
-		t.Run(version.String(), func(t *testing.T) {
-			tests := []struct {
-				name     string
-				source   []byte
-				dest     interface{}
-				expected interface{}
-				wasNull  bool
-				err      string
-			}{
-				{"null", nil, new(int8), new(int8), true, "data type tinyint not supported"},
-				{"non null", tinyintOneBytes, new(int8), new(int8), false, "data type tinyint not supported"},
 			}
 			for _, tt := range tests {
 				t.Run(tt.name, func(t *testing.T) {

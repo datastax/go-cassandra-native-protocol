@@ -99,14 +99,10 @@ func (c *timeCodec) DataType() datatype.DataType {
 }
 
 func (c *timeCodec) Encode(source interface{}, version primitive.ProtocolVersion) (dest []byte, err error) {
-	if !version.SupportsDataType(c.DataType().Code()) {
-		err = errDataTypeNotSupported(c.DataType(), version)
-	} else {
-		var val int64
-		var wasNil bool
-		if val, wasNil, err = convertToInt64Time(source, c.layout); err == nil && !wasNil {
-			dest = writeInt64(val)
-		}
+	var val int64
+	var wasNil bool
+	if val, wasNil, err = convertToInt64Time(source, c.layout); err == nil && !wasNil {
+		dest = writeInt64(val)
 	}
 	if err != nil {
 		err = errCannotEncode(source, c.DataType(), version, err)
@@ -115,14 +111,9 @@ func (c *timeCodec) Encode(source interface{}, version primitive.ProtocolVersion
 }
 
 func (c *timeCodec) Decode(source []byte, dest interface{}, version primitive.ProtocolVersion) (wasNull bool, err error) {
-	if !version.SupportsDataType(c.DataType().Code()) {
-		wasNull = len(source) == 0
-		err = errDataTypeNotSupported(c.DataType(), version)
-	} else {
-		var val int64
-		if val, wasNull, err = readInt64(source); err == nil {
-			err = convertFromInt64Time(val, wasNull, dest, c.layout)
-		}
+	var val int64
+	if val, wasNull, err = readInt64(source); err == nil {
+		err = convertFromInt64Time(val, wasNull, dest, c.layout)
 	}
 	if err != nil {
 		err = errCannotDecode(dest, c.DataType(), version, err)

@@ -33,14 +33,10 @@ func (c *smallintCodec) DataType() datatype.DataType {
 }
 
 func (c *smallintCodec) Encode(source interface{}, version primitive.ProtocolVersion) (dest []byte, err error) {
-	if !version.SupportsDataType(c.DataType().Code()) {
-		err = errDataTypeNotSupported(c.DataType(), version)
-	} else {
-		var val int16
-		var wasNil bool
-		if val, wasNil, err = convertToInt16(source); err == nil && !wasNil {
-			dest = writeInt16(val)
-		}
+	var val int16
+	var wasNil bool
+	if val, wasNil, err = convertToInt16(source); err == nil && !wasNil {
+		dest = writeInt16(val)
 	}
 	if err != nil {
 		err = errCannotEncode(source, c.DataType(), version, err)
@@ -49,14 +45,9 @@ func (c *smallintCodec) Encode(source interface{}, version primitive.ProtocolVer
 }
 
 func (c *smallintCodec) Decode(source []byte, dest interface{}, version primitive.ProtocolVersion) (wasNull bool, err error) {
-	if !version.SupportsDataType(c.DataType().Code()) {
-		wasNull = len(source) == 0
-		err = errDataTypeNotSupported(c.DataType(), version)
-	} else {
-		var val int16
-		if val, wasNull, err = readInt16(source); err == nil {
-			err = convertFromInt16(val, wasNull, dest)
-		}
+	var val int16
+	if val, wasNull, err = readInt16(source); err == nil {
+		err = convertFromInt16(val, wasNull, dest)
 	}
 	if err != nil {
 		err = errCannotDecode(dest, c.DataType(), version, err)

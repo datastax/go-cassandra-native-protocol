@@ -46,14 +46,10 @@ func (c *durationCodec) DataType() datatype.DataType {
 }
 
 func (c *durationCodec) Encode(source interface{}, version primitive.ProtocolVersion) (dest []byte, err error) {
-	if !version.SupportsDataType(c.DataType().Code()) {
-		err = errDataTypeNotSupported(c.DataType(), version)
-	} else {
-		var val CqlDuration
-		var wasNil bool
-		if val, wasNil, err = convertToDuration(source); err == nil && !wasNil {
-			dest = writeDuration(val)
-		}
+	var val CqlDuration
+	var wasNil bool
+	if val, wasNil, err = convertToDuration(source); err == nil && !wasNil {
+		dest = writeDuration(val)
 	}
 	if err != nil {
 		err = errCannotEncode(source, c.DataType(), version, err)
@@ -62,14 +58,9 @@ func (c *durationCodec) Encode(source interface{}, version primitive.ProtocolVer
 }
 
 func (c *durationCodec) Decode(source []byte, dest interface{}, version primitive.ProtocolVersion) (wasNull bool, err error) {
-	if !version.SupportsDataType(c.DataType().Code()) {
-		wasNull = len(source) == 0
-		err = errDataTypeNotSupported(c.DataType(), version)
-	} else {
-		var val CqlDuration
-		if val, wasNull, err = readDuration(source); err == nil {
-			err = convertFromDuration(val, wasNull, dest)
-		}
+	var val CqlDuration
+	if val, wasNull, err = readDuration(source); err == nil {
+		err = convertFromDuration(val, wasNull, dest)
 	}
 	if err != nil {
 		err = errCannotDecode(dest, c.DataType(), version, err)

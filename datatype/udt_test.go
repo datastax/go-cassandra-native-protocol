@@ -175,29 +175,6 @@ func TestWriteUserDefinedType(t *testing.T) {
 			})
 		}
 	})
-
-	t.Run("versions_without_udt_support", func(t *testing.T) {
-		for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion3) {
-			t.Run(version.String(), func(t *testing.T) {
-				for _, test := range tests {
-					t.Run(test.name, func(t *testing.T) {
-						var dest = &bytes.Buffer{}
-						var err error
-						err = WriteDataType(test.input, dest, version)
-						actual := dest.Bytes()
-						require.NotNil(t, err)
-						if test.err != nil {
-							assert.Equal(t, test.err, err)
-						} else {
-							assert.Contains(t, err.Error(),
-								fmt.Sprintf("invalid data type code for %s: DataTypeCode Udt", version))
-						}
-						assert.Equal(t, 0, len(actual))
-					})
-				}
-			})
-		}
-	})
 }
 
 func TestLengthOfUserDefinedType(t *testing.T) {
@@ -317,25 +294,6 @@ func TestReadUserDefinedType(t *testing.T) {
 						actual, err = ReadDataType(source, version)
 						assert.Equal(t, test.err, err)
 						assert.Equal(t, test.expected, actual)
-					})
-				}
-			})
-		}
-	})
-
-	t.Run("versions_without_udt_support", func(t *testing.T) {
-		for _, version := range primitive.SupportedProtocolVersionsLesserThan(primitive.ProtocolVersion3) {
-			t.Run(version.String(), func(t *testing.T) {
-				for _, test := range tests {
-					t.Run(test.name, func(t *testing.T) {
-						var source = bytes.NewBuffer(test.input)
-						var actual DataType
-						var err error
-						actual, err = ReadDataType(source, version)
-						require.NotNil(t, err)
-						assert.Contains(t, err.Error(),
-							fmt.Sprintf("invalid data type code for %s: DataTypeCode Udt", version))
-						assert.Nil(t, actual)
 					})
 				}
 			})
