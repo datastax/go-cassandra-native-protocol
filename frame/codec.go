@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/datastax/go-cassandra-native-protocol/compression"
 	"github.com/datastax/go-cassandra-native-protocol/message"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
 )
@@ -102,14 +103,14 @@ type RawCodec interface {
 
 type codec struct {
 	messageCodecs map[primitive.OpCode]message.Codec
-	compressor    BodyCompressor
+	compressor    compression.Compressor
 }
 
 func NewCodec(messageCodecs ...message.Codec) Codec {
 	return NewCodecWithCompression(nil, messageCodecs...)
 }
 
-func NewCodecWithCompression(compressor BodyCompressor, messageCodecs ...message.Codec) Codec {
+func NewCodecWithCompression(compressor compression.Compressor, messageCodecs ...message.Codec) Codec {
 	return NewRawCodecWithCompression(compressor, messageCodecs...)
 }
 
@@ -117,7 +118,7 @@ func NewRawCodec(messageCodecs ...message.Codec) RawCodec {
 	return NewRawCodecWithCompression(nil, messageCodecs...)
 }
 
-func NewRawCodecWithCompression(compressor BodyCompressor, messageCodecs ...message.Codec) RawCodec {
+func NewRawCodecWithCompression(compressor compression.Compressor, messageCodecs ...message.Codec) RawCodec {
 	frameCodec := &codec{
 		compressor:    compressor,
 		messageCodecs: make(map[primitive.OpCode]message.Codec, len(message.DefaultMessageCodecs)+len(messageCodecs)),
@@ -131,11 +132,11 @@ func NewRawCodecWithCompression(compressor BodyCompressor, messageCodecs ...mess
 	return frameCodec
 }
 
-func (c *codec) GetBodyCompressor() BodyCompressor {
+func (c *codec) GetCompressor() compression.Compressor {
 	return c.compressor
 }
 
-func (c *codec) SetBodyCompressor(compressor BodyCompressor) {
+func (c *codec) SetCompressor(compressor compression.Compressor) {
 	c.compressor = compressor
 }
 

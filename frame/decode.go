@@ -96,11 +96,13 @@ func (c *codec) DecodeBody(header *Header, source io.Reader) (body *Body, err er
 		if c.compressor == nil {
 			return nil, errors.New("cannot decompress body: no compressor available")
 		} else {
-			decompressedBody := &bytes.Buffer{}
-			if err := c.compressor.DecompressWithLength(io.LimitReader(source, int64(header.BodyLength)), decompressedBody); err != nil {
+			reader := io.LimitReader(source, int64(header.BodyLength))
+			if compressedBody, err := bufferFromReader(reader); err != nil {
+				return nil, fmt.Errorf("cannot read compressed message: %w", err)
+			} else if decompressedBody, err := c.compressor.DecompressFrame(compressedBody); err != nil {
 				return nil, fmt.Errorf("cannot decompress body: %w", err)
 			} else {
-				source = decompressedBody
+				source = bytes.NewBuffer(decompressedBody)
 			}
 		}
 	}
@@ -159,4 +161,18 @@ func (c *codec) DiscardBody(header *Header, source io.Reader) (err error) {
 		err = fmt.Errorf("cannot discard body; %w", err)
 	}
 	return err
+}
+
+func bufferFromReader(source io.Reader) ([]byte, error) {
+	var buf *bytes.Buffer
+	switch s := source.(type) {
+	case *bytes.Buffer:
+		buf = s
+	default:
+		buf = &bytes.Buffer{}
+		if _, err := buf.ReadFrom(s); err != nil {
+			return nil, err
+		}
+	}
+	return buf.Bytes(), nil
 }

@@ -142,7 +142,7 @@ func (f *Frame) RequestTracingId(tracing bool) {
 // SetCompress Configures this frame to use compression, adjusting the header flags accordingly.
 // Note: this method will not enable compression on frames that cannot be compressed.
 // Also, enabling compression on a frame does not guarantee that the frame will be properly compressed:
-// the frame codec must also be configured to use a BodyCompressor.
+// the frame codec must also be configured to use a compression.Compressor.
 func (f *Frame) SetCompress(compress bool) {
 	if compress && isCompressible(f.Body.Message.GetOpCode()) {
 		f.Header.Flags = f.Header.Flags.Add(primitive.HeaderFlagCompressed)

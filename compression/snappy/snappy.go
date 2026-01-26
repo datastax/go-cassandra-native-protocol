@@ -15,51 +15,30 @@
 package snappy
 
 import (
-	"bytes"
 	"fmt"
-	"io"
-
 	"github.com/golang/snappy"
 )
 
-// Compressor satisfies frame.BodyCompressor for the SNAPPY algorithm.
+// Compressor satisfies compression.Compressor for the SNAPPY algorithm.
 type Compressor struct{}
 
-func (l Compressor) CompressWithLength(source io.Reader, dest io.Writer) error {
-	if uncompressedMessage, err := bufferFromReader(source); err != nil {
-		return fmt.Errorf("cannot read uncompressed message: %w", err)
-	} else {
-		compressedMessage := snappy.Encode(nil, uncompressedMessage.Bytes())
-		if _, err := dest.Write(compressedMessage); err != nil {
-			return fmt.Errorf("cannot write compressed message: %w", err)
-		}
-		return nil
-	}
+func (c Compressor) CompressFrame(uncompressed []byte) ([]byte, error) {
+	compressed := snappy.Encode(nil, uncompressed)
+	return compressed, nil
 }
 
-func (l Compressor) DecompressWithLength(source io.Reader, dest io.Writer) error {
-	if compressedMessage, err := bufferFromReader(source); err != nil {
-		return fmt.Errorf("cannot read compressed message: %w", err)
-	} else {
-		if decompressedMessage, err := snappy.Decode(nil, compressedMessage.Bytes()); err != nil {
-			return fmt.Errorf("cannot decompress message: %w", err)
-		} else if _, err := dest.Write(decompressedMessage); err != nil {
-			return fmt.Errorf("cannot write decompressed message: %w", err)
-		}
-		return nil
+func (c Compressor) DecompressFrame(compressed []byte) ([]byte, error) {
+	decompressedMessage, err := snappy.Decode(nil, compressed)
+	if err != nil {
+		return nil, fmt.Errorf("cannot decompress message: %w", err)
 	}
+	return decompressedMessage, nil
 }
 
-func bufferFromReader(source io.Reader) (*bytes.Buffer, error) {
-	var buf *bytes.Buffer
-	switch s := source.(type) {
-	case *bytes.Buffer:
-		buf = s
-	default:
-		buf = &bytes.Buffer{}
-		if _, err := buf.ReadFrom(s); err != nil {
-			return nil, err
-		}
-	}
-	return buf, nil
+func (c Compressor) CompressSegment(uncompressed []byte) ([]byte, error) {
+	return nil, fmt.Errorf("snappy compression is not supported for protocol v5+")
+}
+
+func (c Compressor) DecompressSegment(compressed []byte, uncompressed []byte) error {
+	return fmt.Errorf("snappy decompression is not supported for protocol v5+")
 }

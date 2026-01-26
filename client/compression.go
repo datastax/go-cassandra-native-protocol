@@ -15,14 +15,13 @@
 package client
 
 import (
+	"github.com/datastax/go-cassandra-native-protocol/compression"
 	"github.com/datastax/go-cassandra-native-protocol/compression/lz4"
 	"github.com/datastax/go-cassandra-native-protocol/compression/snappy"
-	"github.com/datastax/go-cassandra-native-protocol/frame"
 	"github.com/datastax/go-cassandra-native-protocol/primitive"
-	"github.com/datastax/go-cassandra-native-protocol/segment"
 )
 
-func NewBodyCompressor(c primitive.Compression) frame.BodyCompressor {
+func NewCompressor(c primitive.Compression) compression.Compressor {
 	switch c {
 	case primitive.CompressionNone:
 		return nil
@@ -30,20 +29,6 @@ func NewBodyCompressor(c primitive.Compression) frame.BodyCompressor {
 		return &lz4.Compressor{}
 	case primitive.CompressionSnappy:
 		return &snappy.Compressor{}
-	default:
-		return nil
-	}
-}
-
-func NewPayloadCompressor(c primitive.Compression) segment.PayloadCompressor {
-	switch c {
-	case primitive.CompressionNone:
-		return nil
-	case primitive.CompressionLz4:
-		return &lz4.Compressor{}
-	case primitive.CompressionSnappy:
-		// Snappy not supported for payload compression
-		return nil
 	default:
 		return nil
 	}

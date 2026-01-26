@@ -112,8 +112,10 @@ func (c *codec) EncodeBody(header *Header, body *Body, dest io.Writer) error {
 			uncompressedBody := bytes.NewBuffer(make([]byte, 0, uncompressedBodyLength))
 			if err = c.encodeBodyUncompressed(header, body, uncompressedBody); err != nil {
 				return fmt.Errorf("cannot encode body: %w", err)
-			} else if err := c.compressor.CompressWithLength(uncompressedBody, dest); err != nil {
+			} else if compressedBody, err := c.compressor.CompressFrame(uncompressedBody.Bytes()); err != nil {
 				return fmt.Errorf("cannot compress body: %w", err)
+			} else if _, err := dest.Write(compressedBody); err != nil {
+				return fmt.Errorf("cannot write compressed message: %w", err)
 			}
 			return nil
 		}
