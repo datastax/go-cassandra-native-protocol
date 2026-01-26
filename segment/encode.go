@@ -55,18 +55,16 @@ func (c *codec) encodeSegmentUncompressed(segment *Segment, dest io.Writer) erro
 }
 
 func (c *codec) encodeSegmentCompressed(segment *Segment, dest io.Writer) error {
-	uncompressedPayload := bytes.NewBuffer(segment.Payload.UncompressedData)
-	compressedPayload := bytes.NewBuffer(make([]byte, 0, len(segment.Payload.UncompressedData)))
-	if err := c.compressor.Compress(uncompressedPayload, compressedPayload); err != nil {
+	if compressedPayload, err := c.compressor.CompressSegment(segment.Payload.UncompressedData); err != nil {
 		return fmt.Errorf("cannot compress segment payload: %w", err)
 	} else {
 		var payload *bytes.Buffer
-		segment.Header.CompressedPayloadLength = int32(compressedPayload.Len())
+		segment.Header.CompressedPayloadLength = int32(len(compressedPayload))
 		if segment.Header.CompressedPayloadLength <= segment.Header.UncompressedPayloadLength {
-			payload = compressedPayload
+			payload = bytes.NewBuffer(compressedPayload)
 		} else {
 			// compression is not worth it
-			payload = uncompressedPayload
+			payload = bytes.NewBuffer(segment.Payload.UncompressedData)
 			segment.Header.CompressedPayloadLength = segment.Header.UncompressedPayloadLength
 			segment.Header.UncompressedPayloadLength = 0
 		}

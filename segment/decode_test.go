@@ -16,6 +16,7 @@ package segment
 
 import (
 	"bytes"
+	"github.com/datastax/go-cassandra-native-protocol/compression"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -27,7 +28,7 @@ import (
 func Test_codec_DecodeSegment(t *testing.T) {
 	tests := []struct {
 		name       string
-		compressor PayloadCompressor
+		compressor compression.Compressor
 		source     []byte
 		expected   *Segment
 		expectErr  bool
@@ -280,7 +281,7 @@ func Test_codec_DecodeSegment(t *testing.T) {
 func Test_codec_decodeSegmentHeader(t *testing.T) {
 	tests := []struct {
 		name       string
-		compressor PayloadCompressor
+		compressor compression.Compressor
 		source     []byte
 		expected   *Header
 		expectErr  bool

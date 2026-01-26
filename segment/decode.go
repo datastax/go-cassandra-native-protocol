@@ -15,7 +15,6 @@
 package segment
 
 import (
-	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -112,11 +111,11 @@ func (c *codec) decodeSegmentPayload(header *Header, source io.Reader) (*Payload
 	if c.compressor == nil || header.CompressedPayloadLength == 0 {
 		payload.UncompressedData = encodedPayload
 	} else {
-		rawData := bytes.NewBuffer(make([]byte, 0, length))
-		if err := c.compressor.Decompress(bytes.NewReader(encodedPayload), rawData); err != nil {
+		rawData := make([]byte, header.UncompressedPayloadLength)
+		if err := c.compressor.DecompressSegment(encodedPayload, rawData); err != nil {
 			return nil, fmt.Errorf("cannot decompress segment payload: %w", err)
 		}
-		payload.UncompressedData = rawData.Bytes()
+		payload.UncompressedData = rawData
 	}
 	return payload, nil
 }

@@ -603,8 +603,9 @@ func (c *CqlServerConnection) readFrame(source io.Reader) (abort bool) {
 	} else {
 		if startup, ok := incoming.Body.Message.(*message.Startup); ok {
 			c.compression = startup.GetCompression()
-			c.frameCodec = frame.NewCodecWithCompression(NewBodyCompressor(c.compression))
-			c.segmentCodec = segment.NewCodecWithCompression(NewPayloadCompressor(c.compression))
+			compressor := NewCompressor(c.compression)
+			c.frameCodec = frame.NewCodecWithCompression(compressor)
+			c.segmentCodec = segment.NewCodecWithCompression(compressor)
 		}
 		c.processIncomingFrame(incoming)
 	}

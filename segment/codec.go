@@ -15,6 +15,7 @@
 package segment
 
 import (
+	"github.com/datastax/go-cassandra-native-protocol/compression"
 	"io"
 )
 
@@ -48,13 +49,13 @@ type Codec interface {
 }
 
 type codec struct {
-	compressor PayloadCompressor
+	compressor compression.Compressor
 }
 
 func NewCodec() Codec {
 	return NewCodecWithCompression(nil)
 }
 
-func NewCodecWithCompression(compressor PayloadCompressor) Codec {
+func NewCodecWithCompression(compressor compression.Compressor) Codec {
 	return &codec{compressor: compressor}
 }

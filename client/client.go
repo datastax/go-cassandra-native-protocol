@@ -195,8 +195,9 @@ func newCqlClientConnection(
 	if maxPending < 1 {
 		return nil, fmt.Errorf("max pending: expecting positive, got: %v", maxInFlight)
 	}
-	frameCodec := frame.NewCodecWithCompression(NewBodyCompressor(compression))
-	segmentCodec := segment.NewCodecWithCompression(NewPayloadCompressor(compression))
+	compressor := NewCompressor(compression)
+	frameCodec := frame.NewCodecWithCompression(compressor)
+	segmentCodec := segment.NewCodecWithCompression(compressor)
 	if compression == "" {
 		compression = primitive.CompressionNone
 	}
